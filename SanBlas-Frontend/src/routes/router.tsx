@@ -9,6 +9,7 @@ import Navbar from "../shared/components/Navbar";
 import Home from "../modules/landing/pages/HomePage";
 import Footer from "../modules/landing/components/Footer";
 import Dashboard from "../modules/dashboard/pages/Dashboard";
+import Rutas from "./Rutas";
 
 
 function RootLayout() {
@@ -30,25 +31,25 @@ const rootRoute = createRootRoute({
 
 const homeRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: "/",
+    path: Rutas.home,
     component: () => <Home />,
 });
 
 const sobreNosotrosRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: "/sobre-nosotros",
+    path: Rutas.sobreNosotros,
     component: () => <h1>Sobre Nosotros</h1>,
 });
 
 const historiaRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: "/historia",
+    path: Rutas.historia,
     component: () => <h1>Historia</h1>,
 });
 
 const dashboardRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: "/dashboard",
+    path: Rutas.dashboard,
     component: () => <Dashboard></Dashboard>,
 });
 
