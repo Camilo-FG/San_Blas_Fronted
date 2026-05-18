@@ -1,0 +1,125 @@
+.footer {
+    background-color: #003366;
+    color: #ffffff;
+    padding: 64px 32px 24px;
+    border-top: 3px solid #d4af37;
+}
+
+.footer__container {
+    max-width: 1280px;
+    margin: 0 auto;
+
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
+    gap: 48px;
+}
+
+.footer__logo {
+    margin: 0 0 18px;
+    color: #ffffff;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.footer__description {
+    max-width: 360px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.footer__title {
+    margin: 0 0 18px;
+    color: #d4af37;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+}
+
+.footer__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer__list li {
+    margin-bottom: 12px;
+}
+
+.footer__link {
+    color: rgba(255, 255, 255, 0.72);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: color 0.2s ease, padding-left 0.2s ease;
+}
+
+.footer__link:hover {
+    color: #d4af37;
+    padding-left: 4px;
+}
+
+.footer__text {
+    margin: 0 0 10px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.footer__bottom {
+    max-width: 1280px;
+    margin: 48px auto 0;
+    padding-top: 24px;
+    border-top: 1px solid rgba(212, 175, 55, 0.35);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 13px;
+}
+
+.footer__bottom p {
+    margin: 0;
+}
+
+.footer__bottom span {
+    color: #d4af37;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* Responsive */
+@media (max-width: 950px) {
+    .footer__container {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .footer__bottom {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .footer {
+        padding: 48px 24px 24px;
+    }
+
+    .footer__container {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .footer__description {
+        max-width: 100%;
+    }
+}

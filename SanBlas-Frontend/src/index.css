@@ -1,0 +1,78 @@
+:root {
+  --royal-blue: #003366;
+  --royal-gold: #d4af37;
+  --royal-gold-light: #f0c84b;
+
+  --white: #ffffff;
+  --text: #1f2937;
+  --text-secondary: #6b7280;
+
+  --bg: #ffffff;
+  --bg-soft: #f8f5ef;
+  --border: #e5e7eb;
+
+  --sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: "Playfair Display", Georgia, serif;
+
+  font-family: var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--heading);
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  font-family: inherit;
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+}
+
+
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1;
+}
