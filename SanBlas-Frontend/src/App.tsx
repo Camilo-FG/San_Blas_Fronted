@@ -5,6 +5,8 @@ import heroImg from './assets/hero.png'
 import './App.css'
 import Navbar from './shared/components/Navbar'
 import Home from './modules/landing/pages/HomePage'
+import { RouterProvider } from "@tanstack/react-router";
+import { router } from "./routes/router";
 
 
 function App() {
@@ -12,7 +14,7 @@ function App() {
 
   return (
     <>
-      {/* <Navbar></Navbar> */}
+       <RouterProvider router={router} />
 
     </>
   )
