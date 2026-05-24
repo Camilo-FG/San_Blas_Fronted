@@ -89,6 +89,7 @@ function Dashboard() {
             <article className="dashboard__card">
               <span className="dashboard__card-icon">SS</span>
               <p>Solicitudes de sacramentos</p>
+               
               <h3>0</h3>
             </article>
 
