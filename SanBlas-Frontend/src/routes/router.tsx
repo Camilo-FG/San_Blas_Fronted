@@ -33,7 +33,7 @@ const rootRoute = createRootRoute({
 const homeRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: Rutas.home,
-    component: () => <Home />,
+    component: () => Home(),
 });
 
 const sobreNosotrosRoute = createRoute({
@@ -51,12 +51,12 @@ const historiaRoute = createRoute({
 const dashboardRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: Rutas.dashboard,
-    component: () => <Dashboard></Dashboard>,
+    component: () => Dashboard(),
 });
 const solicSacramentoRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: Rutas.solicitudesSacramentos,
-    component: () => <SolicSacramento></SolicSacramento>,
+    component: () => SolicSacramento(),
 });
 
 const routeTree = rootRoute.addChildren([
