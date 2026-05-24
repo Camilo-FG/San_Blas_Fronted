@@ -26,6 +26,7 @@ function Footer() {
                     <h3 className="footer__title">Servicios</h3>
                     <ul className="footer__list">
                         <li><a href="/catequesis" className="footer__link">Catequesis</a></li>
+                        <li><a href="/solicitudes-sacramentos" className="footer__link">Solicitudes de Sacramentos</a></li>
                         <li><a href="/bautizos" className="footer__link">Bautizos</a></li>
                         <li><a href="/horarios" className="footer__link">Horarios</a></li>
                         <li><a href="/contacto" className="footer__link">Contacto</a></li>

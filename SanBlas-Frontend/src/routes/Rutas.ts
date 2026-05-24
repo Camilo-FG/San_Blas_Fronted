@@ -3,6 +3,7 @@ const Rutas = {
   sobreNosotros: "/sobre-nosotros",
   historia: "/historia",
   dashboard: "/dashboard",
+  solicitudesSacramentos: "/solicitudes-sacramentos",
 
 };
 
