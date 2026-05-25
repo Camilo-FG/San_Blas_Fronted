@@ -14,8 +14,12 @@ import DashboardHome from "../modules/dashboard/pages/DashboardHome";
 import donaciones from "../modules/donaciones/pages/donaciones";
 import Rutas from "./Rutas";
 
+import solicSacrametos from "../modules/solicSacramento/pages/solicSacramento";
+import formSolic from "../modules/solicSacramento/components/FormSolic";
 import DashSacra from "../modules/dashboardSacramento/dashSacra";
 import DonacionInfo from "../modules/donaciones/components/DonacionInfo";
+import FormSolic from "../modules/solicSacramento/components/FormSolic";
+
 // import Donaciones from "../modules/donaciones/pages/donaciones";
 
 function Placeholder({ title }: { title: string }) {
@@ -61,6 +65,11 @@ const historiaRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.historia,
   component: () => <h1>Historia</h1>,
+});
+const solicitudesSacramentosRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.SolicitudesSacramentos,
+  component: formSolic,
 });
 
 const donacionesPublicasRoute = createRoute({
@@ -131,6 +140,7 @@ const routeTree = rootRoute.addChildren([
   sobreNosotrosRoute,
   historiaRoute,
   donacionesPublicasRoute,
+  solicitudesSacramentosRoute,
 
   dashboardRoute.addChildren([
     dashboardHomeRoute,
