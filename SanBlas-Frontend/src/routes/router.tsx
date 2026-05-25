@@ -11,6 +11,7 @@ import Footer from "../modules/landing/components/Footer";
 import Dashboard from "../modules/dashboard/pages/Dashboard";
 import Rutas from "./Rutas";
 import SolicSacramento from "../modules/solicSacramento/pages/solicSacramento";
+import dashSacra from "../modules/dashboardSacramento/dashSacra";
 
 
 function RootLayout() {
@@ -56,7 +57,7 @@ const dashboardRoute = createRoute({
 const solicSacramentoRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: Rutas.solicitudesSacramentos,
-    component: () => SolicSacramento(),
+    component: () => dashSacra(),
 });
 
 const routeTree = rootRoute.addChildren([

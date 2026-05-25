@@ -7,11 +7,11 @@ export const useCreateSolicSacramento = () => {
   const queryClient = useQueryClient(); // 👈 Para invalidar el cache
 
   const createMutation = useMutation({
-    mutationFn: (data: FormSacramento) => CreateSolicSacramento(data), // 👈 Tipado
+    mutationFn: (data: FormSacramento) => CreateSolicSacramento(data), 
 
-    // 👇 Esto faltaba — refresca la lista tras éxito
+    
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['solicSacramento'] });
+      queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
     },
 
     // 👇 Manejo de error
