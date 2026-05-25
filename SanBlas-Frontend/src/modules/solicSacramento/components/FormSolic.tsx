@@ -22,8 +22,8 @@ const FormSolic = () => {
       Motivo: '',
     },
        onSubmit: async ({ value }: any) => {
-      // Usar la mutación ya creada arriba
-      mutate(value);
+      // El estado no lo elige el usuario; inicia siempre pendiente.
+      mutate({ ...value, Estado: 'Pendiente' });
     },
  
   });

@@ -1,6 +1,12 @@
 import { useState } from "react";
+
 import "./Dashboard.css";
+<<<<<<< HEAD
 import GestionUsuarios from "../../../modules/Gestión de Usuarios/pages/GestionUsuarios";
+=======
+import GestionSacramentos from "../../Registro de Sacramentos/Components/GestionSacramentos";
+
+>>>>>>> 594f1fca8493dbb3aca0ce700f64689b9755a68f
 const modules = [
   {
     id: "principal",
@@ -105,9 +111,14 @@ function Dashboard() {
               <h3>0</h3>
             </article>
           </div>
+<<<<<<< HEAD
         ) : activeModule === "usuarios" ? (
           <GestionUsuarios />
         ) : (
+=======
+        ) :
+         (
+>>>>>>> 594f1fca8493dbb3aca0ce700f64689b9755a68f
           <div className="dashboard__placeholder">
             <h2>Módulo en preparación</h2>
             <p>
@@ -117,6 +128,24 @@ function Dashboard() {
             </p>
           </div>
         )}
+
+        {activeModule === "principal" ? (
+  <div className="dashboard__cards">
+    {/* ... tus cards existentes ... */}
+  </div>
+) : activeModule === "gestion-sacramentos" ? (
+  <GestionSacramentos />
+) : (
+  <div className="dashboard__placeholder">
+    <h2>Módulo en preparación</h2>
+    <p>
+      Aquí se mostrará la información de{" "}
+      <strong>{currentModule?.label}</strong>. Más adelante puedes
+      agregar tablas, formularios y operaciones CRUD.
+    </p>
+  </div>
+)}
+
       </main>
     </section>
   );
