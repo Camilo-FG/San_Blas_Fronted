@@ -1,4 +1,8 @@
 import { Link, Outlet } from "@tanstack/react-router";
+import GestionSacramentos from "../../Registro de Sacramentos/Components/GestionSacramentos";
+
+
+
 import {
   Home,
   Heart,

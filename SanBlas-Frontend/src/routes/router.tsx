@@ -18,8 +18,7 @@ import solicSacrametos from "../modules/solicSacramento/pages/solicSacramento";
 import formSolic from "../modules/solicSacramento/components/FormSolic";
 import DashSacra from "../modules/dashboardSacramento/dashSacra";
 import DonacionInfo from "../modules/donaciones/components/DonacionInfo";
-import FormSolic from "../modules/solicSacramento/components/FormSolic";
-
+import GestionSacramentos from "../modules/Registro de Sacramentos/Components/GestionSacramentos";
 // import Donaciones from "../modules/donaciones/pages/donaciones";
 
 function Placeholder({ title }: { title: string }) {
@@ -93,7 +92,7 @@ const dashboardHomeRoute = createRoute({
 const registroSacramentosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.registroSacramentos,
-  component: () => <Placeholder title="Registro de sacramentos" />,
+  component: () => <GestionSacramentos/>,
 });
 
 const constanciasSacramentosRoute = createRoute({

@@ -2,14 +2,14 @@ import { RegistroBautismo } from "src/types/registroSacramento";
 import { apiBautismo } from "../Api/ApiConfigBautismo";
 
 export const fetchGetBautismo = async (): Promise<RegistroBautismo[]> => {
-    const {data} = await apiBautismo.get('/latest');
+    const {data} = await apiBautismo.get('/latest?meta=false');
     return data.record; 
 }
 
 export const fetchCreateBautismo = async (bautismo: RegistroBautismo): Promise<RegistroBautismo> => {
  // 1. Obtener los datos actuales
-    const { data: datosActuales } = await apiBautismo.get('/latest');
-    const registrosActuales = datosActuales.record || [];
+    const { data: datosActuales } = await apiBautismo.get('/latest?meta=false');
+    const registrosActuales = datosActuales || [];
     // 2. Agregar el nuevo registro
     const registrosActualizados = [...registrosActuales, bautismo];
     // 3. Actualizar todo el bin
