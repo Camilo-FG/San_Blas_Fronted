@@ -15,6 +15,8 @@ const Rutas = {
   sobreNosotros: "/sobre-nosotros",
   historia: "/historia",
 
+  donacionesPublicas: "/donaciones",
+
   dashboard: dashboardBase,
 
   dashboardPath,

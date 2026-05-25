@@ -10,14 +10,14 @@ import Home from "../modules/landing/pages/HomePage";
 import Footer from "../modules/landing/components/Footer";
 
 import Dashboard from "../modules/dashboard/pages/Dashboard";
-
+import DashboardHome from "../modules/dashboard/pages/DashboardHome";
+import donaciones from "../modules/donaciones/pages/donaciones";
 import Rutas from "./Rutas";
 
-import Donaciones from "../modules/donaciones/pages/donaciones";
 import DashSacra from "../modules/dashboardSacramento/dashSacra";
-import DashboardHome from "../modules/dashboard/pages/DashboardHome";
+import DonacionInfo from "../modules/donaciones/components/DonacionInfo";
+// import Donaciones from "../modules/donaciones/pages/donaciones";
 
-// Luego cambia estos imports por tus páginas reales cuando las tengas
 function Placeholder({ title }: { title: string }) {
   return (
     <div className="dashboard__placeholder">
@@ -63,6 +63,12 @@ const historiaRoute = createRoute({
   component: () => <h1>Historia</h1>,
 });
 
+const donacionesPublicasRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.donacionesPublicas,
+  component: donaciones,
+});
+
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.dashboard,
@@ -93,11 +99,14 @@ const solicitudesCatequesisRoute = createRoute({
   component: () => <Placeholder title="Solicitudes de catequesis" />,
 });
 
-const donacionesRoute = createRoute({
+// Cuando Gonza tenga el módulo admin de donaciones, descomentás esto:
+/*
+const donacionesAdminRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.donaciones,
   component: Donaciones,
 });
+*/
 
 const eventosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
@@ -121,13 +130,14 @@ const routeTree = rootRoute.addChildren([
   homeRoute,
   sobreNosotrosRoute,
   historiaRoute,
+  donacionesPublicasRoute,
 
   dashboardRoute.addChildren([
     dashboardHomeRoute,
     registroSacramentosRoute,
     constanciasSacramentosRoute,
     solicitudesCatequesisRoute,
-    donacionesRoute,
+    // donacionesAdminRoute,
     eventosRoute,
     gestionLandingRoute,
     gestionUsuariosRoute,
