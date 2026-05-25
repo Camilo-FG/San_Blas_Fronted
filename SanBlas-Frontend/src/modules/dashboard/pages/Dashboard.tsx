@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, Outlet } from "@tanstack/react-router";
 import {
   Home,
@@ -8,117 +7,55 @@ import {
   Calendar,
   Users,
   Edit,
-  Settings,
-  ChevronDown,
-  ChevronRight,
+  ScrollText,
 } from "lucide-react";
 
+import Rutas from "../../../routes/Rutas";
 import "./Dashboard.css";
 
 const navLinks = [
-  { to: "/admin", label: "Dashboard principal", icon: Home },
-
+  { to: Rutas.dashboard, label: "Dashboard principal", icon: Home },
   {
-    label: "Sacramentos",
+    to: Rutas.dashboardUrl.registroSacramentos,
+    label: "Registro de sacramentos",
     icon: Heart,
-    hasSubmenu: true,
-    submenu: [
-      {
-        to: "/admin/sacramentos",
-        label: "Gestión de sacramentos",
-        icon: Heart,
-      },
-      {
-        to: "/admin/sacramentos/solicitudes",
-        label: "Solicitudes de sacramentos",
-        icon: FileText,
-      },
-    ],
   },
-
   {
-    label: "Catequesis",
+    to: Rutas.dashboardUrl.constanciasSacramentos,
+    label: "Solicitudes de constancia",
+    icon: ScrollText,
+  },
+  {
+    to: Rutas.dashboardUrl.solicitudesCatequesis,
+    label: "Solicitudes de catequesis",
     icon: FileText,
-    hasSubmenu: true,
-    submenu: [
-      {
-        to: "/admin/catequesis/solicitudes",
-        label: "Solicitudes de catequesis",
-        icon: FileText,
-      },
-    ],
   },
-
   {
-    label: "Donaciones",
+    to: Rutas.dashboardUrl.donaciones,
+    label: "Gestión de donaciones",
     icon: HandHeart,
-    hasSubmenu: true,
-    submenu: [
-      {
-        to: "/admin/donaciones",
-        label: "Gestión de donaciones",
-        icon: HandHeart,
-      },
-    ],
   },
-
   {
-    label: "Eventos",
+    to: Rutas.dashboardUrl.eventos,
+    label: "Gestión de eventos",
     icon: Calendar,
-    hasSubmenu: true,
-    submenu: [
-      {
-        to: "/admin/eventos",
-        label: "Gestión de eventos",
-        icon: Calendar,
-      },
-    ],
   },
-
   {
-    to: "/admin/landing",
+    to: Rutas.dashboardUrl.gestionLanding,
     label: "Gestión del landing",
     icon: Edit,
   },
-
   {
-    to: "/admin/usuarios",
+    to: Rutas.dashboardUrl.gestionUsuarios,
     label: "Gestión de usuarios",
     icon: Users,
-  },
-
-  {
-    to: "/admin/perfil",
-    label: "Mi perfil",
-    icon: Settings,
   },
 ];
 
 function Dashboard() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
-
-  const toggleSubmenu = (label: string) => {
-    setExpandedMenus((prev) => {
-      const newSet = new Set(prev);
-
-      if (newSet.has(label)) {
-        newSet.delete(label);
-      } else {
-        newSet.add(label);
-      }
-
-      return newSet;
-    });
-  };
-
   return (
     <section className="dashboard">
-      <aside
-        className={`dashboard__sidebar ${
-          sidebarOpen ? "dashboard__sidebar--open" : ""
-        }`}
-      >
+      <aside className="dashboard__sidebar">
         <div className="dashboard__brand">
           <h2>Panel Administrativo</h2>
           <p>Parroquia San Blas</p>
@@ -127,61 +64,12 @@ function Dashboard() {
         <nav className="dashboard__menu">
           {navLinks.map((link) => {
             const Icon = link.icon;
-            const isExpanded = expandedMenus.has(link.label);
-
-            if (link.hasSubmenu && link.submenu) {
-              return (
-                <div
-                  key={link.label}
-                  className="dashboard__submenu-group"
-                >
-                  <button
-                    type="button"
-                    className="dashboard__menu-item"
-                    onClick={() => toggleSubmenu(link.label)}
-                  >
-                    <Icon className="dashboard__menu-lucide" />
-
-                    <span>{link.label}</span>
-
-                    <span className="dashboard__chevron">
-                      {isExpanded ? (
-                        <ChevronDown size={16} />
-                      ) : (
-                        <ChevronRight size={16} />
-                      )}
-                    </span>
-                  </button>
-
-                  {isExpanded && (
-                    <div className="dashboard__submenu">
-                      {link.submenu.map((subLink) => {
-                        const SubIcon = subLink.icon;
-
-                        return (
-                          <Link
-                            key={subLink.to}
-                            to={subLink.to}
-                            className="dashboard__submenu-item"
-                            onClick={() => setSidebarOpen(false)}
-                          >
-                            <SubIcon className="dashboard__menu-lucide" />
-                            <span>{subLink.label}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            }
 
             return (
               <Link
                 key={link.to}
                 to={link.to}
                 className="dashboard__menu-item"
-                onClick={() => setSidebarOpen(false)}
               >
                 <Icon className="dashboard__menu-lucide" />
                 <span>{link.label}</span>
@@ -191,22 +79,8 @@ function Dashboard() {
         </nav>
       </aside>
 
-      {sidebarOpen && (
-        <div
-          className="dashboard__overlay"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
       <main className="dashboard__content">
         <header className="dashboard__topbar">
-          <button
-            className="dashboard__mobile-button"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            ☰
-          </button>
-
           <div>
             <h1>Panel Administrativo</h1>
             <p>Parroquia San Blas</p>
