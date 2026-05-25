@@ -11,7 +11,7 @@ import Footer from "../modules/landing/components/Footer";
 import Dashboard from "../modules/dashboard/pages/Dashboard";
 import Rutas from "./Rutas";
 import SolicSacramento from "../modules/solicSacramento/pages/solicSacramento";
-import GestionUsuarios from "../modules/Gestión de Usuarios/pages/GestionUsuario";
+import GestionUsuarios from "../modules/Gestión de Usuarios/pages/GestionUsuarios";
 
 
 function RootLayout() {
@@ -64,13 +64,13 @@ const GestionUsuariosRoute = createRoute({
     path: Rutas.GestionUsuarios,
     component: () => GestionUsuarios()
 });
-
 const routeTree = rootRoute.addChildren([
     homeRoute,
     sobreNosotrosRoute,
     historiaRoute,
     dashboardRoute,
     solicSacramentoRoute,
+    GestionUsuariosRoute
 ]);
 
 export const router = createRouter({

@@ -12,6 +12,7 @@ export const useGetUserList = () => {
         const cargarUsuarios = async () => {
             try {
                 const data = await getUsers();
+                setUsers(data);
             }catch(err) {
                 setError('error al hacer fetch a los usuarios');
                 console.error(err);

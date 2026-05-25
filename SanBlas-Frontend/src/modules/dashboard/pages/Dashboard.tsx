@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./Dashboard.css";
-
+import GestionUsuarios from "../../../modules/Gestión de Usuarios/pages/GestionUsuarios";
 const modules = [
   {
     id: "principal",
@@ -102,6 +102,7 @@ function Dashboard() {
             <article className="dashboard__card">
               <span className="dashboard__card-icon">GU</span>
               <p>Usuarios registrados</p>
+              <GestionUsuarios />
               <h3>0 XD JAJAJ</h3>
             </article>
           </div>
