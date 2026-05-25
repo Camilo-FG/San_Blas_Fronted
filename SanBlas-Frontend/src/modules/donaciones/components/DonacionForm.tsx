@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-
+import React, { useState, useRef } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 interface FormData {
     anonimo: boolean;
     nombre: string;
@@ -13,6 +13,7 @@ interface FormErrors {
     correo?: string;
     telefono?: string;
     detalle?: string;
+    captcha?: string;
 }
 
 export default function FormularioDonacion(): React.JSX.Element {
@@ -25,10 +26,17 @@ export default function FormularioDonacion(): React.JSX.Element {
     });
 
     const [errors, setErrors] = useState<FormErrors>({});
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+    const captchaRef = useRef<ReCAPTCHA>(null);
 
     const validar = (): boolean => {
         const nuevosErrores: FormErrors = {};
+        if (!captchaToken) {
+        nuevosErrores.captcha = 'Por favor completá el reCAPTCHA.';
+    }
 
+    setErrors(nuevosErrores);
+    return Object.keys(nuevosErrores).length === 0;
         // 1. Validar NOMBRE COMPLETO (solo si NO es anónimo)
         if (!formData.anonimo) {
             const nombreTrim = formData.nombre.trim();
@@ -96,6 +104,8 @@ export default function FormularioDonacion(): React.JSX.Element {
         
         // Limpiamos el formulario tras un envío exitoso
         setFormData({ anonimo: false, nombre: '', correo: '', telefono: '', detalle: '' });
+        setCaptchaToken(null);
+        captchaRef.current?.reset();
     };
 
     // Estilos visuales del museo
@@ -253,8 +263,21 @@ export default function FormularioDonacion(): React.JSX.Element {
                         resize: 'vertical',
                         fontFamily: 'inherit'
                     }}
-                />
+                />  
                 {errors.detalle && <span style={errorStyle}>⚠ {errors.detalle}</span>}
+
+            </div>
+            <div style={{ marginBottom: '24px' }}>
+                <ReCAPTCHA
+                    ref={captchaRef}
+                    sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Tu clave de reCAPTCHA
+                    onChange={token => {
+                        setCaptchaToken(token);
+                        setErrors(prev => ({ ...prev, captcha: undefined }));
+                    }}
+                    onExpired={() => setCaptchaToken(null)}
+                />
+                {errors.captcha && <span style={errorStyle}>⚠ {errors.captcha}</span>}
             </div>
 
             {/* Botón Enviar */}
