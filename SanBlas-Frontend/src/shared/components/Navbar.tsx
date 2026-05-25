@@ -6,6 +6,7 @@ import "./Navbar.css";
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [serviciosAbierto, setServiciosAbierto] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,6 +56,42 @@ function Navbar() {
           >
             Historia
           </Link>
+
+          <div
+            className="navbar__dropdown"
+            onMouseEnter={() => setServiciosAbierto(true)}
+            onMouseLeave={() => setServiciosAbierto(false)}
+          >
+            <button
+              type="button"
+              className="navbar__link navbar__dropdown-button"
+              onClick={() => setServiciosAbierto(!serviciosAbierto)}
+            >
+              Servicios
+              <span className="navbar__dropdown-icon">▾</span>
+            </button>
+
+            {serviciosAbierto && (
+              <div className="navbar__submenu">
+                <Link
+                  to={Rutas.matriculaCatequesis}
+                  //!aun no lo he implementado
+                  className="navbar__submenu-link"
+                  onClick={() => setServiciosAbierto(false)}
+                >
+                  Matrícula a Catequesis
+                </Link>
+
+                <Link
+                  to={Rutas.SolicitudesSacramentos}
+                  className="navbar__submenu-link"
+                  onClick={() => setServiciosAbierto(false)}
+                >
+                  Solicitudes de Sacramentos
+                </Link>
+              </div>
+            )}
+          </div>
 
           <Link
             to={Rutas.donacionesPublicas}
