@@ -1,8 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchDeleteBautismo } from "../../services/Bautismo-service";
 
-
-
 export const useDeleteBautismo = () => {
 
     const queryBautismo = useQueryClient();
