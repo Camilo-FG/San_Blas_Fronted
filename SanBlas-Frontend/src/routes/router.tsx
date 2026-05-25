@@ -11,6 +11,7 @@ import Footer from "../modules/landing/components/Footer";
 import Dashboard from "../modules/dashboard/pages/Dashboard";
 import Rutas from "./Rutas";
 import SolicSacramento from "../modules/solicSacramento/pages/solicSacramento";
+import GestionUsuarios from "../modules/Gestión de Usuarios/pages/GestionUsuario";
 
 
 function RootLayout() {
@@ -57,6 +58,11 @@ const solicSacramentoRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: Rutas.solicitudesSacramentos,
     component: () => SolicSacramento(),
+});
+const GestionUsuariosRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: Rutas.GestionUsuarios,
+    component: () => GestionUsuarios()
 });
 
 const routeTree = rootRoute.addChildren([
