@@ -1,0 +1,78 @@
+.dashboard__panel {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.dashboard__panel table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dashboard__panel th,
+.dashboard__panel td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef2f6;
+  text-align: left;
+  color: #374151;
+}
+
+.dashboard__panel th {
+  background: transparent;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.dashboard__panel input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px;
+  border: 1px solid transparent;
+}
+
+.estado-badge select {
+  border: none;
+  background: transparent;
+  font-weight: 700;
+  padding: 6px 10px;
+  outline: none;
+  cursor: pointer;
+}
+
+.estado-badge--pendiente {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.estado-badge--pendiente select {
+  color: #9a3412;
+}
+
+.estado-badge--aprobado {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+
+.estado-badge--aprobado select {
+  color: #047857;
+}
+
+.estado-badge--rechazado {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.estado-badge--rechazado select {
+  color: #b91c1c;
+}
