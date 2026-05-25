@@ -11,13 +11,9 @@ import Footer from "../modules/landing/components/Footer";
 import Dashboard from "../modules/dashboard/pages/Dashboard";
 import Rutas from "./Rutas";
 import SolicSacramento from "../modules/solicSacramento/pages/solicSacramento";
-<<<<<<< HEAD
 import GestionUsuarios from "../modules/Gestión de Usuarios/pages/GestionUsuarios";
-=======
 import Donaciones from "../modules/donaciones/pages/donaciones";
 import dashSacra from "../modules/dashboardSacramento/dashSacra";
-
->>>>>>> 594f1fca8493dbb3aca0ce700f64689b9755a68f
 
 
 function RootLayout() {
@@ -82,11 +78,8 @@ const routeTree = rootRoute.addChildren([
     historiaRoute,
     dashboardRoute,
     solicSacramentoRoute,
-<<<<<<< HEAD
-    GestionUsuariosRoute
-=======
+    GestionUsuariosRoute,
     donacionesRoute,
->>>>>>> 594f1fca8493dbb3aca0ce700f64689b9755a68f
 ]);
 
 export const router = createRouter({
