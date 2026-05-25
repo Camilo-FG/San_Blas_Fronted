@@ -12,7 +12,7 @@ const GestionUsuarios = () => {
     //si no se cumplen las condiciones anteriores pasa lo siguiente:
     return(
         <section className="gestion-usuarios">
-            <UserList users={users} />
+            <UserList />
         </section>
     )
 };
