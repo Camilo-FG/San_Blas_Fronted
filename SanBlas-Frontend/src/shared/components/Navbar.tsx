@@ -40,6 +40,10 @@ function Navbar() {
                         Historia
                     </Link>
 
+                    <Link to={Rutas.donaciones} className="navbar__link">
+                        Donaciones
+                    </Link>
+
                     <Link to={Rutas.dashboard} className="navbar__link">
                         Dashboard
                     </Link>

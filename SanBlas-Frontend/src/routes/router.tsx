@@ -11,7 +11,7 @@ import Footer from "../modules/landing/components/Footer";
 import Dashboard from "../modules/dashboard/pages/Dashboard";
 import Rutas from "./Rutas";
 import SolicSacramento from "../modules/solicSacramento/pages/solicSacramento";
-
+import Donaciones from "../modules/donaciones/pages/donaciones";
 
 function RootLayout() {
     return (
@@ -59,12 +59,19 @@ const solicSacramentoRoute = createRoute({
     component: () => SolicSacramento(),
 });
 
+const donacionesRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: Rutas.donaciones,
+    component: () => Donaciones(),
+});
+
 const routeTree = rootRoute.addChildren([
     homeRoute,
     sobreNosotrosRoute,
     historiaRoute,
     dashboardRoute,
     solicSacramentoRoute,
+    donacionesRoute,
 ]);
 
 export const router = createRouter({
