@@ -1,11 +1,35 @@
+const dashboardBase = "/dashboard";
+
+const dashboardPath = {
+  registroSacramentos: "registro-sacramentos",
+  constanciasSacramentos: "constancias-sacramentos",
+  solicitudesCatequesis: "solicitudes-catequesis",
+  donaciones: "donaciones",
+  eventos: "eventos",
+  gestionLanding: "landing",
+  gestionUsuarios: "usuarios",
+};
+
 const Rutas = {
   home: "/",
   sobreNosotros: "/sobre-nosotros",
   historia: "/historia",
-  dashboard: "/dashboard",
-  solicitudesSacramentos: "/solicitudes-sacramentos",
-  GestionUsuarios: "/gestion-usuarios",
-  donaciones: "/donaciones",
+
+  donacionesPublicas: "/donaciones",
+  SolicitudesSacramentos: "/solicitudes-sacramentos",
+  dashboard: dashboardBase,
+
+  dashboardPath,
+
+  dashboardUrl: {
+    registroSacramentos: `${dashboardBase}/${dashboardPath.registroSacramentos}`,
+    constanciasSacramentos: `${dashboardBase}/${dashboardPath.constanciasSacramentos}`,
+    solicitudesCatequesis: `${dashboardBase}/${dashboardPath.solicitudesCatequesis}`,
+    donaciones: `${dashboardBase}/${dashboardPath.donaciones}`,
+    eventos: `${dashboardBase}/${dashboardPath.eventos}`,
+    gestionLanding: `${dashboardBase}/${dashboardPath.gestionLanding}`,
+    gestionUsuarios: `${dashboardBase}/${dashboardPath.gestionUsuarios}`,
+  },
 };
 
 export default Rutas;
