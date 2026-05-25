@@ -102,10 +102,11 @@ function Dashboard() {
             <article className="dashboard__card">
               <span className="dashboard__card-icon">GU</span>
               <p>Usuarios registrados</p>
-              <GestionUsuarios />
-              <h3>0 XD JAJAJ</h3>
+              <h3>0</h3>
             </article>
           </div>
+        ) : activeModule === "usuarios" ? (
+          <GestionUsuarios />
         ) : (
           <div className="dashboard__placeholder">
             <h2>Módulo en preparación</h2>
