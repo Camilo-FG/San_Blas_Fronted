@@ -13,12 +13,15 @@ import Dashboard from "../modules/dashboard/pages/Dashboard";
 import DashboardHome from "../modules/dashboard/pages/DashboardHome";
 import donaciones from "../modules/donaciones/pages/donaciones";
 import Rutas from "./Rutas";
+import SolicSacramento from "../modules/solicSacramento/pages/solicSacramento";
+import GestionUsuarios from "../modules/Gestión de Usuarios/pages/GestionUsuarios";
 
 import solicSacrametos from "../modules/solicSacramento/pages/solicSacramento";
 import formSolic from "../modules/solicSacramento/components/FormSolic";
 import DashSacra from "../modules/dashboardSacramento/dashSacra";
 import DonacionInfo from "../modules/donaciones/components/DonacionInfo";
 import GestionSacramentos from "../modules/Registro de Sacramentos/Components/GestionSacramentos";
+import { UserList } from "src/modules/Gestión de Usuarios/components/UserList";
 // import Donaciones from "../modules/donaciones/pages/donaciones";
 
 function Placeholder({ title }: { title: string }) {
@@ -131,10 +134,11 @@ const gestionLandingRoute = createRoute({
 const gestionUsuariosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.gestionUsuarios,
-  component: () => <Placeholder title="Gestión de usuarios" />,
+  component:GestionUsuarios,
 });
 
 const routeTree = rootRoute.addChildren([
+
   homeRoute,
   sobreNosotrosRoute,
   historiaRoute,
@@ -151,6 +155,7 @@ const routeTree = rootRoute.addChildren([
     gestionLandingRoute,
     gestionUsuariosRoute,
   ]),
+
 ]);
 
 export const router = createRouter({
