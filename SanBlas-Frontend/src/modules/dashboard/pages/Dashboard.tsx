@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import "./Dashboard.css";
 import GestionSacramentos from "../../Registro de Sacramentos/Components/GestionSacramentos";
 
@@ -106,7 +107,8 @@ function Dashboard() {
               <h3>0 XD JAJAJ</h3>
             </article>
           </div>
-        ) : (
+        ) :
+         (
           <div className="dashboard__placeholder">
             <h2>Módulo en preparación</h2>
             <p>
