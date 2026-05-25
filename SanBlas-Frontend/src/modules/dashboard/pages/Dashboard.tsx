@@ -1,141 +1,221 @@
 import { useState } from "react";
+import { Link, Outlet } from "@tanstack/react-router";
+import {
+  Home,
+  Heart,
+  FileText,
+  HandHeart,
+  Calendar,
+  Users,
+  Edit,
+  Settings,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 
 import "./Dashboard.css";
-import GestionSacramentos from "../../Registro de Sacramentos/Components/GestionSacramentos";
 
-const modules = [
+const navLinks = [
+  { to: "/admin", label: "Dashboard principal", icon: Home },
+
   {
-    id: "principal",
-    label: "Dashboard principal",
-    short: "DP",
+    label: "Sacramentos",
+    icon: Heart,
+    hasSubmenu: true,
+    submenu: [
+      {
+        to: "/admin/sacramentos",
+        label: "Gestión de sacramentos",
+        icon: Heart,
+      },
+      {
+        to: "/admin/sacramentos/solicitudes",
+        label: "Solicitudes de sacramentos",
+        icon: FileText,
+      },
+    ],
   },
+
   {
-    id: "gestion-sacramentos",
-    label: "Gestión de sacramentos",
-    short: "GS",
+    label: "Catequesis",
+    icon: FileText,
+    hasSubmenu: true,
+    submenu: [
+      {
+        to: "/admin/catequesis/solicitudes",
+        label: "Solicitudes de catequesis",
+        icon: FileText,
+      },
+    ],
   },
+
   {
-    id: "solicitudes-sacramentos",
-    label: "Solicitudes de sacramentos",
-    short: "SS",
-  },
-  {
-    id: "solicitudes-catequesis",
-    label: "Solicitudes de catequesis",
-    short: "SC",
-  },
-  {
-    id: "donaciones",
     label: "Donaciones",
-    short: "DO",
+    icon: HandHeart,
+    hasSubmenu: true,
+    submenu: [
+      {
+        to: "/admin/donaciones",
+        label: "Gestión de donaciones",
+        icon: HandHeart,
+      },
+    ],
   },
+
   {
-    id: "eventos",
     label: "Eventos",
-    short: "EV",
+    icon: Calendar,
+    hasSubmenu: true,
+    submenu: [
+      {
+        to: "/admin/eventos",
+        label: "Gestión de eventos",
+        icon: Calendar,
+      },
+    ],
   },
+
   {
-    id: "usuarios",
+    to: "/admin/landing",
+    label: "Gestión del landing",
+    icon: Edit,
+  },
+
+  {
+    to: "/admin/usuarios",
     label: "Gestión de usuarios",
-    short: "GU",
+    icon: Users,
+  },
+
+  {
+    to: "/admin/perfil",
+    label: "Mi perfil",
+    icon: Settings,
   },
 ];
 
 function Dashboard() {
-  const [activeModule, setActiveModule] = useState("principal");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
 
-  const currentModule = modules.find((module) => module.id === activeModule);
+  const toggleSubmenu = (label: string) => {
+    setExpandedMenus((prev) => {
+      const newSet = new Set(prev);
+
+      if (newSet.has(label)) {
+        newSet.delete(label);
+      } else {
+        newSet.add(label);
+      }
+
+      return newSet;
+    });
+  };
 
   return (
     <section className="dashboard">
-      <aside className="dashboard__sidebar">
+      <aside
+        className={`dashboard__sidebar ${
+          sidebarOpen ? "dashboard__sidebar--open" : ""
+        }`}
+      >
         <div className="dashboard__brand">
           <h2>Panel Administrativo</h2>
           <p>Parroquia San Blas</p>
         </div>
 
         <nav className="dashboard__menu">
-          {modules.map((module) => (
-            <button
-              key={module.id}
-              className={`dashboard__menu-item ${activeModule === module.id ? "dashboard__menu-item--active" : ""
-                }`}
-              onClick={() => setActiveModule(module.id)}
-            >
-              <span className="dashboard__menu-icon">{module.short}</span>
-              <span>{module.label}</span>
-            </button>
-          ))}
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            const isExpanded = expandedMenus.has(link.label);
+
+            if (link.hasSubmenu && link.submenu) {
+              return (
+                <div
+                  key={link.label}
+                  className="dashboard__submenu-group"
+                >
+                  <button
+                    type="button"
+                    className="dashboard__menu-item"
+                    onClick={() => toggleSubmenu(link.label)}
+                  >
+                    <Icon className="dashboard__menu-lucide" />
+
+                    <span>{link.label}</span>
+
+                    <span className="dashboard__chevron">
+                      {isExpanded ? (
+                        <ChevronDown size={16} />
+                      ) : (
+                        <ChevronRight size={16} />
+                      )}
+                    </span>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="dashboard__submenu">
+                      {link.submenu.map((subLink) => {
+                        const SubIcon = subLink.icon;
+
+                        return (
+                          <Link
+                            key={subLink.to}
+                            to={subLink.to}
+                            className="dashboard__submenu-item"
+                            onClick={() => setSidebarOpen(false)}
+                          >
+                            <SubIcon className="dashboard__menu-lucide" />
+                            <span>{subLink.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="dashboard__menu-item"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Icon className="dashboard__menu-lucide" />
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
         </nav>
       </aside>
 
+      {sidebarOpen && (
+        <div
+          className="dashboard__overlay"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       <main className="dashboard__content">
-        <div className="dashboard__header">
+        <header className="dashboard__topbar">
+          <button
+            className="dashboard__mobile-button"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            ☰
+          </button>
+
           <div>
-            <h1>{currentModule?.label}</h1>
-            <p>
-              Administra la información correspondiente a este módulo de la
-              Parroquia San Blas.
-            </p>
+            <h1>Panel Administrativo</h1>
+            <p>Parroquia San Blas</p>
           </div>
+        </header>
+
+        <div className="dashboard__page-content">
+          <Outlet />
         </div>
-
-        {activeModule === "principal" ? (
-          <div className="dashboard__cards">
-            <article className="dashboard__card">
-              <span className="dashboard__card-icon">SC</span>
-              <p>Solicitudes de catequesis</p>
-              <h3>0</h3>
-            </article>
-
-            <article className="dashboard__card">
-              <span className="dashboard__card-icon">SS</span>
-              <p>Solicitudes de sacramentos</p>
-               
-              <h3>0</h3>
-            </article>
-
-            <article className="dashboard__card">
-              <span className="dashboard__card-icon">DO</span>
-              <p>Donaciones registradas</p>
-              <h3>0</h3>
-            </article>
-
-            <article className="dashboard__card">
-              <span className="dashboard__card-icon">GU</span>
-              <p>Usuarios registrados</p>
-              <h3>0 XD JAJAJ</h3>
-            </article>
-          </div>
-        ) :
-         (
-          <div className="dashboard__placeholder">
-            <h2>Módulo en preparación</h2>
-            <p>
-              Aquí se mostrará la información de{" "}
-              <strong>{currentModule?.label}</strong>. Más adelante puedes
-              agregar tablas, formularios y operaciones CRUD.
-            </p>
-          </div>
-        )}
-
-        {activeModule === "principal" ? (
-  <div className="dashboard__cards">
-    {/* ... tus cards existentes ... */}
-  </div>
-) : activeModule === "gestion-sacramentos" ? (
-  <GestionSacramentos />
-) : (
-  <div className="dashboard__placeholder">
-    <h2>Módulo en preparación</h2>
-    <p>
-      Aquí se mostrará la información de{" "}
-      <strong>{currentModule?.label}</strong>. Más adelante puedes
-      agregar tablas, formularios y operaciones CRUD.
-    </p>
-  </div>
-)}
-
       </main>
     </section>
   );
