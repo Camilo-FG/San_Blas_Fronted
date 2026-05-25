@@ -1,49 +1,58 @@
-import { useState } from "react";
+import { Link, Outlet } from "@tanstack/react-router";
+import {
+  Home,
+  Heart,
+  FileText,
+  HandHeart,
+  Calendar,
+  Users,
+  Edit,
+  ScrollText,
+} from "lucide-react";
+
+import Rutas from "../../../routes/Rutas";
 import "./Dashboard.css";
 
-const modules = [
+const navLinks = [
+  { to: Rutas.dashboard, label: "Dashboard principal", icon: Home },
   {
-    id: "principal",
-    label: "Dashboard principal",
-    short: "DP",
+    to: Rutas.dashboardUrl.registroSacramentos,
+    label: "Registro de sacramentos",
+    icon: Heart,
   },
   {
-    id: "gestion-sacramentos",
-    label: "Gestión de sacramentos",
-    short: "GS",
+    to: Rutas.dashboardUrl.constanciasSacramentos,
+    label: "Solicitudes de constancia",
+    icon: ScrollText,
   },
   {
-    id: "solicitudes-sacramentos",
-    label: "Solicitudes de sacramentos",
-    short: "SS",
-  },
-  {
-    id: "solicitudes-catequesis",
+    to: Rutas.dashboardUrl.solicitudesCatequesis,
     label: "Solicitudes de catequesis",
-    short: "SC",
+    icon: FileText,
   },
   {
-    id: "donaciones",
-    label: "Donaciones",
-    short: "DO",
+    to: Rutas.dashboardUrl.donaciones,
+    label: "Gestión de donaciones",
+    icon: HandHeart,
   },
   {
-    id: "eventos",
-    label: "Eventos",
-    short: "EV",
+    to: Rutas.dashboardUrl.eventos,
+    label: "Gestión de eventos",
+    icon: Calendar,
   },
   {
-    id: "usuarios",
+    to: Rutas.dashboardUrl.gestionLanding,
+    label: "Gestión del landing",
+    icon: Edit,
+  },
+  {
+    to: Rutas.dashboardUrl.gestionUsuarios,
     label: "Gestión de usuarios",
-    short: "GU",
+    icon: Users,
   },
 ];
 
 function Dashboard() {
-  const [activeModule, setActiveModule] = useState("principal");
-
-  const currentModule = modules.find((module) => module.id === activeModule);
-
   return (
     <section className="dashboard">
       <aside className="dashboard__sidebar">
@@ -53,68 +62,34 @@ function Dashboard() {
         </div>
 
         <nav className="dashboard__menu">
-          {modules.map((module) => (
-            <button
-              key={module.id}
-              className={`dashboard__menu-item ${activeModule === module.id ? "dashboard__menu-item--active" : ""
-                }`}
-              onClick={() => setActiveModule(module.id)}
-            >
-              <span className="dashboard__menu-icon">{module.short}</span>
-              <span>{module.label}</span>
-            </button>
-          ))}
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="dashboard__menu-item"
+              >
+                <Icon className="dashboard__menu-lucide" />
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
         </nav>
       </aside>
 
       <main className="dashboard__content">
-        <div className="dashboard__header">
+        <header className="dashboard__topbar">
           <div>
-            <h1>{currentModule?.label}</h1>
-            <p>
-              Administra la información correspondiente a este módulo de la
-              Parroquia San Blas.
-            </p>
+            <h1>Panel Administrativo</h1>
+            <p>Parroquia San Blas</p>
           </div>
+        </header>
+
+        <div className="dashboard__page-content">
+          <Outlet />
         </div>
-
-        {activeModule === "principal" ? (
-          <div className="dashboard__cards">
-            <article className="dashboard__card">
-              <span className="dashboard__card-icon">SC</span>
-              <p>Solicitudes de catequesis</p>
-              <h3>0</h3>
-            </article>
-
-            <article className="dashboard__card">
-              <span className="dashboard__card-icon">SS</span>
-              <p>Solicitudes de sacramentos</p>
-               
-              <h3>0</h3>
-            </article>
-
-            <article className="dashboard__card">
-              <span className="dashboard__card-icon">DO</span>
-              <p>Donaciones registradas</p>
-              <h3>0</h3>
-            </article>
-
-            <article className="dashboard__card">
-              <span className="dashboard__card-icon">GU</span>
-              <p>Usuarios registrados</p>
-              <h3>0 XD JAJAJ</h3>
-            </article>
-          </div>
-        ) : (
-          <div className="dashboard__placeholder">
-            <h2>Módulo en preparación</h2>
-            <p>
-              Aquí se mostrará la información de{" "}
-              <strong>{currentModule?.label}</strong>. Más adelante puedes
-              agregar tablas, formularios y operaciones CRUD.
-            </p>
-          </div>
-        )}
       </main>
     </section>
   );

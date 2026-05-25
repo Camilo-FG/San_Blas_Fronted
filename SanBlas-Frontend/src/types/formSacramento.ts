@@ -1,6 +1,6 @@
 
 export type FormSacramento = {
-  id?: number;
+  id?: number | string;
   Nombre: string;
   PrimerApellido: string;
   SegundoApellido: string;
@@ -9,4 +9,5 @@ export type FormSacramento = {
   Telefono: number;
   TipoSacramento: string;
   Motivo: string;
+  Estado?: string;
 };

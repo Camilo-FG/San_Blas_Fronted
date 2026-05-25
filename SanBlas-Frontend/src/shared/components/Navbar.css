@@ -29,6 +29,19 @@
     white-space: nowrap;
 }
 
+.navbar__logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.navbar__logo-img {
+    width: 42px;
+    height: 42px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
 .navbar__logo:hover {
     color: #d4af37;
 }
