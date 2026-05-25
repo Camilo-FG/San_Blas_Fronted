@@ -1,13 +1,8 @@
 import { useForm } from "@tanstack/react-form";
 import { useCreateSolicSacramento } from "../Api/useCreateSacramento";
-import { useGetSolicitudes } from "../Api/useGetSolicitudes";
-import { FormSacramento } from "src/types/formSacramento";
+import "./FormSolic.css";
 
 const FormSolic = () => {
-
-  const { data: solicitudes = [], isLoading } = useGetSolicitudes();
-
- 
   const { mutate, isPending } = useCreateSolicSacramento();
 
   const form = useForm({
@@ -28,145 +23,161 @@ const FormSolic = () => {
  
   });
 
-  if (isLoading) return <div>Cargando solicitudes...</div>;
+ 
 
   return (
-    <div>
-      <h2>Formulario de Sacramento</h2>
-
-      {/* ✅ Select con nombre correcto */}
-      <select>
-        <option value="0">Seleccione una solicitud</option>
-        {solicitudes.map((solic: FormSacramento) => (
-          <option key={solic.id} value={solic.id}>
-            {solic.Nombre}
-          </option>
-        ))}
-      </select>
+    <div className="form-solic">
+      <div className="form-solic__header">
+        <p className="form-solic__eyebrow">Solicitud pastoral</p>
+        <h2>Formulario de Sacramento</h2>
+        <p className="form-solic__description">
+          Completa los datos para registrar una nueva solicitud.
+        </p>
+      </div>
 
       <form
+        className="form-solic__form"
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
           form.handleSubmit();
         }}
       >
-        <div>
+        <div className="form-solic__field">
           <form.Field
             name="Nombre"
             children={(field) => (
               <>
-                <label htmlFor={field.name}>Nombre:</label> {/* ✅ Corregido */}
+                <label htmlFor={field.name}>Nombre</label>
                 <input
                   id={field.name}
                   name={field.name}
+                  type="text"
+                  placeholder="Ej: Juan"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  className="form-solic__input"
                 />
               </>
             )}
           />
         </div>
 
-        <div>
+        <div className="form-solic__field">
           <form.Field
             name="PrimerApellido"
             children={(field) => (
               <>
-                <label htmlFor={field.name}>Primer Apellido:</label>
+                <label htmlFor={field.name}>Primer apellido</label>
                 <input
                   id={field.name}
                   name={field.name}
+                  type="text"
+                  placeholder="Ej: Pérez"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  className="form-solic__input"
                 />
               </>
             )}
           />
         </div>
 
-        <div>
+        <div className="form-solic__field">
           <form.Field
             name="SegundoApellido"
             children={(field) => (
               <>
-                <label htmlFor={field.name}>Segundo Apellido:</label>
+                <label htmlFor={field.name}>Segundo apellido</label>
                 <input
                   id={field.name}
                   name={field.name}
+                  type="text"
+                  placeholder="Ej: González"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  className="form-solic__input"
                 />
               </>
             )}
           />
         </div>
 
-        <div>
+        <div className="form-solic__field">
           <form.Field
             name="Cedula"
             children={(field) => (
               <>
-                <label htmlFor={field.name}>Cédula:</label>
+                <label htmlFor={field.name}>Cédula</label>
                 <input
                   id={field.name}
                   name={field.name}
+                  type="text"
+                  placeholder="Ej: 001-000000-0000A"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  className="form-solic__input"
                 />
               </>
             )}
           />
         </div>
 
-        <div>
+        <div className="form-solic__field">
           <form.Field
             name="Correo"
             children={(field) => (
               <>
-                <label htmlFor={field.name}>Correo:</label>
+                <label htmlFor={field.name}>Correo</label>
                 <input
                   id={field.name}
                   name={field.name}
+                  type="email"
+                  placeholder="Ej: nombre@correo.com"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  className="form-solic__input"
                 />
               </>
             )}
           />
         </div>
 
-        <div>
+        <div className="form-solic__field">
           <form.Field
             name="Telefono"
             children={(field) => (
               <>
-                <label htmlFor={field.name}>Teléfono:</label>
+                <label htmlFor={field.name}>Teléfono</label>
                 <input
                   id={field.name}
                   name={field.name}
+                  type="tel"
+                  placeholder="Ej: 8888-8888"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  className="form-solic__input"
                 />
               </>
             )}
           />
         </div>
 
-        <div>
+        <div className="form-solic__field">
           <form.Field
             name="TipoSacramento"
             children={(field) => (
               <>
-                <label htmlFor={field.name}>Tipo de Sacramento:</label>
+                <label htmlFor={field.name}>Tipo de sacramento</label>
                 <select
                   value={field.state.value}
                   name={field.name}
                   id={field.name}
+                  className="form-solic__input"
                   onChange={(e) => field.handleChange(e.target.value)}
                 >
                   <option value="">Seleccione un sacramento</option>
-                  <option value="Bautismo">Bautismo</option>       {/* ✅ valor descriptivo */}
+                  <option value="Bautismo">Bautismo</option>
                   <option value="Confirmación">Confirmación</option>
                   <option value="Matrimonio">Matrimonio</option>
                 </select>
@@ -175,25 +186,27 @@ const FormSolic = () => {
           />
         </div>
 
-        <div>
+        <div className="form-solic__field form-solic__field--full">
           <form.Field
             name="Motivo"
             children={(field) => (
               <>
-                <label htmlFor={field.name}>Motivo:</label>
+                <label htmlFor={field.name}>Motivo</label>
                 <input
                   id={field.name}
                   name={field.name}
+                  type="text"
+                  placeholder="Describe brevemente el motivo"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  className="form-solic__input"
                 />
               </>
             )}
           />
         </div>
 
-        {/* ✅ Muestra estado de carga al guardar */}
-        <button type="submit" disabled={isPending}>
+        <button className="form-solic__submit" type="submit" disabled={isPending}>
           {isPending ? 'Guardando...' : 'Guardar'}
         </button>
       </form>
