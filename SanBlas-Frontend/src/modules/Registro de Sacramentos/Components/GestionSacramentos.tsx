@@ -1,12 +1,16 @@
 // src/modules/dashboard/components/GestionSacramentos.tsx
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useGetListBautismo } from '../hooks/hooksBautismo/useGetListBautismo';
 import SacramentTable from './SacramentTable';
 import DetailsDrawer from './DetailsDrawer';
+import AddSacramentoModal from './AddSacramentoModal';
+import { useCreateBautismo } from '../hooks/hooksBautismo/useCreateBautismo';
 import './styles/GestionSacramentos.css';
 
 const GestionSacramentos = () => {
   const { data: bautismos, isPending, error } = useGetListBautismo();
+  const queryClient = useQueryClient();
   const [searchNombre, setSearchNombre] = useState('');
   const [searchCedula, setSearchCedula] = useState('');
   const [searchFecha, setSearchFecha] = useState('');
@@ -14,9 +18,24 @@ const GestionSacramentos = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sortColumn, setSortColumn] = useState<string>('nombre');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const createBautismo = useCreateBautismo();
 
-  if (isPending) return <p>Cargando sacramentos...</p>;
-  if (error) return <p>Error: {error.message}</p>;
+  const handleSaveSacramento = async (data: any, tipo: string) => {
+    if (tipo === 'Bautismo') {
+      const nuevoId = Date.now();
+      await createBautismo.mutateAsync({
+        id: nuevoId,
+        ...data,
+        SegundoApellido: data.SegundoApellido || '',
+        Prebispero: data.Prebispero || '',
+        horaNacimiento: data.horaNacimiento || '',
+        NombreAbuelosPaternos: data.NombreAbuelosPaternos || '',
+        NombreAbuelosMaternos: data.NombreAbuelosMaternos || '',
+      });
+      queryClient.invalidateQueries({ queryKey: ['bautismo'] });
+    }
+  };
 
   // Filtrar datos
   const sacramentosFiltrados = bautismos
@@ -79,9 +98,17 @@ const GestionSacramentos = () => {
     setSelectedSacramento(null);
   };
 
+  // ✅ TODO el UI va DENTRO del return, no antes
   return (
     <div className="gestion-sacramentos">
-      {/* Filtros */}
+      {/* Botón Agregar - Siempre visible */}
+      <div className="add-button-container">
+        <button className="add-sacrament-btn" onClick={() => setIsModalOpen(true)}>
+          + Agregar Sacramento
+        </button>
+      </div>
+
+      {/* Filtros - Siempre visibles */}
       <div className="search-filters">
         <input
           type="text"
@@ -106,19 +133,20 @@ const GestionSacramentos = () => {
         />
       </div>
 
-      {/* Botón Agregar */}
-      <div className="add-button-container">
-        <button className="add-sacrament-btn">+ Agregar Sacramento</button>
-      </div>
-
-      {/* Tabla */}
-      <SacramentTable 
-        sacramentos={sacramentosOrdenados}
-        onViewDetails={handleViewDetails}
-        onSort={handleSort}
-        sortColumn={sortColumn}
-        sortDirection={sortDirection}
-      />
+      {/* Estados de carga/error */}
+      {isPending && <p>Cargando sacramentos...</p>}
+      {error && <p>Error: {error.message}</p>}
+      
+      {/* Tabla - solo si no está cargando ni hay error */}
+      {!isPending && !error && (
+        <SacramentTable 
+          sacramentos={sacramentosOrdenados}
+          onViewDetails={handleViewDetails}
+          onSort={handleSort}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
+        />
+      )}
 
       {/* Drawer lateral */}
       <DetailsDrawer 
@@ -126,6 +154,13 @@ const GestionSacramentos = () => {
         onClose={handleCloseDrawer}
         sacramento={selectedSacramento}
         tipo="Bautismo"
+      />
+
+      {/* Modal para agregar */}
+      <AddSacramentoModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveSacramento}
       />
     </div>
   );
