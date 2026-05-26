@@ -2,6 +2,9 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGetListBautismo } from '../hooks/hooksBautismo/useGetListBautismo';
+import { useGetListComunion } from '../hooks/hooksComunion/useGetListComunion';
+import { useGetListConfirma } from '../hooks/hooksConfirma/useGetListConfirma';
+import { useGetListMatrimonio } from '../hooks/hooksMatrimonio/useGetListMatrimonio';
 import SacramentTable from './SacramentTable';
 import DetailsDrawer from './DetailsDrawer';
 import AddSacramentoModal from './AddSacramentoModal';
@@ -9,17 +12,25 @@ import { useCreateBautismo } from '../hooks/hooksBautismo/useCreateBautismo';
 import './styles/GestionSacramentos.css';
 
 const GestionSacramentos = () => {
-  const { data: bautismos, isPending, error } = useGetListBautismo();
+  const { data: bautismos, isPending: pendingBautismo, error: errorBautismo } = useGetListBautismo();
+  const { data: comuniones, isPending: pendingComunion, error: errorComunion } = useGetListComunion();
+  const { data: confirmaciones, isPending: pendingConfirmacion, error: errorConfirmacion } = useGetListConfirma();
+  const { data: matrimonios, isPending: pendingMatrimonio, error: errorMatrimonio } = useGetListMatrimonio();
+  
   const queryClient = useQueryClient();
   const [searchNombre, setSearchNombre] = useState('');
   const [searchCedula, setSearchCedula] = useState('');
   const [searchFecha, setSearchFecha] = useState('');
   const [selectedSacramento, setSelectedSacramento] = useState<any>(null);
+  const [selectedTipo, setSelectedTipo] = useState<string>('Bautismo');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sortColumn, setSortColumn] = useState<string>('nombre');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const createBautismo = useCreateBautismo();
+
+  const isPending = pendingBautismo || pendingComunion || pendingConfirmacion || pendingMatrimonio;
+  const error = errorBautismo || errorComunion || errorConfirmacion || errorMatrimonio;
 
   const handleSaveSacramento = async (data: any, tipo: string) => {
     if (tipo === 'Bautismo') {
@@ -37,23 +48,53 @@ const GestionSacramentos = () => {
     }
   };
 
-  // Filtrar datos
-  const sacramentosFiltrados = bautismos
-    ?.filter(b => {
-      const nombreCompleto = `${b.Nombre} ${b.PrimerApellido} ${b.SegundoApellido}`.toLowerCase();
-      const matchNombre = searchNombre === '' || nombreCompleto.includes(searchNombre.toLowerCase());
-      const matchCedula = searchCedula === '' || b.cedula.toString().includes(searchCedula);
-      const matchFecha = searchFecha === '' || b.FechaBautismo.includes(searchFecha);
-      return matchNombre && matchCedula && matchFecha;
-    })
-    .map(b => ({
-      id: b.id,
+  // Unificar todos los sacramentos en un solo array
+  const todosLosSacramentos = [
+    ...(bautismos?.map(b => ({
+      id:`bautismo-${b.id}`,
       nombre: `${b.Nombre} ${b.PrimerApellido} ${b.SegundoApellido}`,
+      cedula: b.cedula,
       fechaCelebracion: b.FechaBautismo,
       lugar: b.NombreParroquia,
       tipo: 'Bautismo' as const,
       detalles: b
-    })) || [];
+    })) || []),
+    ...(comuniones?.map(c => ({
+      id: `comunion-${c.id}`,
+      nombre: c.Nombre,
+      cedula: '',
+      fechaCelebracion: `${c.DiaComunion} ${c.MesComunion} ${c.AnnioComunion}`,
+      lugar: c.LugarComunion,
+      tipo: 'Comunión' as const,
+      detalles: c
+    })) || []),
+    ...(confirmaciones?.map(conf => ({
+      id: `confirmacion-${conf.id}`,
+      nombre: conf.Nombre,
+      cedula: '',
+      fechaCelebracion: `${conf.DiaConfirmacion} ${conf.MesConfirmacion} ${conf.AnnioConfirmacion}`,
+      lugar: conf.LugarConfirmacion,
+      tipo: 'Confirmación' as const,
+      detalles: conf
+    })) || []),
+    ...(matrimonios?.map(m => ({
+      id:`matrimonio-${m.id}`,
+      nombre: `${m.NombreContrayente} y ${m.NombreContrayente2}`,
+      cedula: '',
+      fechaCelebracion: `${m.DiaMatrimonio} ${m.MesMatrimonio} ${m.AnnioMatrimonio}`,
+      lugar: m.LugarMatrimonio,
+      tipo: 'Matrimonio' as const,
+      detalles: m
+    })) || []),
+  ];
+
+  // Filtrar datos
+  const sacramentosFiltrados = todosLosSacramentos.filter(s => {
+    const matchNombre = searchNombre === '' || s.nombre.toLowerCase().includes(searchNombre.toLowerCase());
+    const matchCedula = searchCedula === '' || s.cedula.toString().includes(searchCedula);
+    const matchFecha = searchFecha === '' || s.fechaCelebracion.includes(searchFecha);
+    return matchNombre && matchCedula && matchFecha;
+  });
 
   // Ordenar datos
   const ordenarDatos = (datos: any[], columna: string, direccion: 'asc' | 'desc') => {
@@ -90,25 +131,24 @@ const GestionSacramentos = () => {
 
   const handleViewDetails = (sacramento: any) => {
     setSelectedSacramento(sacramento.detalles);
+    setSelectedTipo(sacramento.tipo);
     setDrawerOpen(true);
   };
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
     setSelectedSacramento(null);
+    setSelectedTipo('Bautismo');
   };
 
-  // ✅ TODO el UI va DENTRO del return, no antes
   return (
     <div className="gestion-sacramentos">
-      {/* Botón Agregar - Siempre visible */}
       <div className="add-button-container">
         <button className="add-sacrament-btn" onClick={() => setIsModalOpen(true)}>
           + Agregar Sacramento
         </button>
       </div>
 
-      {/* Filtros - Siempre visibles */}
       <div className="search-filters">
         <input
           type="text"
@@ -133,11 +173,9 @@ const GestionSacramentos = () => {
         />
       </div>
 
-      {/* Estados de carga/error */}
       {isPending && <p>Cargando sacramentos...</p>}
       {error && <p>Error: {error.message}</p>}
       
-      {/* Tabla - solo si no está cargando ni hay error */}
       {!isPending && !error && (
         <SacramentTable 
           sacramentos={sacramentosOrdenados}
@@ -148,15 +186,13 @@ const GestionSacramentos = () => {
         />
       )}
 
-      {/* Drawer lateral */}
       <DetailsDrawer 
         isOpen={drawerOpen}
         onClose={handleCloseDrawer}
         sacramento={selectedSacramento}
-        tipo="Bautismo"
+        tipo={selectedTipo}
       />
 
-      {/* Modal para agregar */}
       <AddSacramentoModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
