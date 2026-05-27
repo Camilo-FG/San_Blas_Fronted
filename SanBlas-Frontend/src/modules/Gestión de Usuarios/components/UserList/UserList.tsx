@@ -22,6 +22,16 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState('');
 
+    //se inverte el array para mostrar  usuarios más recientes primero
+    const sortedUsers = useMemo(() => {
+        const recordsLength = users.length;
+        const inverted: Usuario[] = [];
+        for (let i = 0; i < recordsLength; i++) {
+            inverted.push(users[recordsLength - 1 - i]);
+        }
+        return inverted;
+    }, [users]);
+
     const columns = useMemo(
         () => [
             columnHelper.accessor('UserName', {
@@ -57,7 +67,7 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
     );
 
     const table = useReactTable({
-        data: users,
+        data: sortedUsers,
         columns,
         state: { sorting, globalFilter },
         initialState: {
