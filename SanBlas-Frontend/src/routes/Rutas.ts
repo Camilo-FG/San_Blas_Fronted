@@ -14,7 +14,7 @@ const Rutas = {
   home: "/",
   sobreNosotros: "/sobre-nosotros",
   historia: "/historia",
-
+  FormsolicitudesCatequesis: "/solicitudes-catequesis",
   donacionesPublicas: "/donaciones",
   SolicitudesSacramentos: "/solicitudes-sacramentos",
   dashboard: dashboardBase,
