@@ -37,7 +37,7 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
             }),
             columnHelper.accessor('UserRole', {
                 header: 'Rol',
-                cell: (info) => info.getValue(),
+                cell: (info) => info.getValue() ? 'Admin' : 'User', // ← cambio
             }),
             columnHelper.accessor('State', {
                 header: 'Estado',

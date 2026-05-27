@@ -2,26 +2,41 @@ import { useState } from 'react';
 import { UserList } from '../components/UserList/UserList';
 import CreateUserModal from '../components/CreateUserModal/CreateUserModal';
 import { useGetUserList } from '../hooks/hooksUsuarios/useGetUserList'
+import { usePutUser } from '../hooks/hooksUsuarios/usePutUser';
+import { Usuario } from 'src/types/Usuario';
 import "./GestionUsuarios.css";
 
 const GestionUsuarios = () => {
 
-    const {users, loading, error} = useGetUserList();
+    const { users, loading, error, refetch } = useGetUserList();
+    const { crearUsuario, loading: creando } = usePutUser();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleOpenModal = () => {
         setIsModalOpen(true);
-    };
+    };  
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
     };
 
-    const handleSaveUser = (userData: any) => {
-        // Aquí iría la lógica para crear el usuario
-        console.log('Usuario a crear:', userData);
-        setIsModalOpen(false);
-        // Luego hacer refetch de usuarios si lo deseas
+    const handleSaveUser = async (userData: any) => {
+        const nuevoUsuario: Usuario = {
+            ID: Math.max(0, ...users.map(u => u.ID)) + 1,
+            UserName: userData.nombre,
+            Email: userData.correo,
+            PhoneNumber: userData.telefono,
+            Password: userData.contraseña,
+            UserRole: false,
+            State: true,
+            CreationDate: new Date().toISOString(),
+        };
+
+        const ok = await crearUsuario(nuevoUsuario);
+        if (ok) {
+            setIsModalOpen(false);
+            refetch(); // recargar la tabla
+        }
     };
 
     if(loading) return <div>Loading...</div>
@@ -29,13 +44,14 @@ const GestionUsuarios = () => {
 
     //si no se cumplen las condiciones anteriores pasa lo siguiente:
     return(
-        <section className="gestion-usuarios">
-            <UserList users={users} onAddUser={handleOpenModal} />
-            <CreateUserModal 
+         <section className="gestion-usuarios">
+            <UserList users={users} onAddUser={() => setIsModalOpen(true)} />
+            <CreateUserModal
                 isOpen={isModalOpen}
-                onClose={handleCloseModal}
+                onClose={() => setIsModalOpen(false)}
                 onSave={handleSaveUser}
             />
+            {creando && <div className="loading-overlay">Guardando...</div>}
         </section>
     )
 };

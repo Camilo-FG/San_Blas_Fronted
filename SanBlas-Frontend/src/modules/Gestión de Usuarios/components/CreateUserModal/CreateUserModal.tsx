@@ -38,8 +38,31 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   if (!isOpen) return null;
 
   const validateEmail = (email: string): boolean => {
+    // Validación estricta de email
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return emailRegex.test(email);
+    
+    if (!emailRegex.test(email)) {
+      return false;
+    }
+    
+    // Validación adicional: debe tener extensión válida (.com, .es, .org, etc.)
+    const hasDomainExtension = /\.[a-zA-Z]{2,}$/.test(email);
+    if (!hasDomainExtension) {
+      return false;
+    }
+    
+    // Validación: no puede terminar con punto
+    if (email.endsWith('.')) {
+      return false;
+    }
+    
+    // Validación: debe tener al menos un punto después del @
+    const parts = email.split('@');
+    if (parts.length !== 2 || !parts[1].includes('.')) {
+      return false;
+    }
+    
+    return true;
   };
 
   const validatePhone = (phone: string): boolean => {
