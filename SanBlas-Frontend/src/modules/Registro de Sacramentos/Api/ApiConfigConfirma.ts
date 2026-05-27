@@ -1,9 +1,12 @@
+// ApiConfigBautismo.ts
 import axios from 'axios';
 
+const ACCESS_KEY = import.meta.env.VITE_ACCESS_KEY;
+
 export const apiConfirma = axios.create({
-    baseURL: `https://api.jsonbin.io/v3/b/${import.meta.env.VITE_CONFIRMACION_BIN_ID}`, 
-    headers: {
-        'Content-Type': 'application/json',
-        'X-Access-Key': import.meta.env.VITE_ACCESS_KEY,
-    },
+  baseURL: 'https://api.jsonbin.io/v3',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Access-Key': ACCESS_KEY,
+  },
 });

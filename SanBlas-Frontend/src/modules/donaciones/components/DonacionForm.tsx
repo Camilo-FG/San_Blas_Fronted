@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { useCaptcha } from '../../../shared/hooks/useCaptcha';
 interface FormData {
     anonimo: boolean;
     nombre: string;
@@ -26,8 +27,7 @@ export default function FormularioDonacion(): React.JSX.Element {
     });
 
     const [errors, setErrors] = useState<FormErrors>({});
-    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-    const captchaRef = useRef<ReCAPTCHA>(null);
+    const { captchaRef, captchaToken, handleCaptchaChange, handleCaptchaExpired, resetCaptcha } = useCaptcha();
     const [enviado, setEnviado] = useState<boolean>(false); 
 
     const validar = (): boolean => {
@@ -106,13 +106,12 @@ export default function FormularioDonacion(): React.JSX.Element {
         setEnviado(true);
         // Limpiamos el formulario tras un envío exitoso
         setFormData({ anonimo: false, nombre: '', correo: '', telefono: '', detalle: '' });
-        setCaptchaToken(null);
-        captchaRef.current?.reset();
+        resetCaptcha();
     };
 
     const handleHacerOtraDonacion = () => {
     setFormData({ anonimo: false, nombre: '', correo: '', telefono: '', detalle: '' });
-    setCaptchaToken(null);
+    resetCaptcha();
     setErrors({});
     setEnviado(false); // Regresa al formulario interactivo
     
@@ -332,10 +331,10 @@ return (
                             ref={captchaRef}
                             sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
                             onChange={(token: string | null) => {
-                                setCaptchaToken(token);
+                                handleCaptchaChange(token);
                                 setErrors(prev => ({ ...prev, captcha: undefined }));
                             }}
-                            onExpired={() => setCaptchaToken(null)}
+                            onExpired={handleCaptchaExpired}
                         />
                         {errors.captcha && <span style={errorStyle}>⚠ {errors.captcha}</span>}
                     </div>

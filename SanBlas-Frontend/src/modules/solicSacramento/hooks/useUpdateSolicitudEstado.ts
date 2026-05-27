@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { saveSolicitud } from "./solicSacramentos-service";
-import { FormSacramento } from "src/types/formSacramento";
+import { saveSolicitud } from "../Api/solicSacramentos-service";
+import { FormSacramento } from "../../../types/formSacramento";
 
 type UpdateEstadoPayload = {
   id: number | string;

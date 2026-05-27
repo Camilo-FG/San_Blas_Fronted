@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './CreateUserModal.css';
-import { Usuario } from 'src/types/Usuario';
+import { Usuario } from '../../../../types/Usuario';
 
 interface Props {
   isOpen: boolean;
@@ -265,7 +265,6 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
                 <span className="modal-form-error">⚠ {errors.rol}</span>
               )}
             </div>
-
 
           </div>
 

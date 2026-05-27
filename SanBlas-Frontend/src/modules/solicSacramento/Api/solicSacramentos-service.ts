@@ -1,25 +1,32 @@
-import { FormSacramento } from "src/types/formSacramento";
+import { FormSacramento } from "../../../types/formSacramento";
 import { apiClient } from "./apiConfig";
 
 //usando Axios
 
-const BIN_ID = '6a122ded6610dd3ae895173d';
-
-//Post — Crear nuevo producto
+// POST deshabilitado para evitar crear bins nuevos en JSONBin.
+// La solicitud se agrega al arreglo existente y se guarda con PUT en el bin fijo.
 export async function CreateSolicSacramento(sacramento: FormSacramento) {
-  // Usar POST a /v3/b para crear un nuevo bin (la Access Key permite POST)
-  const response = await apiClient.post(`/`, sacramento);
+  const currentSolicitudes = await getSolicitudes();
+  const nextSolicitud = {
+    ...sacramento,
+    id: sacramento.id ?? Date.now(),
+  };
+  const updatedSolicitudes = Array.isArray(currentSolicitudes)
+    ? [...currentSolicitudes, nextSolicitud]
+    : [nextSolicitud];
+
+  const response = await apiClient.put('/', updatedSolicitudes);
   return response.data.record; // JSONBin envuelve en "record"
 }
 
 // GET — Leer datos
 export const getSolicitudes = async () => {
-  const response = await apiClient.get(`/${BIN_ID}/latest`);
+  const response = await apiClient.get(`/latest`);
   return response.data.record; // JSONBin envuelve en "record"
 };
 
 // PUT — Guardar/actualizar datos
 export const saveSolicitud = async (data: any) => {
-  const response = await apiClient.put(`/${BIN_ID}`, data);
+  const response = await apiClient.put('/', data);
   return response.data.record;
 };

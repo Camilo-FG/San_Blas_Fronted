@@ -22,20 +22,9 @@ const SolicSacramento = () => {
         </div>
       </div>
 
-      <div className="solic-sacramento__layout">
-        <main className="solic-sacramento__content">
-          <div className="solic-sacramento__panel">
-            <div className="solic-sacramento__panel-header">
-              <div>
-                <p className="solic-sacramento__card-label">Formulario</p>
-                <h2>Solicitud de sacramento</h2>
-              </div>
-            </div>
 
             <FormSolic />
-          </div>
-        </main>
-      </div>
+       
     </section>
   );
 };

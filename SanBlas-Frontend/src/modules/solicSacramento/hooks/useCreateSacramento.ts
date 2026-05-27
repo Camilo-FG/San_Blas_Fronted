@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CreateSolicSacramento } from "./solicSacramentos-service";
-import { FormSacramento } from "src/types/formSacramento";
+import { FormSacramento } from "../../../types/formSacramento";
+import { CreateSolicSacramento } from "../Api/solicSacramentos-service";
 
 
 export const useCreateSolicSacramento = () => {

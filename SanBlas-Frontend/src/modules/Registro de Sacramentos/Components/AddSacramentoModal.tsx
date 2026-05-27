@@ -10,17 +10,51 @@ interface Props {
 
 const tiposSacramento = ['Bautismo', 'Comunión', 'Confirmación', 'Matrimonio'];
 
+const convertirMesANumero = (mes: string): string => {
+  const meses: { [key: string]: string } = {
+    'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04',
+    'mayo': '05', 'junio': '06', 'julio': '07', 'agosto': '08',
+    'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12'
+  };
+  return meses[mes.toLowerCase()] || '01';
+};
+
 const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
   const [tipoActivo, setTipoActivo] = useState('Bautismo');
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<any>({
+    diaTemp: '',
+    mesTemp: '',
+    anioTemp: ''
+  });
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData, tipoActivo);
+    
+    // Crear una copia sin los campos temporales
+    const { diaTemp, mesTemp, anioTemp, ...datosParaGuardar } = formData;
+    
+    onSave(datosParaGuardar, tipoActivo);
     onClose();
-    setFormData({});
+    setFormData({ diaTemp: '', mesTemp: '', anioTemp: '' });
+  };
+
+  const actualizarFecha = (campo: 'dia' | 'mes' | 'anio', valor: string) => {
+    const nuevosDatos = { ...formData };
+    
+    if (campo === 'dia') nuevosDatos.diaTemp = valor;
+    if (campo === 'mes') nuevosDatos.mesTemp = valor;
+    if (campo === 'anio') nuevosDatos.anioTemp = valor;
+    
+    // Si tenemos los tres campos, formateamos la fecha
+    if (nuevosDatos.diaTemp && nuevosDatos.mesTemp && nuevosDatos.anioTemp) {
+      const mesNumero = convertirMesANumero(nuevosDatos.mesTemp);
+      nuevosDatos.FechaBautismo = `${nuevosDatos.anioTemp}-${mesNumero}-${nuevosDatos.diaTemp.padStart(2, '0')}`;
+      nuevosDatos.AnnioBautismo = parseInt(nuevosDatos.anioTemp);
+    }
+    
+    setFormData(nuevosDatos);
   };
 
   const renderForm = () => {
@@ -44,20 +78,35 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
             </div>
             <div className="modal-form-group">
               <label>Cédula</label>
-              <input type="text" placeholder="0-0000-0000" onChange={(e) => setFormData({...formData, cedula: e.target.value})} />
+              <input type="text" placeholder="0-0000-0000" onChange={(e) => setFormData({...formData, cedula: parseInt(e.target.value) || 0})} />
             </div>
             <div className="modal-form-row">
               <div className="modal-form-group">
                 <label>Día de celebración</label>
-                <input type="text" placeholder="12" onChange={(e) => setFormData({...formData, FechaBautismo: `${e.target.value}/??/????`})} />
+                <input 
+                  type="text" 
+                  placeholder="12" 
+                  value={formData.diaTemp}
+                  onChange={(e) => actualizarFecha('dia', e.target.value)} 
+                />
               </div>
               <div className="modal-form-group">
                 <label>Mes de celebración</label>
-                <input type="text" placeholder="Mayo" onChange={(e) => setFormData({...formData, Mes: e.target.value})} />
+                <input 
+                  type="text" 
+                  placeholder="Mayo" 
+                  value={formData.mesTemp}
+                  onChange={(e) => actualizarFecha('mes', e.target.value)} 
+                />
               </div>
               <div className="modal-form-group">
                 <label>Año de celebración</label>
-                <input type="text" placeholder="2026" onChange={(e) => setFormData({...formData, AnnioBautismo: e.target.value})} />
+                <input 
+                  type="text" 
+                  placeholder="2026" 
+                  value={formData.anioTemp}
+                  onChange={(e) => actualizarFecha('anio', e.target.value)} 
+                />
               </div>
             </div>
             <div className="modal-form-group">
@@ -109,7 +158,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
               </div>
               <div className="modal-form-group">
                 <label>Año de Comunión</label>
-                <input type="text" placeholder="2026" onChange={(e) => setFormData({...formData, AnnioComunion: e.target.value})} />
+                <input type="number" placeholder="2026" onChange={(e) => setFormData({...formData, AnnioComunion: parseInt(e.target.value)})} />
               </div>
             </div>
             <div className="modal-form-group">
@@ -137,7 +186,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
               </div>
               <div className="modal-form-group">
                 <label>Año de Confirmación</label>
-                <input type="text" placeholder="2026" onChange={(e) => setFormData({...formData, AnnioConfirmacion: e.target.value})} />
+                <input type="number" placeholder="2026" onChange={(e) => setFormData({...formData, AnnioConfirmacion: parseInt(e.target.value)})} />
               </div>
             </div>
             <div className="modal-form-group">
@@ -171,7 +220,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
               </div>
               <div className="modal-form-group">
                 <label>Año de Matrimonio</label>
-                <input type="text" placeholder="2026" onChange={(e) => setFormData({...formData, AnnioMatrimonio: e.target.value})} />
+                <input type="number" placeholder="2026" onChange={(e) => setFormData({...formData, AnnioMatrimonio: parseInt(e.target.value)})} />
               </div>
             </div>
             <div className="modal-form-group">

@@ -2,7 +2,7 @@
 import './styles/SacramentTable.css';
 
 interface Sacrament {
-  id: number;
+  id: string;  // ← Cambiado a string por el prefijo (bautismo-1, etc)
   nombre: string;
   fechaCelebracion: string;
   lugar: string;
@@ -13,24 +13,35 @@ interface Sacrament {
 interface Props {
   sacramentos: Sacrament[];
   onViewDetails: (sacramento: Sacrament) => void;
+  onEdit: (sacramento: Sacrament) => void;      // ← Agregar
+  onDelete: (sacramento: Sacrament) => void;    // ← Agregar
   onSort?: (columna: string) => void;
   sortColumn?: string;
   sortDirection?: 'asc' | 'desc';
 }
 
 const colorPorTipo = {
-   'Bautismo': '#4CAF5020',      // Verde transparente
-  'Comunión': '#2196F320',      // Azul transparente
-  'Confirmación': '#FF980020',  // Naranja transparente
-  'Matrimonio': '#9C27B020'     // Morado transparente
+  'Bautismo': '#E8F5E9',
+  'Comunión': '#E3F2FD',
+  'Confirmación': '#FFF3E0',
+  'Matrimonio': '#F3E5F5'
+};
+
+const textColorPorTipo = {
+  'Bautismo': '#2E7D32',
+  'Comunión': '#1565C0',
+  'Confirmación': '#E65100',
+  'Matrimonio': '#6A1B9A'
 };
 
 const SacramentTable = ({ 
   sacramentos, 
   onViewDetails,
-  onSort,           // ← Esto estaba faltando
-  sortColumn,       // ← Esto estaba faltando
-  sortDirection     // ← Esto estaba faltando
+  onEdit,           // ← Recibir
+  onDelete,         // ← Recibir
+  onSort,
+  sortColumn,
+  sortDirection
 }: Props) => {
   return (
     <div className="sacrament-table-container">
@@ -54,6 +65,7 @@ const SacramentTable = ({
               {sortColumn === 'lugar' && (sortDirection === 'asc' ? ' ↑' : ' ↓')}
             </th>
             <th>DETALLES</th>
+            <th>ACCIONES</th>  {/* ← Nueva columna */}
           </tr>
         </thead>
         <tbody>
@@ -62,10 +74,10 @@ const SacramentTable = ({
               <td>
                 <span 
                   className="sacrament-badge"
-                  style={{ backgroundColor: colorPorTipo[sacramento.tipo],
-                     color: colorPorTipo[sacramento.tipo].replace('20', '')
-                   }}
-                  
+                  style={{ 
+                    backgroundColor: colorPorTipo[sacramento.tipo],
+                    color: textColorPorTipo[sacramento.tipo]
+                  }}
                 >
                   {sacramento.tipo}
                 </span>
@@ -80,6 +92,22 @@ const SacramentTable = ({
                 >
                   VER ACTA &gt;
                 </button>
+              </td>
+              <td>
+                <div className="action-buttons">
+                  <button 
+                    className="edit-btn"
+                    onClick={() => onEdit(sacramento)}
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button 
+                    className="delete-btn"
+                    onClick={() => onDelete(sacramento)}
+                  >
+                    🗑️ Eliminar
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

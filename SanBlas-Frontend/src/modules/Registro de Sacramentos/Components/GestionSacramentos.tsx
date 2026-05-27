@@ -1,23 +1,51 @@
 // src/modules/dashboard/components/GestionSacramentos.tsx
 import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useGetListBautismo } from '../hooks/hooksBautismo/useGetListBautismo';
-import { useGetListComunion } from '../hooks/hooksComunion/useGetListComunion';
-import { useGetListConfirma } from '../hooks/hooksConfirma/useGetListConfirma';
-import { useGetListMatrimonio } from '../hooks/hooksMatrimonio/useGetListMatrimonio';
+ import { useGetListComunion } from '../hooks/hooksComunion/useGetListComunion';
+ import { useGetListConfirma } from '../hooks/hooksConfirma/useGetListConfirma';
+ import { useGetListMatrimonio } from '../hooks/hooksMatrimonio/useGetListMatrimonio';
 import SacramentTable from './SacramentTable';
 import DetailsDrawer from './DetailsDrawer';
 import AddSacramentoModal from './AddSacramentoModal';
+import EditSacramentoModal from './EditSacramentoModal';
 import { useCreateBautismo } from '../hooks/hooksBautismo/useCreateBautismo';
+ import { useCreateComunion } from '../hooks/hooksComunion/useCreateComunion';
+ import { useCreateConfirma } from '../hooks/hooksConfirma/useCreateConfirma';
+ import { useCreateMatrimonio } from '../hooks/hooksMatrimonio/useCreateMatrimonio';
+import { usePutBautismo } from '../hooks/hooksBautismo/usePutBautismo';
+ import { usePutComunion } from '../hooks/hooksComunion/usePutComunion';
+ import { usePutConfirma } from '../hooks/hooksConfirma/usePutConfirma';
+ import { usePutMatrimonio } from '../hooks/hooksMatrimonio/usePutMatrimonio';
+import { useDeleteBautismo } from '../hooks/hooksBautismo/useDeleteBautismo';
+ import { useDeleteComunion } from '../hooks/hooksComunion/useDeleteComunion';
+ import { useDeleteConfirma } from '../hooks/hooksConfirma/useDeleteConfirma';
+ import { useDeleteMatrimonio } from '../hooks/hooksMatrimonio/useDeleteMatrimonio';
 import './styles/GestionSacramentos.css';
 
 const GestionSacramentos = () => {
-  const { data: bautismos, isPending: pendingBautismo, error: errorBautismo } = useGetListBautismo();
-  const { data: comuniones, isPending: pendingComunion, error: errorComunion } = useGetListComunion();
-  const { data: confirmaciones, isPending: pendingConfirmacion, error: errorConfirmacion } = useGetListConfirma();
-  const { data: matrimonios, isPending: pendingMatrimonio, error: errorMatrimonio } = useGetListMatrimonio();
-  
-  const queryClient = useQueryClient();
+  // ========== HOOKS DE LECTURA ==========
+  const { data: bautismos, isPending: pendingBautismo, error: errorBautismo, refetch: refetchBautismos } = useGetListBautismo();
+   const { data: comuniones, isPending: pendingComunion, error: errorComunion, refetch: refetchComuniones } = useGetListComunion();
+   const { data: confirmaciones, isPending: pendingConfirmacion, error: errorConfirmacion, refetch: refetchConfirmaciones } = useGetListConfirma();
+   const { data: matrimonios, isPending: pendingMatrimonio, error: errorMatrimonio, refetch: refetchMatrimonios } = useGetListMatrimonio();
+
+  // ========== HOOKS DE MUTACIÓN ==========
+  const createBautismo = useCreateBautismo();
+   const createComunion = useCreateComunion();
+   const createConfirmacion = useCreateConfirma();
+   const createMatrimonio = useCreateMatrimonio();
+
+  const updateBautismo = usePutBautismo();
+   const updateComunion = usePutComunion();
+   const updateConfirmacion = usePutConfirma();
+   const updateMatrimonio = usePutMatrimonio();
+
+  const deleteBautismo = useDeleteBautismo();
+   const deleteComunion = useDeleteComunion();
+   const deleteConfirmacion = useDeleteConfirma();
+   const deleteMatrimonio = useDeleteMatrimonio();
+
+  // ========== ESTADOS ==========
   const [searchNombre, setSearchNombre] = useState('');
   const [searchCedula, setSearchCedula] = useState('');
   const [searchFecha, setSearchFecha] = useState('');
@@ -27,11 +55,15 @@ const GestionSacramentos = () => {
   const [sortColumn, setSortColumn] = useState<string>('nombre');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const createBautismo = useCreateBautismo();
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingSacramento, setEditingSacramento] = useState<any>(null);
+  const [editingTipo, setEditingTipo] = useState<string>('Bautismo');
 
-  const isPending = pendingBautismo || pendingComunion || pendingConfirmacion || pendingMatrimonio;
-  const error = errorBautismo || errorComunion || errorConfirmacion || errorMatrimonio;
+  // ========== ESTADOS DE CARGA Y ERROR ==========
+  const isPending = pendingBautismo; // || pendingComunion || pendingConfirmacion || pendingMatrimonio;
+  const error = errorBautismo; // || errorComunion || errorConfirmacion || errorMatrimonio;
 
+  // ========== HANDLERS ==========
   const handleSaveSacramento = async (data: any, tipo: string) => {
     if (tipo === 'Bautismo') {
       const nuevoId = Date.now();
@@ -44,22 +76,106 @@ const GestionSacramentos = () => {
         NombreAbuelosPaternos: data.NombreAbuelosPaternos || '',
         NombreAbuelosMaternos: data.NombreAbuelosMaternos || '',
       });
-      queryClient.invalidateQueries({ queryKey: ['bautismo'] });
+      await refetchBautismos();
+    }
+    // TODO: Descomentar cuando tengas los hooks de los otros sacramentos
+    
+    else if (tipo === 'Comunión') {
+      const nuevoId = Date.now();
+      await createComunion.mutateAsync({ id: nuevoId, ...data });
+      await refetchComuniones();
+    }
+    else if (tipo === 'Confirmación') {
+      const nuevoId = Date.now();
+      await createConfirmacion.mutateAsync({ id: nuevoId, ...data });
+      await refetchConfirmaciones();
+    }
+    else if (tipo === 'Matrimonio') {
+      const nuevoId = Date.now();
+      await createMatrimonio.mutateAsync({ id: nuevoId, ...data });
+      await refetchMatrimonios();
+    }
+    
+  };
+
+  const handleEdit = (sacramento: any) => {
+    setEditingSacramento(sacramento.detalles);
+    setEditingTipo(sacramento.tipo);
+    setEditModalOpen(true);
+  };
+
+  const handleEditSave = async (data: any, tipo: string) => {
+    if (tipo === 'Bautismo') {
+      await updateBautismo.mutateAsync(data);
+      await refetchBautismos();
+    }
+    // TODO: Descomentar cuando tengas los hooks de los otros sacramentos
+    
+    else if (tipo === 'Comunión') {
+      await updateComunion.mutateAsync(data);
+      await refetchComuniones();
+    }
+    else if (tipo === 'Confirmación') {
+      await updateConfirmacion.mutateAsync(data);
+      await refetchConfirmaciones();
+    }
+    else if (tipo === 'Matrimonio') {
+      await updateMatrimonio.mutateAsync(data);
+      await refetchMatrimonios();
+    }
+    
+  };
+
+  const handleDelete = async (sacramento: any) => {
+    if (confirm(`¿Estás seguro de eliminar ${sacramento.nombre}?`)) {
+      const id = sacramento.detalles.id;
+      
+      switch (sacramento.tipo) {
+        case 'Bautismo':
+          await deleteBautismo.mutateAsync(id);
+          await refetchBautismos();
+          break;
+        
+        
+        case 'Comunión':
+          await deleteComunion.mutateAsync(id);
+          await refetchComuniones();
+          break;
+        case 'Confirmación':
+          await deleteConfirmacion.mutateAsync(id);
+          await refetchConfirmaciones();
+          break;
+        case 'Matrimonio':
+          await deleteMatrimonio.mutateAsync(id);
+          await refetchMatrimonios();
+          break;
+        
+      }
     }
   };
 
-  // Unificar todos los sacramentos en un solo array
+  // ========== UNIFICAR SACRAMENTOS ==========
+  const bautismosArray = Array.isArray(bautismos) ? bautismos : [];
+   const comunionesArray = Array.isArray(comuniones) ? comuniones : [];
+   const confirmacionesArray = Array.isArray(confirmaciones) ? confirmaciones : [];
+   const matrimoniosArray = Array.isArray(matrimonios) ? matrimonios : [];
+
   const todosLosSacramentos = [
-    ...(bautismos?.map(b => ({
-      id:`bautismo-${b.id}`,
+    // BAUTISMOS
+    ...(bautismosArray.map(b => ({
+      id: `bautismo-${b.id}`,
       nombre: `${b.Nombre} ${b.PrimerApellido} ${b.SegundoApellido}`,
       cedula: b.cedula,
       fechaCelebracion: b.FechaBautismo,
       lugar: b.NombreParroquia,
       tipo: 'Bautismo' as const,
       detalles: b
-    })) || []),
-    ...(comuniones?.map(c => ({
+    }))),
+    
+    // TODO: Descomentar cuando tengas los datos de los otros sacramentos
+    
+    // COMUNIONES
+    ...(comunionesArray.map(c => ({
       id: `comunion-${c.id}`,
       nombre: c.Nombre,
       cedula: '',
@@ -67,8 +183,10 @@ const GestionSacramentos = () => {
       lugar: c.LugarComunion,
       tipo: 'Comunión' as const,
       detalles: c
-    })) || []),
-    ...(confirmaciones?.map(conf => ({
+    }))),
+    
+    // CONFIRMACIONES
+    ...(confirmacionesArray.map(conf => ({
       id: `confirmacion-${conf.id}`,
       nombre: conf.Nombre,
       cedula: '',
@@ -76,19 +194,22 @@ const GestionSacramentos = () => {
       lugar: conf.LugarConfirmacion,
       tipo: 'Confirmación' as const,
       detalles: conf
-    })) || []),
-    ...(matrimonios?.map(m => ({
-      id:`matrimonio-${m.id}`,
+    }))),
+    
+    // MATRIMONIOS
+    ...(matrimoniosArray.map(m => ({
+      id: `matrimonio-${m.id}`,
       nombre: `${m.NombreContrayente} y ${m.NombreContrayente2}`,
       cedula: '',
       fechaCelebracion: `${m.DiaMatrimonio} ${m.MesMatrimonio} ${m.AnnioMatrimonio}`,
       lugar: m.LugarMatrimonio,
       tipo: 'Matrimonio' as const,
       detalles: m
-    })) || []),
+    }))),
+    
   ];
 
-  // Filtrar datos
+  // ========== FILTRAR DATOS ==========
   const sacramentosFiltrados = todosLosSacramentos.filter(s => {
     const matchNombre = searchNombre === '' || s.nombre.toLowerCase().includes(searchNombre.toLowerCase());
     const matchCedula = searchCedula === '' || s.cedula.toString().includes(searchCedula);
@@ -96,7 +217,7 @@ const GestionSacramentos = () => {
     return matchNombre && matchCedula && matchFecha;
   });
 
-  // Ordenar datos
+  // ========== ORDENAR DATOS ==========
   const ordenarDatos = (datos: any[], columna: string, direccion: 'asc' | 'desc') => {
     return [...datos].sort((a, b) => {
       let valA = a[columna];
@@ -141,14 +262,17 @@ const GestionSacramentos = () => {
     setSelectedTipo('Bautismo');
   };
 
+  // ========== RENDER ==========
   return (
     <div className="gestion-sacramentos">
+      {/* Botón Agregar */}
       <div className="add-button-container">
         <button className="add-sacrament-btn" onClick={() => setIsModalOpen(true)}>
           + Agregar Sacramento
         </button>
       </div>
 
+      {/* Filtros */}
       <div className="search-filters">
         <input
           type="text"
@@ -173,19 +297,24 @@ const GestionSacramentos = () => {
         />
       </div>
 
+      
       {isPending && <p>Cargando sacramentos...</p>}
       {error && <p>Error: {error.message}</p>}
       
+      {/* Tabla */}
       {!isPending && !error && (
         <SacramentTable 
           sacramentos={sacramentosOrdenados}
           onViewDetails={handleViewDetails}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
           onSort={handleSort}
           sortColumn={sortColumn}
           sortDirection={sortDirection}
         />
       )}
 
+     
       <DetailsDrawer 
         isOpen={drawerOpen}
         onClose={handleCloseDrawer}
@@ -193,10 +322,20 @@ const GestionSacramentos = () => {
         tipo={selectedTipo}
       />
 
+      
       <AddSacramentoModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveSacramento}
+      />
+
+      
+      <EditSacramentoModal 
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        onSave={handleEditSave}
+        sacramento={editingSacramento}
+        tipo={editingTipo}
       />
     </div>
   );

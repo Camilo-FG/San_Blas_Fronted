@@ -1,22 +1,14 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchDeleteComunion } from "../../services/Comunion-service";
-
-
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchDeleteComunion } from '../../services/Comunion-service';
 
 export const useDeleteComunion = () => {
-
-    const queryComunion = useQueryClient();
-
-  const DeleteMutation = useMutation({
-    mutationKey: ['deleteComunion', 'comunion'], // una key generica para mutaciones de delete en Comunion
-    mutationFn: (id:number) => fetchDeleteComunion(id),
-
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: fetchDeleteComunion,
     onSuccess: () => {
-        queryComunion.invalidateQueries({ queryKey: ['comunion']
-
-        });
-    }
-  })
-
-    return DeleteMutation
-}
+      // Esto fuerza el refetch inmediato después de eliminar
+      queryClient.refetchQueries({ queryKey: ['comunion'] });
+    },
+  });
+};
