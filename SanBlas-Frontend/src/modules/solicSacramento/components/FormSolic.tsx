@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { useCreateSolicSacramento } from "../Api/useCreateSacramento";
 import "./FormSolic.css";
+import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
 
 const FormSolic = () => {
-  const { mutate, isPending } = useCreateSolicSacramento();
+  const { mutateAsync, isPending } = useCreateSolicSacramento();
+  const [enviado, setEnviado] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -17,32 +19,58 @@ const FormSolic = () => {
       Motivo: '',
     },
        onSubmit: async ({ value }: any) => {
-      // El estado no lo elige el usuario; inicia siempre pendiente.
-      mutate({ ...value, Estado: 'Pendiente' });
+
+      await mutateAsync({ ...value, Estado: 'Pendiente' });
+      form.reset();
+      setEnviado(true);
     },
  
   });
+
+  const handleHacerOtraSolicitud = () => {
+    form.reset();
+    setEnviado(false);
+  };
 
  
 
   return (
     <div className="form-solic">
-      <div className="form-solic__header">
-        <p className="form-solic__eyebrow">Solicitud pastoral</p>
-        <h2>Formulario de Sacramento</h2>
-        <p className="form-solic__description">
-          Completa los datos para registrar una nueva solicitud.
-        </p>
-      </div>
+      {enviado ? (
+        <div className="form-solic__success">
+          <div className="form-solic__success-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
 
-      <form
-        className="form-solic__form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
-      >
+          <h3>¡Solicitud enviada con éxito!</h3>
+          <p>
+            Recibimos tu solicitud de sacramento. En breve se revisará y te contactaremos.
+          </p>
+
+          <button type="button" className="form-solic__retry" onClick={handleHacerOtraSolicitud}>
+            Hacer otra solicitud
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="form-solic__header">
+            <p className="form-solic__eyebrow">Solicitud pastoral</p>
+            <h2>Formulario de Sacramento</h2>
+            <p className="form-solic__description">
+              Completa los datos para registrar una nueva solicitud.
+            </p>
+          </div>
+
+          <form
+            className="form-solic__form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+          >
         <div className="form-solic__field">
           <form.Field
             name="Nombre"
@@ -210,6 +238,8 @@ const FormSolic = () => {
           {isPending ? 'Guardando...' : 'Guardar'}
         </button>
       </form>
+        </>
+      )}
     </div>
   );
 };

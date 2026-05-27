@@ -21,7 +21,7 @@ import formSolic from "../modules/solicSacramento/components/FormSolic";
 import DashSacra from "../modules/dashboardSacramento/dashSacra";
 import DonacionInfo from "../modules/donaciones/components/DonacionInfo";
 import GestionSacramentos from "../modules/Registro de Sacramentos/Components/GestionSacramentos";
-import { UserList } from "src/modules/Gestión de Usuarios/components/UserList";
+import { UserList } from "src/modules/Gestión de Usuarios/components/UserList/UserList";
 import CatequesisForm from "../modules/dashboard/pages/catequesis/components/CatequesisForm";
 import CatequesisPage from "../modules/dashboard/pages/catequesis/pages/CatequesisPage";
 // import Donaciones from "../modules/donaciones/pages/donaciones";
@@ -73,7 +73,7 @@ const historiaRoute = createRoute({
 const solicitudesSacramentosRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.SolicitudesSacramentos,
-  component: formSolic,
+  component: SolicSacramento,
 });
 
 const donacionesPublicasRoute = createRoute({

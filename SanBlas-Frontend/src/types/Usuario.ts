@@ -8,7 +8,7 @@ export type Usuario = {
     Email: string;
     PhoneNumber: string;
     Password: string;
-    UserRole: string;
+    UserRole: boolean;
     State: boolean;
     CreationDate: string;
 }
