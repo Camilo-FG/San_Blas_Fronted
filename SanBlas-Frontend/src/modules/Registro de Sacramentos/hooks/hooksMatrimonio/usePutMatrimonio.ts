@@ -1,13 +1,18 @@
-import { useMutation } from "@tanstack/react-query"
-import { fetchUpdateMatrimonio } from "../../services/Matrimonio-service"
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchUpdateMatrimonio } from "../../services/Matrimonio-service";
 
-  export const usePutMatrimonio = (MatrimonioId:number) => {
+export const usePutMatrimonio = () => {
+  const queryClient = useQueryClient();
 
-    const UpdateMutation = useMutation({
-        mutationFn: fetchUpdateMatrimonio,
-        mutationKey: ['matrimonio', MatrimonioId]
-    })
+  const UpdateMutation = useMutation({
+    mutationFn: fetchUpdateMatrimonio,
+    mutationKey: ['matrimonio', 'update'],
+    
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['matrimonio'] });
+    }
+  });
 
- return UpdateMutation
+  return UpdateMutation;
 }

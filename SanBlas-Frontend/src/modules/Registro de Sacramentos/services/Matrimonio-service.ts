@@ -1,49 +1,29 @@
-import { RegistroMatrimonio } from "src/types/registroSacramento";
+import { RegistroConfirmacion, RegistroMatrimonio } from "src/types/registroSacramento";
+import { apiConfirma } from "../Api/ApiConfigConfirma";
 import { apiMatrimonio } from "../Api/ApiConfigMatrimonio";
 
+const BIN_ID = import.meta.env.VITE_MATRIMONIO_BIN_ID;
 
 export const fetchGetMatrimonio = async (): Promise<RegistroMatrimonio[]> => {
-    const {data} = await apiMatrimonio.get('/latest');
-    return data.record; 
-}
+  const response = await apiMatrimonio.get(`/b/${BIN_ID}/latest?meta=false`);
+  return response.data; // Directamente el array
+};
 
 export const fetchCreateMatrimonio = async (matrimonio: RegistroMatrimonio): Promise<RegistroMatrimonio> => {
-       // 1. Obtener los datos actuales
-               const { data: datosActuales } = await apiMatrimonio.get('/latest');
-               const registrosActuales = datosActuales.record || [];
-               // 2. Agregar el nuevo registro
-               const registrosActualizados = [...registrosActuales, matrimonio];
-               // 3. Actualizar todo el bin
-               const { data } = await apiMatrimonio.put(`/`, {
-                   record: registrosActualizados
-               });
-               
-               return data.record;
-}
-
-export const fetchUpdateMatrimonio = async (matrimonioActualizado: RegistroMatrimonio): Promise<RegistroMatrimonio> => {
-    // 1. Obtener todos
-                 const { data: datosActuales } = await apiMatrimonio.get('/latest');
-                 const registrosActuales: RegistroMatrimonio[] = datosActuales.record || [];
-                 // 2. Encontrar y reemplazar el que coincide por ID
-                 const registrosActualizados = registrosActuales.map(b => 
-                     b.id === matrimonioActualizado.id ? matrimonioActualizado : b);
-                 // 3. Actualizar todo el bin
-                 const { data } = await apiMatrimonio.put('/', {
-                     record: registrosActualizados
-                 });
-                 
-                 return matrimonioActualizado;
-}
+  const current = await fetchGetMatrimonio();
+  const newMatrimonio = { ...matrimonio, id: Date.now() };
+  await apiMatrimonio.put(`/b/${BIN_ID}`, [...current, newMatrimonio]);
+  return matrimonio;
+};
 
 export const fetchDeleteMatrimonio = async (id: number): Promise<void> => {
-    // 1. Obtener todos
-              const { data: datosActuales } = await apiMatrimonio.get('/latest');
-              const registrosActuales: RegistroMatrimonio[] = datosActuales.record || [];
-              // 2. Filtrar para eliminar el que tiene el ID
-              const registrosActualizados = registrosActuales.filter(b => b.id !== id);
-              // 3. Actualizar todo el bin
-              await apiMatrimonio.put('/', {
-                  record: registrosActualizados
-              });
-}
+  const current = await fetchGetMatrimonio();
+  await apiMatrimonio.put(`/b/${BIN_ID}`, current.filter(b => b.id !== id));
+};
+
+export const fetchUpdateMatrimonio = async (matrimonio: RegistroMatrimonio): Promise<RegistroMatrimonio> => {
+  const current = await fetchGetMatrimonio();
+  const updated = current.map(b => b.id === matrimonio.id ? matrimonio : b);
+  await apiMatrimonio.put(`/b/${BIN_ID}`, updated);
+  return matrimonio;
+};
