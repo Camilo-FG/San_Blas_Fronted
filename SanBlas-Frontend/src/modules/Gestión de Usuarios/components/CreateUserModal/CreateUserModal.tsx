@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import ReCAPTCHA from 'react-google-recaptcha';
 import './CreateUserModal.css';
 import { Usuario } from '../../../../types/Usuario';
-import { useCaptcha } from '../../../../shared/hooks/useCaptcha';
 
 interface Props {
   isOpen: boolean;
@@ -25,7 +23,6 @@ interface FormErrors {
   telefono?: string;
   contraseña?: string;
   rol?: string;
-  captcha?: string;
 }
 
 const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) => {
@@ -38,7 +35,6 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
-  const { captchaRef, captchaToken, handleCaptchaChange, handleCaptchaExpired, resetCaptcha } = useCaptcha();
 
   if (!isOpen) return null;
 
@@ -102,11 +98,6 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
       nuevosErrores.rol = 'Selecciona un rol de usuario.';
     }
 
-    // Validar reCAPTCHA
-    if (!captchaToken) {
-      nuevosErrores.captcha = 'Por favor completá el reCAPTCHA.';
-    }
-
     setErrors(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
@@ -135,7 +126,6 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
     if (!validateForm()) return;
 
     console.log('Datos del usuario:', formData);
-    console.log('Token reCAPTCHA:', captchaToken);
 
     onSave(formData);
 
@@ -149,7 +139,6 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
     });
     setErrors({});
     setTouchedFields(new Set());
-    resetCaptcha();
   };
 
   const handleTelefono = (value: string) => {
@@ -277,26 +266,6 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
               )}
             </div>
 
-            {/* reCAPTCHA */}
-            <div className={`modal-form-group modal-captcha-group ${errors.captcha ? 'modal-form-group--error' : ''}`}>
-              <ReCAPTCHA
-                ref={captchaRef}
-                sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
-                onChange={(token: string | null) => {
-                  handleCaptchaChange(token);
-                  if (token) {
-                    setErrors((prev) => ({
-                      ...prev,
-                      captcha: undefined,
-                    }));
-                  }
-                }}
-                onExpired={handleCaptchaExpired}
-              />
-              {errors.captcha && (
-                <span className="modal-form-error">⚠ {errors.captcha}</span>
-              )}
-            </div>
           </div>
 
           <div className="modal-footer">
