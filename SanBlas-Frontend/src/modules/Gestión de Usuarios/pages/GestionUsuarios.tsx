@@ -42,7 +42,6 @@ const GestionUsuarios = () => {
     if(loading) return <div>Loading...</div>
     if(error) return <div>{error}</div>
 
-    //si no se cumplen las condiciones anteriores pasa lo siguiente:
     return(
          <section className="gestion-usuarios">
             <UserList users={users} onAddUser={() => setIsModalOpen(true)} />

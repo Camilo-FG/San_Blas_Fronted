@@ -6,6 +6,7 @@ import {
     useReactTable,
     getSortedRowModel,
     getFilteredRowModel,
+    getPaginationRowModel,
     SortingState,
 } from '@tanstack/react-table';
 import { Usuario } from 'src/types/Usuario';
@@ -37,7 +38,7 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
             }),
             columnHelper.accessor('UserRole', {
                 header: 'Rol',
-                cell: (info) => info.getValue() ? 'Admin' : 'User', // ← cambio
+                cell: (info) => info.getValue() ? 'Admin' : 'User',
             }),
             columnHelper.accessor('State', {
                 header: 'Estado',
@@ -58,15 +59,16 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
     const table = useReactTable({
         data: users,
         columns,
-        state: {
-            sorting,
-            globalFilter,
+        state: { sorting, globalFilter },
+        initialState: {
+            pagination: { pageSize: 7 },
         },
         onSortingChange: setSorting,
         onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
     });
 
     return (
@@ -79,10 +81,7 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
                     onChange={(e) => setGlobalFilter(e.target.value)}
                     className="user-search-input"
                 />
-                <button 
-                    onClick={onAddUser}
-                    className="user-add-button"
-                >
+                <button onClick={onAddUser} className="user-add-button">
                     + Agregar usuario
                 </button>
             </div>
@@ -91,15 +90,9 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
                     {table.getHeaderGroups().map((headerGroup) => (
                         <tr key={headerGroup.id}>
                             {headerGroup.headers.map((header) => (
-                                <th
-                                    key={header.id}
-                                    onClick={header.column.getToggleSortingHandler()}
-                                >
+                                <th key={header.id} onClick={header.column.getToggleSortingHandler()}>
                                     <div className="table-header-cell">
-                                        {flexRender(
-                                            header.column.columnDef.header,
-                                            header.getContext()
-                                        )}
+                                        {flexRender(header.column.columnDef.header, header.getContext())}
                                         {header.column.getIsSorted() && (
                                             <span className="sort-indicator">
                                                 {header.column.getIsSorted() === 'asc' ? '↑' : '↓'}
@@ -117,10 +110,7 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
                             <tr key={row.id}>
                                 {row.getVisibleCells().map((cell) => (
                                     <td key={cell.id}>
-                                        {flexRender(
-                                            cell.column.columnDef.cell,
-                                            cell.getContext()
-                                        )}
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </td>
                                 ))}
                             </tr>
@@ -134,10 +124,30 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
                     )}
                 </tbody>
             </table>
+
             <div className="table-footer">
                 <span className="table-records-count">
-                    Total de registros: <strong>{table.getRowModel().rows.length}</strong>
+                    Total de registros: <strong>{table.getFilteredRowModel().rows.length}</strong>
                 </span>
+                <div className="pagination-controls">
+                    <button
+                        onClick={() => table.previousPage()}
+                        disabled={!table.getCanPreviousPage()}
+                        className="pagination-btn"
+                    >
+                        ← Anterior
+                    </button>
+                    <span className="pagination-info">
+                        Página <strong>{table.getState().pagination.pageIndex + 1}</strong> de <strong>{table.getPageCount()}</strong>
+                    </span>
+                    <button
+                        onClick={() => table.nextPage()}
+                        disabled={!table.getCanNextPage()}
+                        className="pagination-btn"
+                    >
+                        Siguiente →
+                    </button>
+                </div>
             </div>
         </div>
     );
