@@ -182,29 +182,6 @@
   flex: 1;
 }
 
-/* Contenedor reCAPTCHA */
-.modal-captcha-group {
-  display: flex;
-  justify-content: center;
-  padding: 16px;
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  margin-bottom: 0;
-  transition: all 0.2s ease;
-  flex-direction: column;
-  align-items: center;
-}
-
-.modal-captcha-group.modal-form-group--error {
-  background-color: #fef2f2;
-  border-color: #ef4444;
-}
-
-.modal-captcha-group.modal-form-group--error .modal-form-error {
-  margin-top: 8px;
-}
-
 .modal-footer {
   display: flex;
   justify-content: flex-end;
