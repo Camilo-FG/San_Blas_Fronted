@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { getSolicitudes } from "./solicSacramentos-service";
+import { getSolicitudes } from "../Api/solicSacramentos-service";
+
 
 // useGetSolicitudes.ts
 export const useGetSolicitudes = () => {
