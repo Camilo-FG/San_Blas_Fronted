@@ -21,23 +21,23 @@ const GestionUsuarios = () => {
     };
 
     const handleSaveUser = async (userData: any) => {
-        const nuevoUsuario: Usuario = {
-            ID: Math.max(0, ...users.map(u => u.ID)) + 1,
-            UserName: userData.nombre,
-            Email: userData.correo,
-            PhoneNumber: userData.telefono,
-            Password: userData.contraseña,
-            UserRole: false,
-            State: true,
-            CreationDate: new Date().toISOString(),
-        };
-
-        const ok = await crearUsuario(nuevoUsuario);
-        if (ok) {
-            setIsModalOpen(false);
-            refetch(); // recargar la tabla
-        }
+    const nuevoUsuario: Usuario = {
+        ID: Math.max(0, ...users.map(u => u.ID)) + 1,
+        UserName: userData.nombre,
+        Email: userData.correo,
+        PhoneNumber: userData.telefono,
+        Password: userData.contraseña,
+        UserRole: userData.rol === 'admin', //true si admin, false si user
+        State: true,
+        CreationDate: new Date().toISOString(),
     };
+
+    const ok = await crearUsuario(nuevoUsuario);
+    if (ok) {
+        setIsModalOpen(false);
+        refetch();
+    }
+};
 
     if(loading) return <div>Loading...</div>
     if(error) return <div>{error}</div>
@@ -50,7 +50,7 @@ const GestionUsuarios = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleSaveUser}
-            />
+                users={users}/>
             {creando && <div className="loading-overlay">Guardando...</div>}
         </section>
     )

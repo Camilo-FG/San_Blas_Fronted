@@ -1,11 +1,13 @@
 import React, { useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import './CreateUserModal.css';
+import { Usuario } from 'src/types/Usuario';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: CreateUserData) => void;
+  users: Usuario[];
 }
 
 interface CreateUserData {
@@ -13,6 +15,7 @@ interface CreateUserData {
   correo: string;
   telefono: string;
   contraseña: string;
+  rol: 'user' | 'admin';
 }
 
 interface FormErrors {
@@ -20,16 +23,18 @@ interface FormErrors {
   correo?: string;
   telefono?: string;
   contraseña?: string;
+  rol?: string;
   captcha?: string;
 }
 
-const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
+const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) => {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreateUserData>({
     nombre: '',
     correo: '',
     telefono: '',
     contraseña: '',
+    rol: 'user',
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
@@ -38,31 +43,9 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
   if (!isOpen) return null;
 
   const validateEmail = (email: string): boolean => {
-    // Validación estricta de email
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    
-    if (!emailRegex.test(email)) {
-      return false;
-    }
-    
-    // Validación adicional: debe tener extensión válida (.com, .es, .org, etc.)
-    const hasDomainExtension = /\.[a-zA-Z]{2,}$/.test(email);
-    if (!hasDomainExtension) {
-      return false;
-    }
-    
-    // Validación: no puede terminar con punto
-    if (email.endsWith('.')) {
-      return false;
-    }
-    
-    // Validación: debe tener al menos un punto después del @
-    const parts = email.split('@');
-    if (parts.length !== 2 || !parts[1].includes('.')) {
-      return false;
-    }
-    
-    return true;
+    // Validación estricta: solo permite .com, .es, .org
+    const validDomainsRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|es|org)$/i;
+    return validDomainsRegex.test(email);
   };
 
   const validatePhone = (phone: string): boolean => {
@@ -85,13 +68,16 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       nuevosErrores.nombre = 'El nombre solo puede contener letras.';
     }
 
-    // Validar correo
+    //alidacion correo
     const correoTrim = formData.correo.trim();
     if (!correoTrim) {
       nuevosErrores.correo = 'El correo es requerido.';
     } else if (!validateEmail(correoTrim)) {
-      nuevosErrores.correo = 'Ingresá un correo válido. Ej: nombre@dominio.com';
+      nuevosErrores.correo = 'Solo se permiten dominios .com, .es o .org';
+    } else if (users.some(u => u.Email.toLowerCase() === correoTrim.toLowerCase())) {
+    nuevosErrores.correo = 'Ya existe una cuenta con este correo.'; //validar si ya hay una cuenta registrada con el mismo correo introducido
     }
+
 
     // Validar teléfono
     const telefonoTrim = formData.telefono.trim();
@@ -109,6 +95,11 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       nuevosErrores.contraseña = 'La contraseña debe tener mínimo 8 caracteres.';
     } else if (contraseñaTrim.length > 64) {
       nuevosErrores.contraseña = 'La contraseña no puede superar 64 caracteres.';
+    }
+
+    // Validar rol
+    if (!formData.rol) {
+      nuevosErrores.rol = 'Selecciona un rol de usuario.';
     }
 
     // Validar reCAPTCHA
@@ -154,6 +145,7 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
       correo: '',
       telefono: '',
       contraseña: '',
+      rol: 'user',
     });
     setErrors({});
     setTouchedFields(new Set());
@@ -169,10 +161,10 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
     handleInputChange('telefono', formateado);
   };
 
-  const getFieldClassName = (field: keyof CreateUserData): string => {
+  const getFieldClassName = (field: string): string => {
     let className = 'modal-form-group';
-    if (touchedFields.has(field) || errors[field]) {
-      if (errors[field]) {
+    if (touchedFields.has(field) || errors[field as keyof FormErrors]) {
+      if (errors[field as keyof FormErrors]) {
         className += ' modal-form-group--error';
       } else {
         className += ' modal-form-group--success';
@@ -267,6 +259,23 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave }) => {
                   <span className="modal-form-error">⚠ {errors.contraseña}</span>
                 )}
               </div>
+            </div>
+
+            {/* Campo Rol */}
+            <div className={getFieldClassName('rol')}>
+              <label htmlFor="rol">Rol de Usuario</label>
+              <select
+                id="rol"
+                value={formData.rol}
+                onChange={(e) => handleInputChange('rol', e.target.value)}
+                onBlur={() => handleFieldBlur('rol')}
+              >
+                <option value="user">Usuario Regular</option>
+                <option value="admin">Administrador</option>
+              </select>
+              {errors.rol && (
+                <span className="modal-form-error">⚠ {errors.rol}</span>
+              )}
             </div>
 
             {/* reCAPTCHA */}

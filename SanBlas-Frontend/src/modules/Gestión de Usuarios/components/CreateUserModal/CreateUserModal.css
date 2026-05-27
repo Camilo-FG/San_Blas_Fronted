@@ -119,22 +119,26 @@
 }
 
 /* Estados de validación */
-.modal-form-group--error input {
+.modal-form-group--error input,
+.modal-form-group--error select {
   border-color: #ef4444;
   background-color: #fef2f2;
 }
 
-.modal-form-group--error input:focus {
+.modal-form-group--error input:focus,
+.modal-form-group--error select:focus {
   border-color: #ef4444;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
-.modal-form-group--success input {
+.modal-form-group--success input,
+.modal-form-group--success select {
   border-color: #10b981;
   background-color: #f0fdf4;
 }
 
-.modal-form-group--success input:focus {
+.modal-form-group--success input:focus,
+.modal-form-group--success select:focus {
   border-color: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
