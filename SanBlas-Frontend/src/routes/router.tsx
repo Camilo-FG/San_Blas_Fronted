@@ -73,7 +73,7 @@ const historiaRoute = createRoute({
 const solicitudesSacramentosRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.SolicitudesSacramentos,
-  component: formSolic,
+  component: SolicSacramento,
 });
 
 const donacionesPublicasRoute = createRoute({

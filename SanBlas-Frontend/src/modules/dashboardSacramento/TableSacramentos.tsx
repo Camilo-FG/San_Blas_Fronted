@@ -1,17 +1,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
-import { useGetSolicitudes } from '../solicSacramento/Api/useGetSolicitudes';
-import { useUpdateSolicitudEstado } from '../solicSacramento/Api/useUpdateSolicitudEstado';
+import { useUpdateSolicitudEstado } from '../solicSacramento/hooks/useUpdateSolicitudEstado';
 import { FormSacramento } from 'src/types/formSacramento';
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { useGetSolicitudes } from '../solicSacramento/hooks/useGetSolicitudes';
 
 const columnHelper = createColumnHelper<FormSacramento>()
 
 const columns = [
-  columnHelper.accessor('id', {
-    header: () => 'ID',
-    cell: (info) => info.getValue(),
-  }),
   columnHelper.accessor('Nombre', {
     header: () => 'Nombre',
     cell: (info) => info.getValue(),

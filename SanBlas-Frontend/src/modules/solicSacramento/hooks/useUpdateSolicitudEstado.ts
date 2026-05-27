@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { saveSolicitud } from "./solicSacramentos-service";
+import { saveSolicitud } from "../Api/solicSacramentos-service";
 import { FormSacramento } from "src/types/formSacramento";
 
 type UpdateEstadoPayload = {
