@@ -21,7 +21,7 @@ import formSolic from "../modules/solicSacramento/components/FormSolic";
 import DashSacra from "../modules/dashboardSacramento/dashSacra";
 import DonacionInfo from "../modules/donaciones/components/DonacionInfo";
 import GestionSacramentos from "../modules/Registro de Sacramentos/Components/GestionSacramentos";
-import { UserList } from "src/modules/Gestión de Usuarios/components/UserList";
+import { UserList } from "src/modules/Gestión de Usuarios/components/UserList/UserList";
 // import Donaciones from "../modules/donaciones/pages/donaciones";
 
 function Placeholder({ title }: { title: string }) {

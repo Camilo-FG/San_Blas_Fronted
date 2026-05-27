@@ -12,11 +12,12 @@ import { Usuario } from 'src/types/Usuario';
 
 interface UserListProps {
     users: Usuario[];
+    onAddUser: () => void;
 }
 
 const columnHelper = createColumnHelper<Usuario>();
 
-export const UserList = ({ users }: UserListProps) => {
+export const UserList = ({ users, onAddUser }: UserListProps) => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState('');
 
@@ -78,6 +79,12 @@ export const UserList = ({ users }: UserListProps) => {
                     onChange={(e) => setGlobalFilter(e.target.value)}
                     className="user-search-input"
                 />
+                <button 
+                    onClick={onAddUser}
+                    className="user-add-button"
+                >
+                    + Agregar usuario
+                </button>
             </div>
             <table className="users-table">
                 <thead>
