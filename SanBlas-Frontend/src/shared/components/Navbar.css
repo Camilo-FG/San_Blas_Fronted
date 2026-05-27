@@ -27,9 +27,7 @@
     letter-spacing: 1.2px;
     text-transform: uppercase;
     white-space: nowrap;
-}
 
-.navbar__logo {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -81,35 +79,7 @@
     width: 100%;
 }
 
-@media (max-width: 900px) {
-    .navbar__container {
-        flex-direction: column;
-        padding: 18px 24px;
-    }
-
-    .navbar__menu {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 18px;
-    }
-}
-
-@media (max-width: 600px) {
-    .navbar__logo {
-        font-size: 18px;
-        text-align: center;
-    }
-
-    .navbar__menu {
-        flex-direction: column;
-        gap: 14px;
-    }
-
-    .navbar__link {
-        font-size: 12px;
-    }
-}
-
+/* Dropdown desktop */
 .navbar__dropdown {
     position: relative;
     display: flex;
@@ -154,4 +124,174 @@
 .navbar__submenu-link:hover {
     background-color: #f3f4f6;
     color: #8b5e00;
+}
+
+/* Botón hamburguesa */
+.navbar__mobile-button {
+    display: none;
+    border: none;
+    background: transparent;
+    color: #d4af37;
+    font-size: 30px;
+    cursor: pointer;
+    z-index: 1002;
+    transition: color 0.3s ease;
+    line-height: 1;
+    padding: 6px;
+}
+
+.navbar__mobile-button:hover {
+    color: #ffffff;
+}
+
+/* Panel móvil */
+.navbar__mobile-panel {
+    position: fixed;
+    top: 72px;
+    right: 0;
+    width: 100%;
+    max-width: 330px;
+    height: calc(100vh - 72px);
+    background: #003366;
+    z-index: 1001;
+    box-shadow: -12px 0 30px rgba(0, 0, 0, 0.35);
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+    animation: slideMenu 0.3s ease forwards;
+}
+
+@keyframes slideMenu {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.navbar__mobile-content {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 35px 28px;
+}
+
+.navbar__mobile-link {
+    color: #ffffff;
+    font-size: 20px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    text-decoration: none;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    text-align: left;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.navbar__mobile-link:hover {
+    color: #d4af37;
+}
+
+.navbar__mobile-section {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    padding-bottom: 14px;
+}
+
+.navbar__mobile-dropdown-button {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.navbar__mobile-submenu {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 14px;
+    padding-left: 16px;
+}
+
+.navbar__mobile-sublink {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.navbar__mobile-sublink:hover {
+    color: #d4af37;
+}
+
+/* Responsive tablet/mobile */
+@media (max-width: 900px) {
+    .navbar__container {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 24px;
+        gap: 16px;
+    }
+
+    .navbar__menu {
+        display: none;
+    }
+
+    .navbar__mobile-button {
+        display: block;
+    }
+}
+
+/* Responsive celulares */
+@media (max-width: 600px) {
+    .navbar__logo {
+        font-size: 18px;
+        text-align: left;
+        letter-spacing: 0.8px;
+    }
+
+    .navbar__logo-img {
+        width: 36px;
+        height: 36px;
+    }
+
+    .navbar__container {
+        padding: 12px 18px;
+    }
+
+    .navbar__mobile-panel {
+        top: 62px;
+        height: calc(100vh - 62px);
+    }
+}
+
+/* Responsive celulares muy pequeños */
+@media (max-width: 480px) {
+    .navbar__mobile-panel {
+        max-width: 100%;
+    }
+
+    .navbar__logo span {
+        font-size: 15px;
+    }
+
+    .navbar__logo-img {
+        width: 34px;
+        height: 34px;
+    }
+
+    .navbar__mobile-button {
+        font-size: 28px;
+    }
 }
