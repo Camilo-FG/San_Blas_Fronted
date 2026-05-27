@@ -74,7 +74,7 @@ function Navbar() {
             {serviciosAbierto && (
               <div className="navbar__submenu">
                 <Link
-                  to={Rutas.matriculaCatequesis}
+                  to={Rutas.FormsolicitudesCatequesis}
                   //!aun no lo he implementado
                   className="navbar__submenu-link"
                   onClick={() => setServiciosAbierto(false)}

@@ -22,6 +22,8 @@ import DashSacra from "../modules/dashboardSacramento/dashSacra";
 import DonacionInfo from "../modules/donaciones/components/DonacionInfo";
 import GestionSacramentos from "../modules/Registro de Sacramentos/Components/GestionSacramentos";
 import { UserList } from "src/modules/Gestión de Usuarios/components/UserList";
+import CatequesisForm from "../modules/dashboard/pages/catequesis/components/CatequesisForm";
+import CatequesisPage from "../modules/dashboard/pages/catequesis/pages/CatequesisPage";
 // import Donaciones from "../modules/donaciones/pages/donaciones";
 
 function Placeholder({ title }: { title: string }) {
@@ -79,6 +81,11 @@ const donacionesPublicasRoute = createRoute({
   path: Rutas.donacionesPublicas,
   component: donaciones,
 });
+const formsolicitudesCatequesisRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.FormsolicitudesCatequesis,
+  component: CatequesisPage,
+});
 
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -95,7 +102,7 @@ const dashboardHomeRoute = createRoute({
 const registroSacramentosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.registroSacramentos,
-  component: () => <GestionSacramentos/>,
+  component: () => <GestionSacramentos />,
 });
 
 const constanciasSacramentosRoute = createRoute({
@@ -134,17 +141,16 @@ const gestionLandingRoute = createRoute({
 const gestionUsuariosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.gestionUsuarios,
-  component:GestionUsuarios,
+  component: GestionUsuarios,
 });
 
 const routeTree = rootRoute.addChildren([
-
   homeRoute,
   sobreNosotrosRoute,
   historiaRoute,
   donacionesPublicasRoute,
   solicitudesSacramentosRoute,
-
+  formsolicitudesCatequesisRoute,
   dashboardRoute.addChildren([
     dashboardHomeRoute,
     registroSacramentosRoute,
@@ -155,7 +161,6 @@ const routeTree = rootRoute.addChildren([
     gestionLandingRoute,
     gestionUsuariosRoute,
   ]),
-
 ]);
 
 export const router = createRouter({
