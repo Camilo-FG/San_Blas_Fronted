@@ -8,21 +8,22 @@ export const useGetUserList = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    const cargarUsuarios = async () => {
+        setLoading(true);
+        try {
+            const data = await getUsers();
+            setUsers(data);
+        } catch (err) {
+            setError('Error al hacer fetch a los usuarios');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const cargarUsuarios = async () => {
-            try {
-                const data = await getUsers();
-                setUsers(data);
-            }catch(err) {
-                setError('error al hacer fetch a los usuarios');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         cargarUsuarios();
-    }, [])
+    }, []);
 
-    return { users, loading, error };
+    return { users, loading, error, refetch: cargarUsuarios };
 };
