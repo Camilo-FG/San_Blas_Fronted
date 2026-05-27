@@ -1,8 +1,13 @@
+import heroImage from "../../../assets/Iglesia.webp";
 import "./HeroSection.css";
 
 function HeroSection() {
   return (
-    <section className="hero" id="inicio">
+    <section
+      className="hero"
+      id="inicio"
+      style={{ backgroundImage: `url(${heroImage})` }}
+    >
       <div className="hero__overlay"></div>
 
       <div className="hero__content">
@@ -22,11 +27,17 @@ function HeroSection() {
         </p>
 
         <div className="hero__buttons">
-          <a href="/horarios" className="hero__button hero__button--primary">
+          <a
+            href="/horarios"
+            className="hero__button hero__button--primary"
+          >
             Horarios de misa
           </a>
 
-          <a href="/sacramentos" className="hero__button hero__button--secondary">
+          <a
+            href="/sacramentos"
+            className="hero__button hero__button--secondary"
+          >
             Trámites
           </a>
         </div>
