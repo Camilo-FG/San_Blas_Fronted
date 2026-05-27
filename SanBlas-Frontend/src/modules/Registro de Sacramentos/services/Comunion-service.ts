@@ -1,4 +1,4 @@
-import { RegistroComunion } from "src/types/registroSacramento";
+import { RegistroComunion } from "../../../types/registroSacramento";
 import { apiComunion } from "../Api/ApiConfigComunion";
 
 const BIN_ID = import.meta.env.VITE_COMUNION_BIN_ID;

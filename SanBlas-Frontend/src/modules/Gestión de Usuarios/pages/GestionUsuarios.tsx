@@ -3,8 +3,10 @@ import { UserList } from '../components/UserList/UserList';
 import CreateUserModal from '../components/CreateUserModal/CreateUserModal';
 import { useGetUserList } from '../hooks/hooksUsuarios/useGetUserList'
 import { usePutUser } from '../hooks/hooksUsuarios/usePutUser';
-import { Usuario } from 'src/types/Usuario';
+import { Usuario } from "../../../types/Usuario";
+
 import "./GestionUsuarios.css";
+
 
 const GestionUsuarios = () => {
 

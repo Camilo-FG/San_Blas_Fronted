@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
+import ReCAPTCHA from 'react-google-recaptcha';
 import "./FormSolic.css";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
+import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 
 const FormSolic = () => {
   const { mutateAsync, isPending } = useCreateSolicSacramento();
   const [enviado, setEnviado] = useState(false);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const { captchaRef, captchaToken, handleCaptchaChange, handleCaptchaExpired, resetCaptcha } = useCaptcha();
 
   const form = useForm({
     defaultValues: {
@@ -20,8 +24,15 @@ const FormSolic = () => {
     },
        onSubmit: async ({ value }: any) => {
 
+      if (!captchaToken) {
+        setCaptchaError('Por favor completá el reCAPTCHA.');
+        return;
+      }
+
       await mutateAsync({ ...value, Estado: 'Pendiente' });
       form.reset();
+      setCaptchaError(null);
+      resetCaptcha();
       setEnviado(true);
     },
  
@@ -29,6 +40,8 @@ const FormSolic = () => {
 
   const handleHacerOtraSolicitud = () => {
     form.reset();
+    setCaptchaError(null);
+    resetCaptcha();
     setEnviado(false);
   };
 
@@ -232,6 +245,21 @@ const FormSolic = () => {
               </>
             )}
           />
+        </div>
+
+        <div className="form-solic__field form-solic__field--full form-solic__captcha">
+          <ReCAPTCHA
+            ref={captchaRef}
+            sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+            onChange={(token: string | null) => {
+              handleCaptchaChange(token);
+              if (token) {
+                setCaptchaError(null);
+              }
+            }}
+            onExpired={handleCaptchaExpired}
+          />
+          {captchaError && <span className="form-solic__error">⚠ {captchaError}</span>}
         </div>
 
         <button className="form-solic__submit" type="submit" disabled={isPending}>

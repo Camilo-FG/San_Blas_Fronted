@@ -1,4 +1,4 @@
-import { RegistroBautismo } from "src/types/registroSacramento";
+import { RegistroBautismo } from "../../../types/registroSacramento";
 import { apiBautismo } from "../Api/ApiConfigBautismo";
 
 const BIN_ID = import.meta.env.VITE_BAUTISMO_BIN_ID;

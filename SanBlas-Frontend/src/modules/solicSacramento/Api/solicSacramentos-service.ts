@@ -1,4 +1,4 @@
-import { FormSacramento } from "src/types/formSacramento";
+import { FormSacramento } from "../../../types/formSacramento";
 import { apiClient } from "./apiConfig";
 
 //usando Axios

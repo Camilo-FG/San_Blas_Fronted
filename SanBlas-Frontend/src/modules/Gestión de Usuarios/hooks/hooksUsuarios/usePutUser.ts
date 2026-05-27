@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Usuario } from "src/types/Usuario";
+import { Usuario } from "../../../../types/Usuario";
 import { getUsers, putUser } from "../../services/userServices";
 
 export const usePutUser = () => {

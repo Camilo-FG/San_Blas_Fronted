@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import './CreateUserModal.css';
-import { Usuario } from 'src/types/Usuario';
+import { Usuario } from '../../../../types/Usuario';
+import { useCaptcha } from '../../../../shared/hooks/useCaptcha';
 
 interface Props {
   isOpen: boolean;
@@ -28,7 +29,6 @@ interface FormErrors {
 }
 
 const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) => {
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreateUserData>({
     nombre: '',
     correo: '',
@@ -38,7 +38,7 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
-  const captchaRef = useRef<ReCAPTCHA>(null);
+  const { captchaRef, captchaToken, handleCaptchaChange, handleCaptchaExpired, resetCaptcha } = useCaptcha();
 
   if (!isOpen) return null;
 
@@ -149,8 +149,7 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
     });
     setErrors({});
     setTouchedFields(new Set());
-    setCaptchaToken(null);
-    captchaRef.current?.reset();
+    resetCaptcha();
   };
 
   const handleTelefono = (value: string) => {
@@ -284,7 +283,7 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
                 ref={captchaRef}
                 sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
                 onChange={(token: string | null) => {
-                  setCaptchaToken(token);
+                  handleCaptchaChange(token);
                   if (token) {
                     setErrors((prev) => ({
                       ...prev,
@@ -292,7 +291,7 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
                     }));
                   }
                 }}
-                onExpired={() => setCaptchaToken(null)}
+                onExpired={handleCaptchaExpired}
               />
               {errors.captcha && (
                 <span className="modal-form-error">⚠ {errors.captcha}</span>

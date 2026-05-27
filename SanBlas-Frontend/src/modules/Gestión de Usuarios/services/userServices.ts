@@ -1,4 +1,4 @@
-import { UserResponse, Usuario } from 'src/types/Usuario';
+import { UserResponse, Usuario } from '../../../types/Usuario';
 import { apiUsers } from '../api/apiUsers';
 
 const BIN_ID = import.meta.env.VITE_USER_BIN_ID;

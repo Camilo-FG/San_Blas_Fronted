@@ -1,4 +1,4 @@
-import { RegistroConfirmacion } from "src/types/registroSacramento";
+import { RegistroConfirmacion } from "../../../types/registroSacramento";
 import { apiConfirma } from "../Api/ApiConfigConfirma";
 
 const BIN_ID = import.meta.env.VITE_CONFIRMACION_BIN_ID;

@@ -1,4 +1,4 @@
-import { RegistroConfirmacion, RegistroMatrimonio } from "src/types/registroSacramento";
+import { RegistroConfirmacion, RegistroMatrimonio } from "../../../types/registroSacramento";
 import { apiConfirma } from "../Api/ApiConfigConfirma";
 import { apiMatrimonio } from "../Api/ApiConfigMatrimonio";
 

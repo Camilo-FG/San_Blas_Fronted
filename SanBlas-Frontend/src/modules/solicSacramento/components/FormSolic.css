@@ -54,6 +54,13 @@
     grid-column: 1 / -1;
 }
 
+.form-solic__captcha {
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f9fafb;
+}
+
 .form-solic__field label {
     color: #003366;
     font-size: 0.92rem;
@@ -82,6 +89,14 @@
 
 .form-solic__input::placeholder {
     color: #9ca3af;
+}
+
+.form-solic__error {
+    display: block;
+    margin-top: 8px;
+    color: #ef4444;
+    font-size: 0.84rem;
+    font-weight: 600;
 }
 
 .form-solic__input select,

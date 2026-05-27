@@ -9,7 +9,8 @@ import {
     getPaginationRowModel,
     SortingState,
 } from '@tanstack/react-table';
-import { Usuario } from 'src/types/Usuario';
+import { Usuario } from '../../../../types/Usuario';
+import { usePagination } from '../../../../shared/hooks/usePagination';
 
 interface UserListProps {
     users: Usuario[];
@@ -71,6 +72,16 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
         getPaginationRowModel: getPaginationRowModel(),
     });
 
+    const {
+        totalItems,
+        currentPage,
+        totalPages,
+        canPreviousPage,
+        canNextPage,
+        goToPreviousPage,
+        goToNextPage,
+    } = usePagination(table);
+
     return (
         <div className="user-list-container">
             <div className="user-search-wrapper">
@@ -127,22 +138,22 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
 
             <div className="table-footer">
                 <span className="table-records-count">
-                    Total de registros: <strong>{table.getFilteredRowModel().rows.length}</strong>
+                    Total de registros: <strong>{totalItems}</strong>
                 </span>
                 <div className="pagination-controls">
                     <button
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
+                        onClick={goToPreviousPage}
+                        disabled={!canPreviousPage}
                         className="pagination-btn"
                     >
                         ← Anterior
                     </button>
                     <span className="pagination-info">
-                        Página <strong>{table.getState().pagination.pageIndex + 1}</strong> de <strong>{table.getPageCount()}</strong>
+                        Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
                     </span>
                     <button
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
+                        onClick={goToNextPage}
+                        disabled={!canNextPage}
                         className="pagination-btn"
                     >
                         Siguiente →

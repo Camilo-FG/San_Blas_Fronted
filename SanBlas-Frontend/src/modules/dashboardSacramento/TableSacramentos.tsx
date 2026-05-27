@@ -1,9 +1,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useUpdateSolicitudEstado } from '../solicSacramento/hooks/useUpdateSolicitudEstado';
-import { FormSacramento } from 'src/types/formSacramento';
-import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { FormSacramento } from '../../types/formSacramento';
+import { createColumnHelper, flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table';
 import { useGetSolicitudes } from '../solicSacramento/hooks/useGetSolicitudes';
+import { usePagination } from '../../shared/hooks/usePagination';
+
 
 const columnHelper = createColumnHelper<FormSacramento>()
 
@@ -83,7 +85,21 @@ const TableSacramentos = () => {
     data: filtered,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    initialState: {
+      pagination: { pageSize: 7 },
+    },
+    getPaginationRowModel: getPaginationRowModel(),
   });
+
+  const {
+    totalItems,
+    currentPage,
+    totalPages,
+    canPreviousPage,
+    canNextPage,
+    goToPreviousPage,
+    goToNextPage,
+  } = usePagination(table);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value || '');
 
@@ -157,6 +173,35 @@ const TableSacramentos = () => {
             ))}
           </tbody>
         </table>
+      )}
+
+      {!isPending && table.getRowModel().rows.length > 0 && (
+        <div className="table-footer">
+          <span className="table-records-count">
+            Total de registros: <strong>{totalItems}</strong>
+          </span>
+          <div className="pagination-controls">
+            <button
+              type="button"
+              onClick={goToPreviousPage}
+              disabled={!canPreviousPage}
+              className="pagination-btn"
+            >
+              ← Anterior
+            </button>
+            <span className="pagination-info">
+              Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+            </span>
+            <button
+              type="button"
+              onClick={goToNextPage}
+              disabled={!canNextPage}
+              className="pagination-btn"
+            >
+              Siguiente →
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

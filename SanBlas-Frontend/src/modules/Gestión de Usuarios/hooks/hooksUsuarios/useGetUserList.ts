@@ -1,6 +1,6 @@
 //los hooks usan a los servicios
 import { useEffect, useState } from "react";
-import { Usuario } from "src/types/Usuario";
+import { Usuario } from "../../../../types/Usuario";
 import { getUsers } from "../../services/userServices";
 
 export const useGetUserList = () => {
