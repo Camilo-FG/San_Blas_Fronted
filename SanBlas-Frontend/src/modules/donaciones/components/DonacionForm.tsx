@@ -116,12 +116,13 @@ const handleSubmit = async () => {
         const donacionesActuales = resultadoGet.record?.donaciones || [];
 
         // 2. Crear la nueva donación
-        const nuevaDonacion = {
-            ...formData,
-            fecha: new Date().toISOString(),
-            nombre: formData.anonimo ? 'Anónimo' : formData.nombre,
-            telefono: formData.anonimo ? 'N/A' : formData.telefono
-        };
+const nuevaDonacion = {
+    ...formData,
+    fecha: new Date().toISOString(),
+    nombre: formData.anonimo ? 'Anónimo' : formData.nombre,
+    telefono: formData.anonimo ? 'N/A' : formData.telefono,
+    estado: 'Pendiente' // <-- Cambio mínimo: guarda el estado inicial
+};
 
         // 3. Guardar todo actualizado de vuelta en JSONBin
         const guardarResponse = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
