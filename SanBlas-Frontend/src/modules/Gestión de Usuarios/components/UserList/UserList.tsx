@@ -11,6 +11,7 @@ import {
 } from '@tanstack/react-table';
 import { Usuario } from '../../../../types/Usuario';
 import { usePagination } from '../../../../shared/hooks/usePagination';
+import UpdateUserModal from '../UpdateUserModal/UpdateUserModal';
 
 interface UserListProps {
     users: Usuario[];
@@ -22,6 +23,7 @@ const columnHelper = createColumnHelper<Usuario>();
 export const UserList = ({ users, onAddUser }: UserListProps) => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState('');
+    const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
 
     //se inverte el array para mostrar  usuarios más recientes primero
     const sortedUsers = useMemo(() => {
@@ -63,6 +65,18 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
                 header: 'Fecha de Creación',
                 cell: (info) => new Date(info.getValue()).toLocaleDateString('es-ES'),
             }),
+            columnHelper.display({       
+            id: 'acciones',
+            header: 'Acciones',
+            cell: ({ row }) => (
+                <button
+                    className="user-edit-button"
+                    onClick={() => setUsuarioEditando(row.original)}
+                >
+                    ✏ Editar
+                </button>
+            ),
+        }),
         ],
         []
     );
@@ -170,6 +184,17 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
                     </button>
                 </div>
             </div>
+
+            <UpdateUserModal        
+            isOpen={usuarioEditando !== null}
+            onClose={() => setUsuarioEditando(null)}
+            onSave={(data) => {
+                console.log('Datos a actualizar:', data, 'ID:', usuarioEditando?.ID);
+                setUsuarioEditando(null);
+            }}
+            usuario={usuarioEditando}
+            users={users}
+        />
         </div>
     );
 };
