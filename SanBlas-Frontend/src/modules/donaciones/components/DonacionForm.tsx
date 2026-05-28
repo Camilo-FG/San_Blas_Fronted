@@ -31,6 +31,11 @@ export default function DonacionForm(): React.JSX.Element {
     const [errors, setErrors] = useState<FormErrors>({});
     const { captchaRef, captchaToken, handleCaptchaChange, handleCaptchaExpired, resetCaptcha } = useCaptcha();
     const [enviado, setEnviado] = useState<boolean>(false); 
+    const [cargando, setCargando] = useState<boolean>(false);
+
+    const BIN_ID = import.meta.env.VITE_DONACION_BIN_ID;
+    const ACCESS_KEY = import.meta.env.VITE_ACCESS_KEY_DONACION;
+    const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
     const validar = (): boolean => {
         const nuevosErrores: FormErrors = {};
@@ -94,15 +99,55 @@ export default function DonacionForm(): React.JSX.Element {
         handleChange('telefono', formateado);
     };
 
-    const handleSubmit = () => {
-        if (!validar()) return;
-        
-        console.log('Donación lista para enviar:', formData);
-        
+const handleSubmit = async () => {
+    if (!validar()) return;
+    
+    setCargando(true);
+
+    try {
+        // 1. Obtener los datos actuales de JSONBin
+        const obtenerResponse = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+            method: 'GET',
+            headers: { 'X-Master-Key': ACCESS_KEY }
+        });
+
+        if (!obtenerResponse.ok) throw new Error('Error al obtener datos');
+        const resultadoGet = await obtenerResponse.json();
+        const donacionesActuales = resultadoGet.record?.donaciones || [];
+
+        // 2. Crear la nueva donación
+const nuevaDonacion = {
+    ...formData,
+    fecha: new Date().toISOString(),
+    nombre: formData.anonimo ? 'Anónimo' : formData.nombre,
+    telefono: formData.anonimo ? 'N/A' : formData.telefono,
+    estado: 'Pendiente' // <-- Cambio mínimo: guarda el estado inicial
+};
+
+        // 3. Guardar todo actualizado de vuelta en JSONBin
+        const guardarResponse = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': ACCESS_KEY
+            },
+            body: JSON.stringify({ donaciones: [...donacionesActuales, nuevaDonacion] })
+        });
+
+        if (!guardarResponse.ok) throw new Error('Error al guardar');
+
+        // Todo salió bien
         setEnviado(true);
         setFormData({ anonimo: false, nombre: '', correo: '', telefono: '', detalle: '' });
         resetCaptcha();
-    };
+
+    } catch (error) {
+        console.error(error);
+        alert('Hubo un problema al enviar la donación. Inténtalo de nuevo.');
+    } finally {
+        setCargando(false);
+    }
+};
 
     const handleHacerOtraDonacion = () => {
         setFormData({ anonimo: false, nombre: '', correo: '', telefono: '', detalle: '' });
@@ -219,9 +264,9 @@ export default function DonacionForm(): React.JSX.Element {
                     </div>
 
                     <div className="captcha-container">
-                        <ReCAPTCHA
+                       <ReCAPTCHA
                             ref={captchaRef}
-                            sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                            sitekey={RECAPTCHA_KEY}
                             onChange={(token: string | null) => {
                                 handleCaptchaChange(token);
                                 setErrors(prev => ({ ...prev, captcha: undefined }));
@@ -231,7 +276,7 @@ export default function DonacionForm(): React.JSX.Element {
                         {errors.captcha && <span className="form-error">⚠ {errors.captcha}</span>}
                     </div>
 
-                    <button onClick={handleSubmit} className="btn-enviar">
+                    <button onClick={handleSubmit} className="btn-enviar" disabled={cargando}>
                         Enviar Donación
                     </button>
                 </>
