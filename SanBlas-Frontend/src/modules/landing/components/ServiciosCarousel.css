@@ -12,7 +12,7 @@
 }
 
 .servicios-carousel__header {
-    max-width: 600px;
+    max-width: 620px;
     margin: 0 auto 48px;
     text-align: center;
 }
@@ -28,16 +28,18 @@
 }
 
 .servicios-carousel__header h2 {
-    font-size: 38px;
+    font-size: clamp(30px, 4vw, 42px);
     color: #172554;
     margin: 0;
     font-family: Georgia, serif;
+    line-height: 1.15;
 }
 
 .servicios-carousel__header p {
     color: #6b7280;
-    font-size: 14px;
-    margin-top: 10px;
+    font-size: 15px;
+    line-height: 1.7;
+    margin: 12px 0 0;
 }
 
 .servicios-carousel__wrapper {
@@ -51,7 +53,6 @@
 
 .servicios-carousel__track {
     display: flex;
-    gap: 24px;
 }
 
 .servicios-carousel__card {
@@ -60,9 +61,14 @@
     border-radius: 28px;
     overflow: hidden;
     min-height: 460px;
+
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+
+    margin: 0 12px;
+    box-sizing: border-box;
+
     transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
@@ -100,12 +106,15 @@
     top: 16px;
     left: 16px;
     z-index: 2;
+
     background: rgba(255, 255, 255, 0.95);
     color: #73522f;
+
     font-size: 10px;
     font-weight: 800;
     padding: 6px 12px;
     border-radius: 999px;
+
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
@@ -122,11 +131,13 @@
 }
 
 .servicios-carousel__icon {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 12px;
+
     background: rgba(23, 37, 84, 0.06);
     color: #b7832f;
+
     display: flex;
     align-items: center;
     justify-content: center;
@@ -134,17 +145,18 @@
 }
 
 .servicios-carousel__title-row h3 {
-    font-size: 15px;
+    font-size: 16px;
     color: #111827;
     margin: 0;
     font-family: Georgia, serif;
+    line-height: 1.25;
 }
 
 .servicios-carousel__body p {
     color: #6b7280;
-    font-size: 12px;
-    line-height: 1.7;
-    margin-top: 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    margin: 14px 0 0;
 }
 
 .servicios-carousel__footer {
@@ -159,19 +171,25 @@
     text-decoration: none;
     border-radius: 14px;
     padding: 13px 16px;
+
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.12em;
     text-transform: uppercase;
+
     cursor: pointer;
     display: flex;
     justify-content: center;
-    transition: all 0.25s ease;
+    align-items: center;
+    text-align: center;
+
+    transition: background-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
 }
 
 .servicios-carousel__button:hover {
     background: #172554;
     color: #ffffff;
+    transform: translateY(-2px);
 }
 
 .servicios-carousel__arrow {
@@ -179,17 +197,21 @@
     top: 50%;
     transform: translateY(-50%);
     z-index: 5;
+
     width: 42px;
     height: 42px;
     border-radius: 50%;
+
     border: 1px solid #e5e7eb;
     background: #ffffff;
     color: #172554;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     cursor: pointer;
-    transition: color 0.25s ease, box-shadow 0.25s ease;
+    transition: color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 
 .servicios-carousel__arrow:hover {
@@ -227,13 +249,16 @@
     background: #b7832f;
 }
 
+/* Modal */
 .servicios-modal {
     position: fixed;
     inset: 0;
-    z-index: 1000;
+    z-index: 2000;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     padding: 24px;
 }
 
@@ -247,11 +272,14 @@
 .servicios-modal__content {
     position: relative;
     z-index: 2;
+
     width: 100%;
     max-width: 540px;
+
     background: #ffffff;
     border-radius: 28px;
     overflow: hidden;
+
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
 }
 
@@ -270,13 +298,27 @@
     position: absolute;
     top: 16px;
     right: 16px;
+
     width: 36px;
     height: 36px;
+
     border: none;
     border-radius: 50%;
+
     background: rgba(255, 255, 255, 0.95);
     color: #172554;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
     cursor: pointer;
+    transition: background-color 0.25s ease, transform 0.25s ease;
+}
+
+.servicios-modal__close:hover {
+    background: #ffffff;
+    transform: scale(1.05);
 }
 
 .servicios-modal__body {
@@ -291,9 +333,11 @@
     color: #73522f;
     padding: 6px 12px;
     border-radius: 999px;
+
     font-size: 10px;
     font-weight: 800;
     text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 .servicios-modal__body h3 {
@@ -301,12 +345,14 @@
     font-size: 24px;
     margin: 12px 0 4px;
     font-family: Georgia, serif;
+    line-height: 1.2;
 }
 
 .servicios-modal__subtitle {
-    font-size: 12px;
+    font-size: 13px;
     color: #73522f;
     font-style: italic;
+    margin-bottom: 16px;
 }
 
 .servicios-modal__body p,
@@ -324,30 +370,54 @@
     margin-top: 20px;
 }
 
+.servicios-modal__body ul {
+    padding-left: 20px;
+    margin: 10px 0 0;
+}
+
+.servicios-modal__body li {
+    margin-bottom: 6px;
+}
+
 .servicios-modal__info {
     margin-top: 18px;
     padding: 16px;
     border-radius: 18px;
+
     background: rgba(183, 131, 47, 0.08);
+
     display: flex;
     gap: 12px;
     color: #b7832f;
+}
+
+.servicios-modal__info svg {
+    flex-shrink: 0;
+    margin-top: 2px;
 }
 
 .servicios-modal__info strong {
     color: #172554;
 }
 
+.servicios-modal__info p {
+    margin: 6px 0 0;
+}
+
 .servicios-modal__info small {
     display: flex;
     align-items: center;
     gap: 4px;
+
+    margin-top: 8px;
     color: #6b7280;
+    line-height: 1.4;
 }
 
 .servicios-modal__footer {
     padding: 18px 24px;
     background: #f9fafb;
+
     display: flex;
     justify-content: flex-end;
 }
@@ -356,36 +426,167 @@
     border: none;
     background: #172554;
     color: #ffffff;
+
     padding: 12px 22px;
     border-radius: 14px;
+
     font-weight: 800;
     text-transform: uppercase;
     font-size: 12px;
+
     cursor: pointer;
+    transition: background-color 0.25s ease, transform 0.25s ease;
 }
 
 .servicios-modal__footer button:hover {
     background: #b7832f;
+    transform: translateY(-2px);
 }
 
+/* Focus accesible */
+.servicios-carousel__button:focus-visible,
+.servicios-carousel__arrow:focus-visible,
+.servicios-carousel__dot:focus-visible,
+.servicios-modal__close:focus-visible,
+.servicios-modal__footer button:focus-visible {
+    outline: 3px solid rgba(183, 131, 47, 0.45);
+    outline-offset: 3px;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+    .servicios-carousel {
+        padding: 76px 0;
+    }
+
+    .servicios-carousel__wrapper {
+        padding: 0 22px;
+    }
+
+    .servicios-carousel__card {
+        min-height: 450px;
+    }
+}
+
+/* Celular */
 @media (max-width: 640px) {
     .servicios-carousel {
-        padding: 64px 0;
+        padding: 60px 0;
+    }
+
+    .servicios-carousel__container {
+        padding: 0 16px;
+    }
+
+    .servicios-carousel__header {
+        margin-bottom: 32px;
+    }
+
+    .servicios-carousel__header span {
+        font-size: 10px;
+        letter-spacing: 0.18em;
     }
 
     .servicios-carousel__header h2 {
         font-size: 30px;
     }
 
+    .servicios-carousel__header p {
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
     .servicios-carousel__wrapper {
-        padding: 0 12px;
+        padding: 0;
     }
 
-    .servicios-carousel__arrow--left {
-        left: -8px;
+    .servicios-carousel__card {
+        min-height: 430px;
+        border-radius: 22px;
+        margin: 0;
     }
 
-    .servicios-carousel__arrow--right {
-        right: -8px;
+    .servicios-carousel__image-box {
+        height: 165px;
+    }
+
+    .servicios-carousel__body {
+        padding: 20px;
+    }
+
+    .servicios-carousel__title-row h3 {
+        font-size: 16px;
+    }
+
+    .servicios-carousel__body p {
+        font-size: 13px;
+    }
+
+    .servicios-carousel__footer {
+        padding: 0 20px 20px;
+    }
+
+    .servicios-carousel__arrow {
+        display: none;
+    }
+
+    .servicios-carousel__dots {
+        margin-top: 26px;
+    }
+
+    .servicios-modal {
+        padding: 16px;
+        align-items: flex-end;
+    }
+
+    .servicios-modal__content {
+        max-width: 100%;
+        border-radius: 24px 24px 0 0;
+        max-height: 90vh;
+    }
+
+    .servicios-modal__image {
+        height: 150px;
+    }
+
+    .servicios-modal__body {
+        max-height: 58vh;
+        padding: 20px;
+    }
+
+    .servicios-modal__body h3 {
+        font-size: 22px;
+    }
+
+    .servicios-modal__info {
+        padding: 14px;
+    }
+
+    .servicios-modal__footer {
+        padding: 16px 20px;
+    }
+
+    .servicios-modal__footer button {
+        width: 100%;
+    }
+}
+
+/* Celular muy pequeño */
+@media (max-width: 420px) {
+    .servicios-carousel__header h2 {
+        font-size: 27px;
+    }
+
+    .servicios-carousel__card {
+        min-height: 415px;
+    }
+
+    .servicios-carousel__image-box {
+        height: 155px;
+    }
+
+    .servicios-carousel__button {
+        font-size: 10px;
+        padding: 12px 14px;
     }
 }
