@@ -17,6 +17,9 @@ const Rutas = {
   FormsolicitudesCatequesis: "/solicitudes-catequesis",
   donacionesPublicas: "/donaciones",
   SolicitudesSacramentos: "/solicitudes-sacramentos",
+  bautizos: "/bautizos",
+  horarios: "/horarios",
+  contacto: "/contacto",
   dashboard: dashboardBase,
 
   dashboardPath,
