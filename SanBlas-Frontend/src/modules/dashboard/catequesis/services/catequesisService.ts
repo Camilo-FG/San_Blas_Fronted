@@ -16,11 +16,17 @@ export const getSolicitudesCatequesis = async (): Promise<
     },
   });
 
-  console.log("RESPUESTA COMPLETA JSONBIN:", response.data);
-  console.log("RECORD JSONBIN:", response.data.record);
-  console.log("SOLICITUDES:", response.data.record?.solicitudesCatequesis);
+  const solicitudes = response.data.record?.solicitudesCatequesis;
 
-  return response.data.record.solicitudesCatequesis;
+  console.log("RESPUESTA COMPLETA JSONBIN:", response.data);
+  console.log("SOLICITUDES:", solicitudes);
+
+  if (!Array.isArray(solicitudes)) {
+    console.error("Formato incorrecto en JSONBin:", response.data.record);
+    return [];
+  }
+
+  return solicitudes;
 };
 
 export const updateSolicitudesCatequesis = async (
@@ -39,5 +45,42 @@ export const updateSolicitudesCatequesis = async (
     },
   );
 
-  return response.data.record.solicitudesCatequesis;
+  const solicitudesActualizadas = response.data.record?.solicitudesCatequesis;
+
+  if (!Array.isArray(solicitudesActualizadas)) {
+    console.error("Error actualizando JSONBin:", response.data.record);
+    return [];
+  }
+
+  return solicitudesActualizadas;
+};
+
+export const crearSolicitudCatequesis = async (
+  nuevaSolicitud: CatequesisEnrollmentRecord,
+): Promise<CatequesisEnrollmentRecord[]> => {
+  const solicitudesActuales = await getSolicitudesCatequesis();
+
+  const solicitudesActualizadas = [...solicitudesActuales, nuevaSolicitud];
+
+  const response = await axios.put(
+    API_URL,
+    {
+      solicitudesCatequesis: solicitudesActualizadas,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Access-Key": ACCESS_KEY,
+      },
+    },
+  );
+
+  const solicitudesGuardadas = response.data.record?.solicitudesCatequesis;
+
+  if (!Array.isArray(solicitudesGuardadas)) {
+    console.error("Error guardando nueva solicitud:", response.data.record);
+    return [];
+  }
+
+  return solicitudesGuardadas;
 };
