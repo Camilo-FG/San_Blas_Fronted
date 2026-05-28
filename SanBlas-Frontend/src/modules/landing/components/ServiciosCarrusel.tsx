@@ -47,7 +47,7 @@ const SERVICES: ServiceItem[] = [
     category: "Formación de Fe",
     icon: BookOpen,
     buttonLabel: "Iniciar Inscripción",
-    linkTo: Rutas.dashboardUrl.solicitudesCatequesis,
+    linkTo: Rutas.FormsolicitudesCatequesis,
   },
   {
     id: "constancia",
@@ -152,12 +152,26 @@ export default function ServiciosCarousel() {
       } else {
         setCardsToShow(3);
       }
+
+      setCurrentIndex(0);
     };
 
     handleResize();
     window.addEventListener("resize", handleResize);
 
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedService(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
   const maxIndex = Math.max(0, SERVICES.length - cardsToShow);
@@ -186,8 +200,14 @@ export default function ServiciosCarousel() {
           <div className="servicios-carousel__viewport">
             <motion.div
               className="servicios-carousel__track"
-              animate={{ x: `-${currentIndex * (100 / cardsToShow)}%` }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              animate={{
+                x: `-${currentIndex * (100 / SERVICES.length)}%`,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+              }}
               style={{
                 width: `${(SERVICES.length / cardsToShow) * 100}%`,
               }}
@@ -199,7 +219,9 @@ export default function ServiciosCarousel() {
                   <article
                     key={service.id}
                     className="servicios-carousel__card"
-                    style={{ width: `calc(100% / ${SERVICES.length})` }}
+                    style={{
+                      width: `calc(100% / ${SERVICES.length})`,
+                    }}
                   >
                     <div>
                       <div className="servicios-carousel__image-box">
@@ -207,6 +229,7 @@ export default function ServiciosCarousel() {
                           src={service.image}
                           alt={service.title}
                         />
+
                         <span>{service.category}</span>
                       </div>
 
@@ -215,6 +238,7 @@ export default function ServiciosCarousel() {
                           <div className="servicios-carousel__icon">
                             <Icon size={18} />
                           </div>
+
                           <h3>{service.title}</h3>
                         </div>
 
@@ -252,6 +276,7 @@ export default function ServiciosCarousel() {
                 type="button"
                 className="servicios-carousel__arrow servicios-carousel__arrow--left"
                 onClick={handlePrev}
+                aria-label="Ver servicios anteriores"
               >
                 <ChevronLeft size={22} />
               </button>
@@ -260,6 +285,7 @@ export default function ServiciosCarousel() {
                 type="button"
                 className="servicios-carousel__arrow servicios-carousel__arrow--right"
                 onClick={handleNext}
+                aria-label="Ver siguientes servicios"
               >
                 <ChevronRight size={22} />
               </button>
@@ -273,6 +299,7 @@ export default function ServiciosCarousel() {
               <button
                 key={index}
                 type="button"
+                aria-label={`Ir al grupo de servicios ${index + 1}`}
                 className={`servicios-carousel__dot ${
                   currentIndex === index
                     ? "servicios-carousel__dot--active"
@@ -301,6 +328,9 @@ export default function ServiciosCarousel() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="servicios-modal-title"
             >
               <div className="servicios-modal__image">
                 <img
@@ -312,6 +342,7 @@ export default function ServiciosCarousel() {
                   type="button"
                   className="servicios-modal__close"
                   onClick={() => setSelectedService(null)}
+                  aria-label="Cerrar información del servicio"
                 >
                   <X size={18} />
                 </button>
@@ -322,7 +353,8 @@ export default function ServiciosCarousel() {
                   {selectedService.category}
                 </span>
 
-                <h3>{selectedService.title}</h3>
+                <h3 id="servicios-modal-title">{selectedService.title}</h3>
+
                 <p className="servicios-modal__subtitle">
                   {selectedService.modalDetails.subtitle}
                 </p>
@@ -331,6 +363,7 @@ export default function ServiciosCarousel() {
 
                 <div className="servicios-modal__info">
                   <Clock size={20} />
+
                   <div>
                     <strong>Horario y cronogramas:</strong>
                     <p>{selectedService.modalDetails.schedule}</p>
@@ -339,10 +372,11 @@ export default function ServiciosCarousel() {
 
                 <div>
                   <h4>Requisitos obligatorios</h4>
+
                   <ul>
                     {selectedService.modalDetails.requirements.map(
-                      (req, index) => (
-                        <li key={index}>{req}</li>
+                      (requirement, index) => (
+                        <li key={index}>{requirement}</li>
                       ),
                     )}
                   </ul>
@@ -350,12 +384,14 @@ export default function ServiciosCarousel() {
 
                 <div className="servicios-modal__info">
                   <PhoneCall size={20} />
+
                   <div>
                     <strong>Contacto:</strong>
                     <p>{selectedService.modalDetails.contact}</p>
+
                     <small>
-                      <MapPin size={14} /> Parroquia San Blas, Nicoya,
-                      Guanacaste
+                      <MapPin size={14} />
+                      Parroquia San Blas, Nicoya, Guanacaste
                     </small>
                   </div>
                 </div>

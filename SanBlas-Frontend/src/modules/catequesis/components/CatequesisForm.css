@@ -1,0 +1,307 @@
+.catequesis-form {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+/* Tarjetas de secciones */
+.form-section {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 22px;
+    padding: 28px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+/* Encabezado de cada sección */
+.section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+
+    border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+    padding-bottom: 14px;
+    margin-bottom: 24px;
+}
+
+.section-header h2 {
+    margin: 0;
+    color: #003366;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 23px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.section-header p {
+    margin: 6px 0 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.section-header span {
+    background: rgba(212, 175, 55, 0.16);
+    color: #8b5e00;
+    border: 1px solid rgba(212, 175, 55, 0.35);
+
+    padding: 7px 12px;
+    border-radius: 999px;
+
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+/* Grid del formulario */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+@media (min-width: 800px) {
+    .form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Campos */
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.form-field label {
+    color: #003366;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+
+    padding: 12px 14px;
+    font-size: 14px;
+    outline: none;
+
+    background: #ffffff;
+    color: #111827;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+    color: #9ca3af;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+    border-color: #d4af37;
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.18);
+    background-color: #fffdf7;
+}
+
+.form-field textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+/* Inputs de archivo */
+.form-field input[type="file"] {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.form-field input[type="file"]::file-selector-button {
+    border: none;
+    background: #003366;
+    color: #ffffff;
+
+    padding: 9px 14px;
+    margin-right: 12px;
+    border-radius: 10px;
+
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.form-field input[type="file"]::file-selector-button:hover {
+    background: #d4af37;
+    color: #003366;
+}
+
+/* Errores */
+.error-text {
+    margin: 0;
+    color: #dc2626;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+/* Cajas informativas */
+.payment-info,
+.lineamientos-box {
+    background: rgba(212, 175, 55, 0.12);
+    border: 1px solid rgba(212, 175, 55, 0.38);
+    border-radius: 16px;
+
+    padding: 16px;
+    margin-bottom: 18px;
+
+    color: #4b5563;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.payment-info p,
+.lineamientos-box p {
+    margin: 5px 0;
+}
+
+.payment-info strong,
+.lineamientos-box strong {
+    color: #003366;
+}
+
+/* Botón final */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 10px;
+}
+
+.submit-button {
+    background: #003366;
+    color: #ffffff;
+
+    border: none;
+    border-radius: 14px;
+
+    padding: 14px 30px;
+
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+
+    cursor: pointer;
+
+    box-shadow: 0 14px 28px rgba(0, 51, 102, 0.18);
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.submit-button:hover {
+    background: #d4af37;
+    color: #003366;
+    transform: translateY(-2px);
+    box-shadow: 0 16px 30px rgba(212, 175, 55, 0.25);
+}
+
+.submit-button:disabled {
+    background: #d1d5db;
+    color: #6b7280;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Focus accesible */
+.submit-button:focus-visible,
+.form-field input:focus-visible,
+.form-field select:focus-visible,
+.form-field textarea:focus-visible {
+    outline: 3px solid rgba(212, 175, 55, 0.38);
+    outline-offset: 2px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .catequesis-form {
+        margin: 24px auto;
+        padding: 0 14px;
+        gap: 22px;
+    }
+
+    .form-section {
+        padding: 20px;
+        border-radius: 18px;
+    }
+
+    .section-header {
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .section-header h2 {
+        font-size: 20px;
+    }
+
+    .section-header p {
+        font-size: 13px;
+    }
+
+    .section-header span {
+        font-size: 11px;
+        padding: 6px 11px;
+    }
+
+    .form-grid {
+        gap: 16px;
+    }
+
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+        font-size: 14px;
+        padding: 12px;
+    }
+
+    .payment-info,
+    .lineamientos-box {
+        font-size: 13px;
+        padding: 14px;
+    }
+
+    .form-actions {
+        justify-content: stretch;
+    }
+
+    .submit-button {
+        width: 100%;
+        padding: 14px 18px;
+        font-size: 13px;
+    }
+}

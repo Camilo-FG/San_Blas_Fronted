@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useCaptcha } from '../../../shared/hooks/useCaptcha';
+import './DonacionForm.css';
+
 interface FormData {
     anonimo: boolean;
     nombre: string;
@@ -17,7 +19,7 @@ interface FormErrors {
     captcha?: string;
 }
 
-export default function FormularioDonacion(): React.JSX.Element {
+export default function DonacionForm(): React.JSX.Element {
     const [formData, setFormData] = useState<FormData>({
         anonimo: false,
         nombre: '',
@@ -29,22 +31,24 @@ export default function FormularioDonacion(): React.JSX.Element {
     const [errors, setErrors] = useState<FormErrors>({});
     const { captchaRef, captchaToken, handleCaptchaChange, handleCaptchaExpired, resetCaptcha } = useCaptcha();
     const [enviado, setEnviado] = useState<boolean>(false); 
+    const [cargando, setCargando] = useState<boolean>(false);
+
+    const BIN_ID = import.meta.env.VITE_DONACION_BIN_ID;
+    const ACCESS_KEY = import.meta.env.VITE_ACCESS_KEY_DONACION;
+    const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
     const validar = (): boolean => {
         const nuevosErrores: FormErrors = {};
+        
         if (!captchaToken) {
-        nuevosErrores.captcha = 'Por favor completá el reCAPTCHA.';
-    }
+            nuevosErrores.captcha = 'Por favor completá el reCAPTCHA.';
+        }
 
-    setErrors(nuevosErrores);
-    return Object.keys(nuevosErrores).length === 0;
-        // 1. Validar NOMBRE COMPLETO (solo si NO es anónimo)
         if (!formData.anonimo) {
             const nombreTrim = formData.nombre.trim();
             if (!nombreTrim) {
                 nuevosErrores.nombre = 'El nombre completo es requerido.';
             } 
-            // Valida letras/acentos y exige al menos un espacio para asegurar Nombre y Apellido
             else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreTrim)) {
                 nuevosErrores.nombre = 'El nombre solo puede contener letras.';
             } 
@@ -53,7 +57,6 @@ export default function FormularioDonacion(): React.JSX.Element {
             }
         }
 
-        // 2. Validar CORREO GENERAL (Acepta gmail, hotmail, yahoo, institucionales, etc.)
         const correoTrim = formData.correo.trim();
         if (!correoTrim) {
             nuevosErrores.correo = 'El correo electrónico es requerido.';
@@ -61,7 +64,6 @@ export default function FormularioDonacion(): React.JSX.Element {
             nuevosErrores.correo = 'Ingresá un correo válido. Ej: nombre@dominio.com';
         }
 
-        // 3. Validar Teléfono (solo si NO es anónimo)
         if (!formData.anonimo) {
             if (!formData.telefono.trim()) {
                 nuevosErrores.telefono = 'El teléfono es requerido.';
@@ -70,7 +72,6 @@ export default function FormularioDonacion(): React.JSX.Element {
             }
         }
 
-        // 4. Validar Detalle (siempre requerido)
         if (!formData.detalle.trim()) {
             nuevosErrores.detalle = 'El detalle es requerido.';
         } else if (formData.detalle.trim().length < 10) {
@@ -98,221 +99,158 @@ export default function FormularioDonacion(): React.JSX.Element {
         handleChange('telefono', formateado);
     };
 
-    const handleSubmit = () => {
-        if (!validar()) return;
-        
-        console.log('Donación lista para enviar:', formData);
-        
-        setEnviado(true);
-        // Limpiamos el formulario tras un envío exitoso
-        setFormData({ anonimo: false, nombre: '', correo: '', telefono: '', detalle: '' });
-        resetCaptcha();
-    };
-
-    const handleHacerOtraDonacion = () => {
-    setFormData({ anonimo: false, nombre: '', correo: '', telefono: '', detalle: '' });
-    resetCaptcha();
-    setErrors({});
-    setEnviado(false); // Regresa al formulario interactivo
+const handleSubmit = async () => {
+    if (!validar()) return;
     
-    setTimeout(() => {
-        captchaRef.current?.reset();
-    }, 50);
+    setCargando(true);
+
+    try {
+        // 1. Obtener los datos actuales de JSONBin
+        const obtenerResponse = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+            method: 'GET',
+            headers: { 'X-Master-Key': ACCESS_KEY }
+        });
+
+        if (!obtenerResponse.ok) throw new Error('Error al obtener datos');
+        const resultadoGet = await obtenerResponse.json();
+        const donacionesActuales = resultadoGet.record?.donaciones || [];
+
+        // 2. Crear la nueva donación
+const nuevaDonacion = {
+    ...formData,
+    fecha: new Date().toISOString(),
+    nombre: formData.anonimo ? 'Anónimo' : formData.nombre,
+    telefono: formData.anonimo ? 'N/A' : formData.telefono,
+    estado: 'Pendiente' // <-- Cambio mínimo: guarda el estado inicial
 };
 
-    // Estilos visuales del museo
-    const inputStyle = (error?: string): React.CSSProperties => ({
-        width: '100%',
-        padding: '12px 14px',
-        borderRadius: '8px',
-        border: `2px solid ${error ? '#ef4444' : '#e5e7eb'}`,
-        fontSize: '0.95rem',
-        color: '#1F2937',
-        backgroundColor: '#FFFFFF',
-        outline: 'none',
-        boxSizing: 'border-box',
-        transition: 'border-color 0.2s'
-    });
+        // 3. Guardar todo actualizado de vuelta en JSONBin
+        const guardarResponse = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': ACCESS_KEY
+            },
+            body: JSON.stringify({ donaciones: [...donacionesActuales, nuevaDonacion] })
+        });
 
-    const errorStyle: React.CSSProperties = {
-        color: '#ef4444',
-        fontSize: '0.82rem',
-        marginTop: '4px',
-        display: 'block'
+        if (!guardarResponse.ok) throw new Error('Error al guardar');
+
+        // Todo salió bien
+        setEnviado(true);
+        setFormData({ anonimo: false, nombre: '', correo: '', telefono: '', detalle: '' });
+        resetCaptcha();
+
+    } catch (error) {
+        console.error(error);
+        alert('Hubo un problema al enviar la donación. Inténtalo de nuevo.');
+    } finally {
+        setCargando(false);
+    }
+};
+
+    const handleHacerOtraDonacion = () => {
+        setFormData({ anonimo: false, nombre: '', correo: '', telefono: '', detalle: '' });
+        resetCaptcha();
+        setErrors({});
+        setEnviado(false); 
+        
+        setTimeout(() => {
+            captchaRef.current?.reset();
+        }, 50);
     };
 
-    const labelStyle: React.CSSProperties = {
-        color: '#003366',
-        fontWeight: '600',
-        fontSize: '0.9rem',
-        marginBottom: '6px',
-        display: 'block'
-    };
-
-return (
-        <div style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '14px',
-            padding: '36px',
-            maxWidth: '700px',
-            margin: '0 auto',
-            boxShadow: '0 4px 16px rgba(0,51,102,0.08)',
-            border: enviado ? '2px solid #D4AF37' : '1px solid #e5e7eb', 
-            transition: 'all 0.3s ease'
-        }}>
-            {/* 1. ¡AQUÍ SE ABRE LA CONDICIÓN CORRECTAMENTE! */}
+    return (
+        <div className={`formulario-container ${enviado ? 'enviado' : ''}`}>
             {enviado ? (
-                /* VISTA DE ÉXITO */
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '20px 0',
-                    textAlign: 'center'
-                }}>
-                    {/* Checkmark Verde */}
-                    <div style={{
-                        width: '56px',
-                        height: '56px',
-                        backgroundColor: '#4ade80',
-                        borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '20px',
-                        boxShadow: '0 4px 12px rgba(74,222,128,0.3)'
-                    }}>
+                <div className="exito-container">
+                    <div className="checkmark-circle">
                         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                     </div>
 
-                    <h3 style={{ color: '#003366', fontSize: '1.4rem', fontWeight: 'bold', margin: '0 0 10px 0' }}>
+                    <h3 className="exito-titulo">
                         ¡Donación enviada con éxito!
                     </h3>
 
-                    <p style={{ color: '#4B5563', fontSize: '0.95rem', margin: '0 0 26px 0', maxWidth: '450px', lineHeight: '1.5' }}>
+                    <p className="exito-texto">
                         Gracias por tu generosidad. Nos pondremos en contacto con vos pronto.
                     </p>
 
-                    <button
-                        onClick={handleHacerOtraDonacion}
-                        style={{
-                            backgroundColor: '#003366',
-                            color: '#FFFFFF',
-                            border: 'none',
-                            padding: '12px 32px',
-                            borderRadius: '8px',
-                            fontSize: '0.95rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 10px rgba(0,51,102,0.2)',
-                            transition: 'opacity 0.2s'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-                        onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-                    >
+                    <button onClick={handleHacerOtraDonacion} className="btn-otra-donacion">
                         Hacer otra donación
                     </button>
                 </div>
             ) : (
-                /* VISTA DEL FORMULARIO CON TODOS SUS INPUTS */
                 <>
-                    <h3 style={{ color: '#003366', marginBottom: '6px', fontSize: '1.4rem' }}>
-                        🤲 Formulario de Donación de Insumos
+                    <h3 className="formulario-titulo">
+                        Formulario de Donación de Insumos
                     </h3>
-                    <p style={{ color: '#1F2937', marginBottom: '28px', fontSize: '0.95rem' }}>
+                    <p className="formulario-descripcion">
                         Completá el formulario para registrar tu donación de insumos.
                     </p>
 
-                    {/* Checkbox anónimo */}
-                    <div style={{
-                        backgroundColor: '#F9FAFB',
-                        border: '2px solid #D4AF37',
-                        borderRadius: '10px',
-                        padding: '16px 20px',
-                        marginBottom: '24px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        cursor: 'pointer'
-                    }}
-                        onClick={() => {
-                            setFormData(prev => ({ ...prev, anonimo: !prev.anonimo, nombre: '', telefono: '' }));
-                            setErrors(prev => ({ ...prev, nombre: undefined, telefono: undefined }));
-                        }}
-                    >
-                        <div style={{
-                            width: '22px',
-                            height: '22px',
-                            borderRadius: '6px',
-                            border: `2px solid ${formData.anonimo ? '#D4AF37' : '#003366'}`,
-                            backgroundColor: formData.anonimo ? '#D4AF37' : 'transparent',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0
-                        }}>
-                            {formData.anonimo && <span style={{ color: '#003366', fontWeight: 'bold', fontSize: '14px' }}>✓</span>}
+                    <div className="checkbox-anonimo-container" onClick={() => {
+                        setFormData(prev => ({ ...prev, anonimo: !prev.anonimo, nombre: '', telefono: '' }));
+                        setErrors(prev => ({ ...prev, nombre: undefined, telefono: undefined }));
+                    }}>
+                        <div className={`checkbox-box ${formData.anonimo ? 'checked' : ''}`}>
+                            {formData.anonimo && <span className="checkbox-check">✓</span>}
                         </div>
                         <div>
-                            <p style={{ margin: 0, fontWeight: '600', color: '#003366' }}>Donar de forma anónima</p>
-                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#1F2937' }}>
+                            <p className="checkbox-titulo">Donar de forma anónima</p>
+                            <p className="checkbox-subtitulo">
                                 {formData.anonimo ? 'Solo se pedirá tu correo y el detalle de la donación.' : 'Se pedirá nombre completo, correo, teléfono y detalle.'}
                             </p>
                         </div>
                     </div>
 
-                    {/* Nombre completo */}
                     {!formData.anonimo && (
-                        <div style={{ marginBottom: '20px' }}>
-                            <label style={labelStyle}>Nombre completo</label>
+                        <div className="form-group">
+                            <label className="form-label">Nombre completo</label>
                             <input
                                 type="text"
                                 placeholder="Ej: Juan Pérez González"
                                 value={formData.nombre}
                                 onChange={e => handleChange('nombre', e.target.value)}
-                                style={inputStyle(errors.nombre)}
+                                className={`form-input ${errors.nombre ? 'input-error' : ''}`}
                             />
-                            {errors.nombre && <span style={errorStyle}>⚠ {errors.nombre}</span>}
+                            {errors.nombre && <span className="form-error">⚠ {errors.nombre}</span>}
                         </div>
                     )}
 
-                    {/* Correo */}
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={labelStyle}>Correo electrónico</label>
+                    <div className="form-group">
+                        <label className="form-label">Correo electrónico</label>
                         <input
                             type="email"
                             placeholder="Ej: ejemplo@correo.com"
                             value={formData.correo}
                             onChange={e => handleChange('correo', e.target.value)}
-                            style={inputStyle(errors.correo)}
+                            className={`form-input ${errors.correo ? 'input-error' : ''}`}
                         />
-                        {errors.correo && <span style={errorStyle}>⚠ {errors.correo}</span>}
+                        {errors.correo && <span className="form-error">⚠ {errors.correo}</span>}
                     </div>
 
-                    {/* Teléfono */}
                     {!formData.anonimo && (
-                        <div style={{ marginBottom: '20px' }}>
-                            <label style={labelStyle}>Teléfono</label>
+                        <div className="form-group">
+                            <label className="form-label">Teléfono</label>
                             <input
                                 type="text"
                                 placeholder="Ej: 8888-8888"
                                 value={formData.telefono}
                                 onChange={e => handleTelefono(e.target.value)}
-                                style={inputStyle(errors.telefono)}
+                                className={`form-input ${errors.telefono ? 'input-error' : ''}`}
                                 maxLength={9}
                             />
-                            {errors.telefono && <span style={errorStyle}>⚠ {errors.telefono}</span>}
+                            {errors.telefono && <span className="form-error">⚠ {errors.telefono}</span>}
                         </div>
                     )}
 
-                    {/* Detalle */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <label style={labelStyle}>
+                    <div className="form-group last">
+                        <label className="form-label">
                             Detalle de la donación 
-                            <span style={{ color: '#888', fontWeight: 'normal', marginLeft: '6px' }}>({formData.detalle.length}/300)</span>
+                            <span className="form-label-count">({formData.detalle.length}/300)</span>
                         </label>
                         <textarea
                             placeholder="Ej: Ropa en buen estado para niños de 5 a 10 años"
@@ -320,44 +258,25 @@ return (
                             onChange={e => handleChange('detalle', e.target.value)}
                             rows={4}
                             maxLength={300}
-                            style={{ ...inputStyle(errors.detalle), resize: 'vertical', fontFamily: 'inherit' }}
+                            className={`form-input form-textarea ${errors.detalle ? 'input-error' : ''}`}
                         />
-                        {errors.detalle && <span style={errorStyle}>⚠ {errors.detalle}</span>}
+                        {errors.detalle && <span className="form-error">⚠ {errors.detalle}</span>}
                     </div>
 
-                    {/* ReCAPTCHA */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <ReCAPTCHA
+                    <div className="captcha-container">
+                       <ReCAPTCHA
                             ref={captchaRef}
-                            sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                            sitekey={RECAPTCHA_KEY}
                             onChange={(token: string | null) => {
                                 handleCaptchaChange(token);
                                 setErrors(prev => ({ ...prev, captcha: undefined }));
                             }}
                             onExpired={handleCaptchaExpired}
                         />
-                        {errors.captcha && <span style={errorStyle}>⚠ {errors.captcha}</span>}
+                        {errors.captcha && <span className="form-error">⚠ {errors.captcha}</span>}
                     </div>
 
-                    {/* Botón Enviar */}
-                    <button
-                        onClick={handleSubmit}
-                        style={{
-                            backgroundColor: '#D4AF37',
-                            color: '#003366',
-                            border: 'none',
-                            padding: '14px',
-                            borderRadius: '10px',
-                            fontSize: '1rem',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            width: '100%',
-                            boxShadow: '0 4px 12px rgba(212,175,55,0.3)',
-                            transition: 'opacity 0.2s'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-                        onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-                    >
+                    <button onClick={handleSubmit} className="btn-enviar" disabled={cargando}>
                         Enviar Donación
                     </button>
                 </>

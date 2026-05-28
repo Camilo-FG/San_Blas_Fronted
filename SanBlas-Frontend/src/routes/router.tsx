@@ -7,8 +7,10 @@ import {
 
 import Navbar from "../shared/components/Navbar";
 import Home from "../modules/landing/pages/HomePage";
+import HistoriaPage from "../modules/landing/pages/HistoriaPage";
+import SobreNosotrosPage from "../modules/landing/pages/SobreNosotrosPage";
 import Footer from "../modules/landing/components/Footer";
-
+import GestionSolicitudesCatequesis from "../modules/dashboard/catequesis/pages/GestionSolicitudesCatequesis";
 import Dashboard from "../modules/dashboard/pages/Dashboard";
 import DashboardHome from "../modules/dashboard/pages/DashboardHome";
 import donaciones from "../modules/donaciones/pages/donaciones";
@@ -20,10 +22,11 @@ import solicSacrametos from "../modules/solicSacramento/pages/solicSacramento";
 import formSolic from "../modules/solicSacramento/components/FormSolic";
 import DashSacra from "../modules/dashboardSacramento/dashSacra";
 import DonacionInfo from "../modules/donaciones/components/DonacionInfo";
+import GestionDonaciones from "../modules/donaciones/pages/GestionDonaciones";
 import GestionSacramentos from "../modules/Registro de Sacramentos/Components/GestionSacramentos";
 import { UserList } from "src/modules/Gestión de Usuarios/components/UserList/UserList";
-import CatequesisForm from "../modules/dashboard/pages/catequesis/components/CatequesisForm";
-import CatequesisPage from "../modules/dashboard/pages/catequesis/pages/CatequesisPage";
+import CatequesisForm from "../modules/catequesis/components/CatequesisForm";
+import CatequesisPage from "../modules/catequesis/pages/CatequesisPage";
 // import Donaciones from "../modules/donaciones/pages/donaciones";
 
 function Placeholder({ title }: { title: string }) {
@@ -62,13 +65,13 @@ const homeRoute = createRoute({
 const sobreNosotrosRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.sobreNosotros,
-  component: () => <h1>Sobre Nosotros</h1>,
+  component: SobreNosotrosPage,
 });
 
 const historiaRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.historia,
-  component: () => <h1>Historia</h1>,
+  component: HistoriaPage,
 });
 const solicitudesSacramentosRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -114,17 +117,14 @@ const constanciasSacramentosRoute = createRoute({
 const solicitudesCatequesisRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.solicitudesCatequesis,
-  component: () => <Placeholder title="Solicitudes de catequesis" />,
+  component: GestionSolicitudesCatequesis,
 });
 
-// Cuando Gonza tenga el módulo admin de donaciones, descomentás esto:
-/*
 const donacionesAdminRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.donaciones,
-  component: Donaciones,
+  component: GestionDonaciones, // <-- Tu nuevo componente
 });
-*/
 
 const eventosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
@@ -153,10 +153,10 @@ const routeTree = rootRoute.addChildren([
   formsolicitudesCatequesisRoute,
   dashboardRoute.addChildren([
     dashboardHomeRoute,
+    solicitudesCatequesisRoute,
     registroSacramentosRoute,
     constanciasSacramentosRoute,
-    solicitudesCatequesisRoute,
-    // donacionesAdminRoute,
+    donacionesAdminRoute,
     eventosRoute,
     gestionLandingRoute,
     gestionUsuariosRoute,

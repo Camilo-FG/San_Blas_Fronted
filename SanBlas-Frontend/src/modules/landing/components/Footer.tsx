@@ -16,7 +16,7 @@ function Footer() {
                     <h3 className="footer__title">Navegación</h3>
                     <ul className="footer__list">
                         <li><a href="/" className="footer__link">Inicio</a></li>
-                        <li><a href="/sobre-nosotros" className="footer__link">Sobre Nosotros</a></li>
+                        <li><a href="/#sobre-nosotros" className="footer__link">Sobre Nosotros</a></li>
                         <li><a href="/historia" className="footer__link">Historia</a></li>
                         <li><a href="/dashboard" className="footer__link">Dashboard</a></li>
                     </ul>

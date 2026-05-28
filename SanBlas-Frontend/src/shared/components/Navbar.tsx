@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import Rutas from "../../routes/Rutas";
 import logoParroquia from "../../assets/Logo.png";
@@ -8,6 +8,8 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [serviciosAbierto, setServiciosAbierto] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
+
+  const dropdownTimeout = useRef<number | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,9 +22,39 @@ function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (dropdownTimeout.current) {
+        clearTimeout(dropdownTimeout.current);
+      }
+    };
+  }, []);
+
+  const abrirServicios = () => {
+    if (dropdownTimeout.current) {
+      clearTimeout(dropdownTimeout.current);
+    }
+
+    setServiciosAbierto(true);
+  };
+
+  const cerrarServiciosConDelay = () => {
+    dropdownTimeout.current = window.setTimeout(() => {
+      setServiciosAbierto(false);
+    }, 220);
+  };
+
+  const toggleServicios = () => {
+    setServiciosAbierto((prev) => !prev);
+  };
+
   const cerrarMenu = () => {
     setMenuAbierto(false);
     setServiciosAbierto(false);
+
+    if (dropdownTimeout.current) {
+      clearTimeout(dropdownTimeout.current);
+    }
   };
 
   return (
@@ -45,14 +77,9 @@ function Navbar() {
         <nav className="navbar__menu">
           <Link
             to={Rutas.home}
+            hash="sobre-nosotros"
             className="navbar__link"
-          >
-            Inicio
-          </Link>
-
-          <Link
-            to={Rutas.sobreNosotros}
-            className="navbar__link"
+            onClick={cerrarMenu}
           >
             Sobre Nosotros
           </Link>
@@ -60,30 +87,39 @@ function Navbar() {
           <Link
             to={Rutas.historia}
             className="navbar__link"
+            onClick={cerrarMenu}
           >
             Historia
           </Link>
 
           <div
             className="navbar__dropdown"
-            onMouseEnter={() => setServiciosAbierto(true)}
-            onMouseLeave={() => setServiciosAbierto(false)}
+            onMouseEnter={abrirServicios}
+            onMouseLeave={cerrarServiciosConDelay}
           >
             <button
               type="button"
               className="navbar__link navbar__dropdown-button"
-              onClick={() => setServiciosAbierto(!serviciosAbierto)}
+              onClick={toggleServicios}
+              aria-expanded={serviciosAbierto}
+              aria-haspopup="true"
             >
               Servicios
-              <span className="navbar__dropdown-icon">▾</span>
+              <span className="navbar__dropdown-icon">
+                {serviciosAbierto ? "▴" : "▾"}
+              </span>
             </button>
 
             {serviciosAbierto && (
-              <div className="navbar__submenu">
+              <div
+                className="navbar__submenu"
+                onMouseEnter={abrirServicios}
+                onMouseLeave={cerrarServiciosConDelay}
+              >
                 <Link
                   to={Rutas.FormsolicitudesCatequesis}
                   className="navbar__submenu-link"
-                  onClick={() => setServiciosAbierto(false)}
+                  onClick={cerrarMenu}
                 >
                   Matrícula a Catequesis
                 </Link>
@@ -91,7 +127,7 @@ function Navbar() {
                 <Link
                   to={Rutas.SolicitudesSacramentos}
                   className="navbar__submenu-link"
-                  onClick={() => setServiciosAbierto(false)}
+                  onClick={cerrarMenu}
                 >
                   Solicitudes de Sacramentos
                 </Link>
@@ -102,6 +138,7 @@ function Navbar() {
           <Link
             to={Rutas.donacionesPublicas}
             className="navbar__link"
+            onClick={cerrarMenu}
           >
             Donaciones
           </Link>
@@ -109,6 +146,7 @@ function Navbar() {
           <Link
             to={Rutas.dashboard}
             className="navbar__link"
+            onClick={cerrarMenu}
           >
             Dashboard
           </Link>
@@ -118,7 +156,8 @@ function Navbar() {
           type="button"
           className="navbar__mobile-button"
           onClick={() => setMenuAbierto(!menuAbierto)}
-          aria-label="Abrir menú"
+          aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={menuAbierto}
         >
           {menuAbierto ? "✕" : "☰"}
         </button>
@@ -129,14 +168,7 @@ function Navbar() {
           <div className="navbar__mobile-content">
             <Link
               to={Rutas.home}
-              className="navbar__mobile-link"
-              onClick={cerrarMenu}
-            >
-              Inicio
-            </Link>
-
-            <Link
-              to={Rutas.sobreNosotros}
+              hash="sobre-nosotros"
               className="navbar__mobile-link"
               onClick={cerrarMenu}
             >
@@ -155,7 +187,9 @@ function Navbar() {
               <button
                 type="button"
                 className="navbar__mobile-link navbar__mobile-dropdown-button"
-                onClick={() => setServiciosAbierto(!serviciosAbierto)}
+                onClick={toggleServicios}
+                aria-expanded={serviciosAbierto}
+                aria-haspopup="true"
               >
                 Servicios
                 <span>{serviciosAbierto ? "▴" : "▾"}</span>
