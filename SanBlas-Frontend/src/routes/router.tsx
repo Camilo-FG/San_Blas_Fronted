@@ -22,6 +22,7 @@ import solicSacrametos from "../modules/solicSacramento/pages/solicSacramento";
 import formSolic from "../modules/solicSacramento/components/FormSolic";
 import DashSacra from "../modules/dashboardSacramento/dashSacra";
 import DonacionInfo from "../modules/donaciones/components/DonacionInfo";
+import GestionDonaciones from "../modules/donaciones/pages/GestionDonaciones";
 import GestionSacramentos from "../modules/Registro de Sacramentos/Components/GestionSacramentos";
 import { UserList } from "src/modules/Gestión de Usuarios/components/UserList/UserList";
 import CatequesisForm from "../modules/dashboard/pages/catequesis/components/CatequesisForm";
@@ -119,14 +120,11 @@ const solicitudesCatequesisRoute = createRoute({
   component: () => <Placeholder title="Solicitudes de catequesis" />,
 });
 
-// Cuando Gonza tenga el módulo admin de donaciones, descomentás esto:
-/*
 const donacionesAdminRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.donaciones,
-  component: Donaciones,
+  component: GestionDonaciones, // <-- Tu nuevo componente
 });
-*/
 
 const eventosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
@@ -158,7 +156,7 @@ const routeTree = rootRoute.addChildren([
     registroSacramentosRoute,
     constanciasSacramentosRoute,
     solicitudesCatequesisRoute,
-    // donacionesAdminRoute,
+    donacionesAdminRoute,
     eventosRoute,
     gestionLandingRoute,
     gestionUsuariosRoute,
