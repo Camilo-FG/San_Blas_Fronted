@@ -1,4 +1,6 @@
+import { Link } from "@tanstack/react-router";
 import heroImage from "../../../assets/Iglesia.webp";
+import Rutas from "../../../routes/Rutas";
 import "./HeroSection.css";
 
 function HeroSection() {
@@ -27,19 +29,19 @@ function HeroSection() {
         </p>
 
         <div className="hero__buttons">
-          <a
-            href="/horarios"
+          <Link
+            to={Rutas.home}
             className="hero__button hero__button--primary"
           >
-            Horarios de misa
-          </a>
+            Ver mas
+          </Link>
 
-          <a
-            href="/sacramentos"
+          <Link
+            to={Rutas.SolicitudesSacramentos}
             className="hero__button hero__button--secondary"
           >
             Trámites
-          </a>
+          </Link>
         </div>
       </div>
     </section>
