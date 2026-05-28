@@ -124,6 +124,46 @@
     background-color: rgba(255, 255, 255, 0.22);
 }
 
+.hero__dropdown-container {
+    position: relative;
+}
+
+.hero__dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 100%;
+    cursor: pointer;
+}
+
+.hero__dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: rgba(255, 255, 255, 1);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 10px 0;
+    min-width: 220px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+}
+
+.hero__dropdown-link {
+    padding: 10px 20px;
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    display: block;
+    transition: background-color 0.2s ease;
+}
+
+.hero__dropdown-link:hover {
+    background-color: rgba(0, 51, 102, 0.1);
+    color: #003366;
+}
+
 /* Tablet */
 @media (max-width: 900px) {
     .hero {

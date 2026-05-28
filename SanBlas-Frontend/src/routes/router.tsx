@@ -27,6 +27,9 @@ import GestionSacramentos from "../modules/Registro de Sacramentos/Components/Ge
 import { UserList } from "src/modules/Gestión de Usuarios/components/UserList/UserList";
 import CatequesisForm from "../modules/catequesis/components/CatequesisForm";
 import CatequesisPage from "../modules/catequesis/pages/CatequesisPage";
+import BautizosPage from "../modules/landing/pages/BautizosPage";
+import HorariosPage from "../modules/landing/pages/HorariosPage";
+import ContactoPage from "../modules/landing/pages/ContactoPage";
 // import Donaciones from "../modules/donaciones/pages/donaciones";
 
 function Placeholder({ title }: { title: string }) {
@@ -126,6 +129,24 @@ const donacionesAdminRoute = createRoute({
   component: GestionDonaciones,
 });
 
+const bautizosRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.bautizos,
+  component: BautizosPage,
+});
+
+const horariosRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.horarios,
+  component: HorariosPage,
+});
+
+const contactoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.contacto,
+  component: ContactoPage,
+});
+
 const eventosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.eventos,
@@ -147,10 +168,13 @@ const gestionUsuariosRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   homeRoute,
   sobreNosotrosRoute,
+  contactoRoute,
   historiaRoute,
   donacionesPublicasRoute,
   solicitudesSacramentosRoute,
   formsolicitudesCatequesisRoute,
+  bautizosRoute,
+  horariosRoute,
   dashboardRoute.addChildren([
     dashboardHomeRoute,
     solicitudesCatequesisRoute,
