@@ -10,7 +10,7 @@ import Home from "../modules/landing/pages/HomePage";
 import HistoriaPage from "../modules/landing/pages/HistoriaPage";
 import SobreNosotrosPage from "../modules/landing/pages/SobreNosotrosPage";
 import Footer from "../modules/landing/components/Footer";
-
+import GestionSolicitudesCatequesis from "../modules/dashboard/catequesis/pages/GestionSolicitudesCatequesis";
 import Dashboard from "../modules/dashboard/pages/Dashboard";
 import DashboardHome from "../modules/dashboard/pages/DashboardHome";
 import donaciones from "../modules/donaciones/pages/donaciones";
@@ -25,8 +25,8 @@ import DonacionInfo from "../modules/donaciones/components/DonacionInfo";
 import GestionDonaciones from "../modules/donaciones/pages/GestionDonaciones";
 import GestionSacramentos from "../modules/Registro de Sacramentos/Components/GestionSacramentos";
 import { UserList } from "src/modules/Gestión de Usuarios/components/UserList/UserList";
-import CatequesisForm from "../modules/dashboard/pages/catequesis/components/CatequesisForm";
-import CatequesisPage from "../modules/dashboard/pages/catequesis/pages/CatequesisPage";
+import CatequesisForm from "../modules/catequesis/components/CatequesisForm";
+import CatequesisPage from "../modules/catequesis/pages/CatequesisPage";
 // import Donaciones from "../modules/donaciones/pages/donaciones";
 
 function Placeholder({ title }: { title: string }) {
@@ -117,7 +117,7 @@ const constanciasSacramentosRoute = createRoute({
 const solicitudesCatequesisRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.solicitudesCatequesis,
-  component: () => <Placeholder title="Solicitudes de catequesis" />,
+  component: GestionSolicitudesCatequesis,
 });
 
 const donacionesAdminRoute = createRoute({
@@ -153,9 +153,9 @@ const routeTree = rootRoute.addChildren([
   formsolicitudesCatequesisRoute,
   dashboardRoute.addChildren([
     dashboardHomeRoute,
+    solicitudesCatequesisRoute,
     registroSacramentosRoute,
     constanciasSacramentosRoute,
-    solicitudesCatequesisRoute,
     donacionesAdminRoute,
     eventosRoute,
     gestionLandingRoute,
