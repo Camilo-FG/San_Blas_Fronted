@@ -15,11 +15,11 @@ export default function DonacionInfo({ sinpe, cuentaBancaria, banco, onDonarInsu
             {/* Encabezado */}
             <div className="info-encabezado">
                 <h2 className="info-titulo">
-                    ✝ Apoya a Nuestra Parroquia
+                    ✝ Apoya a Nuestra Parroquia.
                 </h2>
                 <p className="info-descripcion">
-                    Tu generosidad nos permite continuar con nuestra misión. Podés realizar
-                    tu donación económica mediante los siguientes medios:
+                    Tu generosidad nos permite continuar con nuestra misión. Puedes realizar
+                    tu donación económica mediante los siguientes medios en el siguiente apartado:
                 </p>
             </div>
 

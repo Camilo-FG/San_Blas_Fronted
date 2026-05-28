@@ -181,7 +181,11 @@
 .captcha-container {
     margin-bottom: 24px;
     max-width: 100%;
-    overflow-x: auto;
+    display: flex;
+    justify-content: center;
+    height: auto;
+    overflow: visible;
+    
 }
 
 .btn-enviar {
