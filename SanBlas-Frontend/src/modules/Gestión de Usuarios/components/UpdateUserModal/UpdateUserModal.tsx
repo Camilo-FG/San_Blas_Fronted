@@ -1,24 +1,26 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from '@tanstack/react-form';
-import './CreateUserModal.css';
+import '../CreateUserModal/CreateUserModal.css';
 import { Usuario } from '../../../../types/Usuario';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: CreateUserData) => void;
+  onSave: (data: UpdateUserData) => void;
+  usuario: Usuario | null;
   users: Usuario[];
 }
 
-interface CreateUserData {
+export interface UpdateUserData {
   nombre: string;
   correo: string;
   telefono: string;
   contraseña: string;
-  rol: 'user' | 'admin';
+  rol: boolean;
+  estado: boolean;
 }
 
-const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) => {
+const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, users }) => {
 
   const form = useForm({
     defaultValues: {
@@ -26,19 +28,30 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
       correo: '',
       telefono: '',
       contraseña: '',
-      rol: 'user' as 'user' | 'admin',
+      rol: false,
+      estado: true,
     },
     onSubmit: async ({ value }) => {
       onSave(value);
-      form.reset();
     },
   });
+
+  //cargar datos del usuario cuando se abre el modal
+  useEffect(() => {
+    if (usuario && isOpen) {
+      form.setFieldValue('nombre', usuario.UserName);
+      form.setFieldValue('correo', usuario.Email);
+      form.setFieldValue('telefono', usuario.PhoneNumber);
+      form.setFieldValue('contraseña', usuario.Password);
+      form.setFieldValue('rol', usuario.UserRole);
+      form.setFieldValue('estado', usuario.State);
+    }
+  }, [usuario, isOpen]);
 
   if (!isOpen) return null;
 
   const validateEmail = (email: string) => {
-    const validDomainsRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|es|org)$/i;
-    return validDomainsRegex.test(email);
+    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|es|org)$/i.test(email);
   };
 
   const validatePhone = (phone: string) => {
@@ -56,7 +69,7 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>CREAR NUEVO USUARIO</h2>
+          <h2>EDITAR USUARIO</h2>
           <button className="modal-close" onClick={onClose} type="button">×</button>
         </div>
 
@@ -79,9 +92,9 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
             >
               {(field) => (
                 <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
-                  <label htmlFor="nombre">Nombre completo</label>
+                  <label htmlFor="u-nombre">Nombre completo</label>
                   <input
-                    id="nombre"
+                    id="u-nombre"
                     type="text"
                     placeholder="Ej: Juan Pérez González"
                     value={field.state.value}
@@ -103,7 +116,7 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
                   const v = value.trim();
                   if (!v) return 'El correo es requerido.';
                   if (!validateEmail(v)) return 'Solo se permiten dominios .com, .es o .org';
-                  if (users.some(u => u.Email.toLowerCase() === v.toLowerCase()))
+                  if (users.some(u => u.Email.toLowerCase() === v.toLowerCase() && u.ID !== usuario?.ID))
                     return 'Ya existe una cuenta con este correo.';
                   return undefined;
                 },
@@ -111,9 +124,9 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
             >
               {(field) => (
                 <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
-                  <label htmlFor="correo">Correo electrónico</label>
+                  <label htmlFor="u-correo">Correo electrónico</label>
                   <input
-                    id="correo"
+                    id="u-correo"
                     type="email"
                     placeholder="Ej: ejemplo@correo.com"
                     value={field.state.value}
@@ -140,9 +153,9 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
               >
                 {(field) => (
                   <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
-                    <label htmlFor="telefono">Teléfono</label>
+                    <label htmlFor="u-telefono">Teléfono</label>
                     <input
-                      id="telefono"
+                      id="u-telefono"
                       type="tel"
                       placeholder="Ej: 8888-8888"
                       value={field.state.value}
@@ -157,6 +170,7 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
                 )}
               </form.Field>
 
+              {/* Contraseña */}
               <form.Field
                 name="contraseña"
                 validators={{
@@ -171,12 +185,12 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
               >
                 {(field) => (
                   <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
-                    <label htmlFor="contraseña">
+                    <label htmlFor="u-contraseña">
                       Contraseña
                       <span className="modal-form-char-count">({field.state.value.length}/64)</span>
                     </label>
                     <input
-                      id="contraseña"
+                      id="u-contraseña"
                       type="password"
                       placeholder="Min. 8 caracteres"
                       value={field.state.value}
@@ -192,23 +206,43 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
               </form.Field>
             </div>
 
-            {/* Rol */}
-            <form.Field name="rol">
-              {(field) => (
-                <div className="modal-form-group">
-                  <label htmlFor="rol">Rol de Usuario</label>
-                  <select
-                    id="rol"
-                    value={field.state.value}
-                    onChange={e => field.handleChange(e.target.value as 'user' | 'admin')}
-                    onBlur={field.handleBlur}
-                  >
-                    <option value="user">Usuario Regular</option>
-                    <option value="admin">Administrador</option>
-                  </select>
-                </div>
-              )}
-            </form.Field>
+            <div className="modal-form-row">
+              {/* Rol */}
+              <form.Field name="rol">
+                {(field) => (
+                  <div className="modal-form-group">
+                    <label htmlFor="u-rol">Rol de Usuario</label>
+                    <select
+                      id="u-rol"
+                      value={field.state.value ? 'admin' : 'user'}
+                      onChange={e => field.handleChange(e.target.value === 'admin')}
+                      onBlur={field.handleBlur}
+                    >
+                      <option value="user">Usuario Regular</option>
+                      <option value="admin">Administrador</option>
+                    </select>
+                  </div>
+                )}
+              </form.Field>
+
+              {/* Estado */}
+              <form.Field name="estado">
+                {(field) => (
+                  <div className="modal-form-group">
+                    <label htmlFor="u-estado">Estado</label>
+                    <select
+                      id="u-estado"
+                      value={field.state.value ? 'active' : 'inactive'}
+                      onChange={e => field.handleChange(e.target.value === 'active')}
+                      onBlur={field.handleBlur}
+                    >
+                      <option value="active">Activo</option>
+                      <option value="inactive">Inactivo</option>
+                    </select>
+                  </div>
+                )}
+              </form.Field>
+            </div>
 
           </div>
 
@@ -217,7 +251,7 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
               cancelar
             </button>
             <button type="submit" className="modal-btn modal-btn--primary">
-              Crear usuario
+              Guardar cambios
             </button>
           </div>
         </form>
@@ -226,4 +260,4 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
   );
 };
 
-export default CreateUserModal;
+export default UpdateUserModal;
