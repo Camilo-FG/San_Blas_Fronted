@@ -11,17 +11,22 @@ import {
 } from '@tanstack/react-table';
 import { Usuario } from '../../../../types/Usuario';
 import { usePagination } from '../../../../shared/hooks/usePagination';
+import UpdateUserModal from '../UpdateUserModal/UpdateUserModal';
+import { useUpdateUser } from '../../hooks/hooksUsuarios/useUpdateUser';
 
 interface UserListProps {
     users: Usuario[];
     onAddUser: () => void;
+    onRefetch: () => void;
 }
 
 const columnHelper = createColumnHelper<Usuario>();
 
-export const UserList = ({ users, onAddUser }: UserListProps) => {
+export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => { 
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState('');
+    const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
+    const { actualizarUsuario } = useUpdateUser();
 
     //se inverte el array para mostrar  usuarios más recientes primero
     const sortedUsers = useMemo(() => {
@@ -63,6 +68,18 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
                 header: 'Fecha de Creación',
                 cell: (info) => new Date(info.getValue()).toLocaleDateString('es-ES'),
             }),
+            columnHelper.display({       
+            id: 'acciones',
+            header: 'Acciones',
+            cell: ({ row }) => (
+                <button
+                    className="user-edit-button"
+                    onClick={() => setUsuarioEditando(row.original)}
+                >
+                    ✏ Editar
+                </button>
+            ),
+        }),
         ],
         []
     );
@@ -170,6 +187,30 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
                     </button>
                 </div>
             </div>
+
+<UpdateUserModal
+    isOpen={usuarioEditando !== null}
+    onClose={() => setUsuarioEditando(null)}
+    onSave={async (data) => {
+        if (!usuarioEditando) return;
+
+        const ok = await actualizarUsuario(usuarioEditando.ID, {
+            UserName: data.nombre,
+            Email: data.correo,
+            PhoneNumber: data.telefono,
+            Password: data.contraseña,
+            UserRole: data.rol,
+            State: data.estado,
+        });
+
+        if (ok) {
+            setUsuarioEditando(null);
+            onRefetch();
+        }
+    }}
+    usuario={usuarioEditando}
+    users={users}
+/>
         </div>
     );
 };

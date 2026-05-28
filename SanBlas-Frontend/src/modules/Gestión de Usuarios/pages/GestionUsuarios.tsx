@@ -46,7 +46,11 @@ const GestionUsuarios = () => {
 
     return(
          <section className="gestion-usuarios">
-            <UserList users={users} onAddUser={() => setIsModalOpen(true)} />
+            <UserList
+                users={users}
+                onAddUser={() => setIsModalOpen(true)}
+                onRefetch={refetch} // ← nuevo
+            />
             <CreateUserModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
