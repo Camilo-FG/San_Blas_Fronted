@@ -34,6 +34,10 @@ export interface CatequizandoData {
   condicionSalud: CondicionSaludCatequizando;
 }
 
+/* 
+  Este tipo lo usa el FORMULARIO internamente.
+  No necesariamente se manda así al JSONBin.
+*/
 export interface MadreCatequizandoData {
   nombre: string;
   apellidos: string;
@@ -60,29 +64,66 @@ export interface InscripcionData {
   pago: PagoInscripcionCatequesis;
 }
 
-export interface LineamientosCatequesis {
-  documentoLineamientos: boolean;
-}
-
+/*
+  Este tipo es para el estado interno del formulario.
+  Aquí NO incluimos lineamientosCatequesis porque el checkbox
+  se maneja aparte con useState y NO se manda al JSONBin.
+*/
 export interface CatequesisEnrollmentData {
   catequesis: CatequesisData;
   catequizando: CatequizandoData;
   madreCatequizando: MadreCatequizandoData;
   inscripcion: InscripcionData;
-  lineamientosCatequesis: LineamientosCatequesis;
+}
+
+/*
+  Estos tipos son para lo que realmente se guarda en JSONBin
+  y lo que lee GestionSolicitudesCatequesis.
+*/
+export interface EncargadoCatequesisData {
+  nombre: string;
+  apellidos: string;
+  cedula: string;
+  telefono: string;
+  correo: string;
+  direccion: {
+    direccionExacta: string | null;
+  };
+  parentesco: string;
+}
+
+export interface PagoCatequesisData {
+  metodoPago: string;
+  numeroComprobante: string;
+  monto: number;
+  comprobanteArchivo: File | string | null;
 }
 
 export type EstadoInscripcionCatequesis =
   | "pendiente"
   | "aprobado"
+  | "aprobada"
   | "rechazado"
-  | "requiere_modificacion";
+  | "rechazada"
+  | "requiere_modificacion"
+  | "Pendiente"
+  | "Aprobado"
+  | "Aprobada"
+  | "Rechazado"
+  | "Rechazada";
 
-export interface CatequesisEnrollmentRecord extends CatequesisEnrollmentData {
+export interface CatequesisEnrollmentRecord {
   id: number;
   codigoSolicitud: string;
   estado: EstadoInscripcionCatequesis;
   fechaSolicitud: string;
+
+  catequesis: CatequesisData;
+  catequizando: CatequizandoData;
+  encargado: EncargadoCatequesisData;
+  pago: PagoCatequesisData;
+
+  observaciones?: string | null;
   observacionAdministrativa?: string | null;
   created_at?: string;
   updated_at?: string;

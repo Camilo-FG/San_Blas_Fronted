@@ -1,8 +1,9 @@
 import { useState } from "react";
 import "./CatequesisForm.css";
 import { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
+
 interface CatequesisFormProps {
-  onSubmit: (data: CatequesisEnrollmentData) => void;
+  onSubmit: (data: any) => void;
   loading: boolean;
 }
 
@@ -60,10 +61,6 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
       fechaPago: null,
     },
   },
-
-  lineamientosCatequesis: {
-    documentoLineamientos: true,
-  },
 });
 
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
@@ -72,6 +69,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [aceptaLineamientos, setAceptaLineamientos] = useState(false);
 
   const updateForm = (path: string, value: unknown) => {
     setForm((prev) => {
@@ -145,15 +143,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     }
 
     if (!form.madreCatequizando.nombre.trim()) {
-      newErrors.nombreMadre = "Digite el nombre de la madre.";
+      newErrors.nombreMadre = "Digite el nombre de la madre o encargada.";
     }
 
     if (!form.madreCatequizando.apellidos.trim()) {
-      newErrors.apellidosMadre = "Digite los apellidos de la madre.";
+      newErrors.apellidosMadre =
+        "Digite los apellidos de la madre o encargada.";
     }
 
     if (!form.madreCatequizando.telefono.trim()) {
-      newErrors.telefonoMadre = "Digite el teléfono de la madre.";
+      newErrors.telefonoMadre = "Digite el teléfono de la madre o encargada.";
     }
 
     if (!form.inscripcion.personaQueInscribe.nombre?.trim()) {
@@ -179,6 +178,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       newErrors.archivoComprobante = "Debe adjuntar el comprobante de pago.";
     }
 
+    if (!aceptaLineamientos) {
+      newErrors.lineamientos = "Debe aceptar los lineamientos de catequesis.";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -188,14 +191,72 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
     if (!validate()) return;
 
-    const payload: CatequesisEnrollmentData = {
-      ...form,
-      inscripcion: {
-        ...form.inscripcion,
-        pago: {
-          ...form.inscripcion.pago,
-          fechaPago: new Date().toISOString().split("T")[0],
+    const fechaActual = new Date().toISOString().split("T")[0];
+
+    const payload = {
+      id: Date.now(),
+      codigoSolicitud: `CAT-${Date.now()}`,
+      estado: "pendiente",
+      fechaSolicitud: fechaActual,
+      observaciones: "Solicitud enviada desde el formulario de catequesis.",
+
+      catequesis: {
+        centroCatequesis: form.catequesis.centroCatequesis,
+        nivelAInscribirse: form.catequesis.nivelAInscribirse,
+        feBautismoArchivo:
+          form.catequesis.feBautismoArchivo instanceof File
+            ? form.catequesis.feBautismoArchivo.name
+            : form.catequesis.feBautismoArchivo,
+      },
+
+      catequizando: {
+        nombre: form.catequizando.nombre,
+        apellidos: form.catequizando.apellidos,
+        fechaNacimiento: form.catequizando.fechaNacimiento,
+        direccion: {
+          direccionExacta: form.catequizando.direccion.direccionExacta,
         },
+        bautismo: {
+          parroquia: form.catequizando.bautismo.parroquia,
+          fecha: form.catequizando.bautismo.fecha,
+          tomo: form.catequizando.bautismo.tomo,
+          folio: form.catequizando.bautismo.folio,
+          asiento: form.catequizando.bautismo.asiento,
+        },
+        adecuacion: {
+          requiereAdecuacionCentroEducativo:
+            form.catequizando.adecuacion.requiereAdecuacionCentroEducativo,
+          descripcionAdecuacion:
+            form.catequizando.adecuacion.descripcionAdecuacion,
+        },
+        condicionSalud: {
+          portadorEnfermedadCronica:
+            form.catequizando.condicionSalud.portadorEnfermedadCronica,
+          descripcionEnfermedad:
+            form.catequizando.condicionSalud.descripcionEnfermedad,
+        },
+      },
+
+      encargado: {
+        nombre: form.inscripcion.personaQueInscribe.nombre || "",
+        apellidos: form.inscripcion.personaQueInscribe.apellido || "",
+        cedula: "",
+        telefono: form.madreCatequizando.telefono,
+        correo: "",
+        direccion: {
+          direccionExacta: form.madreCatequizando.direccion.direccionExacta,
+        },
+        parentesco: form.inscripcion.parentesco || "",
+      },
+
+      pago: {
+        metodoPago: "SINPE Móvil",
+        numeroComprobante: form.inscripcion.pago.numeroComprobanteSINPE,
+        monto: 5000,
+        comprobanteArchivo:
+          form.inscripcion.pago.archivoComprobante instanceof File
+            ? form.inscripcion.pago.archivoComprobante.name
+            : form.inscripcion.pago.archivoComprobante,
       },
     };
 
@@ -528,8 +589,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       <section className="form-section">
         <div className="section-header">
           <div>
-            <h2>Datos de la Madre</h2>
-            <p>Información de contacto de la madre del catequizando.</p>
+            <h2>Datos de la Madre o Encargada</h2>
+            <p>Información de contacto de la persona responsable.</p>
           </div>
           <span>Sección 5</span>
         </div>
@@ -732,23 +793,42 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         <div className="section-header">
           <div>
             <h2>Lineamientos de Catequesis</h2>
-            <p>Confirmación del documento de lineamientos.</p>
+            <p>
+              Lea el documento de lineamientos antes de enviar la inscripción.
+            </p>
           </div>
           <span>Sección 7</span>
         </div>
 
         <div className="lineamientos-box">
           <p>
-            Al enviar esta inscripción, confirma que revisó el documento de
-            lineamientos de catequesis.
+            Antes de enviar la solicitud, debe leer y aceptar los lineamientos
+            de catequesis.
           </p>
 
-          <p>
-            <strong>Documento de lineamientos:</strong>{" "}
-            {form.lineamientosCatequesis.documentoLineamientos
-              ? "Disponible"
-              : "No disponible"}
-          </p>
+          <a
+            href="/lineamientos-catequesis.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lineamientos-link"
+          >
+            Ver documento de lineamientos
+          </a>
+
+          <label className="lineamientos-check">
+            <input
+              type="checkbox"
+              checked={aceptaLineamientos}
+              onChange={(e) => setAceptaLineamientos(e.target.checked)}
+            />
+            <span>
+              Confirmo que he leído y acepto los lineamientos de catequesis.
+            </span>
+          </label>
+
+          {errors.lineamientos && (
+            <p className="error-text">{errors.lineamientos}</p>
+          )}
         </div>
       </section>
 
