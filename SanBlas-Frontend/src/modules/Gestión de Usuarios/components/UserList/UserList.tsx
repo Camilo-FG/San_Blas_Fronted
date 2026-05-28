@@ -12,18 +12,21 @@ import {
 import { Usuario } from '../../../../types/Usuario';
 import { usePagination } from '../../../../shared/hooks/usePagination';
 import UpdateUserModal from '../UpdateUserModal/UpdateUserModal';
+import { useUpdateUser } from '../../hooks/hooksUsuarios/useUpdateUser';
 
 interface UserListProps {
     users: Usuario[];
     onAddUser: () => void;
+    onRefetch: () => void;
 }
 
 const columnHelper = createColumnHelper<Usuario>();
 
-export const UserList = ({ users, onAddUser }: UserListProps) => {
+export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => { 
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState('');
     const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
+    const { actualizarUsuario } = useUpdateUser();
 
     //se inverte el array para mostrar  usuarios más recientes primero
     const sortedUsers = useMemo(() => {
@@ -185,16 +188,29 @@ export const UserList = ({ users, onAddUser }: UserListProps) => {
                 </div>
             </div>
 
-            <UpdateUserModal        
-            isOpen={usuarioEditando !== null}
-            onClose={() => setUsuarioEditando(null)}
-            onSave={(data) => {
-                console.log('Datos a actualizar:', data, 'ID:', usuarioEditando?.ID);
-                setUsuarioEditando(null);
-            }}
-            usuario={usuarioEditando}
-            users={users}
-        />
+<UpdateUserModal
+    isOpen={usuarioEditando !== null}
+    onClose={() => setUsuarioEditando(null)}
+    onSave={async (data) => {
+        if (!usuarioEditando) return;
+
+        const ok = await actualizarUsuario(usuarioEditando.ID, {
+            UserName: data.nombre,
+            Email: data.correo,
+            PhoneNumber: data.telefono,
+            Password: data.contraseña,
+            UserRole: data.rol,
+            State: data.estado,
+        });
+
+        if (ok) {
+            setUsuarioEditando(null);
+            onRefetch();
+        }
+    }}
+    usuario={usuarioEditando}
+    users={users}
+/>
         </div>
     );
 };
