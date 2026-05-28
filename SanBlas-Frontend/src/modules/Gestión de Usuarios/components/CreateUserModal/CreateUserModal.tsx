@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm } from '@tanstack/react-form';
 import './CreateUserModal.css';
 import { Usuario } from '../../../../types/Usuario';
 
@@ -17,270 +18,206 @@ interface CreateUserData {
   rol: 'user' | 'admin';
 }
 
-interface FormErrors {
-  nombre?: string;
-  correo?: string;
-  telefono?: string;
-  contraseña?: string;
-  rol?: string;
-}
-
 const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) => {
-  const [formData, setFormData] = useState<CreateUserData>({
-    nombre: '',
-    correo: '',
-    telefono: '',
-    contraseña: '',
-    rol: 'user',
-  });
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
 
-  if (!isOpen) return null;
-
-  const validateEmail = (email: string): boolean => {
-    // Validación estricta: solo permite .com, .es, .org
-    const validDomainsRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|es|org)$/i;
-    return validDomainsRegex.test(email);
-  };
-
-  const validatePhone = (phone: string): boolean => {
-    const phoneRegex = /^\d{4}-\d{4}$/;
-    return phoneRegex.test(phone);
-  };
-
-  const validateForm = (): boolean => {
-    const nuevosErrores: FormErrors = {};
-
-    // Validar nombre
-    const nombreTrim = formData.nombre.trim();
-    if (!nombreTrim) {
-      nuevosErrores.nombre = 'El nombre es requerido.';
-    } else if (nombreTrim.length < 3) {
-      nuevosErrores.nombre = 'El nombre debe tener al menos 3 caracteres.';
-    } else if (nombreTrim.length > 100) {
-      nuevosErrores.nombre = 'El nombre no puede superar los 100 caracteres.';
-    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreTrim)) {
-      nuevosErrores.nombre = 'El nombre solo puede contener letras.';
-    }
-
-    //alidacion correo
-    const correoTrim = formData.correo.trim();
-    if (!correoTrim) {
-      nuevosErrores.correo = 'El correo es requerido.';
-    } else if (!validateEmail(correoTrim)) {
-      nuevosErrores.correo = 'Solo se permiten dominios .com, .es o .org';
-    } else if (users.some(u => u.Email.toLowerCase() === correoTrim.toLowerCase())) {
-    nuevosErrores.correo = 'Ya existe una cuenta con este correo.'; //validar si ya hay una cuenta registrada con el mismo correo introducido
-    }
-
-
-    // Validar teléfono
-    const telefonoTrim = formData.telefono.trim();
-    if (!telefonoTrim) {
-      nuevosErrores.telefono = 'El teléfono es requerido.';
-    } else if (!validatePhone(telefonoTrim)) {
-      nuevosErrores.telefono = 'El formato debe ser 8888-8888.';
-    }
-
-    // Validar contraseña
-    const contraseñaTrim = formData.contraseña.trim();
-    if (!contraseñaTrim) {
-      nuevosErrores.contraseña = 'La contraseña es requerida.';
-    } else if (contraseñaTrim.length < 8) {
-      nuevosErrores.contraseña = 'La contraseña debe tener mínimo 8 caracteres.';
-    } else if (contraseñaTrim.length > 64) {
-      nuevosErrores.contraseña = 'La contraseña no puede superar 64 caracteres.';
-    }
-
-    // Validar rol
-    if (!formData.rol) {
-      nuevosErrores.rol = 'Selecciona un rol de usuario.';
-    }
-
-    setErrors(nuevosErrores);
-    return Object.keys(nuevosErrores).length === 0;
-  };
-
-  const handleInputChange = (field: keyof CreateUserData, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-    // Limpiar error del campo cuando el usuario comienza a escribir
-    if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: undefined,
-      }));
-    }
-  };
-
-  const handleFieldBlur = (field: keyof CreateUserData) => {
-    setTouchedFields((prev) => new Set(prev).add(field));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    console.log('Datos del usuario:', formData);
-
-    onSave(formData);
-
-    // Limpiar formulario
-    setFormData({
+  const form = useForm({
+    defaultValues: {
       nombre: '',
       correo: '',
       telefono: '',
       contraseña: '',
-      rol: 'user',
-    });
-    setErrors({});
-    setTouchedFields(new Set());
+      rol: 'user' as 'user' | 'admin',
+    },
+    onSubmit: async ({ value }) => {
+      onSave(value);
+      form.reset();
+    },
+  });
+
+  if (!isOpen) return null;
+
+  const validateEmail = (email: string) => {
+    const validDomainsRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|es|org)$/i;
+    return validDomainsRegex.test(email);
   };
 
-  const handleTelefono = (value: string) => {
+  const validatePhone = (phone: string) => {
+    return /^\d{4}-\d{4}$/.test(phone);
+  };
+
+  const formatTelefono = (value: string) => {
     const soloNumeros = value.replace(/\D/g, '').slice(0, 8);
-    const formateado = soloNumeros.length > 4
+    return soloNumeros.length > 4
       ? `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4)}`
       : soloNumeros;
-    handleInputChange('telefono', formateado);
   };
-
-  const getFieldClassName = (field: string): string => {
-    let className = 'modal-form-group';
-    if (touchedFields.has(field) || errors[field as keyof FormErrors]) {
-      if (errors[field as keyof FormErrors]) {
-        className += ' modal-form-group--error';
-      } else {
-        className += ' modal-form-group--success';
-      }
-    }
-    return className;
-  };
-
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-container" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>CREAR NUEVO USUARIO</h2>
-          <button 
-            className="modal-close" 
-            onClick={onClose}
-            type="button"
-          >
-            ×
-          </button>
+          <button className="modal-close" onClick={onClose} type="button">×</button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}>
           <div className="modal-body">
-            {/* Campo Nombre */}
-            <div className={getFieldClassName('nombre')}>
-              <label htmlFor="nombre">Nombre completo</label>
-              <input
-                id="nombre"
-                type="text"
-                placeholder="Ej: Juan Pérez González"
-                value={formData.nombre}
-                onChange={(e) => handleInputChange('nombre', e.target.value)}
-                onBlur={() => handleFieldBlur('nombre')}
-              />
-              {errors.nombre && (
-                <span className="modal-form-error">⚠ {errors.nombre}</span>
-              )}
-            </div>
 
-            {/* Campo Correo */}
-            <div className={getFieldClassName('correo')}>
-              <label htmlFor="correo">Correo electrónico</label>
-              <input
-                id="correo"
-                type="email"
-                placeholder="Ej: ejemplo@correo.com"
-                value={formData.correo}
-                onChange={(e) => handleInputChange('correo', e.target.value)}
-                onBlur={() => handleFieldBlur('correo')}
-              />
-              {errors.correo && (
-                <span className="modal-form-error">⚠ {errors.correo}</span>
+            {/* Nombre */}
+            <form.Field
+              name="nombre"
+              validators={{
+                onBlur: ({ value }) => {
+                  const v = value.trim();
+                  if (!v) return 'El nombre es requerido.';
+                  if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
+                  if (v.length > 100) return 'El nombre no puede superar los 100 caracteres.';
+                  if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v)) return 'El nombre solo puede contener letras.';
+                  return undefined;
+                },
+              }}
+            >
+              {(field) => (
+                <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
+                  <label htmlFor="nombre">Nombre completo</label>
+                  <input
+                    id="nombre"
+                    type="text"
+                    placeholder="Ej: Juan Pérez González"
+                    value={field.state.value}
+                    onChange={e => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <span className="modal-form-error">⚠ {field.state.meta.errors[0]}</span>
+                  )}
+                </div>
               )}
-            </div>
+            </form.Field>
 
-            {/* Campo Teléfono y Contraseña en fila */}
+            {/* Correo */}
+            <form.Field
+              name="correo"
+              validators={{
+                onBlur: ({ value }) => {
+                  const v = value.trim();
+                  if (!v) return 'El correo es requerido.';
+                  if (!validateEmail(v)) return 'Solo se permiten dominios .com, .es o .org';
+                  if (users.some(u => u.Email.toLowerCase() === v.toLowerCase()))
+                    return 'Ya existe una cuenta con este correo.';
+                  return undefined;
+                },
+              }}
+            >
+              {(field) => (
+                <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
+                  <label htmlFor="correo">Correo electrónico</label>
+                  <input
+                    id="correo"
+                    type="email"
+                    placeholder="Ej: ejemplo@correo.com"
+                    value={field.state.value}
+                    onChange={e => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <span className="modal-form-error">⚠ {field.state.meta.errors[0]}</span>
+                  )}
+                </div>
+              )}
+            </form.Field>
+
             <div className="modal-form-row">
-              <div className={getFieldClassName('telefono')}>
-                <label htmlFor="telefono">Teléfono</label>
-                <input
-                  id="telefono"
-                  type="tel"
-                  placeholder="Ej: 8888-8888"
-                  value={formData.telefono}
-                  onChange={(e) => handleTelefono(e.target.value)}
-                  onBlur={() => handleFieldBlur('telefono')}
-                  maxLength={9}
-                />
-                {errors.telefono && (
-                  <span className="modal-form-error">⚠ {errors.telefono}</span>
+              <form.Field
+                name="telefono"
+                validators={{
+                  onBlur: ({ value }) => {
+                    if (!value) return 'El teléfono es requerido.';
+                    if (!validatePhone(value)) return 'El formato debe ser 8888-8888.';
+                    return undefined;
+                  },
+                }}
+              >
+                {(field) => (
+                  <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
+                    <label htmlFor="telefono">Teléfono</label>
+                    <input
+                      id="telefono"
+                      type="tel"
+                      placeholder="Ej: 8888-8888"
+                      value={field.state.value}
+                      onChange={e => field.handleChange(formatTelefono(e.target.value))}
+                      onBlur={field.handleBlur}
+                      maxLength={9}
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <span className="modal-form-error">⚠ {field.state.meta.errors[0]}</span>
+                    )}
+                  </div>
                 )}
-              </div>
-              <div className={getFieldClassName('contraseña')}>
-                <label htmlFor="contraseña">
-                  Contraseña
-                  <span className="modal-form-char-count">
-                    ({formData.contraseña.length}/64)
-                  </span>
-                </label>
-                <input
-                  id="contraseña"
-                  type="password"
-                  placeholder="Min. 8 caracteres"
-                  value={formData.contraseña}
-                  onChange={(e) => handleInputChange('contraseña', e.target.value)}
-                  onBlur={() => handleFieldBlur('contraseña')}
-                  maxLength={64}
-                />
-                {errors.contraseña && (
-                  <span className="modal-form-error">⚠ {errors.contraseña}</span>
+              </form.Field>
+
+              <form.Field
+                name="contraseña"
+                validators={{
+                  onBlur: ({ value }) => {
+                    const v = value.trim();
+                    if (!v) return 'La contraseña es requerida.';
+                    if (v.length < 8) return 'La contraseña debe tener mínimo 8 caracteres.';
+                    if (v.length > 64) return 'La contraseña no puede superar 64 caracteres.';
+                    return undefined;
+                  },
+                }}
+              >
+                {(field) => (
+                  <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
+                    <label htmlFor="contraseña">
+                      Contraseña
+                      <span className="modal-form-char-count">({field.state.value.length}/64)</span>
+                    </label>
+                    <input
+                      id="contraseña"
+                      type="password"
+                      placeholder="Min. 8 caracteres"
+                      value={field.state.value}
+                      onChange={e => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      maxLength={64}
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <span className="modal-form-error">⚠ {field.state.meta.errors[0]}</span>
+                    )}
+                  </div>
                 )}
-              </div>
+              </form.Field>
             </div>
 
-            {/* Campo Rol */}
-            <div className={getFieldClassName('rol')}>
-              <label htmlFor="rol">Rol de Usuario</label>
-              <select
-                id="rol"
-                value={formData.rol}
-                onChange={(e) => handleInputChange('rol', e.target.value)}
-                onBlur={() => handleFieldBlur('rol')}
-              >
-                <option value="user">Usuario Regular</option>
-                <option value="admin">Administrador</option>
-              </select>
-              {errors.rol && (
-                <span className="modal-form-error">⚠ {errors.rol}</span>
+            {/* Rol */}
+            <form.Field name="rol">
+              {(field) => (
+                <div className="modal-form-group">
+                  <label htmlFor="rol">Rol de Usuario</label>
+                  <select
+                    id="rol"
+                    value={field.state.value}
+                    onChange={e => field.handleChange(e.target.value as 'user' | 'admin')}
+                    onBlur={field.handleBlur}
+                  >
+                    <option value="user">Usuario Regular</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
               )}
-            </div>
+            </form.Field>
 
           </div>
 
           <div className="modal-footer">
-            <button
-              type="button"
-              className="modal-btn modal-btn--secondary"
-              onClick={onClose}
-            >
-              CANCELAR
+            <button type="button" className="modal-btn modal-btn--secondary" onClick={onClose}>
+              cancelar
             </button>
-            <button
-              type="submit"
-              className="modal-btn modal-btn--primary"
-            >
-              CREAR USUARIO
+            <button type="submit" className="modal-btn modal-btn--primary">
+              Crear usuario
             </button>
           </div>
         </form>

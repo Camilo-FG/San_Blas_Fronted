@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Usuario } from '../../../../types/Usuario';
+import React, { useEffect } from 'react';
+import { useForm } from '@tanstack/react-form';
 import '../CreateUserModal/CreateUserModal.css';
+import { Usuario } from '../../../../types/Usuario';
 
 interface Props {
   isOpen: boolean;
@@ -10,7 +11,7 @@ interface Props {
   users: Usuario[];
 }
 
-interface UpdateUserData {
+export interface UpdateUserData {
   nombre: string;
   correo: string;
   telefono: string;
@@ -19,134 +20,49 @@ interface UpdateUserData {
   estado: boolean;
 }
 
-interface FormErrors {
-  nombre?: string;
-  correo?: string;
-  telefono?: string;
-  contraseña?: string;
-}
-
 const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, users }) => {
-  const [formData, setFormData] = useState<UpdateUserData>({
-    nombre: '',
-    correo: '',
-    telefono: '',
-    contraseña: '',
-    rol: false,
-    estado: true,
-  });
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
 
-  // Cargar datos del usuario cuando se abre el modal
+  const form = useForm({
+    defaultValues: {
+      nombre: '',
+      correo: '',
+      telefono: '',
+      contraseña: '',
+      rol: false,
+      estado: true,
+    },
+    onSubmit: async ({ value }) => {
+      onSave(value);
+    },
+  });
+
+  //cargar datos del usuario cuando se abre el modal
   useEffect(() => {
     if (usuario && isOpen) {
-      setFormData({
-        nombre: usuario.UserName,
-        correo: usuario.Email,
-        telefono: usuario.PhoneNumber,
-        contraseña: usuario.Password,
-        rol: usuario.UserRole,
-        estado: usuario.State,
-      });
-      setErrors({});
-      setTouchedFields(new Set());
+      form.setFieldValue('nombre', usuario.UserName);
+      form.setFieldValue('correo', usuario.Email);
+      form.setFieldValue('telefono', usuario.PhoneNumber);
+      form.setFieldValue('contraseña', usuario.Password);
+      form.setFieldValue('rol', usuario.UserRole);
+      form.setFieldValue('estado', usuario.State);
     }
   }, [usuario, isOpen]);
 
   if (!isOpen) return null;
 
-  const validateEmail = (email: string): boolean => {
-    const validDomainsRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|es|org)$/i;
-    return validDomainsRegex.test(email);
+  const validateEmail = (email: string) => {
+    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|es|org)$/i.test(email);
   };
 
-  const validatePhone = (phone: string): boolean => {
-    const phoneRegex = /^\d{4}-\d{4}$/;
-    return phoneRegex.test(phone);
+  const validatePhone = (phone: string) => {
+    return /^\d{4}-\d{4}$/.test(phone);
   };
 
-  const validateForm = (): boolean => {
-    const nuevosErrores: FormErrors = {};
-
-    const nombreTrim = formData.nombre.trim();
-    if (!nombreTrim) {
-      nuevosErrores.nombre = 'El nombre es requerido.';
-    } else if (nombreTrim.length < 3) {
-      nuevosErrores.nombre = 'El nombre debe tener al menos 3 caracteres.';
-    } else if (nombreTrim.length > 100) {
-      nuevosErrores.nombre = 'El nombre no puede superar los 100 caracteres.';
-    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreTrim)) {
-      nuevosErrores.nombre = 'El nombre solo puede contener letras.';
-    }
-
-    const correoTrim = formData.correo.trim();
-    if (!correoTrim) {
-      nuevosErrores.correo = 'El correo es requerido.';
-    } else if (!validateEmail(correoTrim)) {
-      nuevosErrores.correo = 'Solo se permiten dominios .com, .es o .org';
-    } else if (
-      users.some(
-        u => u.Email.toLowerCase() === correoTrim.toLowerCase() &&
-        u.ID !== usuario?.ID // permitir el mismo correo del usuario que se edita
-      )
-    ) {
-      nuevosErrores.correo = 'Ya existe una cuenta con este correo.';
-    }
-
-    const telefonoTrim = formData.telefono.trim();
-    if (!telefonoTrim) {
-      nuevosErrores.telefono = 'El teléfono es requerido.';
-    } else if (!validatePhone(telefonoTrim)) {
-      nuevosErrores.telefono = 'El formato debe ser 8888-8888.';
-    }
-
-    const contraseñaTrim = formData.contraseña.trim();
-    if (!contraseñaTrim) {
-      nuevosErrores.contraseña = 'La contraseña es requerida.';
-    } else if (contraseñaTrim.length < 8) {
-      nuevosErrores.contraseña = 'La contraseña debe tener mínimo 8 caracteres.';
-    } else if (contraseñaTrim.length > 64) {
-      nuevosErrores.contraseña = 'La contraseña no puede superar 64 caracteres.';
-    }
-
-    setErrors(nuevosErrores);
-    return Object.keys(nuevosErrores).length === 0;
-  };
-
-  const handleInputChange = (field: keyof UpdateUserData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field as keyof FormErrors]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  const handleFieldBlur = (field: string) => {
-    setTouchedFields(prev => new Set(prev).add(field));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    onSave(formData);
-  };
-
-  const handleTelefono = (value: string) => {
+  const formatTelefono = (value: string) => {
     const soloNumeros = value.replace(/\D/g, '').slice(0, 8);
-    const formateado = soloNumeros.length > 4
+    return soloNumeros.length > 4
       ? `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4)}`
       : soloNumeros;
-    handleInputChange('telefono', formateado);
-  };
-
-  const getFieldClassName = (field: string): string => {
-    let className = 'modal-form-group';
-    if (touchedFields.has(field) || errors[field as keyof FormErrors]) {
-      className += errors[field as keyof FormErrors]
-        ? ' modal-form-group--error'
-        : ' modal-form-group--success';
-    }
-    return className;
   };
 
   return (
@@ -157,102 +73,185 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
           <button className="modal-close" onClick={onClose} type="button">×</button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}>
           <div className="modal-body">
 
-            <div className={getFieldClassName('nombre')}>
-              <label htmlFor="u-nombre">Nombre completo</label>
-              <input
-                id="u-nombre"
-                type="text"
-                placeholder="Ej: Juan Pérez González"
-                value={formData.nombre}
-                onChange={e => handleInputChange('nombre', e.target.value)}
-                onBlur={() => handleFieldBlur('nombre')}
-              />
-              {errors.nombre && <span className="modal-form-error">⚠ {errors.nombre}</span>}
-            </div>
+            {/* Nombre */}
+            <form.Field
+              name="nombre"
+              validators={{
+                onBlur: ({ value }) => {
+                  const v = value.trim();
+                  if (!v) return 'El nombre es requerido.';
+                  if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
+                  if (v.length > 100) return 'El nombre no puede superar los 100 caracteres.';
+                  if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v)) return 'El nombre solo puede contener letras.';
+                  return undefined;
+                },
+              }}
+            >
+              {(field) => (
+                <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
+                  <label htmlFor="u-nombre">Nombre completo</label>
+                  <input
+                    id="u-nombre"
+                    type="text"
+                    placeholder="Ej: Juan Pérez González"
+                    value={field.state.value}
+                    onChange={e => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <span className="modal-form-error">⚠ {field.state.meta.errors[0]}</span>
+                  )}
+                </div>
+              )}
+            </form.Field>
 
-            <div className={getFieldClassName('correo')}>
-              <label htmlFor="u-correo">Correo electrónico</label>
-              <input
-                id="u-correo"
-                type="email"
-                placeholder="Ej: ejemplo@correo.com"
-                value={formData.correo}
-                onChange={e => handleInputChange('correo', e.target.value)}
-                onBlur={() => handleFieldBlur('correo')}
-              />
-              {errors.correo && <span className="modal-form-error">⚠ {errors.correo}</span>}
+            {/* Correo */}
+            <form.Field
+              name="correo"
+              validators={{
+                onBlur: ({ value }) => {
+                  const v = value.trim();
+                  if (!v) return 'El correo es requerido.';
+                  if (!validateEmail(v)) return 'Solo se permiten dominios .com, .es o .org';
+                  if (users.some(u => u.Email.toLowerCase() === v.toLowerCase() && u.ID !== usuario?.ID))
+                    return 'Ya existe una cuenta con este correo.';
+                  return undefined;
+                },
+              }}
+            >
+              {(field) => (
+                <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
+                  <label htmlFor="u-correo">Correo electrónico</label>
+                  <input
+                    id="u-correo"
+                    type="email"
+                    placeholder="Ej: ejemplo@correo.com"
+                    value={field.state.value}
+                    onChange={e => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <span className="modal-form-error">⚠ {field.state.meta.errors[0]}</span>
+                  )}
+                </div>
+              )}
+            </form.Field>
+
+            <div className="modal-form-row">
+              <form.Field
+                name="telefono"
+                validators={{
+                  onBlur: ({ value }) => {
+                    if (!value) return 'El teléfono es requerido.';
+                    if (!validatePhone(value)) return 'El formato debe ser 8888-8888.';
+                    return undefined;
+                  },
+                }}
+              >
+                {(field) => (
+                  <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
+                    <label htmlFor="u-telefono">Teléfono</label>
+                    <input
+                      id="u-telefono"
+                      type="tel"
+                      placeholder="Ej: 8888-8888"
+                      value={field.state.value}
+                      onChange={e => field.handleChange(formatTelefono(e.target.value))}
+                      onBlur={field.handleBlur}
+                      maxLength={9}
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <span className="modal-form-error">⚠ {field.state.meta.errors[0]}</span>
+                    )}
+                  </div>
+                )}
+              </form.Field>
+
+              {/* Contraseña */}
+              <form.Field
+                name="contraseña"
+                validators={{
+                  onBlur: ({ value }) => {
+                    const v = value.trim();
+                    if (!v) return 'La contraseña es requerida.';
+                    if (v.length < 8) return 'La contraseña debe tener mínimo 8 caracteres.';
+                    if (v.length > 64) return 'La contraseña no puede superar 64 caracteres.';
+                    return undefined;
+                  },
+                }}
+              >
+                {(field) => (
+                  <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
+                    <label htmlFor="u-contraseña">
+                      Contraseña
+                      <span className="modal-form-char-count">({field.state.value.length}/64)</span>
+                    </label>
+                    <input
+                      id="u-contraseña"
+                      type="password"
+                      placeholder="Min. 8 caracteres"
+                      value={field.state.value}
+                      onChange={e => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      maxLength={64}
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <span className="modal-form-error">⚠ {field.state.meta.errors[0]}</span>
+                    )}
+                  </div>
+                )}
+              </form.Field>
             </div>
 
             <div className="modal-form-row">
-              <div className={getFieldClassName('telefono')}>
-                <label htmlFor="u-telefono">Teléfono</label>
-                <input
-                  id="u-telefono"
-                  type="tel"
-                  placeholder="Ej: 8888-8888"
-                  value={formData.telefono}
-                  onChange={e => handleTelefono(e.target.value)}
-                  onBlur={() => handleFieldBlur('telefono')}
-                  maxLength={9}
-                />
-                {errors.telefono && <span className="modal-form-error">⚠ {errors.telefono}</span>}
-              </div>
-              <div className={getFieldClassName('contraseña')}>
-                <label htmlFor="u-contraseña">
-                  Contraseña
-                  <span className="modal-form-char-count">({formData.contraseña.length}/64)</span>
-                </label>
-                <input
-                  id="u-contraseña"
-                  type="password"
-                  placeholder="Min. 8 caracteres"
-                  value={formData.contraseña}
-                  onChange={e => handleInputChange('contraseña', e.target.value)}
-                  onBlur={() => handleFieldBlur('contraseña')}
-                  maxLength={64}
-                />
-                {errors.contraseña && <span className="modal-form-error">⚠ {errors.contraseña}</span>}
-              </div>
-            </div>
+              {/* Rol */}
+              <form.Field name="rol">
+                {(field) => (
+                  <div className="modal-form-group">
+                    <label htmlFor="u-rol">Rol de Usuario</label>
+                    <select
+                      id="u-rol"
+                      value={field.state.value ? 'admin' : 'user'}
+                      onChange={e => field.handleChange(e.target.value === 'admin')}
+                      onBlur={field.handleBlur}
+                    >
+                      <option value="user">Usuario Regular</option>
+                      <option value="admin">Administrador</option>
+                    </select>
+                  </div>
+                )}
+              </form.Field>
 
-            <div className="modal-form-row">
-              <div className="modal-form-group">
-                <label htmlFor="u-rol">Rol de Usuario</label>
-                <select
-                  id="u-rol"
-                  value={formData.rol ? 'admin' : 'user'}
-                  onChange={e => handleInputChange('rol', e.target.value === 'admin')}
-                  onBlur={() => handleFieldBlur('rol')}
-                >
-                  <option value="user">Usuario Regular</option>
-                  <option value="admin">Administrador</option>
-                </select>
-              </div>
-              <div className="modal-form-group">
-                <label htmlFor="u-estado">Estado</label>
-                <select
-                  id="u-estado"
-                  value={formData.estado ? 'active' : 'inactive'}
-                  onChange={e => handleInputChange('estado', e.target.value === 'active')}
-                  onBlur={() => handleFieldBlur('estado')}
-                >
-                  <option value="active">Activo</option>
-                  <option value="inactive">Inactivo</option>
-                </select>
-              </div>
+              {/* Estado */}
+              <form.Field name="estado">
+                {(field) => (
+                  <div className="modal-form-group">
+                    <label htmlFor="u-estado">Estado</label>
+                    <select
+                      id="u-estado"
+                      value={field.state.value ? 'active' : 'inactive'}
+                      onChange={e => field.handleChange(e.target.value === 'active')}
+                      onBlur={field.handleBlur}
+                    >
+                      <option value="active">Activo</option>
+                      <option value="inactive">Inactivo</option>
+                    </select>
+                  </div>
+                )}
+              </form.Field>
             </div>
 
           </div>
 
           <div className="modal-footer">
             <button type="button" className="modal-btn modal-btn--secondary" onClick={onClose}>
-              CANCELAR
+              cancelar
             </button>
             <button type="submit" className="modal-btn modal-btn--primary">
-              GUARDAR CAMBIOS
+              Guardar cambios
             </button>
           </div>
         </form>
