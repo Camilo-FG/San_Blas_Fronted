@@ -1,27 +1,32 @@
-import React from "react";
+import { ReactNode } from "react";
+import { X } from "lucide-react";
 import "./ModalSimple.css";
 
 interface ModalSimpleProps {
+  children: ReactNode;
   onClose: () => void;
-  children: React.ReactNode;
 }
 
-function ModalSimple({ onClose, children }: ModalSimpleProps) {
+function ModalSimple({ children, onClose }: ModalSimpleProps) {
   return (
-    <div className="modal-simple">
-      <div className="modal-simple__content">
-        <div className="modal-simple__header">
-          <button
-            type="button"
-            className="modal-simple__close"
-            onClick={onClose}
-            aria-label="Cerrar modal"
-          >
-            ×
-          </button>
-        </div>
+    <div
+      className="modal-simple__overlay"
+      onClick={onClose}
+    >
+      <div
+        className="modal-simple__content"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="modal-simple__close"
+          onClick={onClose}
+          aria-label="Cerrar modal"
+        >
+          <X size={20} />
+        </button>
 
-        <div className="modal-simple__body">{children}</div>
+        {children}
       </div>
     </div>
   );
