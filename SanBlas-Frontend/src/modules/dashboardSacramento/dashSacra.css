@@ -4,11 +4,19 @@
   border-radius: 22px;
   padding: 20px;
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+  overflow-x: auto;
 }
 
 .dashboard__panel table {
   width: 100%;
   border-collapse: collapse;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 12px;
 }
 
 .dashboard__panel th,

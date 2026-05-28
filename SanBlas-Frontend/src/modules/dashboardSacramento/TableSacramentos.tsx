@@ -127,52 +127,54 @@ const TableSacramentos = () => {
     <div className="p-2">
       <input value={query} type="text" placeholder="Buscar por nombre, apellidos o cédula" onChange={handleSearch} />
       {!isPending && (
-        <table>
-          <thead>
-            {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id}>
-                {hg.headers.map((h) => (
-                  <th key={h.id}>
-                    {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id}>
-                {row.getVisibleCells().map((cell) => {
-                  if (cell.column.id === 'Estado') {
-                    const originalRow = row.original;
-                    const currentEstado = originalRow.Estado ?? 'Pendiente';
-                    const estadoClass = `estado-badge estado-badge--${String(currentEstado).toLowerCase()}`;
+        <div className="table-responsive">
+          <table>
+            <thead>
+              {table.getHeaderGroups().map((hg) => (
+                <tr key={hg.id}>
+                  {hg.headers.map((h) => (
+                    <th key={h.id}>
+                      {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id}>
+                  {row.getVisibleCells().map((cell) => {
+                    if (cell.column.id === 'Estado') {
+                      const originalRow = row.original;
+                      const currentEstado = originalRow.Estado ?? 'Pendiente';
+                      const estadoClass = `estado-badge estado-badge--${String(currentEstado).toLowerCase()}`;
+
+                      return (
+                        <td key={cell.id}>
+                          <div className={estadoClass}>
+                            <select
+                              value={currentEstado}
+                              onChange={(e) => handleEstadoChange(originalRow.id, e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado')}
+                              disabled={isUpdatingEstado}
+                            >
+                              <option value="Pendiente">Pendiente</option>
+                              <option value="Aprobado">Aprobado</option>
+                              <option value="Rechazado">Rechazado</option>
+                            </select>
+                          </div>
+                        </td>
+                      );
+                    }
 
                     return (
-                      <td key={cell.id}>
-                        <div className={estadoClass}>
-                          <select
-                            value={currentEstado}
-                            onChange={(e) => handleEstadoChange(originalRow.id, e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado')}
-                            disabled={isUpdatingEstado}
-                          >
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="Aprobado">Aprobado</option>
-                            <option value="Rechazado">Rechazado</option>
-                          </select>
-                        </div>
-                      </td>
+                      <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
                     );
-                  }
-
-                  return (
-                    <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {!isPending && table.getRowModel().rows.length > 0 && (
