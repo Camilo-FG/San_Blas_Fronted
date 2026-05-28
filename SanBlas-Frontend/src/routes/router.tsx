@@ -7,6 +7,7 @@ import {
 
 import Navbar from "../shared/components/Navbar";
 import Home from "../modules/landing/pages/HomePage";
+import HistoriaPage from "../modules/landing/pages/HistoriaPage";
 import SobreNosotrosPage from "../modules/landing/pages/SobreNosotrosPage";
 import Footer from "../modules/landing/components/Footer";
 
@@ -69,7 +70,7 @@ const sobreNosotrosRoute = createRoute({
 const historiaRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.historia,
-  component: () => <h1>Historia</h1>,
+  component: HistoriaPage,
 });
 const solicitudesSacramentosRoute = createRoute({
   getParentRoute: () => rootRoute,
