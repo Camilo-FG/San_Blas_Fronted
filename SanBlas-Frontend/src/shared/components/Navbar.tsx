@@ -51,7 +51,8 @@ function Navbar() {
           </Link>
 
           <Link
-            to={Rutas.sobreNosotros}
+            to={Rutas.home}
+            hash="sobre-nosotros"
             className="navbar__link"
           >
             Sobre Nosotros
@@ -136,7 +137,8 @@ function Navbar() {
             </Link>
 
             <Link
-              to={Rutas.sobreNosotros}
+              to={Rutas.home}
+              hash="sobre-nosotros"
               className="navbar__mobile-link"
               onClick={cerrarMenu}
             >
