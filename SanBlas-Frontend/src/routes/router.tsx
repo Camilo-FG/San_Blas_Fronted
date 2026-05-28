@@ -123,7 +123,7 @@ const solicitudesCatequesisRoute = createRoute({
 const donacionesAdminRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.donaciones,
-  component: GestionDonaciones, // <-- Tu nuevo componente
+  component: GestionDonaciones,
 });
 
 const eventosRoute = createRoute({

@@ -5,7 +5,7 @@ const BIN_ID = import.meta.env.VITE_COMUNION_BIN_ID;
 
 export const fetchGetComunion = async (): Promise<RegistroComunion[]> => {
   const response = await apiComunion.get(`/b/${BIN_ID}/latest?meta=false`);
-  return response.data; // Directamente el array
+  return response.data; 
 };
 
 export const fetchCreateComunion = async (comunion: RegistroComunion): Promise<RegistroComunion> => {

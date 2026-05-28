@@ -1,8 +1,7 @@
-// src/modules/dashboard/components/SacramentTable.tsx
 import './styles/SacramentTable.css';
 
 interface Sacrament {
-  id: string;  // ← Cambiado a string por el prefijo (bautismo-1, etc)
+  id: string;  
   nombre: string;
   fechaCelebracion: string;
   lugar: string;
@@ -13,8 +12,8 @@ interface Sacrament {
 interface Props {
   sacramentos: Sacrament[];
   onViewDetails: (sacramento: Sacrament) => void;
-  onEdit: (sacramento: Sacrament) => void;      // ← Agregar
-  onDelete: (sacramento: Sacrament) => void;    // ← Agregar
+  onEdit: (sacramento: Sacrament) => void;      
+  onDelete: (sacramento: Sacrament) => void;    
   onSort?: (columna: string) => void;
   sortColumn?: string;
   sortDirection?: 'asc' | 'desc';
@@ -37,8 +36,8 @@ const textColorPorTipo = {
 const SacramentTable = ({ 
   sacramentos, 
   onViewDetails,
-  onEdit,           // ← Recibir
-  onDelete,         // ← Recibir
+  onEdit,           
+  onDelete,         
   onSort,
   sortColumn,
   sortDirection
@@ -65,7 +64,7 @@ const SacramentTable = ({
               {sortColumn === 'lugar' && (sortDirection === 'asc' ? ' ↑' : ' ↓')}
             </th>
             <th>DETALLES</th>
-            <th>ACCIONES</th>  {/* ← Nueva columna */}
+            <th>ACCIONES</th>
           </tr>
         </thead>
         <tbody>
@@ -99,13 +98,13 @@ const SacramentTable = ({
                     className="edit-btn"
                     onClick={() => onEdit(sacramento)}
                   >
-                    ✏️ Editar
+                     Editar
                   </button>
                   <button 
                     className="delete-btn"
                     onClick={() => onDelete(sacramento)}
                   >
-                    🗑️ Eliminar
+                     Eliminar
                   </button>
                 </div>
               </td>

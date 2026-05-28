@@ -1,4 +1,3 @@
-// src/modules/dashboard/components/GestionSacramentos.tsx
 import { useState } from 'react';
 import { useGetListBautismo } from '../hooks/hooksBautismo/useGetListBautismo';
  import { useGetListComunion } from '../hooks/hooksComunion/useGetListComunion';
@@ -60,8 +59,8 @@ const GestionSacramentos = () => {
   const [editingTipo, setEditingTipo] = useState<string>('Bautismo');
 
   // ========== ESTADOS DE CARGA Y ERROR ==========
-  const isPending = pendingBautismo; // || pendingComunion || pendingConfirmacion || pendingMatrimonio;
-  const error = errorBautismo; // || errorComunion || errorConfirmacion || errorMatrimonio;
+  const isPending = pendingBautismo || pendingComunion || pendingConfirmacion || pendingMatrimonio;
+  const error = errorBautismo || errorComunion || errorConfirmacion || errorMatrimonio;
 
   // ========== HANDLERS ==========
   const handleSaveSacramento = async (data: any, tipo: string) => {
@@ -78,7 +77,7 @@ const GestionSacramentos = () => {
       });
       await refetchBautismos();
     }
-    // TODO: Descomentar cuando tengas los hooks de los otros sacramentos
+    
     
     else if (tipo === 'Comunión') {
       const nuevoId = Date.now();
@@ -109,7 +108,6 @@ const GestionSacramentos = () => {
       await updateBautismo.mutateAsync(data);
       await refetchBautismos();
     }
-    // TODO: Descomentar cuando tengas los hooks de los otros sacramentos
     
     else if (tipo === 'Comunión') {
       await updateComunion.mutateAsync(data);
@@ -172,7 +170,6 @@ const GestionSacramentos = () => {
       detalles: b
     }))),
     
-    // TODO: Descomentar cuando tengas los datos de los otros sacramentos
     
     // COMUNIONES
     ...(comunionesArray.map(c => ({

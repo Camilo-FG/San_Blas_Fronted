@@ -7,7 +7,6 @@ export const useDeleteConfirma = () => {
   return useMutation({
     mutationFn: fetchDeleteConfirma,
     onSuccess: () => {
-      // Esto fuerza el refetch inmediato después de eliminar
       queryClient.refetchQueries({ queryKey: ['confirma'] });
     },
   });

@@ -1,4 +1,4 @@
-// hooks/hooksBautismo/useGetListBautismo.ts
+
 import { useQuery } from "@tanstack/react-query";
 import { fetchGetComunion } from "../../services/Comunion-service";
 

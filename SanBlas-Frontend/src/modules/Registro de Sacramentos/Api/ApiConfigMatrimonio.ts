@@ -1,4 +1,4 @@
-// ApiConfigBautismo.ts
+
 import axios from 'axios';
 
 const ACCESS_KEY = import.meta.env.VITE_ACCESS_KEY;

@@ -1,4 +1,4 @@
-// src/modules/dashboard/components/EditSacramentoModal.tsx
+
 import { useState, useEffect } from 'react';
 import './styles/EditSacramentoModal.css';
 

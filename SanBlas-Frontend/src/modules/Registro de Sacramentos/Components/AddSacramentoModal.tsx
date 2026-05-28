@@ -1,4 +1,4 @@
-// src/modules/Registro de Sacramentos/Components/AddSacramentoModal.tsx
+
 import { useState } from 'react';
 import './styles/AddSacramentoModal.css';
 

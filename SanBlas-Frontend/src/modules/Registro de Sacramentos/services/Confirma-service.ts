@@ -5,7 +5,7 @@ const BIN_ID = import.meta.env.VITE_CONFIRMACION_BIN_ID;
 
 export const fetchGetConfirma = async (): Promise<RegistroConfirmacion[]> => {
   const response = await apiConfirma.get(`/b/${BIN_ID}/latest?meta=false`);
-  return response.data; // Directamente el array
+  return response.data; 
 };
 
 export const fetchCreateConfirma = async (confirma: RegistroConfirmacion): Promise<RegistroConfirmacion> => {

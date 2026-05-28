@@ -7,7 +7,6 @@ export const useDeleteComunion = () => {
   return useMutation({
     mutationFn: fetchDeleteComunion,
     onSuccess: () => {
-      // Esto fuerza el refetch inmediato después de eliminar
       queryClient.refetchQueries({ queryKey: ['comunion'] });
     },
   });

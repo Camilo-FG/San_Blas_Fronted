@@ -6,7 +6,7 @@ const BIN_ID = import.meta.env.VITE_MATRIMONIO_BIN_ID;
 
 export const fetchGetMatrimonio = async (): Promise<RegistroMatrimonio[]> => {
   const response = await apiMatrimonio.get(`/b/${BIN_ID}/latest?meta=false`);
-  return response.data; // Directamente el array
+  return response.data; 
 };
 
 export const fetchCreateMatrimonio = async (matrimonio: RegistroMatrimonio): Promise<RegistroMatrimonio> => {

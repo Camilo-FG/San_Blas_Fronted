@@ -5,7 +5,7 @@ const BIN_ID = import.meta.env.VITE_BAUTISMO_BIN_ID;
 
 export const fetchGetBautismo = async (): Promise<RegistroBautismo[]> => {
   const response = await apiBautismo.get(`/b/${BIN_ID}/latest?meta=false`);
-  return response.data; // Directamente el array
+  return response.data; 
 };
 
 export const fetchCreateBautismo = async (bautismo: RegistroBautismo): Promise<RegistroBautismo> => {

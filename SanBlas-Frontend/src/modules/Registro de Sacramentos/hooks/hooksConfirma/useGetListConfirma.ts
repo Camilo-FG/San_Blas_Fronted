@@ -1,4 +1,4 @@
-// hooks/hooksBautismo/useGetListBautismo.ts
+
 import { useQuery } from "@tanstack/react-query";
 import { fetchGetConfirma } from "../../services/Confirma-service";
 
