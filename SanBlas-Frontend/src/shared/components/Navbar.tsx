@@ -131,6 +131,30 @@ function Navbar() {
                 >
                   Solicitudes de Sacramentos
                 </Link>
+
+                <Link
+                  to={Rutas.bautizos}
+                  className="navbar__submenu-link"
+                  onClick={cerrarMenu}
+                >
+                  Bautizos
+                </Link>
+
+                <Link
+                  to={Rutas.horarios}
+                  className="navbar__submenu-link"
+                  onClick={cerrarMenu}
+                >
+                  Horarios
+                </Link>
+
+                <Link
+                  to={Rutas.contacto}
+                  className="navbar__submenu-link"
+                  onClick={cerrarMenu}
+                >
+                  Contacto
+                </Link>
               </div>
             )}
           </div>
@@ -211,6 +235,30 @@ function Navbar() {
                     onClick={cerrarMenu}
                   >
                     Solicitudes de Sacramentos
+                  </Link>
+
+                  <Link
+                    to={Rutas.bautizos}
+                    className="navbar__mobile-sublink"
+                    onClick={cerrarMenu}
+                  >
+                    Bautizos
+                  </Link>
+
+                  <Link
+                    to={Rutas.horarios}
+                    className="navbar__mobile-sublink"
+                    onClick={cerrarMenu}
+                  >
+                    Horarios
+                  </Link>
+
+                  <Link
+                    to={Rutas.contacto}
+                    className="navbar__mobile-sublink"
+                    onClick={cerrarMenu}
+                  >
+                    Contacto
                   </Link>
                 </div>
               )}
