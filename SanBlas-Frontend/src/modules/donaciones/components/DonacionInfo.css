@@ -1,0 +1,118 @@
+.info-container {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 16px;
+}
+
+.info-encabezado {
+    background-color: #003366;
+    border-radius: 16px;
+    padding: 40px;
+    margin-bottom: 24px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.info-titulo {
+    color: #D4AF37;
+    font-size: 2rem;
+    margin: 0 0 12px;
+}
+
+.info-descripcion {
+    color: #FFFFFF;
+    font-size: 1rem;
+    margin: 0;
+    opacity: 0.9;
+    line-height: 1.5;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.tarjeta-donacion {
+    background-color: #FFFFFF;
+    border: 2px solid #D4AF37;
+    border-radius: 14px;
+    padding: 28px;
+    box-shadow: 0 4px 12px rgba(0, 51, 102, 0.08);
+    box-sizing: border-box;
+}
+
+.tarjeta-badge {
+    background-color: #003366;
+    border-radius: 8px;
+    padding: 8px 14px;
+    display: inline-block;
+    margin-bottom: 16px;
+}
+
+.tarjeta-badge-text {
+    color: #D4AF37;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.tarjeta-subtexto {
+    color: #1F2937;
+    margin: 0 0 8px;
+    font-size: 0.9rem;
+}
+
+.tarjeta-dato {
+    color: #003366;
+    font-weight: bold;
+    margin: 0;
+    letter-spacing: 1px;
+    word-break: break-all;
+}
+
+.tarjeta-dato.sinpe {
+    font-size: 1.8rem;
+}
+
+.tarjeta-dato.cuenta {
+    font-size: 1.2rem;
+}
+
+.btn-donar-insumos {
+    background-color: #D4AF37;
+    color: #003366;
+    border: none;
+    padding: 16px 40px;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    transition: opacity 0.2s;
+    box-sizing: border-box;
+}
+
+.btn-donar-insumos:hover {
+    opacity: 0.85;
+}
+
+@media (max-width: 768px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .info-encabezado {
+        padding: 28px 20px;
+    }
+    .info-titulo {
+        font-size: 1.6rem;
+    }
+    .tarjeta-donacion {
+        padding: 20px;
+    }
+}

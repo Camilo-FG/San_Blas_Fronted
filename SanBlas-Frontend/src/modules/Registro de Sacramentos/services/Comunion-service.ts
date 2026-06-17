@@ -1,49 +1,28 @@
-import { RegistroComunion } from "src/types/registroSacramento";
+import { RegistroComunion } from "../../../types/registroSacramento";
 import { apiComunion } from "../Api/ApiConfigComunion";
 
+const BIN_ID = import.meta.env.VITE_COMUNION_BIN_ID;
 
 export const fetchGetComunion = async (): Promise<RegistroComunion[]> => {
-    const {data} = await apiComunion.get('/latest');
-    return data.record; 
-}
+  const response = await apiComunion.get(`/b/${BIN_ID}/latest?meta=false`);
+  return response.data; 
+};
 
 export const fetchCreateComunion = async (comunion: RegistroComunion): Promise<RegistroComunion> => {
-   // 1. Obtener los datos actuales
-       const { data: datosActuales } = await apiComunion.get('/latest');
-       const registrosActuales = datosActuales.record || [];
-       // 2. Agregar el nuevo registro
-       const registrosActualizados = [...registrosActuales, comunion];
-       // 3. Actualizar todo el bin
-       const { data } = await apiComunion.put(`/`, {
-           record: registrosActualizados
-       });
-
-       return data.record;
-}
-
-export const fetchUpdateComunion = async (comunioActualizada: RegistroComunion): Promise<RegistroComunion> => {
-     // 1. Obtener todos
-       const { data: datosActuales } = await apiComunion.get('/latest');
-       const registrosActuales: RegistroComunion[] = datosActuales.record || [];
-       // 2. Encontrar y reemplazar el que coincide por ID
-       const registrosActualizados = registrosActuales.map(b => 
-           b.id === comunioActualizada.id ? comunioActualizada : b);
-       // 3. Actualizar todo el bin
-       const { data } = await apiComunion.put('/', {
-           record: registrosActualizados
-       });
-       
-       return comunioActualizada;
-}
+  const current = await fetchGetComunion();
+  const newComunion = { ...comunion, id: Date.now() };
+  await apiComunion.put(`/b/${BIN_ID}`, [...current, newComunion]);
+  return newComunion;
+};
 
 export const fetchDeleteComunion = async (id: number): Promise<void> => {
-     // 1. Obtener todos
-        const { data: datosActuales } = await apiComunion.get('/latest');
-        const registrosActuales: RegistroComunion[] = datosActuales.record || [];
-        // 2. Filtrar para eliminar el que tiene el ID
-        const registrosActualizados = registrosActuales.filter(b => b.id !== id);
-        // 3. Actualizar todo el bin
-        await apiComunion.put('/', {
-            record: registrosActualizados
-        });
-}
+  const current = await fetchGetComunion();
+  await apiComunion.put(`/b/${BIN_ID}`, current.filter(b => b.id !== id));
+};
+
+export const fetchUpdateComunion = async (comunion: RegistroComunion): Promise<RegistroComunion> => {
+  const current = await fetchGetComunion();
+  const updated = current.map(b => b.id === comunion.id ? comunion : b);
+  await apiComunion.put(`/b/${BIN_ID}`, updated);
+  return comunion;
+};

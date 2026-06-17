@@ -1,5 +1,6 @@
-import { fetchCreateMatrimonio } from "../../services/Matrimonio-service";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchCreateMatrimonio } from "../../services/Matrimonio-service";
 
 export const useCreateMatrimonio = () => {
     const queryClient = useQueryClient();

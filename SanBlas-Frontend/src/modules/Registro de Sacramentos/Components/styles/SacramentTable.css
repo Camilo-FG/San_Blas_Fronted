@@ -95,3 +95,38 @@
 .add-sacrament-btn:hover {
   background-color: #0052a3;
 }
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-btn {
+  background-color: #7ece81;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+}
+
+.edit-btn:hover {
+  background-color: #45a049;
+}
+
+.delete-btn {
+  background-color: #e66d64;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+}
+
+.delete-btn:hover {
+  background-color: #da190b;
+}

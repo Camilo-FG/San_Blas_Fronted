@@ -1,0 +1,151 @@
+/* Contenedor principal para encapsular el scope de historia */
+.historia-section {
+  background-color: var(--bg); /* Variables globales del proyecto (index.css) */
+  width: 100%;
+}
+
+/* Base para los contenedores con fondo Parallax */
+.historia__parallax {
+  position: relative;
+  /* El secreto del efecto parallax por defecto sin hooks: */
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modificador para el parallax intermedio (suele ser menos alto) */
+.historia__parallax--mid {
+  min-height: 40vh;
+  padding: 0 20px;
+}
+
+/* Filtro oscuro superior para dar legibilidad a las letras sobre la imagen */
+.historia__parallax-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 51, 102, 0.6) 0%,
+    rgba(0, 51, 102, 0.3) 100%
+  );
+  z-index: 1;
+}
+
+/* Título principal sobre la imagen */
+.historia__parallax-title {
+  position: relative;
+  z-index: 2;
+  color: var(--white);
+  font-family: var(--heading);
+  font-size: clamp(36px, 6vw, 64px);
+  text-align: center;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  margin: 0;
+  padding: 20px;
+}
+
+/* Texto destacado (frase) sobre el segundo nivel de parallax */
+.historia__quote {
+  font-size: clamp(20px, 3.5vw, 32px);
+  color: var(--white);
+  font-family: var(--heading);
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  line-height: 1.4;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Limitador de ancho central para texto (legibilidad) */
+.historia__content {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+
+.historia__text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Detalle visual dorado sobre el título */
+.historia__eyebrow {
+  color: var(--royal-gold);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+/* Subtítulo azul de la sección de texto */
+.historia__heading {
+  color: var(--royal-blue);
+  font-family: var(--heading);
+  font-size: clamp(28px, 4vw, 42px);
+  margin-bottom: 32px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Párrafo con el color secundario, muy legible y espaciado */
+.historia__paragraph {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin: 0;
+  text-align: justify;
+}
+
+/* CONTENEDOR DEL VIDEO YOUTUBE */
+.historia__video-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 24px 100px;
+}
+
+/* Hack CSS clásico para mantener proporción 16:9 en iframes (Responsive) */
+.historia__video-wrapper {
+  position: relative;
+  padding-bottom: 56.25%; /* Relación de aspecto 16:9 */
+  height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
+  background-color: #000;
+}
+
+.historia__video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Media Query para pantallas muy pequeñas */
+@media (max-width: 600px) {
+  .historia__content {
+    padding: 50px 20px;
+  }
+  .historia__paragraph {
+    font-size: 1rem;
+  }
+  .historia__parallax {
+    /* 
+       En algunos iOS el background-attachment: fixed falla terriblemente,
+       se puede forzar revert en caso extremo, pero dejaremos el standard por ahora.
+    */
+  }
+}

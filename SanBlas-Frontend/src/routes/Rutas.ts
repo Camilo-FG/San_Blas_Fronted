@@ -3,7 +3,7 @@ const dashboardBase = "/dashboard";
 const dashboardPath = {
   registroSacramentos: "registro-sacramentos",
   constanciasSacramentos: "constancias-sacramentos",
-  solicitudesCatequesis: "solicitudes-catequesis",
+  solicitudesCatequesis: "catequesis",
   donaciones: "donaciones",
   eventos: "eventos",
   gestionLanding: "landing",
@@ -14,9 +14,12 @@ const Rutas = {
   home: "/",
   sobreNosotros: "/sobre-nosotros",
   historia: "/historia",
-
+  FormsolicitudesCatequesis: "/solicitudes-catequesis",
   donacionesPublicas: "/donaciones",
-
+  SolicitudesSacramentos: "/solicitudes-sacramentos",
+  bautizos: "/bautizos",
+  horarios: "/horarios",
+  contacto: "/contacto",
   dashboard: dashboardBase,
 
   dashboardPath,

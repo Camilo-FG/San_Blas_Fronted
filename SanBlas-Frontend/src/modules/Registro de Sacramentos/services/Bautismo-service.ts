@@ -1,48 +1,28 @@
-import { RegistroBautismo } from "src/types/registroSacramento";
+import { RegistroBautismo } from "../../../types/registroSacramento";
 import { apiBautismo } from "../Api/ApiConfigBautismo";
 
-export const fetchGetBautismo = async (): Promise<RegistroBautismo[]> => {
-    const {data} = await apiBautismo.get('/latest');
-    return data.record; 
-}
+const BIN_ID = import.meta.env.VITE_BAUTISMO_BIN_ID;
 
-export const fetchCreateBautismo = async (bautismo: RegistroBautismo): Promise<RegistroBautismo> => {
- // 1. Obtener los datos actuales
-    const { data: datosActuales } = await apiBautismo.get('/latest');
-    const registrosActuales = datosActuales.record || [];
-    // 2. Agregar el nuevo registro
-    const registrosActualizados = [...registrosActuales, bautismo];
-    // 3. Actualizar todo el bin
-    const { data } = await apiBautismo.put(`/`, {
-        record: registrosActualizados
-    });
-    
-    return data.record;
+export const fetchGetBautismo = async (): Promise<RegistroBautismo[]> => {
+  const response = await apiBautismo.get(`/b/${BIN_ID}/latest?meta=false`);
+  return response.data; 
 };
 
-export const fetchUpdateBautismo = async (bautismoActualizado: RegistroBautismo): Promise<RegistroBautismo> => {
-    // 1. Obtener todos
-    const { data: datosActuales } = await apiBautismo.get('/latest');
-    const registrosActuales: RegistroBautismo[] = datosActuales.record || [];
-    // 2. Encontrar y reemplazar el que coincide por ID
-    const registrosActualizados = registrosActuales.map(b => 
-        b.id === bautismoActualizado.id ? bautismoActualizado : b);
-    // 3. Actualizar todo el bin
-    const { data } = await apiBautismo.put('/', {
-        record: registrosActualizados
-    });
-    
-    return bautismoActualizado;
-}
+export const fetchCreateBautismo = async (bautismo: RegistroBautismo): Promise<RegistroBautismo> => {
+  const current = await fetchGetBautismo();
+  const newBautismo = { ...bautismo, id: Date.now() };
+  await apiBautismo.put(`/b/${BIN_ID}`, [...current, newBautismo]);
+  return newBautismo;
+};
 
 export const fetchDeleteBautismo = async (id: number): Promise<void> => {
-    // 1. Obtener todos
-    const { data: datosActuales } = await apiBautismo.get('/latest');
-    const registrosActuales: RegistroBautismo[] = datosActuales.record || [];
-    // 2. Filtrar para eliminar el que tiene el ID
-    const registrosActualizados = registrosActuales.filter(b => b.id !== id);
-    // 3. Actualizar todo el bin
-    await apiBautismo.put('/', {
-        record: registrosActualizados
-    });
-}
+  const current = await fetchGetBautismo();
+  await apiBautismo.put(`/b/${BIN_ID}`, current.filter(b => b.id !== id));
+};
+
+export const fetchUpdateBautismo = async (bautismo: RegistroBautismo): Promise<RegistroBautismo> => {
+  const current = await fetchGetBautismo();
+  const updated = current.map(b => b.id === bautismo.id ? bautismo : b);
+  await apiBautismo.put(`/b/${BIN_ID}`, updated);
+  return bautismo;
+};

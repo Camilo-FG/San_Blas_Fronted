@@ -1,20 +1,14 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchDeleteBautismo } from "../../services/Bautismo-service";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchDeleteBautismo } from '../../services/Bautismo-service';
 
 export const useDeleteBautismo = () => {
-
-    const queryBautismo = useQueryClient();
-
-  const DeleteMutation = useMutation({
-    mutationKey: ['deleteBautismo', 'bautismo'], // una key generica para mutaciones de delete en Bautismo
-    mutationFn: (id:number) => fetchDeleteBautismo(id),
-
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: fetchDeleteBautismo,
     onSuccess: () => {
-        queryBautismo.invalidateQueries({ queryKey: ['bautismo']
-
-        });
-    }
-  })
-
-    return DeleteMutation
-}
+      // Esto fuerza el refetch inmediato después de eliminar
+      queryClient.refetchQueries({ queryKey: ['bautismo'] });
+    },
+  });
+};

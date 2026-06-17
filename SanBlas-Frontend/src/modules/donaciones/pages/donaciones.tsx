@@ -3,10 +3,10 @@ import DonacionInfo from "../components/DonacionInfo";
 import DonacionForm from "../components/DonacionForm";
 
 function Donaciones() {
-  // Creamos la referencia para el formulario
+  // referencia para el formulario
   const formRef = useRef<HTMLDivElement>(null);
 
-  // Esta función ahora hace que la página baje suavemente
+  // Esta función hace que la página baje suavemente
   const handleDonarInsumos = () => {
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -15,7 +15,6 @@ function Donaciones() {
     <section className="donaciones">
       <div className="donaciones__container">
         <div className="donaciones__header">
-          {/* Tu cabecera actual */}
         </div>
 
         <div className="donaciones__content">
@@ -27,8 +26,6 @@ function Donaciones() {
             onDonarInsumos={handleDonarInsumos} 
           />
 
-          {/* Formulario abajo del todo, con el estilo del museo */}
-          {/* Le añadimos scrollMarginTop por si tienes un menú fijo arriba, que no tape el título al bajar */}
           <div ref={formRef} style={{ marginTop: '50px', paddingBottom: '60px', scrollMarginTop: '80px' }}>
             <h3 style={{
                 color: '#003366',

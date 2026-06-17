@@ -1,8 +1,18 @@
+import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+import heroImage from "../../../assets/Iglesia.webp";
+import Rutas from "../../../routes/Rutas";
 import "./HeroSection.css";
 
 function HeroSection() {
+  const [dropdownAbierto, setDropdownAbierto] = useState(false);
+
   return (
-    <section className="hero" id="inicio">
+    <section
+      className="hero"
+      id="inicio"
+      style={{ backgroundImage: `url(${heroImage})` }}
+    >
       <div className="hero__overlay"></div>
 
       <div className="hero__content">
@@ -22,13 +32,33 @@ function HeroSection() {
         </p>
 
         <div className="hero__buttons">
-          <a href="/horarios" className="hero__button hero__button--primary">
-            Horarios de misa
-          </a>
+          <Link
+            to={Rutas.contacto}
+            className="hero__button hero__button--primary"
+          >
+            Contactos
+          </Link>
 
-          <a href="/sacramentos" className="hero__button hero__button--secondary">
-            Trámites
-          </a>
+          <div 
+            className="hero__dropdown-container"
+            onMouseEnter={() => setDropdownAbierto(true)}
+            onMouseLeave={() => setDropdownAbierto(false)}
+          >
+            <button
+              className="hero__button hero__button--secondary hero__dropdown-btn"
+              type="button"
+            >
+              Trámites
+              <span>{dropdownAbierto ? "▴" : "▾"}</span>
+            </button>
+
+            {dropdownAbierto && (
+              <div className="hero__dropdown-menu">
+                <Link to={Rutas.FormsolicitudesCatequesis} className="hero__dropdown-link">Catequesis</Link>
+                <Link to={Rutas.SolicitudesSacramentos} className="hero__dropdown-link">Solicitudes de Sacramentos</Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </section>
