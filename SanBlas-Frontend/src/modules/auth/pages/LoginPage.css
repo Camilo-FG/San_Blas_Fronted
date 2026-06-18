@@ -1,0 +1,100 @@
+.login-page {
+  min-height: calc(100vh - 160px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 12px 30px rgba(0, 51, 102, 0.08);
+}
+
+.login-card__eyebrow {
+  margin: 0 0 0.5rem;
+  color: #d4af37;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.login-card h1 {
+  margin: 0 0 0.5rem;
+  color: #003366;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.75rem;
+}
+
+.login-card__subtitle {
+  margin: 0 0 1.5rem;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.login-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.login-card__field label {
+  color: #003366;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.login-card__field input {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  font-size: 1rem;
+}
+
+.login-card__field input:focus {
+  outline: 2px solid rgba(0, 51, 102, 0.15);
+  border-color: #003366;
+}
+
+.login-card__error {
+  margin: 0 0 1rem;
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.login-card__submit {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  background: #003366;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.login-card__submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-card__back {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #003366;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.login-card__back:hover {
+  text-decoration: underline;
+}

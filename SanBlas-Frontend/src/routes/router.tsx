@@ -3,6 +3,7 @@ import {
   createRoute,
   createRouter,
   Outlet,
+  redirect,
 } from "@tanstack/react-router";
 
 import Navbar from "../shared/components/Navbar";
@@ -30,7 +31,12 @@ import CatequesisPage from "../modules/catequesis/pages/CatequesisPage";
 import BautizosPage from "../modules/landing/pages/BautizosPage";
 import HorariosPage from "../modules/landing/pages/HorariosPage";
 import ContactoPage from "../modules/landing/pages/ContactoPage";
-// import Donaciones from "../modules/donaciones/pages/donaciones";
+import LoginPage from "../modules/auth/pages/LoginPage";
+import {
+  clearAuthToken,
+  getAuthToken,
+} from "../services/apiClient";
+import { isTokenExpired } from "../utils/jwt";
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -93,10 +99,32 @@ const formsolicitudesCatequesisRoute = createRoute({
   component: CatequesisPage,
 });
 
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.login,
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
+  component: function LoginRouteComponent() {
+    const { redirect: redirectTo } = loginRoute.useSearch();
+    return <LoginPage redirectTo={redirectTo} />;
+  },
+});
+
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.dashboard,
   component: Dashboard,
+  beforeLoad: ({ location }) => {
+    const token = getAuthToken();
+    if (!token || isTokenExpired(token)) {
+      if (token) clearAuthToken();
+      throw redirect({
+        to: Rutas.login,
+        search: { redirect: location.pathname },
+      });
+    }
+  },
 });
 
 const dashboardHomeRoute = createRoute({
@@ -175,6 +203,7 @@ const routeTree = rootRoute.addChildren([
   formsolicitudesCatequesisRoute,
   bautizosRoute,
   horariosRoute,
+  loginRoute,
   dashboardRoute.addChildren([
     dashboardHomeRoute,
     solicitudesCatequesisRoute,

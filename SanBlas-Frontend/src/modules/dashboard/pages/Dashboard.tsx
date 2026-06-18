@@ -1,8 +1,4 @@
-import { Link, Outlet } from "@tanstack/react-router";
-import GestionSacramentos from "../../Registro de Sacramentos/Components/GestionSacramentos";
-
-
-
+import { Link, Outlet, useNavigate } from "@tanstack/react-router";
 import {
   Home,
   Heart,
@@ -12,9 +8,11 @@ import {
   Users,
   Edit,
   ScrollText,
+  LogOut,
 } from "lucide-react";
 
 import Rutas from "../../../routes/Rutas";
+import { useAuth } from "../../../context/AuthContext";
 import "./Dashboard.css";
 
 const navLinks = [
@@ -57,6 +55,14 @@ const navLinks = [
 ];
 
 function Dashboard() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate({ to: Rutas.login });
+  };
+
   return (
     <section className="dashboard">
       <aside className="dashboard__sidebar">
@@ -88,6 +94,18 @@ function Dashboard() {
           <div>
             <h1>Panel Administrativo</h1>
             <p>Parroquia San Blas</p>
+          </div>
+
+          <div className="dashboard__user">
+            <span>{user?.email}</span>
+            <button
+              type="button"
+              className="dashboard__logout"
+              onClick={handleLogout}
+            >
+              <LogOut size={16} />
+              Cerrar sesión
+            </button>
           </div>
         </header>
 

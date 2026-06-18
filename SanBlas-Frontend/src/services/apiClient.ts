@@ -17,6 +17,27 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      const url = error.config?.url ?? "";
+      const isLoginRequest = url.includes("/Auth/login");
+
+      if (!isLoginRequest) {
+        clearAuthToken();
+        const currentPath = window.location.pathname;
+        if (!currentPath.startsWith("/login")) {
+          const redirect = encodeURIComponent(currentPath);
+          window.location.assign(`/login?redirect=${redirect}`);
+        }
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
+
 export const getAuthToken = (): string | null =>
   localStorage.getItem(AUTH_TOKEN_KEY);
 

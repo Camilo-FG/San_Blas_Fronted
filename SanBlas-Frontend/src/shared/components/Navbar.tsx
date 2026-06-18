@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import Rutas from "../../routes/Rutas";
+import { useAuth } from "../../context/AuthContext";
 import logoParroquia from "../../assets/Logo.png";
 import "./Navbar.css";
 
 function Navbar() {
+  const { isAuthenticated } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [serviciosAbierto, setServiciosAbierto] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -168,11 +170,11 @@ function Navbar() {
           </Link>
 
           <Link
-            to={Rutas.dashboard}
+            to={isAuthenticated ? Rutas.dashboard : Rutas.login}
             className="navbar__link"
             onClick={cerrarMenu}
           >
-            Dashboard
+            {isAuthenticated ? "Dashboard" : "Iniciar sesión"}
           </Link>
         </nav>
 
@@ -273,11 +275,11 @@ function Navbar() {
             </Link>
 
             <Link
-              to={Rutas.dashboard}
+              to={isAuthenticated ? Rutas.dashboard : Rutas.login}
               className="navbar__mobile-link"
               onClick={cerrarMenu}
             >
-              Dashboard
+              {isAuthenticated ? "Dashboard" : "Iniciar sesión"}
             </Link>
           </div>
         </div>

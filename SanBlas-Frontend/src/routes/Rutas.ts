@@ -20,6 +20,7 @@ const Rutas = {
   bautizos: "/bautizos",
   horarios: "/horarios",
   contacto: "/contacto",
+  login: "/login",
   dashboard: dashboardBase,
 
   dashboardPath,
