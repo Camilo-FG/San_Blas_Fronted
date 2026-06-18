@@ -1,6 +1,8 @@
 import { Usuario, UserCreate, UserUpdate } from '../../../types/Usuario';
 import { apiConfig } from '../../../api/apiConfig';
 
+const normalizePhoneNumber = (phone: string): string => phone.replace(/\D/g, '');
+
 export const getUsers = async (): Promise<Usuario[]> => {
     const { data } = await apiConfig.get<Usuario[]>('/api/Users');
     return data;
@@ -12,11 +14,19 @@ export const getUserById = async (id: number): Promise<Usuario> => {
 };
 
 export const createUser = async (userData: UserCreate): Promise<Usuario> => {
-    const { data } = await apiConfig.post<Usuario>('/api/Users', userData);
+    const { data } = await apiConfig.post<Usuario>('/api/Users', {
+        ...userData,
+        phoneNumber: normalizePhoneNumber(userData.phoneNumber),
+    });
     return data;
 };
 
 export const updateUser = async (id: number, userData: UserUpdate): Promise<Usuario> => {
-    const { data } = await apiConfig.put<Usuario>(`/api/Users/${id}`, userData);
+    const { data } = await apiConfig.put<Usuario>(`/api/Users/${id}`, {
+        ...userData,
+        ...(userData.phoneNumber
+            ? { phoneNumber: normalizePhoneNumber(userData.phoneNumber) }
+            : {}),
+    });
     return data;
 };
