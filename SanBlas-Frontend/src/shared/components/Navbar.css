@@ -255,6 +255,9 @@
     margin-top: 12px;
     padding-top: 14px;
     border-top: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .navbar__mobile-user-info {
@@ -262,7 +265,6 @@
     align-items: center;
     gap: 10px;
     color: #ffffff;
-    margin-bottom: 8px;
 }
 
 .navbar__mobile-user-info div {
@@ -284,9 +286,52 @@
     letter-spacing: 0.06em;
 }
 
-.navbar__mobile-dashboard-link {
-    color: #d4af37;
+.navbar__mobile-user-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.navbar__mobile-action {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.92rem;
     font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.navbar__mobile-action--dashboard {
+    border: 1px solid rgba(212, 175, 55, 0.55);
+    background: rgba(212, 175, 55, 0.12);
+    color: #f5d77a;
+}
+
+.navbar__mobile-action--dashboard:hover {
+    background: rgba(212, 175, 55, 0.22);
+    color: #ffffff;
+}
+
+.navbar__mobile-action--logout {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+
+.navbar__mobile-action--logout:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fecaca;
+}
+
+.navbar__mobile-action:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
 }
 
 /* Botón hamburguesa */
@@ -344,6 +389,8 @@
 }
 
 .navbar__mobile-link {
+    display: block;
+    width: 100%;
     color: #ffffff;
     font-size: 17px;
     font-family: Georgia, "Times New Roman", serif;

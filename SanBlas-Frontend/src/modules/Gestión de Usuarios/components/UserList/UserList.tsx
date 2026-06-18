@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, User, Mail, Phone, Shield } from 'lucide-react';
 import {
     createColumnHelper,
     flexRender,
@@ -174,20 +174,42 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
                     return (
                         <AdminRecordCard
                             key={usuario.id}
+                            icon={<User size={20} />}
+                            accent={isAdminRole(usuario.role) ? '#7c3aed' : '#003366'}
+                            code={`USR-${usuario.id}`}
                             title={usuario.userName}
-                            subtitle={usuario.email}
+                            subtitle={isAdminRole(usuario.role) ? 'Administrador' : 'Usuario'}
                             badges={
-                                <>
-                                    <span className="status-badge">
-                                        {isAdminRole(usuario.role) ? 'Admin' : 'User'}
-                                    </span>
-                                    <span className={`status-badge ${usuario.state ? 'status-active' : 'status-inactive'}`}>
-                                        {usuario.state ? 'Activo' : 'Inactivo'}
-                                    </span>
-                                </>
+                                <span className={`status-badge ${usuario.state ? 'status-active' : 'status-inactive'}`}>
+                                    {usuario.state ? 'Activo' : 'Inactivo'}
+                                </span>
                             }
-                            onViewDetail={() => setUsuarioSeleccionado(usuario)}
-                            viewLabel="Ver detalle"
+                            meta={[
+                                {
+                                    icon: <Mail size={12} />,
+                                    label: 'Correo',
+                                    value: usuario.email,
+                                },
+                                {
+                                    icon: <Phone size={12} />,
+                                    label: 'Teléfono',
+                                    value: usuario.phoneNumber || 'No provisto',
+                                },
+                            ]}
+                            actions={[
+                                {
+                                    label: 'Editar',
+                                    icon: <Pencil size={15} />,
+                                    variant: 'primary',
+                                    onClick: () => setUsuarioEditando(usuario),
+                                },
+                                {
+                                    label: 'Perfil',
+                                    icon: <Shield size={15} />,
+                                    variant: 'ghost',
+                                    onClick: () => setUsuarioSeleccionado(usuario),
+                                },
+                            ]}
                         />
                     );
                 })}

@@ -6,6 +6,9 @@ import {
   Search,
   XCircle,
   AlertCircle,
+  GraduationCap,
+  Phone,
+  Calendar,
 } from "lucide-react";
 import {
   ColumnDef,
@@ -434,12 +437,17 @@ function GestionSolicitudesCatequesis() {
             {filteredSolicitudes.map((solicitud) => {
               const nombre = `${solicitud.catequizando?.nombre ?? "Sin nombre"} ${solicitud.catequizando?.apellidos ?? ""}`.trim();
               const codigo = solicitud.codigoSolicitud || `CAT-${solicitud.id}`;
+              const encargado = `${solicitud.encargado?.nombre ?? ""} ${solicitud.encargado?.apellidos ?? ""}`.trim() || "Sin encargado";
+              const nivel = solicitud.catequesis?.nivelAInscribirse ?? "Sin nivel";
 
               return (
                 <AdminRecordCard
                   key={solicitud.id}
+                  icon={<GraduationCap size={20} />}
+                  accent="#0f766e"
+                  code={codigo}
                   title={nombre}
-                  subtitle={codigo}
+                  subtitle={nivel}
                   badges={
                     <span
                       className={`catequesis-admin__badge catequesis-admin__badge--${obtenerClaseEstado(
@@ -449,8 +457,26 @@ function GestionSolicitudesCatequesis() {
                       {obtenerTextoEstado(solicitud.estado)}
                     </span>
                   }
-                  onViewDetail={() => openModal(solicitud)}
-                  viewLabel="Ver expediente"
+                  meta={[
+                    {
+                      icon: <Calendar size={12} />,
+                      label: "Fecha",
+                      value: solicitud.fechaSolicitud || "No registrada",
+                    },
+                    {
+                      icon: <Phone size={12} />,
+                      label: "Encargado",
+                      value: encargado,
+                    },
+                  ]}
+                  actions={[
+                    {
+                      label: "Revisar expediente",
+                      icon: <Eye size={15} />,
+                      variant: "primary",
+                      onClick: () => openModal(solicitud),
+                    },
+                  ]}
                 />
               );
             })}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ScrollText, Phone, IdCard, Eye } from 'lucide-react';
 import { useUpdateSolicitudEstado } from '../solicSacramento/hooks/useUpdateSolicitudEstado';
 import { FormSacramento } from '../../types/formSacramento';
 import { createColumnHelper, flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table';
@@ -218,11 +219,50 @@ const TableSacramentos = () => {
             {filtered.map((row) => (
               <AdminRecordCard
                 key={String(row.id)}
+                icon={<ScrollText size={20} />}
+                accent="#1d4ed8"
+                code={`SOL-${row.id}`}
                 title={nombreCompleto(row)}
-                subtitle={`${row.TipoSacramento ?? 'Sacramento'} · ${row.Cedula ?? 'Sin cédula'}`}
+                subtitle={row.TipoSacramento ?? 'Sacramento'}
                 badges={renderEstadoBadge(row.Estado)}
-                onViewDetail={() => setSolicitudSeleccionada(row)}
-                viewLabel="Ver detalle"
+                meta={[
+                  {
+                    icon: <IdCard size={12} />,
+                    label: 'Cédula',
+                    value: row.Cedula ?? '—',
+                  },
+                  {
+                    icon: <Phone size={12} />,
+                    label: 'Teléfono',
+                    value: row.Telefono || 'No provisto',
+                  },
+                ]}
+                footer={
+                  isAdmin ? (
+                    <select
+                      className="admin-record-card__inline-select"
+                      value={row.Estado ?? 'Pendiente'}
+                      disabled={isUpdatingEstado}
+                      aria-label={`Estado de solicitud de ${nombreCompleto(row)}`}
+                      onChange={(e) => handleEstadoChange(
+                        row.id,
+                        e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado',
+                      )}
+                    >
+                      <option value="Pendiente">Pendiente</option>
+                      <option value="Aprobado">Aprobado</option>
+                      <option value="Rechazado">Rechazado</option>
+                    </select>
+                  ) : undefined
+                }
+                actions={[
+                  {
+                    label: 'Ver solicitud',
+                    icon: <Eye size={15} />,
+                    variant: 'primary',
+                    onClick: () => setSolicitudSeleccionada(row),
+                  },
+                ]}
               />
             ))}
           </div>

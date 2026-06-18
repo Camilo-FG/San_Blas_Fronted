@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { HandHeart, Mail, Phone, Eye } from 'lucide-react';
 import { useGestionDonaciones, Donacion } from '../hooks/useGestionDonaciones';
 import { AdminRecordCard } from '../../../shared/components/admin/AdminRecordCard';
 import { AdminRecordDetailSheet } from '../../../shared/components/admin/AdminRecordDetailSheet';
@@ -96,11 +97,45 @@ export default function GestionDonaciones(): React.JSX.Element {
                         {donaciones.map((donacion: Donacion, index: number) => (
                             <AdminRecordCard
                                 key={index}
+                                icon={<HandHeart size={20} />}
+                                accent={donacion.anonimo ? '#64748b' : '#003366'}
+                                code={`DON-${donacion.id}`}
                                 title={donacion.nombre}
                                 subtitle={formatearFecha(donacion.fecha)}
                                 badges={renderEstadoBadge(donacion.estado)}
-                                onViewDetail={() => setDonacionSeleccionada(donacion)}
-                                viewLabel="Ver detalle"
+                                meta={[
+                                    {
+                                        icon: <Mail size={12} />,
+                                        label: 'Correo',
+                                        value: donacion.correo,
+                                    },
+                                    {
+                                        icon: <Phone size={12} />,
+                                        label: 'Teléfono',
+                                        value: donacion.telefono || 'No provisto',
+                                    },
+                                ]}
+                                footer={
+                                    <select
+                                        className={`admin-record-card__inline-select select-estado-dinamico ${(donacion.estado || 'pendiente').toLowerCase()}`}
+                                        value={donacion.estado || 'Pendiente'}
+                                        disabled={procesandoId === donacion.id}
+                                        aria-label={`Estado de donación de ${donacion.nombre}`}
+                                        onChange={(e) => handleAccionEstado(donacion.id, e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado')}
+                                    >
+                                        <option value="Pendiente">Pendiente</option>
+                                        <option value="Aprobado">Aprobado</option>
+                                        <option value="Rechazado">Rechazado</option>
+                                    </select>
+                                }
+                                actions={[
+                                    {
+                                        label: 'Insumos',
+                                        icon: <Eye size={15} />,
+                                        variant: 'primary',
+                                        onClick: () => setDonacionSeleccionada(donacion),
+                                    },
+                                ]}
                             />
                         ))}
                     </div>
