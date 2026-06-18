@@ -4,28 +4,38 @@ import type {
   EstadoConstancia,
   FormSacraBackend,
   TipoSacramentoBackend,
+  TipoSacramentoBackendCode,
 } from "./constanciasApiTypes";
 
 const soloDigitos = (valor: string): string => valor.replace(/\D/g, "");
 
-export const mapTipoSacramentoToBackend = (
-  tipo: string,
-): TipoSacramentoBackend => {
-  const normalizado = tipo
+const normalizarTipoSacramento = (tipo: string): string =>
+  tipo
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  if (normalizado === "bautismo") return "Bautismo";
-  if (normalizado === "confirmacion") return "Confirmacion";
-  if (normalizado === "matrimonio") return "Matrimonio";
+export const mapTipoSacramentoToBackend = (
+  tipo: string,
+): TipoSacramentoBackendCode => {
+  const normalizado = normalizarTipoSacramento(tipo);
 
-  return tipo as TipoSacramentoBackend;
+  if (normalizado === "bautismo") return 0;
+  if (normalizado === "confirmacion") return 1;
+  if (normalizado === "matrimonio") return 2;
+
+  return 0;
 };
 
 export const mapTipoSacramentoToFrontend = (
-  tipo: TipoSacramentoBackend | string,
+  tipo: TipoSacramentoBackend | TipoSacramentoBackendCode,
 ): string => {
+  if (typeof tipo === "number") {
+    if (tipo === 1) return "Confirmación";
+    if (tipo === 2) return "Matrimonio";
+    return "Bautismo";
+  }
+
   if (tipo === "Confirmacion") return "Confirmación";
   return tipo;
 };

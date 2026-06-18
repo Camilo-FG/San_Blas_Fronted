@@ -15,6 +15,10 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
+
     const token = getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -91,6 +95,7 @@ export const handleApiError = (error: unknown): never => {
     message?: string;
     title?: string;
     errores?: Record<string, string[]>;
+    errors?: Record<string, string[]>;
   }>;
 
   if (!axiosError.response) {
@@ -101,11 +106,28 @@ export const handleApiError = (error: unknown): never => {
   }
 
   const { status, data } = axiosError.response;
-  const mensajeBackend = data?.mensaje ?? data?.message ?? data?.title;
+  const erroresBackend = data?.errores ?? data?.errors;
+  const mensajesValidacion = erroresBackend
+    ? Object.values(erroresBackend)
+        .flat()
+        .filter(
+          (mensaje) =>
+            mensaje &&
+            mensaje !== "The dto field is required." &&
+            !mensaje.startsWith("The JSON value could not be converted"),
+        )
+    : [];
+
+  const mensajeBackend =
+    data?.mensaje ??
+    data?.message ??
+    (mensajesValidacion.length > 0
+      ? mensajesValidacion.join(" ")
+      : data?.title);
 
   throw new ApiError(
     mensajeBackend ?? mensajePorEstado(status),
     status,
-    data?.errores,
+    erroresBackend,
   );
 };
