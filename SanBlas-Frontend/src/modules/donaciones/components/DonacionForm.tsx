@@ -105,49 +105,41 @@ const handleSubmit = async () => {
     setCargando(true);
 
     try {
-        // 1. Obtener los datos actuales de JSONBin
-        const obtenerResponse = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-            method: 'GET',
-            headers: { 'X-Master-Key': ACCESS_KEY }
-        });
+        //Datos limpios para el back
+        const nuevaDonacion = {
+            anonimo: formData.anonimo,
+            nombre: formData.anonimo ? 'Anónimo' : formData.nombre,
+            correo: formData.correo,
+            telefono: formData.anonimo ? 'N/A' : formData.telefono,
+            detalle: formData.detalle
+        };
 
-        if (!obtenerResponse.ok) throw new Error('Error al obtener datos');
-        const resultadoGet = await obtenerResponse.json();
-        const donacionesActuales = resultadoGet.record?.donaciones || [];
-
-        // 2. Crear la nueva donación
-const nuevaDonacion = {
-    ...formData,
-    fecha: new Date().toISOString(),
-    nombre: formData.anonimo ? 'Anónimo' : formData.nombre,
-    telefono: formData.anonimo ? 'N/A' : formData.telefono,
-    estado: 'Pendiente' // <-- Cambio mínimo: guarda el estado inicial
-};
-
-        // 3. Guardar todo actualizado de vuelta en JSONBin
-        const guardarResponse = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-            method: 'PUT',
+        //Enviamos los datos directamente al api
+        const response = await fetch('http://localhost:5146/api/Donacion', {
+            method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': ACCESS_KEY
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ donaciones: [...donacionesActuales, nuevaDonacion] })
+            body: JSON.stringify(nuevaDonacion) // Convertimos el objeto a JSON
         });
 
-        if (!guardarResponse.ok) throw new Error('Error al guardar');
+        if (!response.ok) {
+            throw new Error('Error en el servidor al intentar guardar la donación.');
+        }
 
-        // Todo salió bien
+       
         setEnviado(true);
         setFormData({ anonimo: false, nombre: '', correo: '', telefono: '', detalle: '' });
         resetCaptcha();
 
     } catch (error) {
-        console.error(error);
-        alert('Hubo un problema al enviar la donación. Inténtalo de nuevo.');
+        console.error('Error de conexión con el Backend:', error);
+        alert('Hubo un problema al enviar la donación al servidor. Inténtalo de nuevo.');
     } finally {
         setCargando(false);
     }
 };
+
 
     const handleHacerOtraDonacion = () => {
         setFormData({ anonimo: false, nombre: '', correo: '', telefono: '', detalle: '' });
