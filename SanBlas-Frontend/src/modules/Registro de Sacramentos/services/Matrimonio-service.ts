@@ -1,29 +1,21 @@
-import { RegistroConfirmacion, RegistroMatrimonio } from "../../../types/registroSacramento";
-import { apiConfirma } from "../Api/ApiConfigConfirma";
-import { apiMatrimonio } from "../Api/ApiConfigMatrimonio";
-
-const BIN_ID = import.meta.env.VITE_MATRIMONIO_BIN_ID;
+import { apiConfig } from '../../../api/apiConfig';
+import { RegistroMatrimonio } from "src/types/registroSacramento";
 
 export const fetchGetMatrimonio = async (): Promise<RegistroMatrimonio[]> => {
-  const response = await apiMatrimonio.get(`/b/${BIN_ID}/latest?meta=false`);
-  return response.data; 
+  const response = await apiConfig.get('/Matrimonio');
+  return response.data;
 };
 
 export const fetchCreateMatrimonio = async (matrimonio: RegistroMatrimonio): Promise<RegistroMatrimonio> => {
-  const current = await fetchGetMatrimonio();
-  const newMatrimonio = { ...matrimonio, id: Date.now() };
-  await apiMatrimonio.put(`/b/${BIN_ID}`, [...current, newMatrimonio]);
-  return matrimonio;
+  const response = await apiConfig.post('/Matrimonio', matrimonio);
+  return response.data;
+};
+
+export const fetchUpdateMatrimonio = async (MatrimonioActualizado: RegistroMatrimonio): Promise<RegistroMatrimonio> => {
+  const response = await apiConfig.put(`/Matrimonio/${MatrimonioActualizado.id}`, MatrimonioActualizado);
+  return response.data;
 };
 
 export const fetchDeleteMatrimonio = async (id: number): Promise<void> => {
-  const current = await fetchGetMatrimonio();
-  await apiMatrimonio.put(`/b/${BIN_ID}`, current.filter(b => b.id !== id));
-};
-
-export const fetchUpdateMatrimonio = async (matrimonio: RegistroMatrimonio): Promise<RegistroMatrimonio> => {
-  const current = await fetchGetMatrimonio();
-  const updated = current.map(b => b.id === matrimonio.id ? matrimonio : b);
-  await apiMatrimonio.put(`/b/${BIN_ID}`, updated);
-  return matrimonio;
+  await apiConfig.delete(`/Matrimonio/${id}`);
 };

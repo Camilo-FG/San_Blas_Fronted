@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const apiUsers = axios.create({
+export const apiConfig = axios.create({
     baseURL: 'http://localhost:5146', 
     headers: {
         'Content-Type': 'application/json',
@@ -8,7 +8,7 @@ export const apiUsers = axios.create({
 });
 
 //interceptor para agregar el token lwt 
-apiUsers.interceptors.request.use(
+apiConfig.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token'); // O como guarden el token <- OJO KERIL
         if (token) {
