@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pencil, User, Mail, Phone, Shield } from 'lucide-react';
+import { Pencil, User, Mail, Phone, Shield, Search } from 'lucide-react';
 import {
     createColumnHelper,
     flexRender,
@@ -114,21 +114,26 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
     } = usePagination(table);
 
     return (
-        <div className="user-list-container">
-            <div className="user-search-wrapper">
-                <input
-                    type="text"
-                    placeholder="Buscar por nombre, email o teléfono..."
-                    value={globalFilter}
-                    onChange={(e) => setGlobalFilter(e.target.value)}
-                    className="user-search-input"
-                />
-                <button onClick={onAddUser} className="user-add-button">
+        <div className="user-list-container admin-module">
+            <div className="admin-toolbar">
+                <div className="admin-toolbar__search">
+                    <Search size={18} className="admin-toolbar__search-icon" />
+                    <input
+                        type="search"
+                        placeholder="Buscar por nombre, email o teléfono..."
+                        value={globalFilter}
+                        onChange={(e) => setGlobalFilter(e.target.value)}
+                        className="admin-search"
+                        aria-label="Buscar usuarios"
+                    />
+                </div>
+                <button onClick={onAddUser} className="admin-btn admin-btn--primary">
                     + Agregar usuario
                 </button>
             </div>
             <div className="admin-responsive-data">
-            <table className="users-table admin-responsive-data__table">
+            <div className="admin-table-panel admin-responsive-data__table">
+            <table className="admin-table users-table">
                 <thead>
                     {table.getHeaderGroups().map((headerGroup) => (
                         <tr key={headerGroup.id}>
@@ -167,6 +172,7 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
                     )}
                 </tbody>
             </table>
+            </div>
 
             <div className="admin-responsive-data__cards">
                 {table.getRowModel().rows.map((row) => {
@@ -216,25 +222,25 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
             </div>
             </div>
 
-            <div className="table-footer">
-                <span className="table-records-count">
+            <div className="admin-table-footer">
+                <span>
                     Total de registros: <strong>{totalItems}</strong>
                 </span>
-                <div className="pagination-controls">
+                <div className="admin-pagination">
                     <button
                         onClick={goToPreviousPage}
                         disabled={!canPreviousPage}
-                        className="pagination-btn"
+                        className="admin-pagination__btn"
                     >
                         ← Anterior
                     </button>
-                    <span className="pagination-info">
+                    <span>
                         Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
                     </span>
                     <button
                         onClick={goToNextPage}
                         disabled={!canNextPage}
-                        className="pagination-btn"
+                        className="admin-pagination__btn"
                     >
                         Siguiente →
                     </button>

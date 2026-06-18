@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollText, Phone, IdCard, Eye } from 'lucide-react';
+import { ScrollText, Phone, IdCard, Eye, Search } from 'lucide-react';
 import { useUpdateSolicitudEstado } from '../solicSacramento/hooks/useUpdateSolicitudEstado';
 import { FormSacramento } from '../../types/formSacramento';
 import { createColumnHelper, flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table';
@@ -158,12 +158,24 @@ const TableSacramentos = () => {
   }
 
   return (
-    <div className="p-2">
-      <input value={query} type="text" placeholder="Buscar por nombre, apellidos o cédula" onChange={handleSearch} />
+    <div className="admin-module p-2">
+      <div className="admin-toolbar">
+        <div className="admin-toolbar__search">
+          <Search size={18} className="admin-toolbar__search-icon" />
+          <input
+            value={query}
+            type="search"
+            className="admin-search"
+            placeholder="Buscar por nombre, apellidos o cédula"
+            onChange={handleSearch}
+            aria-label="Buscar solicitudes de constancia"
+          />
+        </div>
+      </div>
       {!isPending && (
         <div className="admin-responsive-data">
-          <div className="admin-responsive-data__table table-responsive">
-          <table>
+          <div className="admin-responsive-data__table admin-table-panel table-responsive">
+          <table className="admin-table">
             <thead>
               {table.getHeaderGroups().map((hg) => (
                 <tr key={hg.id}>
@@ -306,27 +318,27 @@ const TableSacramentos = () => {
       </AdminRecordDetailSheet>
 
       {!isPending && table.getRowModel().rows.length > 0 && (
-        <div className="table-footer">
-          <span className="table-records-count">
+        <div className="admin-table-footer">
+          <span>
             Total de registros: <strong>{totalItems}</strong>
           </span>
-          <div className="pagination-controls">
+          <div className="admin-pagination">
             <button
               type="button"
               onClick={goToPreviousPage}
               disabled={!canPreviousPage}
-              className="pagination-btn"
+              className="admin-pagination__btn"
             >
               ← Anterior
             </button>
-            <span className="pagination-info">
+            <span>
               Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
             </span>
             <button
               type="button"
               onClick={goToNextPage}
               disabled={!canNextPage}
-              className="pagination-btn"
+              className="admin-pagination__btn"
             >
               Siguiente →
             </button>
