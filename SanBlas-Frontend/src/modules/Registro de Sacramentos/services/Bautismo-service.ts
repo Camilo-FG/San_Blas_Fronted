@@ -1,28 +1,21 @@
-import { RegistroBautismo } from "../../../types/registroSacramento";
-import { apiBautismo } from "../Api/ApiConfigBautismo";
-
-const BIN_ID = import.meta.env.VITE_BAUTISMO_BIN_ID;
+import { apiConfig } from '../../../api/apiConfig';
+import { RegistroBautismo } from "src/types/registroSacramento";
 
 export const fetchGetBautismo = async (): Promise<RegistroBautismo[]> => {
-  const response = await apiBautismo.get(`/b/${BIN_ID}/latest?meta=false`);
-  return response.data; 
+  const response = await apiConfig.get('/Bautismo');
+  return response.data;
 };
 
 export const fetchCreateBautismo = async (bautismo: RegistroBautismo): Promise<RegistroBautismo> => {
-  const current = await fetchGetBautismo();
-  const newBautismo = { ...bautismo, id: Date.now() };
-  await apiBautismo.put(`/b/${BIN_ID}`, [...current, newBautismo]);
-  return newBautismo;
+  const response = await apiConfig.post('/Bautismo', bautismo);
+  return response.data;
+};
+
+export const fetchUpdateBautismo = async (bautismoActualizado: RegistroBautismo): Promise<RegistroBautismo> => {
+  const response = await apiConfig.put(`/Bautismo/${bautismoActualizado.id}`, bautismoActualizado);
+  return response.data;
 };
 
 export const fetchDeleteBautismo = async (id: number): Promise<void> => {
-  const current = await fetchGetBautismo();
-  await apiBautismo.put(`/b/${BIN_ID}`, current.filter(b => b.id !== id));
-};
-
-export const fetchUpdateBautismo = async (bautismo: RegistroBautismo): Promise<RegistroBautismo> => {
-  const current = await fetchGetBautismo();
-  const updated = current.map(b => b.id === bautismo.id ? bautismo : b);
-  await apiBautismo.put(`/b/${BIN_ID}`, updated);
-  return bautismo;
+  await apiConfig.delete(`/Bautismo/${id}`);
 };
