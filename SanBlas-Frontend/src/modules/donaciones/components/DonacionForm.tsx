@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { useCaptcha } from '../../../shared/hooks/useCaptcha';
+import { crearDonacion } from '../../../services/donacionesService';
+import { ApiError } from '../../../services/apiClient';
 import './DonacionForm.css';
 
 interface FormData {
@@ -33,8 +35,6 @@ export default function DonacionForm(): React.JSX.Element {
     const [enviado, setEnviado] = useState<boolean>(false); 
     const [cargando, setCargando] = useState<boolean>(false);
 
-    const BIN_ID = import.meta.env.VITE_DONACION_BIN_ID;
-    const ACCESS_KEY = import.meta.env.VITE_ACCESS_KEY_DONACION;
     const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
     const validar = (): boolean => {
@@ -114,27 +114,18 @@ const handleSubmit = async () => {
             detalle: formData.detalle
         };
 
-        //Enviamos los datos directamente al api
-        const response = await fetch('http://localhost:5146/api/Donacion', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(nuevaDonacion) // Convertimos el objeto a JSON
-        });
+        await crearDonacion(nuevaDonacion);
 
-        if (!response.ok) {
-            throw new Error('Error en el servidor al intentar guardar la donación.');
-        }
-
-       
         setEnviado(true);
         setFormData({ anonimo: false, nombre: '', correo: '', telefono: '', detalle: '' });
         resetCaptcha();
 
     } catch (error) {
         console.error('Error de conexión con el Backend:', error);
-        alert('Hubo un problema al enviar la donación al servidor. Inténtalo de nuevo.');
+        const mensaje = error instanceof ApiError
+            ? error.message
+            : 'Hubo un problema al enviar la donación al servidor. Inténtalo de nuevo.';
+        alert(mensaje);
     } finally {
         setCargando(false);
     }

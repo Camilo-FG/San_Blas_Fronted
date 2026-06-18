@@ -1,21 +1,21 @@
-import { apiConfig } from '../../../api/apiConfig';
+import { apiClient } from "../../../services/apiClient";
 import { RegistroBautismo } from "src/types/registroSacramento";
 
 export const fetchGetBautismo = async (): Promise<RegistroBautismo[]> => {
-  const response = await apiConfig.get('/Bautismo');
+  const response = await apiClient.get('/Bautismo');
   return response.data;
 };
 
 export const fetchCreateBautismo = async (bautismo: RegistroBautismo): Promise<RegistroBautismo> => {
-  const response = await apiConfig.post('/Bautismo', bautismo);
+  const response = await apiClient.post('/Bautismo', bautismo);
   return response.data;
 };
 
 export const fetchUpdateBautismo = async (bautismoActualizado: RegistroBautismo): Promise<RegistroBautismo> => {
-  const response = await apiConfig.put(`/Bautismo/${bautismoActualizado.id}`, bautismoActualizado);
+  const response = await apiClient.put(`/Bautismo/${bautismoActualizado.id}`, bautismoActualizado);
   return response.data;
 };
 
 export const fetchDeleteBautismo = async (id: number): Promise<void> => {
-  await apiConfig.delete(`/Bautismo/${id}`);
+  await apiClient.delete(`/Bautismo/${id}`);
 };

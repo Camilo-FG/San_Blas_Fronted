@@ -16,7 +16,7 @@ export interface UpdateUserData {
   correo: string;
   telefono: string;
   contraseña: string;
-  rol: boolean;
+  rol: 'user' | 'admin';
   estado: boolean;
 }
 
@@ -28,7 +28,7 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
       correo: '',
       telefono: '',
       contraseña: '',
-      rol: false,
+      rol: 'user' as 'user' | 'admin',
       estado: true,
     },
     onSubmit: async ({ value }) => {
@@ -43,7 +43,7 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
       form.setFieldValue('correo', usuario.email);
       form.setFieldValue('telefono', usuario.phoneNumber);
       form.setFieldValue('contraseña', '');
-      form.setFieldValue('rol', usuario.userRole);
+      form.setFieldValue('rol', usuario.role === 'admin' ? 'admin' : 'user');
       form.setFieldValue('estado', usuario.state);
     }
   }, [usuario, isOpen]);
@@ -214,8 +214,8 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
                     <label htmlFor="u-rol">Rol de Usuario</label>
                     <select
                       id="u-rol"
-                      value={field.state.value ? 'admin' : 'user'}
-                      onChange={e => field.handleChange(e.target.value === 'admin')}
+                      value={field.state.value}
+                      onChange={e => field.handleChange(e.target.value as 'user' | 'admin')}
                       onBlur={field.handleBlur}
                     >
                       <option value="user">Usuario Regular</option>

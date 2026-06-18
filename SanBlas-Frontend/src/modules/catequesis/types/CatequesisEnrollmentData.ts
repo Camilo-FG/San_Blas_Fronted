@@ -34,10 +34,7 @@ export interface CatequizandoData {
   condicionSalud: CondicionSaludCatequizando;
 }
 
-/* 
-  Este tipo lo usa el FORMULARIO internamente.
-  No necesariamente se manda así al JSONBin.
-*/
+/* Tipo usado internamente por el formulario de inscripción. */
 export interface MadreCatequizandoData {
   nombre: string;
   apellidos: string;
@@ -64,11 +61,7 @@ export interface InscripcionData {
   pago: PagoInscripcionCatequesis;
 }
 
-/*
-  Este tipo es para el estado interno del formulario.
-  Aquí NO incluimos lineamientosCatequesis porque el checkbox
-  se maneja aparte con useState y NO se manda al JSONBin.
-*/
+/* Estado interno del formulario (lineamientos se manejan aparte). */
 export interface CatequesisEnrollmentData {
   catequesis: CatequesisData;
   catequizando: CatequizandoData;
@@ -76,10 +69,7 @@ export interface CatequesisEnrollmentData {
   inscripcion: InscripcionData;
 }
 
-/*
-  Estos tipos son para lo que realmente se guarda en JSONBin
-  y lo que lee GestionSolicitudesCatequesis.
-*/
+/* Tipos usados por el dashboard de gestión de solicitudes. */
 export interface EncargadoCatequesisData {
   nombre: string;
   apellidos: string;

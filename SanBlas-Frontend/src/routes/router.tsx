@@ -3,6 +3,7 @@ import {
   createRoute,
   createRouter,
   Outlet,
+  redirect,
 } from "@tanstack/react-router";
 
 import Navbar from "../shared/components/Navbar";
@@ -30,7 +31,18 @@ import CatequesisPage from "../modules/catequesis/pages/CatequesisPage";
 import BautizosPage from "../modules/landing/pages/BautizosPage";
 import HorariosPage from "../modules/landing/pages/HorariosPage";
 import ContactoPage from "../modules/landing/pages/ContactoPage";
-// import Donaciones from "../modules/donaciones/pages/donaciones";
+import LoginPage from "../modules/auth/pages/LoginPage";
+import EventosPublicPage from "../modules/eventos/pages/EventosPublicPage";
+import GestionEventos from "../modules/dashboard/eventos/pages/GestionEventos";
+import {
+  clearAuthToken,
+  getAuthToken,
+} from "../services/apiClient";
+import { isTokenExpired } from "../utils/jwt";
+import {
+  getPostLoginPath,
+  isAuthenticatedAdmin,
+} from "../utils/authRouting";
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -93,10 +105,36 @@ const formsolicitudesCatequesisRoute = createRoute({
   component: CatequesisPage,
 });
 
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.login,
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
+  component: function LoginRouteComponent() {
+    const { redirect: redirectTo } = loginRoute.useSearch();
+    return <LoginPage redirectTo={redirectTo} />;
+  },
+});
+
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.dashboard,
   component: Dashboard,
+  beforeLoad: ({ location }) => {
+    const token = getAuthToken();
+    if (!token || isTokenExpired(token)) {
+      if (token) clearAuthToken();
+      throw redirect({
+        to: Rutas.login,
+        search: { redirect: location.pathname },
+      });
+    }
+
+    if (!isAuthenticatedAdmin()) {
+      throw redirect({ to: Rutas.SolicitudesSacramentos });
+    }
+  },
 });
 
 const dashboardHomeRoute = createRoute({
@@ -147,10 +185,16 @@ const contactoRoute = createRoute({
   component: ContactoPage,
 });
 
+const eventosPublicosRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.eventosPublicos,
+  component: EventosPublicPage,
+});
+
 const eventosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.eventos,
-  component: () => <Placeholder title="Gestión de eventos" />,
+  component: GestionEventos,
 });
 
 const gestionLandingRoute = createRoute({
@@ -175,6 +219,8 @@ const routeTree = rootRoute.addChildren([
   formsolicitudesCatequesisRoute,
   bautizosRoute,
   horariosRoute,
+  eventosPublicosRoute,
+  loginRoute,
   dashboardRoute.addChildren([
     dashboardHomeRoute,
     solicitudesCatequesisRoute,

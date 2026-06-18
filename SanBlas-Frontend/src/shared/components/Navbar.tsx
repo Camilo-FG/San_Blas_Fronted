@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import Rutas from "../../routes/Rutas";
+import { useAuth } from "../../context/AuthContext";
 import logoParroquia from "../../assets/Logo.png";
 import "./Navbar.css";
 
 function Navbar() {
+  const { isAuthenticated, isAdmin, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [serviciosAbierto, setServiciosAbierto] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -149,6 +151,14 @@ function Navbar() {
                 </Link>
 
                 <Link
+                  to={Rutas.eventosPublicos}
+                  className="navbar__submenu-link"
+                  onClick={cerrarMenu}
+                >
+                  Eventos
+                </Link>
+
+                <Link
                   to={Rutas.contacto}
                   className="navbar__submenu-link"
                   onClick={cerrarMenu}
@@ -168,12 +178,41 @@ function Navbar() {
           </Link>
 
           <Link
-            to={Rutas.dashboard}
+            to={isAdmin ? Rutas.dashboard : Rutas.login}
             className="navbar__link"
             onClick={cerrarMenu}
           >
-            Dashboard
+            {isAdmin ? "Dashboard" : "Iniciar sesión"}
           </Link>
+
+          {isAuthenticated && !isAdmin && (
+            <>
+              <Link
+                to={Rutas.SolicitudesSacramentos}
+                className="navbar__link"
+                onClick={cerrarMenu}
+              >
+                Constancia
+              </Link>
+              <Link
+                to={Rutas.FormsolicitudesCatequesis}
+                className="navbar__link"
+                onClick={cerrarMenu}
+              >
+                Catequesis
+              </Link>
+              <button
+                type="button"
+                className="navbar__link navbar__link--button"
+                onClick={() => {
+                  logout();
+                  cerrarMenu();
+                }}
+              >
+                Cerrar sesión
+              </button>
+            </>
+          )}
         </nav>
 
         <button
@@ -254,6 +293,14 @@ function Navbar() {
                   </Link>
 
                   <Link
+                    to={Rutas.eventosPublicos}
+                    className="navbar__mobile-sublink"
+                    onClick={cerrarMenu}
+                  >
+                    Eventos
+                  </Link>
+
+                  <Link
                     to={Rutas.contacto}
                     className="navbar__mobile-sublink"
                     onClick={cerrarMenu}
@@ -273,12 +320,41 @@ function Navbar() {
             </Link>
 
             <Link
-              to={Rutas.dashboard}
+              to={isAdmin ? Rutas.dashboard : Rutas.login}
               className="navbar__mobile-link"
               onClick={cerrarMenu}
             >
-              Dashboard
+              {isAdmin ? "Dashboard" : "Iniciar sesión"}
             </Link>
+
+            {isAuthenticated && !isAdmin && (
+              <>
+                <Link
+                  to={Rutas.SolicitudesSacramentos}
+                  className="navbar__mobile-link"
+                  onClick={cerrarMenu}
+                >
+                  Solicitud de constancia
+                </Link>
+                <Link
+                  to={Rutas.FormsolicitudesCatequesis}
+                  className="navbar__mobile-link"
+                  onClick={cerrarMenu}
+                >
+                  Inscripción catequesis
+                </Link>
+                <button
+                  type="button"
+                  className="navbar__mobile-link navbar__link--button"
+                  onClick={() => {
+                    logout();
+                    cerrarMenu();
+                  }}
+                >
+                  Cerrar sesión
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

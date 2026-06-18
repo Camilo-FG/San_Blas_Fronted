@@ -1,13 +1,53 @@
 import axios, { AxiosError } from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5146/api";
+import { API_BASE_URL, AUTH_TOKEN_KEY, DEFAULT_HEADERS } from "../config/api";
 
 export const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: API_BASE_URL,
+  headers: { ...DEFAULT_HEADERS },
 });
+
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      const url = error.config?.url ?? "";
+      const isLoginRequest = url.includes("/Auth/login");
+
+      if (!isLoginRequest) {
+        clearAuthToken();
+        const currentPath = window.location.pathname;
+        if (!currentPath.startsWith("/login")) {
+          const redirect = encodeURIComponent(currentPath);
+          window.location.assign(`/login?redirect=${redirect}`);
+        }
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
+
+export const getAuthToken = (): string | null =>
+  localStorage.getItem(AUTH_TOKEN_KEY);
+
+export const setAuthToken = (token: string): void => {
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+};
+
+export const clearAuthToken = (): void => {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+};
 
 export class ApiError extends Error {
   status: number;
@@ -25,6 +65,23 @@ export class ApiError extends Error {
   }
 }
 
+const mensajePorEstado = (status: number): string => {
+  switch (status) {
+    case 400:
+      return "Los datos enviados no son válidos. Revise el formulario.";
+    case 401:
+      return "Su sesión ha expirado o no está autenticado. Inicie sesión nuevamente.";
+    case 403:
+      return "No tiene permisos para realizar esta acción.";
+    case 404:
+      return "El recurso solicitado no fue encontrado.";
+    case 500:
+      return "Ocurrió un error en el servidor. Intente más tarde.";
+    default:
+      return "Ocurrió un error al procesar la solicitud.";
+  }
+};
+
 export const handleApiError = (error: unknown): never => {
   if (!axios.isAxiosError(error)) {
     throw new ApiError(
@@ -35,6 +92,8 @@ export const handleApiError = (error: unknown): never => {
 
   const axiosError = error as AxiosError<{
     mensaje?: string;
+    message?: string;
+    title?: string;
     errores?: Record<string, string[]>;
   }>;
 
@@ -46,9 +105,10 @@ export const handleApiError = (error: unknown): never => {
   }
 
   const { status, data } = axiosError.response;
+  const mensajeBackend = data?.mensaje ?? data?.message ?? data?.title;
 
   throw new ApiError(
-    data?.mensaje ?? "Ocurrió un error al procesar la solicitud.",
+    mensajeBackend ?? mensajePorEstado(status),
     status,
     data?.errores,
   );

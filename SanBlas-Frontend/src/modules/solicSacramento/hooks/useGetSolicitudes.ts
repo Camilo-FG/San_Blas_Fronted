@@ -1,11 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { getSolicitudes } from "../Api/solicSacramentos-service";
+import { obtenerSolicitudesSacramentos } from "../../../services/constancias/constanciasService";
 
-
-// useGetSolicitudes.ts
 export const useGetSolicitudes = () => {
   return useQuery({
-    queryKey: ['solicitudes'], 
-    queryFn: getSolicitudes,
+    queryKey: ["solicitudes"],
+    queryFn: obtenerSolicitudesSacramentos,
   });
 };

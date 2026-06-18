@@ -104,11 +104,58 @@
     font-size: 16px;
 }
 
+.dashboard__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.dashboard__topbar h1 {
+    margin: 0 0 0.35rem;
+    color: #003366;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 1.75rem;
+}
+
+.dashboard__topbar p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+.dashboard__user {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #475569;
+    font-size: 0.9rem;
+}
+
+.dashboard__logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    background: #ffffff;
+    color: #003366;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.dashboard__logout:hover {
+    background: #f8fafc;
+}
+
 /* Cards */
 
 .dashboard__cards {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 22px;
 }
 
@@ -139,6 +186,11 @@
     color: #003366;
     font-size: 32px;
     font-weight: 900;
+}
+
+.dashboard__error {
+    color: #b91c1c;
+    margin: 0;
 }
 
 /* Placeholder */

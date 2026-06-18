@@ -9,7 +9,7 @@ import {
     getPaginationRowModel,
     SortingState,
 } from '@tanstack/react-table';
-import { Usuario } from '../../../../types/Usuario';
+import { Usuario, isAdminRole } from '../../../../types/Usuario';
 import { usePagination } from '../../../../shared/hooks/usePagination';
 import UpdateUserModal from '../UpdateUserModal/UpdateUserModal';
 import { useUpdateUser } from '../../hooks/hooksUsuarios/useUpdateUser';
@@ -52,9 +52,9 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
                 header: 'Teléfono',
                 cell: (info) => info.getValue(),
             }),
-            columnHelper.accessor('userRole', {
+            columnHelper.accessor('role', {
                 header: 'Rol',
-                cell: (info) => info.getValue() ? 'Admin' : 'User',
+                cell: (info) => isAdminRole(info.getValue()) ? 'Admin' : 'User',
             }),
             columnHelper.accessor('state', {
                 header: 'Estado',
@@ -200,7 +200,7 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
             phoneNumber: data.telefono,
             password: data.contraseña,
             confirmPassword: data.contraseña,
-            userRole: data.rol,
+            role: data.rol,
             state: data.estado,
         });
 
