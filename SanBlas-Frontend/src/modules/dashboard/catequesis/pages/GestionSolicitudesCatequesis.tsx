@@ -305,7 +305,7 @@ function GestionSolicitudesCatequesis() {
   }
 
   return (
-    <section className="catequesis-admin">
+    <section className="catequesis-admin admin-module">
       {guardando && (
         <p className="catequesis-admin__saving" role="status">
           Guardando cambios...
@@ -347,14 +347,16 @@ function GestionSolicitudesCatequesis() {
         </article>
       </div>
 
-      <div className="catequesis-admin__filters">
-        <div className="catequesis-admin__search">
-          <Search size={17} />
+      <div className="catequesis-admin__filters admin-toolbar">
+        <div className="catequesis-admin__search admin-toolbar__search">
+          <Search size={17} className="admin-toolbar__search-icon" />
           <input
-            type="text"
+            type="search"
+            className="admin-search"
             value={searchQuery}
             placeholder="Buscar por catequizando, encargado, teléfono o código..."
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Buscar matrículas de catequesis"
           />
         </div>
 
@@ -384,10 +386,10 @@ function GestionSolicitudesCatequesis() {
         </div>
       </div>
 
-      <div className="catequesis-admin__table-card">
+      <div className="catequesis-admin__table-card admin-table-panel">
         <div className="admin-responsive-data">
           <div className="admin-responsive-data__table catequesis-admin__table-wrapper">
-          <table className="catequesis-admin__table">
+          <table className="admin-table catequesis-admin__table">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>

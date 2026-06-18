@@ -22,13 +22,16 @@ export default function GestionDonaciones(): React.JSX.Element {
     };
 
     const renderEstadoBadge = (estado?: string) => (
-        <span className={`estado-badge ${(estado || 'pendiente').toLowerCase()}`}>
+        <span className={`admin-status-badge admin-status-badge--${
+            (estado || 'pendiente').toLowerCase() === 'aprobado' ? 'success' :
+            (estado || 'pendiente').toLowerCase() === 'rechazado' ? 'danger' : 'warning'
+        }`}>
             {estado || 'Pendiente'}
         </span>
     );
 
     return (
-        <div className="gestion-container">
+        <div className="gestion-container admin-module">
             {error ? (
                 <div className="no-datos-card">
                     <p className="no-datos" style={{ color: '#b91c1c' }}>{error}</p>
@@ -44,8 +47,8 @@ export default function GestionDonaciones(): React.JSX.Element {
                 </div>
             ) : (
                 <div className="admin-responsive-data">
-                    <div className="admin-responsive-data__table tabla-wrapper">
-                        <table className="tabla-donaciones">
+                    <div className="admin-responsive-data__table admin-table-panel tabla-wrapper">
+                        <table className="admin-table tabla-donaciones">
                             <thead>
                                 <tr>
                                     <th>Fecha</th>

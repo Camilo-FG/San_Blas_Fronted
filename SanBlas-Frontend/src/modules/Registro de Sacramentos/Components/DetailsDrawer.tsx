@@ -151,11 +151,23 @@ const DetailsDrawer = ({ isOpen, onClose, sacramento, tipo }: DetailsDrawerProps
 
   return (
     <>
-      <div className="drawer-overlay" onClick={onClose} />
-      <div className="drawer">
+      <div className="drawer-overlay" onClick={onClose} role="presentation" />
+      <div
+        className="drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="drawer-sacramento-title"
+      >
         <div className="drawer-header">
-          <h2>Detalles del Sacramento</h2>
-          <button className="drawer-close" onClick={onClose}>×</button>
+          <h2 id="drawer-sacramento-title">Detalles del sacramento</h2>
+          <button
+            type="button"
+            className="drawer-close"
+            onClick={onClose}
+            aria-label="Cerrar detalles"
+          >
+            ×
+          </button>
         </div>
         <div className="drawer-body">
           {sacramento ? renderDetails() : <p>Cargando detalles...</p>}

@@ -1,11 +1,11 @@
 /* Contenedor principal */
 .gestion-container {
-    padding: 1rem;
-    background-color: #ffffff;
+    padding: 0;
+    background-color: transparent;
     font-family: 'Inter', system-ui, sans-serif;
-    min-height: 80vh;
-    border-radius: 16px;
-    border: 1px solid #e5e7eb;
+    min-height: auto;
+    border: none;
+    border-radius: 0;
 }
 
 .gestion-header-seccion {
