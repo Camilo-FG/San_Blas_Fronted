@@ -32,11 +32,17 @@ import BautizosPage from "../modules/landing/pages/BautizosPage";
 import HorariosPage from "../modules/landing/pages/HorariosPage";
 import ContactoPage from "../modules/landing/pages/ContactoPage";
 import LoginPage from "../modules/auth/pages/LoginPage";
+import EventosPublicPage from "../modules/eventos/pages/EventosPublicPage";
+import GestionEventos from "../modules/dashboard/eventos/pages/GestionEventos";
 import {
   clearAuthToken,
   getAuthToken,
 } from "../services/apiClient";
 import { isTokenExpired } from "../utils/jwt";
+import {
+  getPostLoginPath,
+  isAuthenticatedAdmin,
+} from "../utils/authRouting";
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -124,6 +130,10 @@ const dashboardRoute = createRoute({
         search: { redirect: location.pathname },
       });
     }
+
+    if (!isAuthenticatedAdmin()) {
+      throw redirect({ to: Rutas.SolicitudesSacramentos });
+    }
   },
 });
 
@@ -175,10 +185,16 @@ const contactoRoute = createRoute({
   component: ContactoPage,
 });
 
+const eventosPublicosRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.eventosPublicos,
+  component: EventosPublicPage,
+});
+
 const eventosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.eventos,
-  component: () => <Placeholder title="Gestión de eventos" />,
+  component: GestionEventos,
 });
 
 const gestionLandingRoute = createRoute({
@@ -203,6 +219,7 @@ const routeTree = rootRoute.addChildren([
   formsolicitudesCatequesisRoute,
   bautizosRoute,
   horariosRoute,
+  eventosPublicosRoute,
   loginRoute,
   dashboardRoute.addChildren([
     dashboardHomeRoute,

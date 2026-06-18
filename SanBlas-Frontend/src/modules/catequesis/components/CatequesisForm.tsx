@@ -2,8 +2,6 @@ import { useState } from "react";
 import "./CatequesisForm.css";
 import { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
 
-import { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
-
 interface CatequesisFormProps {
   onSubmit: (data: CatequesisEnrollmentData) => void;
   loading: boolean;

@@ -18,7 +18,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<AuthUser>;
   logout: () => void;
 }
 
@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = useCallback(async (credentials: LoginCredentials) => {
     const authUser = await loginRequest(credentials);
     setUser(authUser);
+    return authUser;
   }, []);
 
   const logout = useCallback(() => {

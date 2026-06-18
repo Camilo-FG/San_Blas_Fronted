@@ -26,7 +26,7 @@ const GestionUsuarios = () => {
             phoneNumber: userData.telefono,
             password: userData.contraseña,
             confirmPassword: userData.contraseña,
-            userRole: userData.rol === 'admin',
+            role: userData.rol,
         });
 
         if (ok) {

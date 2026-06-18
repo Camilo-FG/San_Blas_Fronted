@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "../../../context/AuthContext";
 import { ApiError } from "../../../services/apiClient";
 import Rutas from "../../../routes/Rutas";
+import { getPostLoginPath } from "../../../utils/authRouting";
 import "./LoginPage.css";
 
 interface LoginPageProps {
@@ -10,7 +11,7 @@ interface LoginPageProps {
 }
 
 const LoginPage = ({ redirectTo }: LoginPageProps) => {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isAdmin, user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,10 +19,12 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate({ to: redirectTo || Rutas.dashboard });
+    if (isAuthenticated && user) {
+      navigate({
+        to: getPostLoginPath(isAdmin, redirectTo),
+      });
     }
-  }, [isAuthenticated, navigate, redirectTo]);
+  }, [isAuthenticated, isAdmin, navigate, redirectTo, user]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -29,8 +32,12 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
     setLoading(true);
 
     try {
-      await login({ email, password });
-      navigate({ to: redirectTo || Rutas.dashboard });
+      const authUser = await login({ email, password });
+      const destination = getPostLoginPath(
+        authUser.role === "Admin",
+        redirectTo,
+      );
+      navigate({ to: destination });
     } catch (err) {
       const mensaje =
         err instanceof ApiError
@@ -45,10 +52,11 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
   return (
     <section className="login-page">
       <div className="login-card">
-        <p className="login-card__eyebrow">Acceso administrativo</p>
+        <p className="login-card__eyebrow">Acceso a la parroquia</p>
         <h1>Iniciar sesión</h1>
         <p className="login-card__subtitle">
-          Ingresá con tu cuenta para acceder al panel de la parroquia.
+          Administradores acceden al panel. Usuarios regulares pueden enviar
+          solicitudes de constancia y catequesis.
         </p>
 
         <form onSubmit={handleSubmit}>

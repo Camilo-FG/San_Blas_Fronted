@@ -155,7 +155,7 @@
 
 .dashboard__cards {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 22px;
 }
 
@@ -186,6 +186,11 @@
     color: #003366;
     font-size: 32px;
     font-weight: 900;
+}
+
+.dashboard__error {
+    color: #b91c1c;
+    margin: 0;
 }
 
 /* Placeholder */
