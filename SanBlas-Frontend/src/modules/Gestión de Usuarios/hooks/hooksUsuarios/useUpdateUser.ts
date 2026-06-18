@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Usuario } from "../../../../types/Usuario";
-import { getUsers, putUser } from "../../services/userServices";
+import { UserUpdate } from "../../../../types/Usuario";
+import { updateUser } from "../../services/userServices";
 
 export const useUpdateUser = () => {
     const [loading, setLoading] = useState<boolean>(false);
@@ -8,26 +8,18 @@ export const useUpdateUser = () => {
 
     const actualizarUsuario = async (
         id: number,
-        datosModificados: Partial<Usuario>
+        datosModificados: UserUpdate
     ): Promise<boolean> => {
         setLoading(true);
         setError(null);
         try {
-            const usuariosActuales = await getUsers();
-
-            const usuariosActualizados = usuariosActuales.map(u =>
-                u.ID === id
-                    ? { ...u, ...datosModificados } 
-                    : u
-            );
-
-            await putUser(usuariosActualizados);
+            await updateUser(id, datosModificados);
             return true;
         } catch (err) {
             setError('Error al actualizar el usuario');
             console.error(err);
             return false;
-        } finally { 
+        } finally {
             setLoading(false);
         }
     };

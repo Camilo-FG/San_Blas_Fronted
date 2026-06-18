@@ -39,12 +39,12 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
   //cargar datos del usuario cuando se abre el modal
   useEffect(() => {
     if (usuario && isOpen) {
-      form.setFieldValue('nombre', usuario.UserName);
-      form.setFieldValue('correo', usuario.Email);
-      form.setFieldValue('telefono', usuario.PhoneNumber);
-      form.setFieldValue('contraseña', usuario.Password);
-      form.setFieldValue('rol', usuario.UserRole);
-      form.setFieldValue('estado', usuario.State);
+      form.setFieldValue('nombre', usuario.userName);
+      form.setFieldValue('correo', usuario.email);
+      form.setFieldValue('telefono', usuario.phoneNumber);
+      form.setFieldValue('contraseña', '');
+      form.setFieldValue('rol', usuario.userRole);
+      form.setFieldValue('estado', usuario.state);
     }
   }, [usuario, isOpen]);
 
@@ -116,7 +116,7 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
                   const v = value.trim();
                   if (!v) return 'El correo es requerido.';
                   if (!validateEmail(v)) return 'Solo se permiten dominios .com, .es o .org';
-                  if (users.some(u => u.Email.toLowerCase() === v.toLowerCase() && u.ID !== usuario?.ID))
+                  if (users.some(u => u.email.toLowerCase() === v.toLowerCase() && u.id !== usuario?.id))
                     return 'Ya existe una cuenta con este correo.';
                   return undefined;
                 },

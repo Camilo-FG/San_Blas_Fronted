@@ -40,23 +40,23 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
 
     const columns = useMemo(
         () => [
-            columnHelper.accessor('UserName', {
+            columnHelper.accessor('userName', {
                 header: 'Nombre de Usuario',
                 cell: (info) => info.getValue(),
             }),
-            columnHelper.accessor('Email', {
+            columnHelper.accessor('email', {
                 header: 'Email',
                 cell: (info) => info.getValue(),
             }),
-            columnHelper.accessor('PhoneNumber', {
+            columnHelper.accessor('phoneNumber', {
                 header: 'Teléfono',
                 cell: (info) => info.getValue(),
             }),
-            columnHelper.accessor('UserRole', {
+            columnHelper.accessor('userRole', {
                 header: 'Rol',
                 cell: (info) => info.getValue() ? 'Admin' : 'User',
             }),
-            columnHelper.accessor('State', {
+            columnHelper.accessor('state', {
                 header: 'Estado',
                 cell: (info) => (
                     <span className={`status-badge ${info.getValue() ? 'status-active' : 'status-inactive'}`}>
@@ -64,7 +64,7 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
                     </span>
                 ),
             }),
-            columnHelper.accessor('CreationDate', {
+            columnHelper.accessor('creationDate', {
                 header: 'Fecha de Creación',
                 cell: (info) => new Date(info.getValue()).toLocaleDateString('es-ES'),
             }),
@@ -194,13 +194,14 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
     onSave={async (data) => {
         if (!usuarioEditando) return;
 
-        const ok = await actualizarUsuario(usuarioEditando.ID, {
-            UserName: data.nombre,
-            Email: data.correo,
-            PhoneNumber: data.telefono,
-            Password: data.contraseña,
-            UserRole: data.rol,
-            State: data.estado,
+        const ok = await actualizarUsuario(usuarioEditando.id, {
+            userName: data.nombre,
+            email: data.correo,
+            phoneNumber: data.telefono,
+            password: data.contraseña,
+            confirmPassword: data.contraseña,
+            userRole: data.rol,
+            state: data.estado,
         });
 
         if (ok) {

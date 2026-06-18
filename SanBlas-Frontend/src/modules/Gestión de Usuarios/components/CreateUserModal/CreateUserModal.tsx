@@ -103,7 +103,7 @@ const CreateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, users }) =>
                   const v = value.trim();
                   if (!v) return 'El correo es requerido.';
                   if (!validateEmail(v)) return 'Solo se permiten dominios .com, .es o .org';
-                  if (users.some(u => u.Email.toLowerCase() === v.toLowerCase()))
+                  if (users.some(u => u.email.toLowerCase() === v.toLowerCase()))
                     return 'Ya existe una cuenta con este correo.';
                   return undefined;
                 },
