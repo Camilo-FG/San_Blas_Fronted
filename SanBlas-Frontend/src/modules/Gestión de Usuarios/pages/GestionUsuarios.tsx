@@ -39,7 +39,7 @@ const GestionUsuarios = () => {
     if (error) return <div>{error}</div>;
 
     return (
-        <section className="gestion-usuarios">
+        <section className="gestion-usuarios admin-module">
             <UserList
                 users={users}
                 onAddUser={() => setIsModalOpen(true)}

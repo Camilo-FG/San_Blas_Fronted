@@ -6,6 +6,9 @@ import {
   Search,
   XCircle,
   AlertCircle,
+  GraduationCap,
+  Phone,
+  Calendar,
 } from "lucide-react";
 import {
   ColumnDef,
@@ -15,6 +18,7 @@ import {
 } from "@tanstack/react-table";
 
 import ModalSimple from "../ModalSimple/ModalSimple";
+import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
 import { useSolicitudesCatequesis } from "../hooks/useSolicitudesCatequesis";
 import type {
   CatequesisEnrollmentRecord,
@@ -74,7 +78,7 @@ const obtenerClaseEstado = (estado?: string | null) => {
 };
 
 function GestionSolicitudesCatequesis() {
-  const { solicitudes, cambiarEstado, obtenerDetalle, cargando, guardando, error } =
+  const { solicitudes, cambiarEstado, obtenerDetalle, cargando, guardando, error, detalleError, accionError, limpiarDetalleError, limpiarAccionError } =
     useSolicitudesCatequesis();
 
   const [statusFilter, setStatusFilter] = useState<
@@ -146,7 +150,9 @@ function GestionSolicitudesCatequesis() {
     setSelectedSolicitud(null);
     setIsRejecting(false);
     setRejectionReason("");
-  }, []);
+    limpiarDetalleError();
+    limpiarAccionError();
+  }, [limpiarDetalleError, limpiarAccionError]);
 
   const openModal = useCallback(async (solicitud: CatequesisEnrollmentRecord) => {
     const detalle = await obtenerDetalle(solicitud.id);
@@ -292,7 +298,7 @@ function GestionSolicitudesCatequesis() {
     );
   }
 
-  if (error) {
+  if (error && solicitudes.length === 0) {
     return (
       <section className="catequesis-admin">
         <p>{error}</p>
@@ -301,19 +307,18 @@ function GestionSolicitudesCatequesis() {
   }
 
   return (
-    <section className="catequesis-admin">
-      <div className="catequesis-admin__top">
-        <div>
-          <h1>Matrículas de Catequesis</h1>
-          <p>
-            Autorice y controle las inscripciones enviadas por los encargados.
-          </p>
-        </div>
+    <section className="catequesis-admin admin-module">
+      {guardando && (
+        <p className="catequesis-admin__saving" role="status">
+          Guardando cambios...
+        </p>
+      )}
 
-        {guardando && (
-          <span className="catequesis-admin__saving">Guardando cambios...</span>
-        )}
-      </div>
+      {error && (
+        <p className="catequesis-admin__inline-error" role="alert">
+          {error}
+        </p>
+      )}
 
       <div className="catequesis-admin__stats">
         <article className="catequesis-admin__stat">
@@ -350,14 +355,16 @@ function GestionSolicitudesCatequesis() {
         </article>
       </div>
 
-      <div className="catequesis-admin__filters">
-        <div className="catequesis-admin__search">
-          <Search size={17} />
+      <div className="catequesis-admin__filters admin-toolbar">
+        <div className="catequesis-admin__search admin-toolbar__search">
+          <Search size={17} className="admin-toolbar__search-icon" />
           <input
-            type="text"
+            type="search"
+            className="admin-search"
             value={searchQuery}
             placeholder="Buscar por catequizando, encargado, teléfono o código..."
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Buscar matrículas de catequesis"
           />
         </div>
 
@@ -387,9 +394,10 @@ function GestionSolicitudesCatequesis() {
         </div>
       </div>
 
-      <div className="catequesis-admin__table-card">
-        <div className="catequesis-admin__table-wrapper">
-          <table className="catequesis-admin__table">
+      <div className="catequesis-admin__table-card admin-table-panel">
+        <div className="admin-responsive-data">
+          <div className="admin-responsive-data__table catequesis-admin__table-wrapper">
+          <table className="admin-table catequesis-admin__table">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
@@ -433,6 +441,56 @@ function GestionSolicitudesCatequesis() {
               )}
             </tbody>
           </table>
+          </div>
+
+          <div className="admin-responsive-data__cards">
+            {filteredSolicitudes.map((solicitud) => {
+              const nombre = `${solicitud.catequizando?.nombre ?? "Sin nombre"} ${solicitud.catequizando?.apellidos ?? ""}`.trim();
+              const codigo = solicitud.codigoSolicitud || `CAT-${solicitud.id}`;
+              const encargado = `${solicitud.encargado?.nombre ?? ""} ${solicitud.encargado?.apellidos ?? ""}`.trim() || "Sin encargado";
+              const nivel = solicitud.catequesis?.nivelAInscribirse ?? "Sin nivel";
+
+              return (
+                <AdminRecordCard
+                  key={solicitud.id}
+                  icon={<GraduationCap size={20} />}
+                  accent="#0f766e"
+                  code={codigo}
+                  title={nombre}
+                  subtitle={nivel}
+                  badges={
+                    <span
+                      className={`catequesis-admin__badge catequesis-admin__badge--${obtenerClaseEstado(
+                        solicitud.estado,
+                      )}`}
+                    >
+                      {obtenerTextoEstado(solicitud.estado)}
+                    </span>
+                  }
+                  meta={[
+                    {
+                      icon: <Calendar size={12} />,
+                      label: "Fecha",
+                      value: solicitud.fechaSolicitud || "No registrada",
+                    },
+                    {
+                      icon: <Phone size={12} />,
+                      label: "Encargado",
+                      value: encargado,
+                    },
+                  ]}
+                  actions={[
+                    {
+                      label: "Revisar expediente",
+                      icon: <Eye size={15} />,
+                      variant: "primary",
+                      onClick: () => openModal(solicitud),
+                    },
+                  ]}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -450,6 +508,18 @@ function GestionSolicitudesCatequesis() {
           </div>
 
           <div className="catequesis-admin__modal-body">
+            {detalleError && (
+              <p className="catequesis-admin__inline-error" role="alert">
+                {detalleError}
+              </p>
+            )}
+
+            {accionError && (
+              <p className="catequesis-admin__inline-error" role="alert">
+                {accionError}
+              </p>
+            )}
+
             <div className="catequesis-admin__section">
               <h3>Información de Catequesis</h3>
 

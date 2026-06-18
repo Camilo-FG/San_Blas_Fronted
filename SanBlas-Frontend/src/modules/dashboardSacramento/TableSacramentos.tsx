@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ScrollText, Phone, IdCard, Eye, Search } from 'lucide-react';
 import { useUpdateSolicitudEstado } from '../solicSacramento/hooks/useUpdateSolicitudEstado';
 import { FormSacramento } from '../../types/formSacramento';
 import { createColumnHelper, flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table';
@@ -6,6 +7,9 @@ import { useGetSolicitudes } from '../solicSacramento/hooks/useGetSolicitudes';
 import { usePagination } from '../../shared/hooks/usePagination';
 import { ApiError } from '../../services/apiClient';
 import { useAuth } from '../../context/AuthContext';
+import { AdminRecordCard } from '../../shared/components/admin/AdminRecordCard';
+import { AdminRecordDetailSheet } from '../../shared/components/admin/AdminRecordDetailSheet';
+import './dashSacra.css';
 
 
 const columnHelper = createColumnHelper<FormSacramento>()
@@ -50,10 +54,14 @@ const normalizeText = (value: unknown) =>
     .toLowerCase()
     .trim();
 
+const nombreCompleto = (row: FormSacramento) =>
+  [row.Nombre, row.PrimerApellido, row.SegundoApellido].filter(Boolean).join(' ');
+
 
 const TableSacramentos = () => {
   const [query, setQuery] = useState('');
   const [localRows, setLocalRows] = useState<FormSacramento[]>([]);
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState<FormSacramento | null>(null);
   const { isAdmin } = useAuth();
   const { data, error, isPending } = useGetSolicitudes();
   const { mutate: updateEstado, isPending: isUpdatingEstado } = useUpdateSolicitudEstado();
@@ -121,6 +129,10 @@ const TableSacramentos = () => {
                 : solicitud,
             ),
           );
+
+          if (solicitudSeleccionada && String(solicitudSeleccionada.id) === String(id)) {
+            setSolicitudSeleccionada({ ...solicitudSeleccionada, Estado: nextEstado });
+          }
         },
         onError: (err) => {
           const mensaje = err instanceof ApiError
@@ -132,6 +144,12 @@ const TableSacramentos = () => {
     );
   };
 
+  const renderEstadoBadge = (estado?: string) => {
+    const currentEstado = estado ?? 'Pendiente';
+    const estadoClass = `estado-badge estado-badge--${String(currentEstado).toLowerCase()}`;
+    return <span className={estadoClass}>{currentEstado}</span>;
+  };
+
   if (error) {
     const mensaje = error instanceof ApiError
       ? error.message
@@ -140,11 +158,24 @@ const TableSacramentos = () => {
   }
 
   return (
-    <div className="p-2">
-      <input value={query} type="text" placeholder="Buscar por nombre, apellidos o cédula" onChange={handleSearch} />
+    <div className="admin-module p-2">
+      <div className="admin-toolbar">
+        <div className="admin-toolbar__search">
+          <Search size={18} className="admin-toolbar__search-icon" />
+          <input
+            value={query}
+            type="search"
+            className="admin-search"
+            placeholder="Buscar por nombre, apellidos o cédula"
+            onChange={handleSearch}
+            aria-label="Buscar solicitudes de constancia"
+          />
+        </div>
+      </div>
       {!isPending && (
-        <div className="table-responsive">
-          <table>
+        <div className="admin-responsive-data">
+          <div className="admin-responsive-data__table admin-table-panel table-responsive">
+          <table className="admin-table">
             <thead>
               {table.getHeaderGroups().map((hg) => (
                 <tr key={hg.id}>
@@ -194,31 +225,120 @@ const TableSacramentos = () => {
               ))}
             </tbody>
           </table>
+          </div>
+
+          <div className="admin-responsive-data__cards">
+            {filtered.map((row) => (
+              <AdminRecordCard
+                key={String(row.id)}
+                icon={<ScrollText size={20} />}
+                accent="#1d4ed8"
+                code={`SOL-${row.id}`}
+                title={nombreCompleto(row)}
+                subtitle={row.TipoSacramento ?? 'Sacramento'}
+                badges={renderEstadoBadge(row.Estado)}
+                meta={[
+                  {
+                    icon: <IdCard size={12} />,
+                    label: 'Cédula',
+                    value: row.Cedula ?? '—',
+                  },
+                  {
+                    icon: <Phone size={12} />,
+                    label: 'Teléfono',
+                    value: row.Telefono || 'No provisto',
+                  },
+                ]}
+                footer={
+                  isAdmin ? (
+                    <select
+                      className="admin-record-card__inline-select"
+                      value={row.Estado ?? 'Pendiente'}
+                      disabled={isUpdatingEstado}
+                      aria-label={`Estado de solicitud de ${nombreCompleto(row)}`}
+                      onChange={(e) => handleEstadoChange(
+                        row.id,
+                        e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado',
+                      )}
+                    >
+                      <option value="Pendiente">Pendiente</option>
+                      <option value="Aprobado">Aprobado</option>
+                      <option value="Rechazado">Rechazado</option>
+                    </select>
+                  ) : undefined
+                }
+                actions={[
+                  {
+                    label: 'Ver solicitud',
+                    icon: <Eye size={15} />,
+                    variant: 'primary',
+                    onClick: () => setSolicitudSeleccionada(row),
+                  },
+                ]}
+              />
+            ))}
+          </div>
         </div>
       )}
 
+      <AdminRecordDetailSheet
+        open={solicitudSeleccionada !== null}
+        title={solicitudSeleccionada ? nombreCompleto(solicitudSeleccionada) : 'Solicitud'}
+        subtitle={solicitudSeleccionada?.TipoSacramento}
+        badges={solicitudSeleccionada ? renderEstadoBadge(solicitudSeleccionada.Estado) : undefined}
+        onClose={() => setSolicitudSeleccionada(null)}
+        actions={
+          solicitudSeleccionada && isAdmin ? (
+            <label className="admin-detail-estado">
+              <span>Cambiar estado</span>
+              <select
+                value={solicitudSeleccionada.Estado ?? 'Pendiente'}
+                onChange={(e) => handleEstadoChange(
+                  solicitudSeleccionada.id,
+                  e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado',
+                )}
+                disabled={isUpdatingEstado}
+              >
+                <option value="Pendiente">Pendiente</option>
+                <option value="Aprobado">Aprobado</option>
+                <option value="Rechazado">Rechazado</option>
+              </select>
+            </label>
+          ) : undefined
+        }
+      >
+        {solicitudSeleccionada && (
+          <div className="admin-detail-fields">
+            <p className="admin-detail-field"><strong>Cédula:</strong> {solicitudSeleccionada.Cedula}</p>
+            <p className="admin-detail-field"><strong>Correo:</strong> {solicitudSeleccionada.Correo}</p>
+            <p className="admin-detail-field"><strong>Teléfono:</strong> {solicitudSeleccionada.Telefono || 'No provisto'}</p>
+            <p className="admin-detail-field"><strong>Motivo:</strong> {solicitudSeleccionada.Motivo}</p>
+          </div>
+        )}
+      </AdminRecordDetailSheet>
+
       {!isPending && table.getRowModel().rows.length > 0 && (
-        <div className="table-footer">
-          <span className="table-records-count">
+        <div className="admin-table-footer">
+          <span>
             Total de registros: <strong>{totalItems}</strong>
           </span>
-          <div className="pagination-controls">
+          <div className="admin-pagination">
             <button
               type="button"
               onClick={goToPreviousPage}
               disabled={!canPreviousPage}
-              className="pagination-btn"
+              className="admin-pagination__btn"
             >
               ← Anterior
             </button>
-            <span className="pagination-info">
+            <span>
               Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
             </span>
             <button
               type="button"
               onClick={goToNextPage}
               disabled={!canNextPage}
-              className="pagination-btn"
+              className="admin-pagination__btn"
             >
               Siguiente →
             </button>

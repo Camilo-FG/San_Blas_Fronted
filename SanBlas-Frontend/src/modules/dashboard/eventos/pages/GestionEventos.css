@@ -1,81 +1,3 @@
-.gestion-eventos {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.gestion-eventos__header h2 {
-  margin: 0 0 0.35rem;
-  color: #003366;
-  font-family: "Playfair Display", Georgia, serif;
-}
-
-.gestion-eventos__header p {
-  margin: 0;
-  color: #64748b;
-}
-
-.gestion-eventos__actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.gestion-eventos__btn {
-  border: none;
-  border-radius: 10px;
-  padding: 0.65rem 1rem;
-  background: #003366;
-  color: #ffffff;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.gestion-eventos__btn--secondary {
-  background: #ffffff;
-  color: #003366;
-  border: 1px solid #cbd5e1;
-}
-
-.gestion-eventos__btn--danger {
-  background: #b91c1c;
-}
-
-.gestion-eventos__error {
-  color: #b91c1c;
-  margin: 0;
-}
-
-.gestion-eventos__table-wrapper {
-  overflow-x: auto;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-}
-
-.gestion-eventos__table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.gestion-eventos__table th,
-.gestion-eventos__table td {
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: left;
-}
-
-.gestion-eventos__table th {
-  color: #003366;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.gestion-eventos__actions-cell {
-  display: flex;
-  gap: 0.5rem;
-}
-
 .gestion-eventos__modal-backdrop {
   position: fixed;
   inset: 0;
@@ -84,12 +6,14 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  z-index: 50;
+  z-index: 1300;
 }
 
 .gestion-eventos__modal {
   width: 100%;
   max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
   background: #ffffff;
   border-radius: 16px;
   padding: 1.5rem;
@@ -131,22 +55,4 @@
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 1rem;
-}
-
-.gestion-eventos__badge {
-  display: inline-block;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.gestion-eventos__badge--published {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.gestion-eventos__badge--draft {
-  background: #f1f5f9;
-  color: #475569;
 }

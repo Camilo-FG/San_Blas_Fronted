@@ -17,6 +17,7 @@ import {
 
 import Rutas from "../../../routes/Rutas";
 import { useAuth } from "../../../context/AuthContext";
+import "../../../shared/components/admin/adminDataView.css";
 import "./Dashboard.css";
 
 const navLinks = [

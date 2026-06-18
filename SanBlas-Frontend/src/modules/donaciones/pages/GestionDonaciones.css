@@ -1,11 +1,11 @@
 /* Contenedor principal */
 .gestion-container {
-    padding: 1rem;
-    background-color: #ffffff;
+    padding: 0;
+    background-color: transparent;
     font-family: 'Inter', system-ui, sans-serif;
-    min-height: 80vh;
-    border-radius: 16px;
-    border: 1px solid #e5e7eb;
+    min-height: auto;
+    border: none;
+    border-radius: 0;
 }
 
 .gestion-header-seccion {
@@ -280,6 +280,21 @@
 
 .no-datos {
     font-style: italic;
+}
+
+.admin-detail-estado {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    color: #334155;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.admin-detail-estado select {
+    width: 100%;
+    min-height: 44px;
 }
 
 @media (min-width: 768px) {

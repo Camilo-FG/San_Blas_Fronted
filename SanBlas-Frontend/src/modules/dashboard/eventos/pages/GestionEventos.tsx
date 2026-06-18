@@ -1,10 +1,22 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  Calendar,
+  MapPin,
+  Pencil,
+  Trash2,
+  Eye,
+  Search,
+  Plus,
+  CalendarDays,
+} from "lucide-react";
 import {
   eventoToFormulario,
   useGestionEventos,
 } from "../hooks/useGestionEventos";
 import type { Evento } from "../../../../services/eventosService";
 import type { EventoPayload } from "../../../../services/eventosService";
+import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
+import { AdminRecordDetailSheet } from "../../../../shared/components/admin/AdminRecordDetailSheet";
 import "./GestionEventos.css";
 
 const formatearFecha = (fecha: string) =>
@@ -12,6 +24,12 @@ const formatearFecha = (fecha: string) =>
     day: "2-digit",
     month: "short",
     year: "numeric",
+  });
+
+const formatearHora = (fecha: string) =>
+  new Date(fecha).toLocaleTimeString("es-CR", {
+    hour: "numeric",
+    minute: "2-digit",
   });
 
 const GestionEventos = () => {
@@ -25,9 +43,23 @@ const GestionEventos = () => {
     borrarEvento,
   } = useGestionEventos();
 
+  const [busqueda, setBusqueda] = useState("");
   const [modalAbierto, setModalAbierto] = useState(false);
   const [formulario, setFormulario] = useState<EventoPayload>(formularioVacio());
   const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
+
+  const eventosFiltrados = useMemo(() => {
+    const query = busqueda.trim().toLowerCase();
+    if (!query) return eventos;
+
+    return eventos.filter((evento) =>
+      [evento.titulo, evento.descripcion, evento.lugar]
+        .join(" ")
+        .toLowerCase()
+        .includes(query),
+    );
+  }, [busqueda, eventos]);
 
   const abrirCrear = () => {
     setEditandoId(null);
@@ -57,85 +89,208 @@ const GestionEventos = () => {
     const confirmar = window.confirm("¿Desea eliminar este evento?");
     if (!confirmar) return;
     await borrarEvento(id);
+    setEventoSeleccionado(null);
   };
 
+  const renderEstadoBadge = (publicado: boolean) => (
+    <span
+      className={`admin-status-badge ${
+        publicado ? "admin-status-badge--success" : "admin-status-badge--neutral"
+      }`}
+    >
+      {publicado ? "Publicado" : "Borrador"}
+    </span>
+  );
+
   return (
-    <section className="gestion-eventos">
-      <div className="gestion-eventos__header">
-        <h2>Gestión de eventos</h2>
-        <p>Cree, edite y publique los eventos de la parroquia.</p>
-      </div>
+    <section className="admin-module gestion-eventos">
+      {error && <p className="admin-error">{error}</p>}
 
-      {error && <p className="gestion-eventos__error">{error}</p>}
-
-      <div className="gestion-eventos__actions">
-        <button
-          type="button"
-          className="gestion-eventos__btn"
-          onClick={abrirCrear}
-        >
+      <div className="admin-toolbar">
+        <div className="admin-toolbar__search">
+          <Search size={18} className="admin-toolbar__search-icon" />
+          <input
+            type="search"
+            className="admin-search"
+            placeholder="Buscar eventos..."
+            value={busqueda}
+            onChange={(event) => setBusqueda(event.target.value)}
+            aria-label="Buscar eventos"
+          />
+        </div>
+        <button type="button" className="admin-btn admin-btn--primary" onClick={abrirCrear}>
+          <Plus size={18} />
           Nuevo evento
         </button>
       </div>
 
       {cargando ? (
-        <p>Cargando eventos...</p>
-      ) : eventos.length === 0 ? (
-        <p>No hay eventos registrados.</p>
+        <p className="admin-empty">Cargando eventos...</p>
+      ) : eventosFiltrados.length === 0 ? (
+        <p className="admin-empty">
+          {busqueda
+            ? "No se encontraron eventos con ese criterio."
+            : "No hay eventos registrados."}
+        </p>
       ) : (
-        <div className="gestion-eventos__table-wrapper">
-          <table className="gestion-eventos__table">
-            <thead>
-              <tr>
-                <th>Título</th>
-                <th>Fecha</th>
-                <th>Lugar</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {eventos.map((evento) => (
-                <tr key={evento.id}>
-                  <td>{evento.titulo}</td>
-                  <td>{formatearFecha(evento.fechaInicio)}</td>
-                  <td>{evento.lugar}</td>
-                  <td>
-                    <span
-                      className={`gestion-eventos__badge ${
-                        evento.publicado
-                          ? "gestion-eventos__badge--published"
-                          : "gestion-eventos__badge--draft"
-                      }`}
-                    >
-                      {evento.publicado ? "Publicado" : "Borrador"}
+        <>
+          <div className="admin-event-grid">
+            {eventosFiltrados.map((evento) => (
+              <article key={evento.id} className="admin-event-card">
+                <div
+                  className={`admin-event-card__cover ${
+                    evento.publicado ? "" : "admin-event-card__cover--draft"
+                  }`}
+                >
+                  <CalendarDays size={42} />
+                  <span
+                    className={`admin-event-card__type ${
+                      evento.publicado
+                        ? "admin-event-card__type--published"
+                        : "admin-event-card__type--draft"
+                    }`}
+                  >
+                    {evento.publicado ? "Evento" : "Borrador"}
+                  </span>
+                </div>
+
+                <div className="admin-event-card__body">
+                  <h3 className="admin-event-card__title">{evento.titulo}</h3>
+                  <div className="admin-event-card__meta">
+                    <span>{formatearFecha(evento.fechaInicio)}</span>
+                    <span className="admin-event-card__time">
+                      {formatearHora(evento.fechaInicio)}
                     </span>
-                  </td>
-                  <td>
-                    <div className="gestion-eventos__actions-cell">
-                      <button
-                        type="button"
-                        className="gestion-eventos__btn gestion-eventos__btn--secondary"
-                        onClick={() => abrirEditar(evento)}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        className="gestion-eventos__btn gestion-eventos__btn--danger"
-                        onClick={() => handleEliminar(evento.id)}
-                        disabled={guardando}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                  <p className="admin-event-card__desc">{evento.descripcion}</p>
+                  <p className="admin-event-card__meta">
+                    <MapPin size={14} />
+                    {evento.lugar}
+                  </p>
+                </div>
+
+                <div className="admin-event-card__footer">
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--ghost"
+                    onClick={() => abrirEditar(evento)}
+                  >
+                    <Pencil size={16} />
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--danger"
+                    onClick={() => handleEliminar(evento.id)}
+                    disabled={guardando}
+                  >
+                    <Trash2 size={16} />
+                    Eliminar
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="admin-responsive-data__cards">
+            {eventosFiltrados.map((evento) => (
+              <AdminRecordCard
+                key={evento.id}
+                icon={<Calendar size={20} />}
+                accent={evento.publicado ? "#047857" : "#b45309"}
+                code={`EVT-${evento.id}`}
+                title={evento.titulo}
+                subtitle={evento.lugar}
+                badges={renderEstadoBadge(evento.publicado)}
+                meta={[
+                  {
+                    icon: <Calendar size={12} />,
+                    label: "Fecha",
+                    value: formatearFecha(evento.fechaInicio),
+                  },
+                  {
+                    icon: <MapPin size={12} />,
+                    label: "Lugar",
+                    value: evento.lugar,
+                  },
+                ]}
+                actions={[
+                  {
+                    label: "Editar",
+                    icon: <Pencil size={15} />,
+                    variant: "ghost",
+                    onClick: () => abrirEditar(evento),
+                  },
+                  {
+                    label: "Ver evento",
+                    icon: <Eye size={15} />,
+                    variant: "primary",
+                    onClick: () => setEventoSeleccionado(evento),
+                  },
+                  {
+                    label: "Eliminar",
+                    icon: <Trash2 size={15} />,
+                    variant: "danger",
+                    disabled: guardando,
+                    onClick: () => handleEliminar(evento.id),
+                  },
+                ]}
+              />
+            ))}
+          </div>
+        </>
       )}
+
+      <AdminRecordDetailSheet
+        open={eventoSeleccionado !== null}
+        title={eventoSeleccionado?.titulo ?? "Evento"}
+        subtitle={eventoSeleccionado ? formatearFecha(eventoSeleccionado.fechaInicio) : undefined}
+        badges={eventoSeleccionado ? renderEstadoBadge(eventoSeleccionado.publicado) : undefined}
+        onClose={() => setEventoSeleccionado(null)}
+        primaryAction={
+          eventoSeleccionado
+            ? {
+                label: "Editar",
+                icon: <Pencil size={16} />,
+                onClick: () => {
+                  abrirEditar(eventoSeleccionado);
+                  setEventoSeleccionado(null);
+                },
+              }
+            : undefined
+        }
+        actions={
+          eventoSeleccionado ? (
+            <button
+              type="button"
+              className="admin-detail-action admin-detail-action--danger"
+              onClick={() => handleEliminar(eventoSeleccionado.id)}
+              disabled={guardando}
+            >
+              <Trash2 size={16} />
+              Eliminar
+            </button>
+          ) : undefined
+        }
+      >
+        {eventoSeleccionado && (
+          <>
+            <div className="admin-detail-fields">
+              <p className="admin-detail-field"><strong>Lugar:</strong> {eventoSeleccionado.lugar}</p>
+              <p className="admin-detail-field">
+                <strong>Fecha fin:</strong>{" "}
+                {eventoSeleccionado.fechaFin
+                  ? formatearFecha(eventoSeleccionado.fechaFin)
+                  : "No definida"}
+              </p>
+            </div>
+            <div className="admin-detail-block">
+              <strong>Descripción</strong>
+              <p className="admin-detail-block__content">{eventoSeleccionado.descripcion}</p>
+            </div>
+          </>
+        )}
+      </AdminRecordDetailSheet>
 
       {modalAbierto && (
         <div className="gestion-eventos__modal-backdrop">
@@ -231,14 +386,14 @@ const GestionEventos = () => {
               <div className="gestion-eventos__modal-actions">
                 <button
                   type="button"
-                  className="gestion-eventos__btn gestion-eventos__btn--secondary"
+                  className="admin-btn admin-btn--secondary"
                   onClick={cerrarModal}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="gestion-eventos__btn"
+                  className="admin-btn admin-btn--primary"
                   disabled={guardando}
                 >
                   {guardando ? "Guardando..." : "Guardar"}

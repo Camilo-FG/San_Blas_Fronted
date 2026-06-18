@@ -59,22 +59,19 @@ export const crearSolicitudCatequesis = async (
       payload.datosPago.comprobanteArchivo = "pendiente";
 
       const body = new FormData();
-      body.append("payload", JSON.stringify(payload));
+      body.append("Payload", JSON.stringify(payload));
       body.append(
-        "feBautismoArchivo",
+        "FeBautismoArchivo",
         formData.catequesis.feBautismoArchivo as File,
       );
       body.append(
-        "comprobanteArchivo",
+        "ComprobanteArchivo",
         formData.inscripcion.pago.archivoComprobante as File,
       );
 
       const { data } = await apiClient.post<CrearInscripcionBackendResponse>(
         `${BASE}/con-archivos`,
         body,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        },
       );
 
       return data;
