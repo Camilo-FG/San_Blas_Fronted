@@ -22,6 +22,7 @@ import type {
 } from "../Types/catequesis";
 
 import "./GestionSolicitudesCatequesis.css";
+import { resolveUploadedFileUrl } from "../../../../utils/files";
 
 const normalizarEstado = (
   estado?: string | null,
@@ -472,9 +473,21 @@ function GestionSolicitudesCatequesis() {
                 <div>
                   <span>Fe de bautismo</span>
                   <strong>
-                    {selectedSolicitud.catequesis?.feBautismoArchivo
-                      ? "Archivo adjunto"
-                      : "No adjuntado"}
+                    {selectedSolicitud.catequesis?.feBautismoArchivo ? (
+                      <a
+                        href={
+                          resolveUploadedFileUrl(
+                            String(selectedSolicitud.catequesis.feBautismoArchivo),
+                          ) ?? "#"
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Ver archivo
+                      </a>
+                    ) : (
+                      "No adjuntado"
+                    )}
                   </strong>
                 </div>
               </div>
@@ -685,9 +698,21 @@ function GestionSolicitudesCatequesis() {
                 <div>
                   <span>Comprobante de pago</span>
                   <strong>
-                    {selectedSolicitud.pago?.comprobanteArchivo
-                      ? "Archivo adjunto"
-                      : "No adjuntado"}
+                    {selectedSolicitud.pago?.comprobanteArchivo ? (
+                      <a
+                        href={
+                          resolveUploadedFileUrl(
+                            String(selectedSolicitud.pago.comprobanteArchivo),
+                          ) ?? "#"
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Ver archivo
+                      </a>
+                    ) : (
+                      "No adjuntado"
+                    )}
                   </strong>
                 </div>
               </div>

@@ -8,11 +8,10 @@ import {
 } from "react";
 import {
   getCurrentUser,
-  login as loginRequest,
-  logout as logoutRequest,
+  logout as logoutSession,
   type AuthUser,
-  type LoginCredentials,
-} from "../services/authService";
+} from "../services/authSession";
+import type { LoginCredentials } from "../services/authService";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -28,13 +27,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(() => getCurrentUser());
 
   const login = useCallback(async (credentials: LoginCredentials) => {
+    const { login: loginRequest } = await import("../services/authService");
     const authUser = await loginRequest(credentials);
     setUser(authUser);
     return authUser;
   }, []);
 
   const logout = useCallback(() => {
-    logoutRequest();
+    logoutSession();
     setUser(null);
   }, []);
 

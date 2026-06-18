@@ -35,12 +35,13 @@ export default function DonacionForm(): React.JSX.Element {
     const [enviado, setEnviado] = useState<boolean>(false); 
     const [cargando, setCargando] = useState<boolean>(false);
 
-    const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+    const RECAPTCHA_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY as string | undefined;
+    const captchaHabilitado = Boolean(RECAPTCHA_KEY);
 
     const validar = (): boolean => {
         const nuevosErrores: FormErrors = {};
         
-        if (!captchaToken) {
+        if (captchaHabilitado && !captchaToken) {
             nuevosErrores.captcha = 'Por favor completá el reCAPTCHA.';
         }
 
@@ -247,15 +248,21 @@ const handleSubmit = async () => {
                     </div>
 
                     <div className="captcha-container">
-                       <ReCAPTCHA
+                        {captchaHabilitado ? (
+                          <ReCAPTCHA
                             ref={captchaRef}
-                            sitekey={RECAPTCHA_KEY}
+                            sitekey={RECAPTCHA_KEY!}
                             onChange={(token: string | null) => {
                                 handleCaptchaChange(token);
                                 setErrors(prev => ({ ...prev, captcha: undefined }));
                             }}
                             onExpired={handleCaptchaExpired}
-                        />
+                          />
+                        ) : (
+                          <p className="captcha-dev-notice">
+                            reCAPTCHA no configurado en este entorno. El formulario funciona en modo desarrollo.
+                          </p>
+                        )}
                         {errors.captcha && <span className="form-error">⚠ {errors.captcha}</span>}
                     </div>
 

@@ -195,11 +195,17 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
         if (!usuarioEditando) return;
 
         const ok = await actualizarUsuario(usuarioEditando.id, {
-            userName: data.nombre,
+            ...(data.nombre.trim() !== usuarioEditando.userName
+              ? { userName: data.nombre }
+              : {}),
             email: data.correo,
             phoneNumber: data.telefono,
-            password: data.contraseña,
-            confirmPassword: data.contraseña,
+            ...(data.contraseña.trim()
+              ? {
+                  password: data.contraseña,
+                  confirmPassword: data.contraseña,
+                }
+              : {}),
             role: data.rol,
             state: data.estado,
         });
