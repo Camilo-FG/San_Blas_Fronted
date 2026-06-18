@@ -1,9 +1,11 @@
 /* Contenedor principal */
 .gestion-container {
-    padding: 24px;
+    padding: 1rem;
     background-color: #ffffff;
     font-family: 'Inter', system-ui, sans-serif;
     min-height: 80vh;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
 }
 
 .gestion-header-seccion {
@@ -145,7 +147,8 @@
 
 .btn-accion {
     border: none;
-    padding: 8px 14px;
+    padding: 0.55rem 0.9rem;
+    min-height: 44px;
     border-radius: 6px;
     font-size: 0.85rem;
     font-weight: 500;
@@ -277,4 +280,31 @@
 
 .no-datos {
     font-style: italic;
+}
+
+@media (min-width: 768px) {
+    .gestion-container {
+        padding: 1.5rem;
+    }
+
+    .gestion-titulo {
+        font-size: 1.8rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .modal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        margin: 0.75rem;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .select-estado-dinamico {
+        width: 100%;
+        max-width: 160px;
+    }
 }

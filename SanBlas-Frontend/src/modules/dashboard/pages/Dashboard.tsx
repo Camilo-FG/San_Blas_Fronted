@@ -1,4 +1,5 @@
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   Home,
   Heart,
@@ -10,6 +11,8 @@ import {
   ScrollText,
   LogOut,
   Shield,
+  Menu,
+  X,
 } from "lucide-react";
 
 import Rutas from "../../../routes/Rutas";
@@ -94,10 +97,22 @@ function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const pageInfo = pageTitles[pathname] ?? {
     title: "Panel administrativo",
     subtitle: "Parroquia San Blas",
   };
+
+  useEffect(() => {
+    setMenuAbierto(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    document.body.style.overflow = menuAbierto ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuAbierto]);
 
   const handleLogout = () => {
     logout();
@@ -106,7 +121,17 @@ function Dashboard() {
 
   return (
     <section className="dashboard">
-      <aside className="dashboard__sidebar">
+      <button
+        type="button"
+        className={`dashboard__backdrop ${menuAbierto ? "dashboard__backdrop--visible" : ""}`}
+        aria-label="Cerrar menú"
+        onClick={() => setMenuAbierto(false)}
+      />
+
+      <aside
+        className={`dashboard__sidebar ${menuAbierto ? "dashboard__sidebar--open" : ""}`}
+        aria-label="Menú del panel administrativo"
+      >
         <div className="dashboard__brand">
           <div className="dashboard__brand-icon">
             <Shield size={22} />
@@ -115,6 +140,14 @@ function Dashboard() {
             <h2>Panel Admin</h2>
             <p>Parroquia San Blas</p>
           </div>
+          <button
+            type="button"
+            className="dashboard__menu-close"
+            aria-label="Cerrar menú"
+            onClick={() => setMenuAbierto(false)}
+          >
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="dashboard__menu">
@@ -151,6 +184,16 @@ function Dashboard() {
 
       <main className="dashboard__content">
         <header className="dashboard__topbar">
+          <button
+            type="button"
+            className="dashboard__menu-toggle"
+            aria-label="Abrir menú de navegación"
+            aria-expanded={menuAbierto}
+            onClick={() => setMenuAbierto(true)}
+          >
+            <Menu size={20} />
+          </button>
+
           <div className="dashboard__page-heading">
             <p className="dashboard__eyebrow">Administración</p>
             <h1>{pageInfo.title}</h1>
