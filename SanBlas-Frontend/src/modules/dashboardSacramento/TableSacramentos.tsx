@@ -1,10 +1,10 @@
-
 import { useEffect, useMemo, useState } from 'react';
 import { useUpdateSolicitudEstado } from '../solicSacramento/hooks/useUpdateSolicitudEstado';
 import { FormSacramento } from '../../types/formSacramento';
 import { createColumnHelper, flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table';
 import { useGetSolicitudes } from '../solicSacramento/hooks/useGetSolicitudes';
 import { usePagination } from '../../shared/hooks/usePagination';
+import { ApiError } from '../../services/apiClient';
 
 
 const columnHelper = createColumnHelper<FormSacramento>()
@@ -108,20 +108,34 @@ const TableSacramentos = () => {
       return;
     }
 
-    updateEstado({
-      id,
-      Estado: nextEstado,
-      currentRows: rows,
-    });
-
-    setLocalRows((current) =>
-      current.map((solicitud) =>
-        String(solicitud.id) === String(id) ? { ...solicitud, Estado: nextEstado } : solicitud,
-      ),
+    updateEstado(
+      { id, Estado: nextEstado },
+      {
+        onSuccess: () => {
+          setLocalRows((current) =>
+            current.map((solicitud) =>
+              String(solicitud.id) === String(id)
+                ? { ...solicitud, Estado: nextEstado }
+                : solicitud,
+            ),
+          );
+        },
+        onError: (err) => {
+          const mensaje = err instanceof ApiError
+            ? err.message
+            : 'No se pudo actualizar el estado.';
+          alert(mensaje);
+        },
+      },
     );
   };
 
-  if (error) return <div>{JSON.stringify(error)}</div>;
+  if (error) {
+    const mensaje = error instanceof ApiError
+      ? error.message
+      : 'No se pudieron cargar las solicitudes.';
+    return <div>{mensaje}</div>;
+  }
 
   return (
     <div className="p-2">

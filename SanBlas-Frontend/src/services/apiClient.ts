@@ -71,6 +71,7 @@ export const handleApiError = (error: unknown): never => {
 
   const axiosError = error as AxiosError<{
     mensaje?: string;
+    message?: string;
     title?: string;
     errores?: Record<string, string[]>;
   }>;
@@ -83,7 +84,7 @@ export const handleApiError = (error: unknown): never => {
   }
 
   const { status, data } = axiosError.response;
-  const mensajeBackend = data?.mensaje ?? data?.title;
+  const mensajeBackend = data?.mensaje ?? data?.message ?? data?.title;
 
   throw new ApiError(
     mensajeBackend ?? mensajePorEstado(status),

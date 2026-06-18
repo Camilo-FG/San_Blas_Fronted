@@ -1,28 +1,21 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { saveSolicitud } from "../Api/solicSacramentos-service";
-import { FormSacramento } from "../../../types/formSacramento";
+import { actualizarEstadoSacramento } from "../../../services/constancias/constanciasService";
+import type { EstadoConstancia } from "../../../services/constancias/constanciasApiTypes";
 
 type UpdateEstadoPayload = {
   id: number | string;
-  Estado: "Pendiente" | "Aprobado" | "Rechazado";
-  currentRows: FormSacramento[];
+  Estado: EstadoConstancia;
 };
 
 export const useUpdateSolicitudEstado = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, Estado, currentRows }: UpdateEstadoPayload) => {
-      const currentData = queryClient.getQueryData<FormSacramento[]>(['solicitudes']) ?? currentRows;
-
-      const updatedData = currentData.map((solicitud) =>
-        String(solicitud.id) === String(id) ? { ...solicitud, Estado } : solicitud,
-      );
-
-      return saveSolicitud(updatedData);
+    mutationFn: async ({ id, Estado }: UpdateEstadoPayload) => {
+      return actualizarEstadoSacramento(Number(id), Estado);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
+      queryClient.invalidateQueries({ queryKey: ["solicitudes"] });
     },
   });
 };
