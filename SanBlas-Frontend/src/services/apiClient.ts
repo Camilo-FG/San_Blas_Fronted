@@ -1,5 +1,12 @@
 import axios, { AxiosError } from "axios";
-import { API_BASE_URL, AUTH_TOKEN_KEY, DEFAULT_HEADERS } from "../config/api";
+import { API_BASE_URL, DEFAULT_HEADERS } from "../config/api";
+import {
+  clearAuthToken,
+  getAuthToken,
+  setAuthToken,
+} from "../utils/authToken";
+
+export { clearAuthToken, getAuthToken, setAuthToken } from "../utils/authToken";
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -8,7 +15,7 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    const token = getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -37,17 +44,6 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   },
 );
-
-export const getAuthToken = (): string | null =>
-  localStorage.getItem(AUTH_TOKEN_KEY);
-
-export const setAuthToken = (token: string): void => {
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
-};
-
-export const clearAuthToken = (): void => {
-  localStorage.removeItem(AUTH_TOKEN_KEY);
-};
 
 export class ApiError extends Error {
   status: number;

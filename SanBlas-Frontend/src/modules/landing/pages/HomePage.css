@@ -1,0 +1,30 @@
+.home-carousel-slot {
+  min-height: 700px;
+  padding: 96px 0;
+  background: #ffffff;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.home-sobre-slot {
+  min-height: 920px;
+  background: var(--white, #ffffff);
+}
+
+@media (max-width: 768px) {
+  .home-carousel-slot {
+    min-height: 620px;
+    padding: 72px 0;
+  }
+
+  .home-sobre-slot {
+    min-height: 780px;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-carousel-slot {
+    min-height: 560px;
+    padding: 64px 0;
+  }
+}

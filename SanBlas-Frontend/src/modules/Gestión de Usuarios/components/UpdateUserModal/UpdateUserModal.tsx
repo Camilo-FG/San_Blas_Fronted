@@ -83,6 +83,7 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
                 onBlur: ({ value }) => {
                   const v = value.trim();
                   if (!v) return 'El nombre es requerido.';
+                  if (usuario && v === usuario.userName.trim()) return undefined;
                   if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
                   if (v.length > 100) return 'El nombre no puede superar los 100 caracteres.';
                   if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v)) return 'El nombre solo puede contener letras.';
@@ -176,7 +177,7 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
                 validators={{
                   onBlur: ({ value }) => {
                     const v = value.trim();
-                    if (!v) return 'La contraseña es requerida.';
+                    if (!v) return undefined;
                     if (v.length < 8) return 'La contraseña debe tener mínimo 8 caracteres.';
                     if (v.length > 64) return 'La contraseña no puede superar 64 caracteres.';
                     return undefined;
@@ -186,13 +187,13 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
                 {(field) => (
                   <div className={`modal-form-group ${field.state.meta.errors.length > 0 ? 'modal-form-group--error' : field.state.meta.isTouched && field.state.value ? 'modal-form-group--success' : ''}`}>
                     <label htmlFor="u-contraseña">
-                      Contraseña
+                      Nueva contraseña
                       <span className="modal-form-char-count">({field.state.value.length}/64)</span>
                     </label>
                     <input
                       id="u-contraseña"
                       type="password"
-                      placeholder="Min. 8 caracteres"
+                      placeholder="Dejar vacío para no cambiar"
                       value={field.state.value}
                       onChange={e => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}

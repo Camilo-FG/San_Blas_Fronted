@@ -1,4 +1,4 @@
-import { clearAuthToken, getAuthToken } from "../services/apiClient";
+import { clearAuthToken, getAuthToken } from "../utils/authToken";
 import { getRoleFromToken, isTokenExpired } from "./jwt";
 import Rutas from "../routes/Rutas";
 

@@ -141,6 +141,154 @@
     color: #8b5e00;
 }
 
+/* Menú de usuario */
+.navbar__user-menu {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.navbar__user-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid rgba(212, 175, 55, 0.55);
+    background: rgba(255, 255, 255, 0.1);
+    color: #d4af37;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.navbar__user-button:hover,
+.navbar__user-button[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    border-color: #d4af37;
+}
+
+.navbar__user-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    min-width: 240px;
+    background-color: #ffffff;
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: 0 16px 35px rgba(0, 0, 0, 0.18);
+    z-index: 1001;
+}
+
+.navbar__user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 6px 10px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 8px;
+}
+
+.navbar__user-name {
+    color: #003366;
+    font-size: 0.9rem;
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.navbar__user-role {
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.navbar__user-logout {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    color: #003366;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.navbar__user-action {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: #003366;
+    color: #ffffff;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+.navbar__user-action:hover {
+    background: #0b4f8a;
+    color: #ffffff;
+}
+
+.navbar__user-logout:hover {
+    background: #eef2f7;
+}
+
+.navbar__mobile-user {
+    margin-top: 12px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.navbar__mobile-user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ffffff;
+    margin-bottom: 8px;
+}
+
+.navbar__mobile-user-info div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.navbar__mobile-user-info span {
+    font-size: 0.92rem;
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.navbar__mobile-user-info small {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.navbar__mobile-dashboard-link {
+    color: #d4af37;
+    font-weight: 700;
+}
+
 /* Botón hamburguesa */
 .navbar__mobile-button {
     display: none;

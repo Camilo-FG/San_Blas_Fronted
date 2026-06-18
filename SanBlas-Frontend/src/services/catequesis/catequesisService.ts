@@ -16,6 +16,10 @@ import {
 
 const BASE = "/inscripciones-catequesis";
 
+const tieneArchivosReales = (formData: CatequesisEnrollmentData): boolean =>
+  formData.catequesis.feBautismoArchivo instanceof File &&
+  formData.inscripcion.pago.archivoComprobante instanceof File;
+
 export const obtenerSolicitudesCatequesis = async (
   estado?: string,
 ): Promise<CatequesisEnrollmentRecord[]> => {
@@ -49,6 +53,33 @@ export const crearSolicitudCatequesis = async (
   formData: CatequesisEnrollmentData,
 ): Promise<CrearInscripcionBackendResponse> => {
   try {
+    if (tieneArchivosReales(formData)) {
+      const payload = mapFormToBackendRequest(formData);
+      payload.datosInscripcion.feBautismoArchivo = "pendiente";
+      payload.datosPago.comprobanteArchivo = "pendiente";
+
+      const body = new FormData();
+      body.append("payload", JSON.stringify(payload));
+      body.append(
+        "feBautismoArchivo",
+        formData.catequesis.feBautismoArchivo as File,
+      );
+      body.append(
+        "comprobanteArchivo",
+        formData.inscripcion.pago.archivoComprobante as File,
+      );
+
+      const { data } = await apiClient.post<CrearInscripcionBackendResponse>(
+        BASE,
+        body,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
+
+      return data;
+    }
+
     const payload = mapFormToBackendRequest(formData);
     const { data } = await apiClient.post<CrearInscripcionBackendResponse>(
       BASE,

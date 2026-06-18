@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Home,
   Heart,
@@ -9,6 +9,7 @@ import {
   Edit,
   ScrollText,
   LogOut,
+  Shield,
 } from "lucide-react";
 
 import Rutas from "../../../routes/Rutas";
@@ -16,7 +17,7 @@ import { useAuth } from "../../../context/AuthContext";
 import "./Dashboard.css";
 
 const navLinks = [
-  { to: Rutas.dashboard, label: "Dashboard principal", icon: Home },
+  { to: Rutas.dashboard, label: "Resumen", icon: Home },
   {
     to: Rutas.dashboardUrl.registroSacramentos,
     label: "Registro de sacramentos",
@@ -54,9 +55,49 @@ const navLinks = [
   },
 ];
 
+const pageTitles: Record<string, { title: string; subtitle: string }> = {
+  [Rutas.dashboard]: {
+    title: "Resumen general",
+    subtitle: "Vista rápida de la actividad parroquial registrada en el sistema.",
+  },
+  [Rutas.dashboardUrl.registroSacramentos]: {
+    title: "Registro de sacramentos",
+    subtitle: "Administre bautismos, comuniones, confirmaciones y matrimonios.",
+  },
+  [Rutas.dashboardUrl.constanciasSacramentos]: {
+    title: "Solicitudes de constancia",
+    subtitle: "Revise y actualice el estado de las solicitudes recibidas.",
+  },
+  [Rutas.dashboardUrl.solicitudesCatequesis]: {
+    title: "Solicitudes de catequesis",
+    subtitle: "Gestione inscripciones, documentos y aprobaciones de catequesis.",
+  },
+  [Rutas.dashboardUrl.donaciones]: {
+    title: "Gestión de donaciones",
+    subtitle: "Consulte y actualice las donaciones registradas.",
+  },
+  [Rutas.dashboardUrl.eventos]: {
+    title: "Gestión de eventos",
+    subtitle: "Cree y edite eventos visibles en el sitio público.",
+  },
+  [Rutas.dashboardUrl.gestionLanding]: {
+    title: "Gestión del landing",
+    subtitle: "Edite textos y bloques del sitio público de la parroquia.",
+  },
+  [Rutas.dashboardUrl.gestionUsuarios]: {
+    title: "Gestión de usuarios",
+    subtitle: "Administre cuentas, roles y accesos del sistema.",
+  },
+};
+
 function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const pageInfo = pageTitles[pathname] ?? {
+    title: "Panel administrativo",
+    subtitle: "Parroquia San Blas",
+  };
 
   const handleLogout = () => {
     logout();
@@ -67,8 +108,13 @@ function Dashboard() {
     <section className="dashboard">
       <aside className="dashboard__sidebar">
         <div className="dashboard__brand">
-          <h2>Panel Administrativo</h2>
-          <p>Parroquia San Blas</p>
+          <div className="dashboard__brand-icon">
+            <Shield size={22} />
+          </div>
+          <div>
+            <h2>Panel Admin</h2>
+            <p>Parroquia San Blas</p>
+          </div>
         </div>
 
         <nav className="dashboard__menu">
@@ -80,32 +126,35 @@ function Dashboard() {
                 key={link.to}
                 to={link.to}
                 className="dashboard__menu-item"
+                activeProps={{ className: "dashboard__menu-item dashboard__menu-item--active" }}
+                activeOptions={{ exact: link.to === Rutas.dashboard }}
               >
-                <Icon className="dashboard__menu-lucide" />
+                <Icon className="dashboard__menu-lucide" size={18} />
                 <span>{link.label}</span>
               </Link>
             );
           })}
         </nav>
+
+        <div className="dashboard__sidebar-footer">
+          <p className="dashboard__sidebar-user">{user?.email}</p>
+          <button
+            type="button"
+            className="dashboard__logout"
+            onClick={handleLogout}
+          >
+            <LogOut size={16} />
+            Cerrar sesión
+          </button>
+        </div>
       </aside>
 
       <main className="dashboard__content">
         <header className="dashboard__topbar">
-          <div>
-            <h1>Panel Administrativo</h1>
-            <p>Parroquia San Blas</p>
-          </div>
-
-          <div className="dashboard__user">
-            <span>{user?.email}</span>
-            <button
-              type="button"
-              className="dashboard__logout"
-              onClick={handleLogout}
-            >
-              <LogOut size={16} />
-              Cerrar sesión
-            </button>
+          <div className="dashboard__page-heading">
+            <p className="dashboard__eyebrow">Administración</p>
+            <h1>{pageInfo.title}</h1>
+            <p>{pageInfo.subtitle}</p>
           </div>
         </header>
 

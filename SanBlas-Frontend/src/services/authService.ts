@@ -1,26 +1,16 @@
 import {
   apiClient,
-  clearAuthToken,
-  getAuthToken,
   handleApiError,
   setAuthToken,
 } from "./apiClient";
-import {
-  getEmailFromToken,
-  getRoleFromToken,
-  getUserIdFromToken,
-  isTokenExpired,
-} from "../utils/jwt";
+import { getCurrentUser, type AuthUser } from "./authSession";
+
+export type { AuthUser } from "./authSession";
+export { getCurrentUser, logout } from "./authSession";
 
 export interface LoginCredentials {
   email: string;
   password: string;
-}
-
-export interface AuthUser {
-  id: number | null;
-  email: string;
-  role: string;
 }
 
 export interface LoginResponse {
@@ -42,31 +32,3 @@ export const login = async (
     handleApiError(error);
   }
 };
-
-export const logout = (): void => {
-  clearAuthToken();
-};
-
-export const getCurrentUser = (): AuthUser | null => {
-  const token = getAuthToken();
-  if (!token || isTokenExpired(token)) {
-    if (token) clearAuthToken();
-    return null;
-  }
-
-  const email = getEmailFromToken(token);
-  if (!email) {
-    clearAuthToken();
-    return null;
-  }
-
-  return {
-    id: getUserIdFromToken(token),
-    email,
-    role: getRoleFromToken(token) ?? "User",
-  };
-};
-
-export const isAuthenticated = (): boolean => getCurrentUser() !== null;
-
-export const isAdmin = (): boolean => getCurrentUser()?.role === "Admin";

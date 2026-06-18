@@ -11,11 +11,28 @@
     background-color: #ffffff;
     border-right: 1px solid #e5e7eb;
     padding: 28px 18px;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 80px);
 }
 
 .dashboard__brand {
     margin-bottom: 36px;
     padding: 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dashboard__brand-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #003366;
+    color: #d4af37;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .dashboard__brand h2 {
@@ -39,6 +56,25 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    flex: 1;
+}
+
+.dashboard__sidebar-footer {
+    margin-top: auto;
+    padding: 16px 8px 0;
+    border-top: 1px solid #e5e7eb;
+}
+
+.dashboard__sidebar-user {
+    margin: 0 0 12px;
+    color: #475569;
+    font-size: 0.82rem;
+    word-break: break-word;
+}
+
+.dashboard__sidebar-footer .dashboard__logout {
+    width: 100%;
+    justify-content: center;
 }
 
 .dashboard__menu-item {
@@ -47,6 +83,7 @@
     background-color: transparent;
     padding: 14px 14px;
     border-radius: 12px;
+    text-decoration: none;
 
     display: flex;
     align-items: center;
@@ -106,23 +143,56 @@
 
 .dashboard__topbar {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 1.5rem;
+    padding: 1.5rem 1.75rem;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
 }
 
-.dashboard__topbar h1 {
+.dashboard__eyebrow {
+    margin: 0 0 0.35rem;
+    color: #d4af37;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.dashboard__page-heading h1 {
     margin: 0 0 0.35rem;
     color: #003366;
     font-family: "Playfair Display", Georgia, serif;
-    font-size: 1.75rem;
+    font-size: 1.85rem;
 }
 
-.dashboard__topbar p {
+.dashboard__page-heading p {
     margin: 0;
     color: #6b7280;
     font-size: 0.95rem;
+    max-width: 720px;
+}
+
+.dashboard__user-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.15rem;
+}
+
+.dashboard__user-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+}
+
+.dashboard__user-meta strong {
+    color: #003366;
 }
 
 .dashboard__user {
@@ -165,6 +235,74 @@
     border-radius: 22px;
     padding: 26px;
     box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
+    border-top: 4px solid var(--card-accent, #003366);
+}
+
+.dashboard__card-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.dashboard__card--interactive {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboard__card--interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+}
+
+.dashboard__card-top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.dashboard__card-icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--card-accent, #003366) 12%, white);
+    color: var(--card-accent, #003366);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dashboard-home__welcome {
+    background: linear-gradient(135deg, #003366, #0b4f8a);
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.dashboard-home__welcome h2 {
+    margin: 0 0 0.5rem;
+    font-family: "Playfair Display", Georgia, serif;
+}
+
+.dashboard-home__welcome p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.88);
+    max-width: 760px;
+}
+
+.dashboard__loading-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+}
+
+.dashboard__card--skeleton {
+    min-height: 140px;
+    animation: dashboard-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes dashboard-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
 }
 
 .dashboard__card svg {
