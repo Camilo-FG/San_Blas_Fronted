@@ -1,13 +1,13 @@
 import { UserResponse, Usuario } from '../../../types/Usuario';
-import { apiUsers } from '../api/apiUsers';
+import { apiConfig } from '../../../api/apiConfig';
 
 export const getUsers = async (): Promise<Usuario[]> => {
-    const { data } = await apiUsers.get<Usuario[]>('/api/Users');
+    const { data } = await apiConfig.get<Usuario[]>('/api/Users');
     return data;
 };
 
 export const getUserById = async (id: number): Promise<Usuario> => {
-    const { data } = await apiUsers.get<Usuario>(`/api/Users/${id}`);
+    const { data } = await apiConfig.get<Usuario>(`/api/Users/${id}`);
     return data;
 };
 
@@ -19,7 +19,7 @@ export const createUser = async (userData: {
     confirmPassword: string;
     userRole?: boolean; //este solo el admin lo usa
 }): Promise<Usuario> => {
-    const { data } = await apiUsers.post<Usuario>('/api/Users', userData);
+    const { data } = await apiConfig.post<Usuario>('/api/Users', userData);
     return data;
 };
 
@@ -32,6 +32,6 @@ export const updateUser = async (id: number, userData: {
     userRole?: boolean;
     state?: boolean;
 }): Promise<Usuario> => {
-    const { data } = await apiUsers.put<Usuario>(`/api/Users/${id}`, userData);
+    const { data } = await apiConfig.put<Usuario>(`/api/Users/${id}`, userData);
     return data;
 };
