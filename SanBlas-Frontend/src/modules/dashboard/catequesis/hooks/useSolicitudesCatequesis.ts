@@ -15,6 +15,8 @@ export const useSolicitudesCatequesis = () => {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
+  const [detalleError, setDetalleError] = useState("");
+  const [accionError, setAccionError] = useState("");
 
   const cargarSolicitudes = useCallback(async () => {
     try {
@@ -41,13 +43,14 @@ export const useSolicitudesCatequesis = () => {
 
   const obtenerDetalle = async (id: number) => {
     try {
+      setDetalleError("");
       return await obtenerSolicitudCatequesisPorId(id);
     } catch (err) {
       console.error(err);
       if (err instanceof ApiError) {
-        setError(err.message);
+        setDetalleError(err.message);
       } else {
-        setError("No se pudo cargar el detalle de la solicitud.");
+        setDetalleError("No se pudo cargar el detalle de la solicitud.");
       }
       return null;
     }
@@ -60,7 +63,7 @@ export const useSolicitudesCatequesis = () => {
   ) => {
     try {
       setGuardando(true);
-      setError("");
+      setAccionError("");
 
       const response = await actualizarEstadoSolicitud(id, estado, observacion);
 
@@ -70,9 +73,9 @@ export const useSolicitudesCatequesis = () => {
     } catch (err) {
       console.error(err);
       if (err instanceof ApiError) {
-        setError(err.message);
+        setAccionError(err.message);
       } else {
-        setError("No se pudo actualizar el estado de la solicitud.");
+        setAccionError("No se pudo actualizar el estado de la solicitud.");
       }
       return null;
     } finally {
@@ -88,5 +91,9 @@ export const useSolicitudesCatequesis = () => {
     cargando,
     guardando,
     error,
+    detalleError,
+    accionError,
+    limpiarDetalleError: () => setDetalleError(""),
+    limpiarAccionError: () => setAccionError(""),
   };
 };

@@ -9,6 +9,23 @@ import type {
   InscripcionResumenBackend,
 } from "./catequesisApiTypes";
 
+const normalizarFecha = (valor: unknown): string | null => {
+  if (valor === null || valor === undefined || valor === "") return null;
+  if (typeof valor === "string") return valor.split("T")[0];
+  if (typeof valor === "object" && "year" in (valor as object)) {
+    const fecha = valor as { year: number; month: number; day: number };
+    const mes = String(fecha.month).padStart(2, "0");
+    const dia = String(fecha.day).padStart(2, "0");
+    return `${fecha.year}-${mes}-${dia}`;
+  }
+  return String(valor);
+};
+
+const normalizarFechaSolicitud = (valor: string | undefined): string => {
+  if (!valor) return "";
+  return valor.split("T")[0];
+};
+
 const normalizarNivel = (nivel: string | null | undefined): string => {
   if (!nivel) return "";
 
@@ -170,7 +187,7 @@ export const mapDetalleToEnrollmentRecord = (
   id: detalle.id,
   codigoSolicitud: `CAT-${detalle.id}`,
   estado: mapEstadoBackendToFrontend(detalle.estado),
-  fechaSolicitud: detalle.fechaSolicitud.split("T")[0],
+  fechaSolicitud: normalizarFechaSolicitud(detalle.fechaSolicitud),
   observacionAdministrativa: detalle.observacionAdministrativa ?? null,
   catequesis: {
     centroCatequesis: detalle.centroCatequesis,
@@ -178,45 +195,45 @@ export const mapDetalleToEnrollmentRecord = (
     feBautismoArchivo: detalle.feBautismoArchivo || null,
   },
   catequizando: {
-    nombre: detalle.catequizando.nombre,
-    apellidos: detalle.catequizando.apellidos,
-    fechaNacimiento: detalle.catequizando.fechaNacimiento,
+    nombre: detalle.catequizando?.nombre ?? "",
+    apellidos: detalle.catequizando?.apellidos ?? "",
+    fechaNacimiento: normalizarFecha(detalle.catequizando?.fechaNacimiento),
     direccion: {
-      direccionExacta: detalle.catequizando.direccionExacta,
+      direccionExacta: detalle.catequizando?.direccionExacta ?? null,
     },
     bautismo: {
-      parroquia: detalle.bautismo.parroquia,
-      fecha: detalle.bautismo.fecha ?? null,
-      tomo: detalle.bautismo.tomo,
-      folio: detalle.bautismo.folio,
-      asiento: detalle.bautismo.asiento,
+      parroquia: detalle.bautismo?.parroquia ?? null,
+      fecha: normalizarFecha(detalle.bautismo?.fecha),
+      tomo: detalle.bautismo?.tomo ?? null,
+      folio: detalle.bautismo?.folio ?? null,
+      asiento: detalle.bautismo?.asiento ?? null,
     },
     adecuacion: {
       requiereAdecuacionCentroEducativo:
-        detalle.adecuacion.requiereAdecuacionCentroEducativo ?? null,
-      descripcionAdecuacion: detalle.adecuacion.descripcionAdecuacion,
+        detalle.adecuacion?.requiereAdecuacionCentroEducativo ?? null,
+      descripcionAdecuacion: detalle.adecuacion?.descripcionAdecuacion ?? null,
     },
     condicionSalud: {
       portadorEnfermedadCronica:
-        detalle.condicionSalud.portadorEnfermedadCronica ?? null,
-      descripcionEnfermedad: detalle.condicionSalud.descripcionEnfermedad,
+        detalle.condicionSalud?.portadorEnfermedadCronica ?? null,
+      descripcionEnfermedad: detalle.condicionSalud?.descripcionEnfermedad ?? null,
     },
   },
   encargado: {
-    nombre: detalle.personaInscribe.nombre,
-    apellidos: detalle.personaInscribe.apellidos,
+    nombre: detalle.personaInscribe?.nombre ?? detalle.madre?.nombre ?? "",
+    apellidos: detalle.personaInscribe?.apellidos ?? detalle.madre?.apellidos ?? "",
     cedula: "",
-    telefono: detalle.madre.telefono,
+    telefono: detalle.madre?.telefono ?? "",
     correo: "",
     direccion: {
-      direccionExacta: detalle.madre.direccionExacta,
+      direccionExacta: detalle.madre?.direccionExacta ?? null,
     },
-    parentesco: detalle.personaInscribe.parentesco,
+    parentesco: detalle.personaInscribe?.parentesco ?? "",
   },
   pago: {
-    metodoPago: detalle.pago.metodoPago,
-    numeroComprobante: detalle.pago.numeroComprobanteSinpe,
-    monto: detalle.pago.monto,
-    comprobanteArchivo: detalle.pago.comprobanteArchivo || null,
+    metodoPago: detalle.pago?.metodoPago ?? "",
+    numeroComprobante: detalle.pago?.numeroComprobanteSinpe ?? "",
+    monto: detalle.pago?.monto ?? 0,
+    comprobanteArchivo: detalle.pago?.comprobanteArchivo || null,
   },
 });
