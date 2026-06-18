@@ -416,22 +416,27 @@ function Navbar() {
                     <small>{userRoleLabel}</small>
                   </div>
                 </div>
-                {isAdmin && (
-                  <Link
-                    to={Rutas.dashboard}
-                    className="navbar__mobile-link navbar__mobile-dashboard-link"
-                    onClick={cerrarMenu}
+
+                <div className="navbar__mobile-user-actions">
+                  {isAdmin && (
+                    <Link
+                      to={Rutas.dashboard}
+                      className="navbar__mobile-action navbar__mobile-action--dashboard"
+                      onClick={cerrarMenu}
+                    >
+                      <LayoutDashboard size={18} />
+                      <span>Dashboard admin</span>
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    className="navbar__mobile-action navbar__mobile-action--logout"
+                    onClick={handleLogout}
                   >
-                    Dashboard admin
-                  </Link>
-                )}
-                <button
-                  type="button"
-                  className="navbar__mobile-link navbar__link--button"
-                  onClick={handleLogout}
-                >
-                  Cerrar sesión
-                </button>
+                    <LogOut size={18} />
+                    <span>Cerrar sesión</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>

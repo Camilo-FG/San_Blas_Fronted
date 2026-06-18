@@ -44,7 +44,6 @@ function Footer() {
 
             <div className="footer__bottom">
                 <p>© {new Date().getFullYear()} Parroquia San Blas. Todos los derechos reservados.</p>
-                <span>Diócesis de Tilarán-Liberia</span>
             </div>
         </footer>
     );

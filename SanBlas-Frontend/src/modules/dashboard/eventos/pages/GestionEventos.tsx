@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Calendar, MapPin, Pencil, Trash2, Eye } from "lucide-react";
 import {
   eventoToFormulario,
   useGestionEventos,
@@ -145,11 +145,45 @@ const GestionEventos = () => {
             {eventos.map((evento) => (
               <AdminRecordCard
                 key={evento.id}
+                icon={<Calendar size={20} />}
+                accent={evento.publicado ? "#047857" : "#b45309"}
+                code={`EVT-${evento.id}`}
                 title={evento.titulo}
-                subtitle={`${formatearFecha(evento.fechaInicio)} · ${evento.lugar}`}
+                subtitle={evento.lugar}
                 badges={renderEstadoBadge(evento.publicado)}
-                onViewDetail={() => setEventoSeleccionado(evento)}
-                viewLabel="Ver detalle"
+                meta={[
+                  {
+                    icon: <Calendar size={12} />,
+                    label: "Fecha",
+                    value: formatearFecha(evento.fechaInicio),
+                  },
+                  {
+                    icon: <MapPin size={12} />,
+                    label: "Lugar",
+                    value: evento.lugar,
+                  },
+                ]}
+                actions={[
+                  {
+                    label: "Editar",
+                    icon: <Pencil size={15} />,
+                    variant: "ghost",
+                    onClick: () => abrirEditar(evento),
+                  },
+                  {
+                    label: "Ver evento",
+                    icon: <Eye size={15} />,
+                    variant: "primary",
+                    onClick: () => setEventoSeleccionado(evento),
+                  },
+                  {
+                    label: "Eliminar",
+                    icon: <Trash2 size={15} />,
+                    variant: "danger",
+                    disabled: guardando,
+                    onClick: () => handleEliminar(evento.id),
+                  },
+                ]}
               />
             ))}
           </div>
