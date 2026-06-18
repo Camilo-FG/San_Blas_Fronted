@@ -1,23 +1,26 @@
 import { useState } from "react";
 import CatequesisForm from "../components/CatequesisForm";
-import { crearSolicitudCatequesis } from "../../dashboard/catequesis/services/catequesisService";
-import type { CatequesisEnrollmentRecord } from "../../dashboard/catequesis/Types/catequesis";
+import { crearSolicitudCatequesis } from "../../../services/catequesis/catequesisService";
+import { ApiError } from "../../../services/apiClient";
+import type { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
 
 const CatequesisPage = () => {
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (data: CatequesisEnrollmentRecord) => {
+  const handleSubmit = async (data: CatequesisEnrollmentData) => {
     setLoading(true);
 
     try {
-      console.log("Solicitud lista para enviar:", data);
-
-      await crearSolicitudCatequesis(data);
-
-      alert("Solicitud de catequesis enviada correctamente.");
+      const response = await crearSolicitudCatequesis(data);
+      alert(response.mensaje);
     } catch (error) {
       console.error("Error al enviar la solicitud:", error);
-      alert("Ocurrió un error al enviar la solicitud.");
+
+      if (error instanceof ApiError) {
+        alert(error.message);
+      } else {
+        alert("Ocurrió un error al enviar la solicitud.");
+      }
     } finally {
       setLoading(false);
     }

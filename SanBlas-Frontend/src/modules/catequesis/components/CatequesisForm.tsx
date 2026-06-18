@@ -2,8 +2,10 @@ import { useState } from "react";
 import "./CatequesisForm.css";
 import { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
 
+import { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
+
 interface CatequesisFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: CatequesisEnrollmentData) => void;
   loading: boolean;
 }
 
@@ -191,76 +193,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
     if (!validate()) return;
 
-    const fechaActual = new Date().toISOString().split("T")[0];
-
-    const payload = {
-      id: Date.now(),
-      codigoSolicitud: `CAT-${Date.now()}`,
-      estado: "pendiente",
-      fechaSolicitud: fechaActual,
-      observaciones: "Solicitud enviada desde el formulario de catequesis.",
-
-      catequesis: {
-        centroCatequesis: form.catequesis.centroCatequesis,
-        nivelAInscribirse: form.catequesis.nivelAInscribirse,
-        feBautismoArchivo:
-          form.catequesis.feBautismoArchivo instanceof File
-            ? form.catequesis.feBautismoArchivo.name
-            : form.catequesis.feBautismoArchivo,
-      },
-
-      catequizando: {
-        nombre: form.catequizando.nombre,
-        apellidos: form.catequizando.apellidos,
-        fechaNacimiento: form.catequizando.fechaNacimiento,
-        direccion: {
-          direccionExacta: form.catequizando.direccion.direccionExacta,
-        },
-        bautismo: {
-          parroquia: form.catequizando.bautismo.parroquia,
-          fecha: form.catequizando.bautismo.fecha,
-          tomo: form.catequizando.bautismo.tomo,
-          folio: form.catequizando.bautismo.folio,
-          asiento: form.catequizando.bautismo.asiento,
-        },
-        adecuacion: {
-          requiereAdecuacionCentroEducativo:
-            form.catequizando.adecuacion.requiereAdecuacionCentroEducativo,
-          descripcionAdecuacion:
-            form.catequizando.adecuacion.descripcionAdecuacion,
-        },
-        condicionSalud: {
-          portadorEnfermedadCronica:
-            form.catequizando.condicionSalud.portadorEnfermedadCronica,
-          descripcionEnfermedad:
-            form.catequizando.condicionSalud.descripcionEnfermedad,
-        },
-      },
-
-      encargado: {
-        nombre: form.inscripcion.personaQueInscribe.nombre || "",
-        apellidos: form.inscripcion.personaQueInscribe.apellido || "",
-        cedula: "",
-        telefono: form.madreCatequizando.telefono,
-        correo: "",
-        direccion: {
-          direccionExacta: form.madreCatequizando.direccion.direccionExacta,
-        },
-        parentesco: form.inscripcion.parentesco || "",
-      },
-
-      pago: {
-        metodoPago: "SINPE Móvil",
-        numeroComprobante: form.inscripcion.pago.numeroComprobanteSINPE,
-        monto: 5000,
-        comprobanteArchivo:
-          form.inscripcion.pago.archivoComprobante instanceof File
-            ? form.inscripcion.pago.archivoComprobante.name
-            : form.inscripcion.pago.archivoComprobante,
-      },
-    };
-
-    onSubmit(payload);
+    onSubmit(form);
   };
 
   return (

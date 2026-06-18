@@ -1,0 +1,90 @@
+import type { CatequesisEnrollmentData } from "../../modules/catequesis/types/CatequesisEnrollmentData";
+import type { CatequesisEnrollmentRecord } from "../../modules/dashboard/catequesis/Types/catequesis";
+import { apiClient, handleApiError } from "../apiClient";
+import type {
+  ActualizarEstadoBackendResponse,
+  CrearInscripcionBackendResponse,
+  InscripcionDetalleBackend,
+  InscripcionResumenBackend,
+} from "./catequesisApiTypes";
+import {
+  mapDetalleToEnrollmentRecord,
+  mapEstadoFrontendToBackend,
+  mapFormToBackendRequest,
+  mapResumenToEnrollmentRecord,
+} from "./catequesisMapper";
+
+const BASE = "/inscripciones-catequesis";
+
+export const obtenerSolicitudesCatequesis = async (
+  estado?: string,
+): Promise<CatequesisEnrollmentRecord[]> => {
+  try {
+    const params = estado ? { estado } : undefined;
+    const { data } = await apiClient.get<InscripcionResumenBackend[]>(BASE, {
+      params,
+    });
+
+    return data.map(mapResumenToEnrollmentRecord);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const obtenerSolicitudCatequesisPorId = async (
+  id: number,
+): Promise<CatequesisEnrollmentRecord> => {
+  try {
+    const { data } = await apiClient.get<InscripcionDetalleBackend>(
+      `${BASE}/${id}`,
+    );
+
+    return mapDetalleToEnrollmentRecord(data);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const crearSolicitudCatequesis = async (
+  formData: CatequesisEnrollmentData,
+): Promise<CrearInscripcionBackendResponse> => {
+  try {
+    const payload = mapFormToBackendRequest(formData);
+    const { data } = await apiClient.post<CrearInscripcionBackendResponse>(
+      BASE,
+      payload,
+    );
+
+    return data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const actualizarEstadoSolicitud = async (
+  id: number,
+  estado: "aprobado" | "rechazado" | "pendiente",
+  observacion?: string,
+): Promise<ActualizarEstadoBackendResponse> => {
+  try {
+    const { data } = await apiClient.put<ActualizarEstadoBackendResponse>(
+      `${BASE}/${id}/estado`,
+      {
+        estado: mapEstadoFrontendToBackend(estado),
+        observacion: observacion ?? null,
+      },
+    );
+
+    return data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const agregarObservacionAdministrativa = async (
+  id: number,
+  estado: "aprobado" | "rechazado",
+  observacion: string,
+): Promise<ActualizarEstadoBackendResponse> => {
+  return actualizarEstadoSolicitud(id, estado, observacion);
+};
