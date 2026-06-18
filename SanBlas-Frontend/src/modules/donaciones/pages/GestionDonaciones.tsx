@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useGestionDonaciones, Donacion } from '../hooks/useGestionDonaciones';
+import { AdminRecordCard } from '../../../shared/components/admin/AdminRecordCard';
+import { AdminRecordDetailSheet } from '../../../shared/components/admin/AdminRecordDetailSheet';
 import './GestionDonaciones.css';
 
 export default function GestionDonaciones(): React.JSX.Element {
@@ -18,13 +20,14 @@ export default function GestionDonaciones(): React.JSX.Element {
         }
     };
 
+    const renderEstadoBadge = (estado?: string) => (
+        <span className={`estado-badge ${(estado || 'pendiente').toLowerCase()}`}>
+            {estado || 'Pendiente'}
+        </span>
+    );
+
     return (
         <div className="gestion-container">
-            <div className="gestion-header-seccion">
-                <h2 className="gestion-titulo">Gestión de Donaciones de Insumos</h2>
-                <p className="gestion-subtitulo">Administre, revise detalles y modifique el estado de las donaciones recibidas.</p>
-            </div>
-
             {error ? (
                 <div className="no-datos-card">
                     <p className="no-datos" style={{ color: '#b91c1c' }}>{error}</p>
@@ -39,86 +42,112 @@ export default function GestionDonaciones(): React.JSX.Element {
                     <p className="no-datos">No hay donaciones registradas en el sistema.</p>
                 </div>
             ) : (
-                <div className="tabla-wrapper">
-                    <table className="tabla-donaciones">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Donante</th>
-                                <th>Correo</th>
-                                <th>Teléfono</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {donaciones.map((donacion: Donacion, index: number) => (
-                                <tr key={index}>
-                                    <td>{formatearFecha(donacion.fecha)}</td>
-                                    <td>
-                                        <span className={`badge-nombre ${donacion.anonimo ? 'es-anonimo' : ''}`}>
-                                            {donacion.nombre}
-                                        </span>
-                                    </td>
-                                    <td>{donacion.correo}</td>
-                                    <td>{donacion.telefono || <span style={{ color: '#aaa', fontStyle: 'italic' }}>No provisto</span>}</td> {/* ← Muestra el celular */}
-                                    <td>
-                                        <select
-                                            className={`select-estado-dinamico ${(donacion.estado || 'pendiente').toLowerCase()}`}
-                                            value={donacion.estado || 'Pendiente'}
-                                            disabled={procesandoId === donacion.id}
-                                            onChange={(e) => handleAccionEstado(donacion.id, e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado')}
-                                        >
-                                            <option value="Pendiente">Pendiente</option>
-                                            <option value="Aprobado">Aprobado</option>
-                                            <option value="Rechazado">Rechazado</option>
-                                        </select>
-                                    </td>
-                                    <td className="acciones-celda">
-                                        <button 
-                                            className="btn-accion btn-ver" 
-                                            onClick={() => setDonacionSeleccionada(donacion)}
-                                        >
-                                            Ver Detalle
-                                        </button>
-                                    </td>
+                <div className="admin-responsive-data">
+                    <div className="admin-responsive-data__table tabla-wrapper">
+                        <table className="tabla-donaciones">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Donante</th>
+                                    <th>Correo</th>
+                                    <th>Teléfono</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                            </thead>
+                            <tbody>
+                                {donaciones.map((donacion: Donacion, index: number) => (
+                                    <tr key={index}>
+                                        <td>{formatearFecha(donacion.fecha)}</td>
+                                        <td>
+                                            <span className={`badge-nombre ${donacion.anonimo ? 'es-anonimo' : ''}`}>
+                                                {donacion.nombre}
+                                            </span>
+                                        </td>
+                                        <td>{donacion.correo}</td>
+                                        <td>{donacion.telefono || <span style={{ color: '#aaa', fontStyle: 'italic' }}>No provisto</span>}</td>
+                                        <td>
+                                            <select
+                                                className={`select-estado-dinamico ${(donacion.estado || 'pendiente').toLowerCase()}`}
+                                                value={donacion.estado || 'Pendiente'}
+                                                disabled={procesandoId === donacion.id}
+                                                onChange={(e) => handleAccionEstado(donacion.id, e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado')}
+                                            >
+                                                <option value="Pendiente">Pendiente</option>
+                                                <option value="Aprobado">Aprobado</option>
+                                                <option value="Rechazado">Rechazado</option>
+                                            </select>
+                                        </td>
+                                        <td className="acciones-celda">
+                                            <button
+                                                className="btn-accion btn-ver"
+                                                onClick={() => setDonacionSeleccionada(donacion)}
+                                            >
+                                                Ver Detalle
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
 
-            {donacionSeleccionada && (
-                <div className="modal-overlay" onClick={() => setDonacionSeleccionada(null)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3>Detalle de la Donación</h3>
-                            <button className="modal-cerrar" onClick={() => setDonacionSeleccionada(null)}>×</button>
-                        </div>
-                        <hr className="modal-divisor" />
-                        
-                        <div className="modal-grid">
-                            <p><strong>Fecha:</strong> {formatearFecha(donacionSeleccionada.fecha)}</p>
-                            <p><strong>Tipo:</strong> {donacionSeleccionada.anonimo ? 'Anónimo' : 'Identificado'}</p>
-                            <p><strong>Nombre:</strong> {donacionSeleccionada.nombre}</p>
-                            <p><strong>Correo:</strong> {donacionSeleccionada.correo}</p>
-                            <p><strong>Teléfono:</strong> {donacionSeleccionada.telefono || 'No provisto'}</p>
-                            <p>
-                                <strong>Estado Actual:</strong>{' '}
-                                <span className={`estado-badge ${(donacionSeleccionada.estado || 'pendiente').toLowerCase()}`}>
-                                    {donacionSeleccionada.estado}
-                                </span>
-                            </p>
-                        </div>
-
-                        <div className="modal-detalle-bloque">
-                            <strong>Insumos ofrecidos:</strong>
-                            <p className="detalle-texto-caja">{donacionSeleccionada.detalle}</p>
-                        </div>
+                    <div className="admin-responsive-data__cards">
+                        {donaciones.map((donacion: Donacion, index: number) => (
+                            <AdminRecordCard
+                                key={index}
+                                title={donacion.nombre}
+                                subtitle={formatearFecha(donacion.fecha)}
+                                badges={renderEstadoBadge(donacion.estado)}
+                                onViewDetail={() => setDonacionSeleccionada(donacion)}
+                                viewLabel="Ver detalle"
+                            />
+                        ))}
                     </div>
                 </div>
             )}
+
+            <AdminRecordDetailSheet
+                open={donacionSeleccionada !== null}
+                title={donacionSeleccionada?.nombre ?? 'Donación'}
+                subtitle={donacionSeleccionada ? formatearFecha(donacionSeleccionada.fecha) : undefined}
+                badges={donacionSeleccionada ? renderEstadoBadge(donacionSeleccionada.estado) : undefined}
+                onClose={() => setDonacionSeleccionada(null)}
+                actions={
+                    donacionSeleccionada ? (
+                        <label className="admin-detail-estado">
+                            <span>Cambiar estado</span>
+                            <select
+                                className={`select-estado-dinamico ${(donacionSeleccionada.estado || 'pendiente').toLowerCase()}`}
+                                value={donacionSeleccionada.estado || 'Pendiente'}
+                                disabled={procesandoId === donacionSeleccionada.id}
+                                onChange={(e) => handleAccionEstado(
+                                    donacionSeleccionada.id,
+                                    e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado',
+                                )}
+                            >
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Aprobado">Aprobado</option>
+                                <option value="Rechazado">Rechazado</option>
+                            </select>
+                        </label>
+                    ) : undefined
+                }
+            >
+                {donacionSeleccionada && (
+                    <>
+                        <div className="admin-detail-fields">
+                            <p className="admin-detail-field"><strong>Tipo:</strong> {donacionSeleccionada.anonimo ? 'Anónimo' : 'Identificado'}</p>
+                            <p className="admin-detail-field"><strong>Correo:</strong> {donacionSeleccionada.correo}</p>
+                            <p className="admin-detail-field"><strong>Teléfono:</strong> {donacionSeleccionada.telefono || 'No provisto'}</p>
+                        </div>
+                        <div className="admin-detail-block">
+                            <strong>Insumos ofrecidos</strong>
+                            <p className="admin-detail-block__content">{donacionSeleccionada.detalle}</p>
+                        </div>
+                    </>
+                )}
+            </AdminRecordDetailSheet>
         </div>
     );
 }

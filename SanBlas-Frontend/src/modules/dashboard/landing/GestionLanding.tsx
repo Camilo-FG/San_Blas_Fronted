@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Edit3, LayoutTemplate } from "lucide-react";
+import { Edit3 } from "lucide-react";
 import {
   actualizarSeccionLanding,
   obtenerSeccionesLanding,
@@ -100,18 +100,10 @@ function GestionLanding() {
 
   return (
     <div className="landing-cms">
-      <header className="landing-cms__intro">
-        <div className="landing-cms__intro-icon" aria-hidden="true">
-          <LayoutTemplate size={22} />
-        </div>
-        <div>
-          <h2>Gestión del landing</h2>
-          <p>
-            Seleccione una sección para editar textos e imágenes con un formulario
-            sencillo. Los cambios se reflejan en el sitio público.
-          </p>
-        </div>
-      </header>
+      <p className="landing-cms__hint">
+        Seleccione una sección para editar textos e imágenes. Los cambios se
+        reflejan en el sitio público.
+      </p>
 
       {error && (
         <p className="landing-cms__error" role="alert">

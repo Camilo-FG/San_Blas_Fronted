@@ -6,6 +6,9 @@ import { useGetSolicitudes } from '../solicSacramento/hooks/useGetSolicitudes';
 import { usePagination } from '../../shared/hooks/usePagination';
 import { ApiError } from '../../services/apiClient';
 import { useAuth } from '../../context/AuthContext';
+import { AdminRecordCard } from '../../shared/components/admin/AdminRecordCard';
+import { AdminRecordDetailSheet } from '../../shared/components/admin/AdminRecordDetailSheet';
+import './dashSacra.css';
 
 
 const columnHelper = createColumnHelper<FormSacramento>()
@@ -50,10 +53,14 @@ const normalizeText = (value: unknown) =>
     .toLowerCase()
     .trim();
 
+const nombreCompleto = (row: FormSacramento) =>
+  [row.Nombre, row.PrimerApellido, row.SegundoApellido].filter(Boolean).join(' ');
+
 
 const TableSacramentos = () => {
   const [query, setQuery] = useState('');
   const [localRows, setLocalRows] = useState<FormSacramento[]>([]);
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState<FormSacramento | null>(null);
   const { isAdmin } = useAuth();
   const { data, error, isPending } = useGetSolicitudes();
   const { mutate: updateEstado, isPending: isUpdatingEstado } = useUpdateSolicitudEstado();
@@ -121,6 +128,10 @@ const TableSacramentos = () => {
                 : solicitud,
             ),
           );
+
+          if (solicitudSeleccionada && String(solicitudSeleccionada.id) === String(id)) {
+            setSolicitudSeleccionada({ ...solicitudSeleccionada, Estado: nextEstado });
+          }
         },
         onError: (err) => {
           const mensaje = err instanceof ApiError
@@ -130,6 +141,12 @@ const TableSacramentos = () => {
         },
       },
     );
+  };
+
+  const renderEstadoBadge = (estado?: string) => {
+    const currentEstado = estado ?? 'Pendiente';
+    const estadoClass = `estado-badge estado-badge--${String(currentEstado).toLowerCase()}`;
+    return <span className={estadoClass}>{currentEstado}</span>;
   };
 
   if (error) {
@@ -143,7 +160,8 @@ const TableSacramentos = () => {
     <div className="p-2">
       <input value={query} type="text" placeholder="Buscar por nombre, apellidos o cédula" onChange={handleSearch} />
       {!isPending && (
-        <div className="table-responsive">
+        <div className="admin-responsive-data">
+          <div className="admin-responsive-data__table table-responsive">
           <table>
             <thead>
               {table.getHeaderGroups().map((hg) => (
@@ -194,8 +212,58 @@ const TableSacramentos = () => {
               ))}
             </tbody>
           </table>
+          </div>
+
+          <div className="admin-responsive-data__cards">
+            {filtered.map((row) => (
+              <AdminRecordCard
+                key={String(row.id)}
+                title={nombreCompleto(row)}
+                subtitle={`${row.TipoSacramento ?? 'Sacramento'} · ${row.Cedula ?? 'Sin cédula'}`}
+                badges={renderEstadoBadge(row.Estado)}
+                onViewDetail={() => setSolicitudSeleccionada(row)}
+                viewLabel="Ver detalle"
+              />
+            ))}
+          </div>
         </div>
       )}
+
+      <AdminRecordDetailSheet
+        open={solicitudSeleccionada !== null}
+        title={solicitudSeleccionada ? nombreCompleto(solicitudSeleccionada) : 'Solicitud'}
+        subtitle={solicitudSeleccionada?.TipoSacramento}
+        badges={solicitudSeleccionada ? renderEstadoBadge(solicitudSeleccionada.Estado) : undefined}
+        onClose={() => setSolicitudSeleccionada(null)}
+        actions={
+          solicitudSeleccionada && isAdmin ? (
+            <label className="admin-detail-estado">
+              <span>Cambiar estado</span>
+              <select
+                value={solicitudSeleccionada.Estado ?? 'Pendiente'}
+                onChange={(e) => handleEstadoChange(
+                  solicitudSeleccionada.id,
+                  e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado',
+                )}
+                disabled={isUpdatingEstado}
+              >
+                <option value="Pendiente">Pendiente</option>
+                <option value="Aprobado">Aprobado</option>
+                <option value="Rechazado">Rechazado</option>
+              </select>
+            </label>
+          ) : undefined
+        }
+      >
+        {solicitudSeleccionada && (
+          <div className="admin-detail-fields">
+            <p className="admin-detail-field"><strong>Cédula:</strong> {solicitudSeleccionada.Cedula}</p>
+            <p className="admin-detail-field"><strong>Correo:</strong> {solicitudSeleccionada.Correo}</p>
+            <p className="admin-detail-field"><strong>Teléfono:</strong> {solicitudSeleccionada.Telefono || 'No provisto'}</p>
+            <p className="admin-detail-field"><strong>Motivo:</strong> {solicitudSeleccionada.Motivo}</p>
+          </div>
+        )}
+      </AdminRecordDetailSheet>
 
       {!isPending && table.getRowModel().rows.length > 0 && (
         <div className="table-footer">

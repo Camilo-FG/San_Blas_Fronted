@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-table";
 
 import ModalSimple from "../ModalSimple/ModalSimple";
+import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
 import { useSolicitudesCatequesis } from "../hooks/useSolicitudesCatequesis";
 import type {
   CatequesisEnrollmentRecord,
@@ -302,18 +303,11 @@ function GestionSolicitudesCatequesis() {
 
   return (
     <section className="catequesis-admin">
-      <div className="catequesis-admin__top">
-        <div>
-          <h1>Matrículas de Catequesis</h1>
-          <p>
-            Autorice y controle las inscripciones enviadas por los encargados.
-          </p>
-        </div>
-
-        {guardando && (
-          <span className="catequesis-admin__saving">Guardando cambios...</span>
-        )}
-      </div>
+      {guardando && (
+        <p className="catequesis-admin__saving" role="status">
+          Guardando cambios...
+        </p>
+      )}
 
       <div className="catequesis-admin__stats">
         <article className="catequesis-admin__stat">
@@ -388,7 +382,8 @@ function GestionSolicitudesCatequesis() {
       </div>
 
       <div className="catequesis-admin__table-card">
-        <div className="catequesis-admin__table-wrapper">
+        <div className="admin-responsive-data">
+          <div className="admin-responsive-data__table catequesis-admin__table-wrapper">
           <table className="catequesis-admin__table">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -433,6 +428,33 @@ function GestionSolicitudesCatequesis() {
               )}
             </tbody>
           </table>
+          </div>
+
+          <div className="admin-responsive-data__cards">
+            {filteredSolicitudes.map((solicitud) => {
+              const nombre = `${solicitud.catequizando?.nombre ?? "Sin nombre"} ${solicitud.catequizando?.apellidos ?? ""}`.trim();
+              const codigo = solicitud.codigoSolicitud || `CAT-${solicitud.id}`;
+
+              return (
+                <AdminRecordCard
+                  key={solicitud.id}
+                  title={nombre}
+                  subtitle={codigo}
+                  badges={
+                    <span
+                      className={`catequesis-admin__badge catequesis-admin__badge--${obtenerClaseEstado(
+                        solicitud.estado,
+                      )}`}
+                    >
+                      {obtenerTextoEstado(solicitud.estado)}
+                    </span>
+                  }
+                  onViewDetail={() => openModal(solicitud)}
+                  viewLabel="Ver expediente"
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
 
