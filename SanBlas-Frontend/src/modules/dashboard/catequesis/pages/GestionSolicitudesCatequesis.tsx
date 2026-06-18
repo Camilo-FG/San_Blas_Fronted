@@ -22,6 +22,7 @@ import type {
 } from "../Types/catequesis";
 
 import "./GestionSolicitudesCatequesis.css";
+import { resolveUploadedFileUrl } from "../../../../utils/files";
 
 const normalizarEstado = (
   estado?: string | null,
@@ -73,7 +74,7 @@ const obtenerClaseEstado = (estado?: string | null) => {
 };
 
 function GestionSolicitudesCatequesis() {
-  const { solicitudes, guardarSolicitudes, cargando, guardando, error } =
+  const { solicitudes, cambiarEstado, obtenerDetalle, cargando, guardando, error } =
     useSolicitudesCatequesis();
 
   const [statusFilter, setStatusFilter] = useState<
@@ -147,51 +148,43 @@ function GestionSolicitudesCatequesis() {
     setRejectionReason("");
   }, []);
 
-  const openModal = useCallback((solicitud: CatequesisEnrollmentRecord) => {
-    setSelectedSolicitud(solicitud);
+  const openModal = useCallback(async (solicitud: CatequesisEnrollmentRecord) => {
+    const detalle = await obtenerDetalle(solicitud.id);
+    setSelectedSolicitud(detalle ?? solicitud);
     setIsRejecting(false);
     setRejectionReason("");
-  }, []);
+  }, [obtenerDetalle]);
 
   const approveSolicitud = useCallback(
     async (id: number) => {
-      const nuevasSolicitudes = solicitudes.map((solicitud) =>
-        solicitud.id === id
-          ? {
-              ...solicitud,
-              estado: "aprobado" as EstadoInscripcionCatequesis,
-              observacionAdministrativa:
-                "Solicitud aprobada por administración.",
-              updated_at: new Date().toISOString(),
-            }
-          : solicitud,
+      const response = await cambiarEstado(
+        id,
+        "aprobado",
+        "Solicitud aprobada por administración.",
       );
 
-      await guardarSolicitudes(nuevasSolicitudes);
-      closeModal();
+      if (response) {
+        closeModal();
+      }
     },
-    [solicitudes, guardarSolicitudes, closeModal],
+    [cambiarEstado, closeModal],
   );
 
   const rejectSolicitud = useCallback(
     async (id: number) => {
       if (!rejectionReason.trim()) return;
 
-      const nuevasSolicitudes = solicitudes.map((solicitud) =>
-        solicitud.id === id
-          ? {
-              ...solicitud,
-              estado: "rechazado" as EstadoInscripcionCatequesis,
-              observacionAdministrativa: rejectionReason.trim(),
-              updated_at: new Date().toISOString(),
-            }
-          : solicitud,
+      const response = await cambiarEstado(
+        id,
+        "rechazado",
+        rejectionReason.trim(),
       );
 
-      await guardarSolicitudes(nuevasSolicitudes);
-      closeModal();
+      if (response) {
+        closeModal();
+      }
     },
-    [solicitudes, guardarSolicitudes, rejectionReason, closeModal],
+    [cambiarEstado, rejectionReason, closeModal],
   );
 
   const columns = useMemo<ColumnDef<CatequesisEnrollmentRecord>[]>(
@@ -480,9 +473,21 @@ function GestionSolicitudesCatequesis() {
                 <div>
                   <span>Fe de bautismo</span>
                   <strong>
-                    {selectedSolicitud.catequesis?.feBautismoArchivo
-                      ? "Archivo adjunto"
-                      : "No adjuntado"}
+                    {selectedSolicitud.catequesis?.feBautismoArchivo ? (
+                      <a
+                        href={
+                          resolveUploadedFileUrl(
+                            String(selectedSolicitud.catequesis.feBautismoArchivo),
+                          ) ?? "#"
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Ver archivo
+                      </a>
+                    ) : (
+                      "No adjuntado"
+                    )}
                   </strong>
                 </div>
               </div>
@@ -693,9 +698,21 @@ function GestionSolicitudesCatequesis() {
                 <div>
                   <span>Comprobante de pago</span>
                   <strong>
-                    {selectedSolicitud.pago?.comprobanteArchivo
-                      ? "Archivo adjunto"
-                      : "No adjuntado"}
+                    {selectedSolicitud.pago?.comprobanteArchivo ? (
+                      <a
+                        href={
+                          resolveUploadedFileUrl(
+                            String(selectedSolicitud.pago.comprobanteArchivo),
+                          ) ?? "#"
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Ver archivo
+                      </a>
+                    ) : (
+                      "No adjuntado"
+                    )}
                   </strong>
                 </div>
               </div>

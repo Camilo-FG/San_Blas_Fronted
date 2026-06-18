@@ -76,3 +76,10 @@ textarea {
 .app-main {
   flex: 1;
 }
+
+.page-loader {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: #64748b;
+  font-weight: 600;
+}

@@ -4,10 +4,12 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import "./FormSolic.css";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
+import { ApiError } from "../../../services/apiClient";
 
 const FormSolic = () => {
   const { mutateAsync, isPending } = useCreateSolicSacramento();
   const [enviado, setEnviado] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const { captchaRef, captchaToken, handleCaptchaChange, handleCaptchaExpired, resetCaptcha } = useCaptcha();
 
@@ -29,11 +31,19 @@ const FormSolic = () => {
         return;
       }
 
-      await mutateAsync({ ...value, Estado: 'Pendiente' });
-      form.reset();
-      setCaptchaError(null);
-      resetCaptcha();
-      setEnviado(true);
+      try {
+        setErrorEnvio(null);
+        await mutateAsync(value);
+        form.reset();
+        setCaptchaError(null);
+        resetCaptcha();
+        setEnviado(true);
+      } catch (error) {
+        const mensaje = error instanceof ApiError
+          ? error.message
+          : 'No se pudo enviar la solicitud. Intente nuevamente.';
+        setErrorEnvio(mensaje);
+      }
     },
  
   });
@@ -41,6 +51,7 @@ const FormSolic = () => {
   const handleHacerOtraSolicitud = () => {
     form.reset();
     setCaptchaError(null);
+    setErrorEnvio(null);
     resetCaptcha();
     setEnviado(false);
   };
@@ -265,6 +276,7 @@ const FormSolic = () => {
         <button className="form-solic__submit" type="submit" disabled={isPending}>
           {isPending ? 'Guardando...' : 'Guardar'}
         </button>
+        {errorEnvio && <p className="form-solic__error">{errorEnvio}</p>}
       </form>
         </>
       )}

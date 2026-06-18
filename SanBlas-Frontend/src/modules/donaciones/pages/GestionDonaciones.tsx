@@ -3,7 +3,7 @@ import { useGestionDonaciones, Donacion } from '../hooks/useGestionDonaciones';
 import './GestionDonaciones.css';
 
 export default function GestionDonaciones(): React.JSX.Element {
-    const { donaciones, cargando, procesandoId, cambiarEstadoDonacion } = useGestionDonaciones();
+    const { donaciones, cargando, error, procesandoId, cambiarEstadoDonacion } = useGestionDonaciones();
     const [donacionSeleccionada, setDonacionSeleccionada] = useState<Donacion | null>(null);
 
     const formatearFecha = (fechaStr: string) => {
@@ -25,7 +25,11 @@ export default function GestionDonaciones(): React.JSX.Element {
                 <p className="gestion-subtitulo">Administre, revise detalles y modifique el estado de las donaciones recibidas.</p>
             </div>
 
-            {cargando ? (
+            {error ? (
+                <div className="no-datos-card">
+                    <p className="no-datos" style={{ color: '#b91c1c' }}>{error}</p>
+                </div>
+            ) : cargando ? (
                 <div className="spinner-container">
                     <div className="loading-spinner"></div>
                     <p>Cargando donaciones...</p>

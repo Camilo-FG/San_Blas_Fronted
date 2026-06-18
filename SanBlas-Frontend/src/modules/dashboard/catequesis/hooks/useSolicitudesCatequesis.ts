@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { CatequesisEnrollmentRecord } from "../Types/catequesis";
 import {
-  getSolicitudesCatequesis,
-  updateSolicitudesCatequesis,
+  actualizarEstadoSolicitud,
+  obtenerSolicitudCatequesisPorId,
+  obtenerSolicitudesCatequesis,
 } from "../services/catequesisService";
+import { ApiError } from "../../../../services/apiClient";
 
 export const useSolicitudesCatequesis = () => {
   const [solicitudes, setSolicitudesState] = useState<
@@ -14,41 +16,65 @@ export const useSolicitudesCatequesis = () => {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const cargarSolicitudes = async () => {
-      try {
-        setCargando(true);
-        setError("");
+  const cargarSolicitudes = useCallback(async () => {
+    try {
+      setCargando(true);
+      setError("");
 
-        const data = await getSolicitudesCatequesis();
-        setSolicitudesState(data);
-      } catch (error) {
-        console.error(error);
+      const data = await obtenerSolicitudesCatequesis();
+      setSolicitudesState(data);
+    } catch (err) {
+      console.error(err);
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
         setError("No se pudieron cargar las solicitudes de catequesis.");
-      } finally {
-        setCargando(false);
       }
-    };
-
-    cargarSolicitudes();
+    } finally {
+      setCargando(false);
+    }
   }, []);
 
-  const guardarSolicitudes = async (
-    nuevasSolicitudes: CatequesisEnrollmentRecord[],
+  useEffect(() => {
+    cargarSolicitudes();
+  }, [cargarSolicitudes]);
+
+  const obtenerDetalle = async (id: number) => {
+    try {
+      return await obtenerSolicitudCatequesisPorId(id);
+    } catch (err) {
+      console.error(err);
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("No se pudo cargar el detalle de la solicitud.");
+      }
+      return null;
+    }
+  };
+
+  const cambiarEstado = async (
+    id: number,
+    estado: "aprobado" | "rechazado",
+    observacion?: string,
   ) => {
     try {
       setGuardando(true);
       setError("");
 
-      setSolicitudesState(nuevasSolicitudes);
+      const response = await actualizarEstadoSolicitud(id, estado, observacion);
 
-      const dataActualizada =
-        await updateSolicitudesCatequesis(nuevasSolicitudes);
+      await cargarSolicitudes();
 
-      setSolicitudesState(dataActualizada);
-    } catch (error) {
-      console.error(error);
-      setError("No se pudieron actualizar las solicitudes en JSONBin.");
+      return response;
+    } catch (err) {
+      console.error(err);
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("No se pudo actualizar el estado de la solicitud.");
+      }
+      return null;
     } finally {
       setGuardando(false);
     }
@@ -56,7 +82,9 @@ export const useSolicitudesCatequesis = () => {
 
   return {
     solicitudes,
-    guardarSolicitudes,
+    cargarSolicitudes,
+    obtenerDetalle,
+    cambiarEstado,
     cargando,
     guardando,
     error,

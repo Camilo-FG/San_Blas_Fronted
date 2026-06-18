@@ -4,7 +4,7 @@ export interface UserCreate {
     phoneNumber: string;
     password: string;
     confirmPassword: string;
-    userRole?: boolean;
+    role?: string;
 }
 
 export interface UserUpdate {
@@ -13,17 +13,19 @@ export interface UserUpdate {
     phoneNumber?: string;
     password?: string;
     confirmPassword?: string;
-    userRole?: boolean;
+    role?: string;
     state?: boolean;
 }
 
-//Response
 export interface Usuario {
     id: number;
     userName: string;
     email: string;
     phoneNumber: string;
-    userRole: boolean;  //false=User, true=admin
-    state: boolean;     //true=activo, false=inactivo
+    role: string;
+    state: boolean;
     creationDate: string;
 }
+
+export const isAdminRole = (role: string): boolean =>
+    role?.toLowerCase() === "admin";

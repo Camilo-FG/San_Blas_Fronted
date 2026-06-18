@@ -43,7 +43,7 @@ const SERVICES: ServiceItem[] = [
     description:
       "Inicie la formación en la fe y preparación sacramental para niños y jóvenes.",
     image:
-      "https://images.unsplash.com/photo-1543157145-f78c636d023d?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1543157145-f78c636d023d?auto=format&fit=crop&q=75&w=400",
     category: "Formación de Fe",
     icon: BookOpen,
     buttonLabel: "Iniciar Inscripción",
@@ -55,7 +55,7 @@ const SERVICES: ServiceItem[] = [
     description:
       "Solicite constancias de Bautismo, Comunión, Confirmación o Matrimonio.",
     image:
-      "https://images.unsplash.com/photo-1478147427282-58a87a120781?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1478147427282-58a87a120781?auto=format&fit=crop&q=80&w=400",
     category: "Archivo Parroquial",
     icon: FileCheck,
     buttonLabel: "Solicitar Constancia",
@@ -67,7 +67,7 @@ const SERVICES: ServiceItem[] = [
     description:
       "Conozca los requisitos, charlas prebautismales y fechas disponibles para bautizos.",
     image:
-      "https://images.unsplash.com/photo-1510022011102-315f696ce29f?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1510022011102-315f696ce29f?auto=format&fit=crop&q=80&w=400",
     category: "Sacramentos",
     icon: Waves,
     buttonLabel: "Ver Más Información",
@@ -92,7 +92,7 @@ const SERVICES: ServiceItem[] = [
     description:
       "Información para apertura de expediente matrimonial, charlas y coordinación de fechas.",
     image:
-      "https://images.unsplash.com/photo-1460364155650-811c77f06245?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1460364155650-811c77f06245?auto=format&fit=crop&q=80&w=400",
     category: "Ministerio Familiar",
     icon: FolderHeart,
     buttonLabel: "Ver Más Información",
@@ -117,7 +117,7 @@ const SERVICES: ServiceItem[] = [
     description:
       "Jornadas de oración, reflexión y crecimiento espiritual para la comunidad parroquial.",
     image:
-      "https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?auto=format&fit=crop&q=80&w=400",
     category: "Vida Interior",
     icon: Flame,
     buttonLabel: "Ver Más Información",
@@ -144,10 +144,13 @@ export default function ServiciosCarousel() {
   );
 
   useEffect(() => {
+    const mqMobile = window.matchMedia("(max-width: 639px)");
+    const mqTablet = window.matchMedia("(max-width: 1023px)");
+
     const handleResize = () => {
-      if (window.innerWidth < 640) {
+      if (mqMobile.matches) {
         setCardsToShow(1);
-      } else if (window.innerWidth < 1024) {
+      } else if (mqTablet.matches) {
         setCardsToShow(2);
       } else {
         setCardsToShow(3);
@@ -157,9 +160,13 @@ export default function ServiciosCarousel() {
     };
 
     handleResize();
-    window.addEventListener("resize", handleResize);
+    mqMobile.addEventListener("change", handleResize);
+    mqTablet.addEventListener("change", handleResize);
 
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      mqMobile.removeEventListener("change", handleResize);
+      mqTablet.removeEventListener("change", handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -228,6 +235,10 @@ export default function ServiciosCarousel() {
                         <img
                           src={service.image}
                           alt={service.title}
+                          width={400}
+                          height={176}
+                          loading="lazy"
+                          decoding="async"
                         />
 
                         <span>{service.category}</span>
@@ -336,6 +347,10 @@ export default function ServiciosCarousel() {
                 <img
                   src={selectedService.image}
                   alt={selectedService.title}
+                  width={400}
+                  height={240}
+                  loading="lazy"
+                  decoding="async"
                 />
 
                 <button

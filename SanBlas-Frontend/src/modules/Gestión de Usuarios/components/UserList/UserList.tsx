@@ -9,7 +9,7 @@ import {
     getPaginationRowModel,
     SortingState,
 } from '@tanstack/react-table';
-import { Usuario } from '../../../../types/Usuario';
+import { Usuario, isAdminRole } from '../../../../types/Usuario';
 import { usePagination } from '../../../../shared/hooks/usePagination';
 import UpdateUserModal from '../UpdateUserModal/UpdateUserModal';
 import { useUpdateUser } from '../../hooks/hooksUsuarios/useUpdateUser';
@@ -52,9 +52,9 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
                 header: 'Teléfono',
                 cell: (info) => info.getValue(),
             }),
-            columnHelper.accessor('userRole', {
+            columnHelper.accessor('role', {
                 header: 'Rol',
-                cell: (info) => info.getValue() ? 'Admin' : 'User',
+                cell: (info) => isAdminRole(info.getValue()) ? 'Admin' : 'User',
             }),
             columnHelper.accessor('state', {
                 header: 'Estado',
@@ -195,12 +195,18 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
         if (!usuarioEditando) return;
 
         const ok = await actualizarUsuario(usuarioEditando.id, {
-            userName: data.nombre,
+            ...(data.nombre.trim() !== usuarioEditando.userName
+              ? { userName: data.nombre }
+              : {}),
             email: data.correo,
             phoneNumber: data.telefono,
-            password: data.contraseña,
-            confirmPassword: data.contraseña,
-            userRole: data.rol,
+            ...(data.contraseña.trim()
+              ? {
+                  password: data.contraseña,
+                  confirmPassword: data.contraseña,
+                }
+              : {}),
+            role: data.rol,
             state: data.estado,
         });
 
