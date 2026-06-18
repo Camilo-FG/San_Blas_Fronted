@@ -70,7 +70,7 @@ export const crearSolicitudCatequesis = async (
       );
 
       const { data } = await apiClient.post<CrearInscripcionBackendResponse>(
-        BASE,
+        `${BASE}/con-archivos`,
         body,
         {
           headers: { "Content-Type": "multipart/form-data" },

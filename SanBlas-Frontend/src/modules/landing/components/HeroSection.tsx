@@ -17,11 +17,15 @@ const HERO_DEFAULT = {
 function HeroSection() {
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
   const { data } = useLandingSection("hero", HERO_DEFAULT, { defer: true });
+  const heroImage =
+    typeof data.imageUrl === "string" && data.imageUrl.trim()
+      ? data.imageUrl.trim()
+      : HERO_IMAGE;
 
   return (
     <section className="hero" id="inicio">
       <img
-        src={HERO_IMAGE}
+        src={heroImage}
         alt=""
         className="hero__bg-image"
         fetchPriority="high"
