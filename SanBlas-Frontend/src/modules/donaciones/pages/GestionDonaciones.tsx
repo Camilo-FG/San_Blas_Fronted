@@ -12,7 +12,7 @@ export default function GestionDonaciones(): React.JSX.Element {
     };
 
     const handleAccionEstado = async (id: number, nuevoEstado: 'Pendiente' | 'Aprobado' | 'Rechazado') => {
-        const exito = await cambiarEstadoDonacion(index, nuevoEstado);
+        const exito = await cambiarEstadoDonacion(id, nuevoEstado);
         if (exito && donacionSeleccionada) {
             setDonacionSeleccionada({ ...donacionSeleccionada, estado: nuevoEstado });
         }
