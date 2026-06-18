@@ -11,8 +11,8 @@ export default function GestionDonaciones(): React.JSX.Element {
         return new Date(fechaStr).toLocaleDateString('es-CR', opciones);
     };
 
-    const handleAccionEstado = async (index: number, nuevoEstado: 'Pendiente' | 'Aprobado' | 'Rechazado') => {
-        const exito = await cambiarEstadoDonacion(index, nuevoEstado);
+    const handleAccionEstado = async (id: number, nuevoEstado: 'Pendiente' | 'Aprobado' | 'Rechazado') => {
+        const exito = await cambiarEstadoDonacion(id, nuevoEstado);
         if (exito && donacionSeleccionada) {
             setDonacionSeleccionada({ ...donacionSeleccionada, estado: nuevoEstado });
         }
@@ -62,8 +62,8 @@ export default function GestionDonaciones(): React.JSX.Element {
                                         <select
                                             className={`select-estado-dinamico ${(donacion.estado || 'pendiente').toLowerCase()}`}
                                             value={donacion.estado || 'Pendiente'}
-                                            disabled={procesandoId === index}
-                                            onChange={(e) => handleAccionEstado(index, e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado')}
+                                            disabled={procesandoId === donacion.id}
+                                            onChange={(e) => handleAccionEstado(donacion.id, e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado')}
                                         >
                                             <option value="Pendiente">Pendiente</option>
                                             <option value="Aprobado">Aprobado</option>
