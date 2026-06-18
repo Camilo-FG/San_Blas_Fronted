@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Pencil } from 'lucide-react';
 import {
     createColumnHelper,
     flexRender,
@@ -13,6 +14,8 @@ import { Usuario, isAdminRole } from '../../../../types/Usuario';
 import { usePagination } from '../../../../shared/hooks/usePagination';
 import UpdateUserModal from '../UpdateUserModal/UpdateUserModal';
 import { useUpdateUser } from '../../hooks/hooksUsuarios/useUpdateUser';
+import { AdminRecordCard } from '../../../../shared/components/admin/AdminRecordCard';
+import { AdminRecordDetailSheet } from '../../../../shared/components/admin/AdminRecordDetailSheet';
 
 interface UserListProps {
     users: Usuario[];
@@ -26,6 +29,7 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState('');
     const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
+    const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
     const { actualizarUsuario } = useUpdateUser();
 
     //se inverte el array para mostrar  usuarios más recientes primero
@@ -123,7 +127,8 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
                     + Agregar usuario
                 </button>
             </div>
-            <table className="users-table">
+            <div className="admin-responsive-data">
+            <table className="users-table admin-responsive-data__table">
                 <thead>
                     {table.getHeaderGroups().map((headerGroup) => (
                         <tr key={headerGroup.id}>
@@ -163,6 +168,32 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
                 </tbody>
             </table>
 
+            <div className="admin-responsive-data__cards">
+                {table.getRowModel().rows.map((row) => {
+                    const usuario = row.original;
+                    return (
+                        <AdminRecordCard
+                            key={usuario.id}
+                            title={usuario.userName}
+                            subtitle={usuario.email}
+                            badges={
+                                <>
+                                    <span className="status-badge">
+                                        {isAdminRole(usuario.role) ? 'Admin' : 'User'}
+                                    </span>
+                                    <span className={`status-badge ${usuario.state ? 'status-active' : 'status-inactive'}`}>
+                                        {usuario.state ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </>
+                            }
+                            onViewDetail={() => setUsuarioSeleccionado(usuario)}
+                            viewLabel="Ver detalle"
+                        />
+                    );
+                })}
+            </div>
+            </div>
+
             <div className="table-footer">
                 <span className="table-records-count">
                     Total de registros: <strong>{totalItems}</strong>
@@ -187,6 +218,47 @@ export const UserList = ({ users, onAddUser, onRefetch  }: UserListProps) => {
                     </button>
                 </div>
             </div>
+
+            <AdminRecordDetailSheet
+                open={usuarioSeleccionado !== null}
+                title={usuarioSeleccionado?.userName ?? 'Usuario'}
+                subtitle={usuarioSeleccionado?.email}
+                badges={
+                    usuarioSeleccionado ? (
+                        <>
+                            <span className="status-badge">
+                                {isAdminRole(usuarioSeleccionado.role) ? 'Admin' : 'User'}
+                            </span>
+                            <span className={`status-badge ${usuarioSeleccionado.state ? 'status-active' : 'status-inactive'}`}>
+                                {usuarioSeleccionado.state ? 'Activo' : 'Inactivo'}
+                            </span>
+                        </>
+                    ) : undefined
+                }
+                onClose={() => setUsuarioSeleccionado(null)}
+                primaryAction={
+                    usuarioSeleccionado
+                        ? {
+                            label: 'Editar',
+                            icon: <Pencil size={16} />,
+                            onClick: () => {
+                                setUsuarioEditando(usuarioSeleccionado);
+                                setUsuarioSeleccionado(null);
+                            },
+                        }
+                        : undefined
+                }
+            >
+                {usuarioSeleccionado && (
+                    <div className="admin-detail-fields">
+                        <p className="admin-detail-field"><strong>Teléfono:</strong> {usuarioSeleccionado.phoneNumber || 'No provisto'}</p>
+                        <p className="admin-detail-field">
+                            <strong>Fecha de creación:</strong>{' '}
+                            {new Date(usuarioSeleccionado.creationDate).toLocaleDateString('es-CR')}
+                        </p>
+                    </div>
+                )}
+            </AdminRecordDetailSheet>
 
 <UpdateUserModal
     isOpen={usuarioEditando !== null}
