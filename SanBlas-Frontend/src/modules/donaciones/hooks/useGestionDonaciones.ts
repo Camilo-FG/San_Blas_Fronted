@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export interface Donacion {
+    id: number;
     fecha: string;
     anonimo: boolean;
     nombre: string;
@@ -15,23 +16,17 @@ export const useGestionDonaciones = () => {
     const [cargando, setCargando] = useState<boolean>(true);
     const [procesandoId, setProcesandoId] = useState<number | null>(null);
 
-    const BIN_ID = import.meta.env.VITE_DONACION_BIN_ID;
-    const ACCESS_KEY = import.meta.env.VITE_ACCESS_KEY_DONACION;
-
     const cargarDonaciones = async () => {
         try {
             setCargando(true);
-            const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-                method: 'GET',
-                headers: { 'X-Master-Key': ACCESS_KEY }
-            });
+            // GET del backend
+            const response = await fetch('http://localhost:5146/api/Donacion');
             if (!response.ok) throw new Error('Error al obtener las donaciones');
             const data = await response.json();
             
-            const listaFormateada = (data.record?.donaciones || []).map((don: any) => {
+            const listaFormateada = data.map((don: any) => {
                 let estadoActual: 'Pendiente' | 'Aprobado' | 'Rechazado' = 'Pendiente';
                 
-                // Conversión limpia de estados viejos a nuevos
                 if (don.estado === 'Aceptada' || don.estado === 'Aprobado') {
                     estadoActual = 'Aprobado';
                 } else if (don.estado === 'Denegada' || don.estado === 'Rechazado') {
@@ -39,6 +34,7 @@ export const useGestionDonaciones = () => {
                 }
 
                 return {
+                    id: don.id,
                     fecha: don.fecha || '',
                     anonimo: !!don.anonimo,
                     nombre: don.nombre || '',
@@ -49,9 +45,6 @@ export const useGestionDonaciones = () => {
                 };
             });
             
-            // Ordenar por fecha (más recientes primero)
-            listaFormateada.sort((a: Donacion, b: Donacion) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-            
             setDonaciones(listaFormateada);
         } catch (error) {
             console.error(error);
@@ -61,22 +54,24 @@ export const useGestionDonaciones = () => {
         }
     };
 
-    const cambiarEstadoDonacion = async (indexOriginal: number, nuevoEstado: 'Pendiente' | 'Aprobado' | 'Rechazado') => {
-        setProcesandoId(indexOriginal);
+    const cambiarEstadoDonacion = async (id: number, nuevoEstado: 'Pendiente' | 'Aprobado' | 'Rechazado') => {
+        setProcesandoId(id);
         try {
-            const listaActualizada = [...donaciones];
-            listaActualizada[indexOriginal].estado = nuevoEstado;
-
-            const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-                method: 'PUT',
+            // PATCH hacia el backend
+            const response = await fetch(`http://localhost:5146/api/Donacion/${id}/estado`, {
+                method: 'PATCH',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-Master-Key': ACCESS_KEY
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ donaciones: listaActualizada })
+                body: JSON.stringify(nuevoEstado)
             });
 
             if (!response.ok) throw new Error('Error al actualizar el estado');
+            
+            const listaActualizada = donaciones.map(donacion => 
+                donacion.id === id ? { ...donacion, estado: nuevoEstado } : donacion
+            );
+            
             setDonaciones(listaActualizada);
             return true;
         } catch (error) {
