@@ -3,6 +3,8 @@ export type TipoSacramentoBackend =
   | "Confirmacion"
   | "Matrimonio";
 
+export type TipoSacramentoBackendCode = 0 | 1 | 2;
+
 export type EstadoConstancia = "Pendiente" | "Aprobado" | "Rechazado";
 
 export interface FormSacraBackend {
@@ -13,7 +15,7 @@ export interface FormSacraBackend {
   cedula: string;
   correo: string;
   telefono: string;
-  tipoSacramento: TipoSacramentoBackend;
+  tipoSacramento: TipoSacramentoBackend | TipoSacramentoBackendCode;
   motivo: string;
   estado?: string | null;
 }
@@ -25,6 +27,6 @@ export interface CrearConstanciaBackendRequest {
   cedula: string;
   correo: string;
   telefono: string;
-  tipoSacramento: TipoSacramentoBackend;
+  tipoSacramento: TipoSacramentoBackendCode;
   motivo: string;
 }

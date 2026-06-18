@@ -118,6 +118,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       newErrors.direccionExacta = "Digite la dirección exacta.";
     }
 
+    if (!form.catequizando.bautismo.parroquia?.trim()) {
+      newErrors.parroquiaBautismo = "Digite la parroquia de bautismo.";
+    }
+
     if (
       form.catequizando.adecuacion.requiereAdecuacionCentroEducativo === null
     ) {
@@ -153,6 +157,18 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
     if (!form.madreCatequizando.telefono.trim()) {
       newErrors.telefonoMadre = "Digite el teléfono de la madre o encargada.";
+    }
+
+    if (!form.madreCatequizando.direccion.direccionExacta?.trim()) {
+      newErrors.direccionMadre = "Digite la dirección de la madre o encargada.";
+    }
+
+    if (!form.madreCatequizando.direccion.ciudad?.trim()) {
+      newErrors.ciudadMadre = "Digite la ciudad de la madre o encargada.";
+    }
+
+    if (!form.madreCatequizando.direccion.provincia?.trim()) {
+      newErrors.provinciaMadre = "Digite la provincia de la madre o encargada.";
     }
 
     if (!form.inscripcion.personaQueInscribe.nombre?.trim()) {
@@ -356,7 +372,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
         <div className="form-grid">
           <div className="form-field">
-            <label>Parroquia</label>
+            <label>Parroquia *</label>
             <input
               type="text"
               value={form.catequizando.bautismo.parroquia || ""}
@@ -364,6 +380,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 updateForm("catequizando.bautismo.parroquia", e.target.value)
               }
             />
+            {errors.parroquiaBautismo && (
+              <p className="error-text">{errors.parroquiaBautismo}</p>
+            )}
           </div>
 
           <div className="form-field">
@@ -556,7 +575,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           </div>
 
           <div className="form-field">
-            <label>Dirección exacta</label>
+            <label>Dirección exacta *</label>
             <input
               type="text"
               value={form.madreCatequizando.direccion.direccionExacta || ""}
@@ -567,10 +586,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 )
               }
             />
+            {errors.direccionMadre && (
+              <p className="error-text">{errors.direccionMadre}</p>
+            )}
           </div>
 
           <div className="form-field">
-            <label>Ciudad</label>
+            <label>Ciudad *</label>
             <input
               type="text"
               value={form.madreCatequizando.direccion.ciudad || ""}
@@ -578,10 +600,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 updateForm("madreCatequizando.direccion.ciudad", e.target.value)
               }
             />
+            {errors.ciudadMadre && (
+              <p className="error-text">{errors.ciudadMadre}</p>
+            )}
           </div>
 
           <div className="form-field">
-            <label>Provincia</label>
+            <label>Provincia *</label>
             <input
               type="text"
               value={form.madreCatequizando.direccion.provincia || ""}
@@ -592,6 +617,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 )
               }
             />
+            {errors.provinciaMadre && (
+              <p className="error-text">{errors.provinciaMadre}</p>
+            )}
           </div>
 
           <div className="form-field">

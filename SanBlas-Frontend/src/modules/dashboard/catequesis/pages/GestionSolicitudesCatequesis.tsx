@@ -78,7 +78,7 @@ const obtenerClaseEstado = (estado?: string | null) => {
 };
 
 function GestionSolicitudesCatequesis() {
-  const { solicitudes, cambiarEstado, obtenerDetalle, cargando, guardando, error } =
+  const { solicitudes, cambiarEstado, obtenerDetalle, cargando, guardando, error, detalleError, accionError, limpiarDetalleError, limpiarAccionError } =
     useSolicitudesCatequesis();
 
   const [statusFilter, setStatusFilter] = useState<
@@ -150,7 +150,9 @@ function GestionSolicitudesCatequesis() {
     setSelectedSolicitud(null);
     setIsRejecting(false);
     setRejectionReason("");
-  }, []);
+    limpiarDetalleError();
+    limpiarAccionError();
+  }, [limpiarDetalleError, limpiarAccionError]);
 
   const openModal = useCallback(async (solicitud: CatequesisEnrollmentRecord) => {
     const detalle = await obtenerDetalle(solicitud.id);
@@ -296,7 +298,7 @@ function GestionSolicitudesCatequesis() {
     );
   }
 
-  if (error) {
+  if (error && solicitudes.length === 0) {
     return (
       <section className="catequesis-admin">
         <p>{error}</p>
@@ -309,6 +311,12 @@ function GestionSolicitudesCatequesis() {
       {guardando && (
         <p className="catequesis-admin__saving" role="status">
           Guardando cambios...
+        </p>
+      )}
+
+      {error && (
+        <p className="catequesis-admin__inline-error" role="alert">
+          {error}
         </p>
       )}
 
@@ -500,6 +508,18 @@ function GestionSolicitudesCatequesis() {
           </div>
 
           <div className="catequesis-admin__modal-body">
+            {detalleError && (
+              <p className="catequesis-admin__inline-error" role="alert">
+                {detalleError}
+              </p>
+            )}
+
+            {accionError && (
+              <p className="catequesis-admin__inline-error" role="alert">
+                {accionError}
+              </p>
+            )}
+
             <div className="catequesis-admin__section">
               <h3>Información de Catequesis</h3>
 
