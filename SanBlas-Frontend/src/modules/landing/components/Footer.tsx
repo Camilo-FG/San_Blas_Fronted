@@ -1,11 +1,54 @@
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+import Rutas from "../../../routes/Rutas";
 import "./Footer.css";
 
+const LOGO_URL = "/logo.png";
+const HERO_SECTION_ID = "inicio";
+
+function scrollToHero() {
+    document.getElementById(HERO_SECTION_ID)?.scrollIntoView({ behavior: "smooth" });
+}
+
 function Footer() {
+    const navigate = useNavigate();
+    const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+    const handleGoToHero = (event: React.MouseEvent<HTMLAnchorElement>) => {
+        event.preventDefault();
+
+        const isHome = pathname === Rutas.home;
+
+        if (isHome) {
+            scrollToHero();
+            window.history.replaceState(null, "", `${Rutas.home}#${HERO_SECTION_ID}`);
+            return;
+        }
+
+        void navigate({ to: Rutas.home, hash: HERO_SECTION_ID }).finally(() => {
+            window.setTimeout(scrollToHero, 150);
+        });
+    };
+
     return (
         <footer className="footer">
             <div className="footer__container">
                 <div className="footer__brand">
-                    <h2 className="footer__logo">Parroquia San Blas</h2>
+                    <a
+                        href={`${Rutas.home}#${HERO_SECTION_ID}`}
+                        className="footer__brand-link"
+                        onClick={handleGoToHero}
+                        aria-label="Ir al inicio - Parroquia San Blas"
+                    >
+                        <img
+                            src={LOGO_URL}
+                            alt=""
+                            className="footer__logo-img"
+                            width={52}
+                            height={52}
+                            decoding="async"
+                        />
+                        <span className="footer__brand-name">Parroquia San Blas</span>
+                    </a>
                     <p className="footer__description">
                         Comunidad parroquial dedicada a la fe, la tradición y el servicio
                         espiritual de las familias de Nicoya.

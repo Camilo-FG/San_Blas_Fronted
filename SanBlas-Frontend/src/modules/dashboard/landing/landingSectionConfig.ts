@@ -68,9 +68,10 @@ export const LANDING_SECTIONS: LandingSectionConfig[] = [
   },
   {
     key: "contacto",
-    label: "Página de contacto",
-    description: "Datos de contacto y horarios de atención.",
+    label: "Contacto",
+    description: "Datos de contacto, horarios y mapa (inicio y página de contacto).",
     fields: [
+      { name: "eyebrow", label: "Etiqueta superior", type: "text", maxLength: 40 },
       { name: "title", label: "Título", type: "text", maxLength: 80 },
       { name: "intro", label: "Introducción", type: "textarea", maxLength: 220, rows: 3 },
       { name: "telefono", label: "Teléfono", type: "text", maxLength: 40 },
@@ -159,6 +160,7 @@ export const sectionDataToForm = (
 
   if (key === "contacto") {
     form.title = String(data.title ?? "");
+    form.eyebrow = String(data.eyebrow ?? "");
     form.intro = String(data.intro ?? "");
     form.telefono = String(data.telefono ?? "");
     form.correo = String(data.correo ?? "");
@@ -221,6 +223,7 @@ export const formToSectionData = (
 
   if (key === "contacto") {
     return {
+      eyebrow: form.eyebrow,
       title: form.title,
       intro: form.intro,
       telefono: form.telefono,

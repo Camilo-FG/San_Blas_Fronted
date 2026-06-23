@@ -1,0 +1,163 @@
+.contacto-page {
+  padding: 48px 8% 80px;
+  background: #ffffff;
+}
+
+.contacto-page__container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.contacto-page__eyebrow {
+  display: inline-flex;
+  margin-bottom: 14px;
+  color: #d4af37;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.contacto-page h1 {
+  margin: 0 0 18px;
+  color: #003366;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.08;
+}
+
+.contacto-page__intro {
+  margin: 0 0 32px;
+  color: #64748b;
+  font-size: 1rem;
+  line-height: 1.75;
+  max-width: 720px;
+}
+
+.contacto-page__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 480px);
+  gap: 48px;
+  align-items: start;
+}
+
+.contacto-page__details {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.contacto-page__details li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.contacto-page__details li svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #d4af37;
+}
+
+.contacto-page__details span {
+  display: block;
+  margin-bottom: 2px;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.contacto-page__details a,
+.contacto-page__details p {
+  margin: 0;
+  color: #003366;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.contacto-page__details a:hover {
+  color: #d4af37;
+}
+
+.contacto-page__callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 620px;
+  padding: 18px 20px;
+  background: #f8fafc;
+  border-left: 4px solid #003366;
+  border-radius: 0 12px 12px 0;
+}
+
+.contacto-page__callout svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #003366;
+}
+
+.contacto-page__callout strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #003366;
+  font-size: 0.92rem;
+}
+
+.contacto-page__callout ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #64748b;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.contacto-page__map-wrap {
+  width: 100%;
+  min-height: 420px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid #e8edf2;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  background: #f1f5f9;
+}
+
+.contacto-page__map {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  border: 0;
+}
+
+@media (max-width: 960px) {
+  .contacto-page {
+    padding: 40px 32px 64px;
+  }
+
+  .contacto-page__grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .contacto-page__map-wrap,
+  .contacto-page__map {
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contacto-page {
+    padding: 32px 18px 56px;
+  }
+
+  .contacto-page__map-wrap,
+  .contacto-page__map {
+    min-height: 280px;
+  }
+}

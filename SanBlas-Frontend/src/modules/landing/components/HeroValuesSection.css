@@ -1,0 +1,73 @@
+.hero-values {
+    position: relative;
+    z-index: 3;
+    padding: 72px 8%;
+    background: #ffffff;
+}
+
+.hero-values__grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+}
+
+.hero-values__card {
+    background: #ffffff;
+    border: 1px solid #e8edf2;
+    border-radius: 22px;
+    padding: 36px 28px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+}
+
+.hero-values__icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: #003366;
+    color: #d4af37;
+    display: grid;
+    place-items: center;
+    margin-bottom: 22px;
+}
+
+.hero-values__card h3 {
+    margin: 0 0 12px;
+    color: #003366;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+
+.hero-values__card p {
+    margin: 0;
+    color: #6b7280;
+    line-height: 1.65;
+    font-size: 0.98rem;
+}
+
+@media (max-width: 900px) {
+    .hero-values {
+        padding: 56px 32px;
+    }
+
+    .hero-values__grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .hero-values__card {
+        padding: 28px 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-values {
+        padding: 48px 18px;
+    }
+
+    .hero-values__card h3 {
+        font-size: 1.2rem;
+    }
+}
