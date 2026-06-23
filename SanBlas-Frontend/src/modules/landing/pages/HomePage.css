@@ -6,6 +6,12 @@
   border-bottom: 1px solid #f0f0f0;
 }
 
+.home-eventos-slot {
+  min-height: 520px;
+  background: #f8fafc;
+  border-top: 1px solid #eef2f7;
+}
+
 .home-sobre-slot {
   min-height: 920px;
   background: var(--white, #ffffff);
@@ -17,6 +23,10 @@
     padding: 72px 0;
   }
 
+  .home-eventos-slot {
+    min-height: 460px;
+  }
+
   .home-sobre-slot {
     min-height: 780px;
   }
@@ -26,5 +36,9 @@
   .home-carousel-slot {
     min-height: 560px;
     padding: 64px 0;
+  }
+
+  .home-eventos-slot {
+    min-height: 420px;
   }
 }
