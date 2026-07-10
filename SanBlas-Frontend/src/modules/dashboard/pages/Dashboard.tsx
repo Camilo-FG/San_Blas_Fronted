@@ -250,15 +250,17 @@ function Dashboard() {
 
       {/* Main content */}
       <main className="h-[calc(100vh-50px)] flex-1 overflow-y-auto p-4 sm:p-6 lg:h-screen lg:p-8">
-        <header className="mb-4 rounded-[20px] border border-border bg-surface p-4 shadow-sm sm:p-6 lg:mb-6">
-          <p className="mb-1.5 text-[0.72rem] font-extrabold tracking-[0.14em] text-brand-gold uppercase">
-            Administración
-          </p>
-          <h1 className="mb-1.5 font-heading text-xl leading-tight text-brand-blue lg:text-3xl">
-            {pageInfo.title}
-          </h1>
-          <p className="max-w-3xl text-sm text-text-secondary">{pageInfo.subtitle}</p>
-        </header>
+        {pathname !== Rutas.dashboard && (
+          <header className="mb-4 rounded-[20px] border border-border bg-surface p-4 shadow-sm sm:p-6 lg:mb-6">
+            <p className="mb-1.5 text-[0.72rem] font-extrabold tracking-[0.14em] text-brand-gold uppercase">
+              Administración
+            </p>
+            <h1 className="mb-1.5 font-heading text-xl leading-tight text-brand-blue lg:text-3xl">
+              {pageInfo.title}
+            </h1>
+            <p className="max-w-3xl text-sm text-text-secondary">{pageInfo.subtitle}</p>
+          </header>
+        )}
 
         <Outlet />
       </main>
