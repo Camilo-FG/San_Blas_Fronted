@@ -5,6 +5,7 @@ import {
   createRouter,
   Outlet,
   redirect,
+  useRouterState,
 } from "@tanstack/react-router";
 
 import Navbar from "../shared/components/Navbar";
@@ -73,9 +74,12 @@ function withSuspense(Component: React.LazyExoticComponent<() => React.JSX.Eleme
 }
 
 function RootLayout() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isDashboard = pathname.startsWith(Rutas.dashboard);
+
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar />
+      {!isDashboard && <Navbar />}
 
       <main className="min-w-0 flex-1">
         <Suspense fallback={<PageLoader />}>
@@ -83,7 +87,7 @@ function RootLayout() {
         </Suspense>
       </main>
 
-      <Footer />
+      {!isDashboard && <Footer />}
     </div>
   );
 }

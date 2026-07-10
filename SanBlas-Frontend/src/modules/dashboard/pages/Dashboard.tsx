@@ -1,16 +1,14 @@
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  Home,
-  Heart,
+  LayoutDashboard,
+  FileSpreadsheet,
   FileText,
-  HandHeart,
+  BookOpen,
+  Heart,
   Calendar,
+  Settings,
   Users,
-  Edit,
-  ScrollText,
-  LogOut,
-  Shield,
   Menu,
   X,
 } from "lucide-react";
@@ -20,40 +18,40 @@ import { useAuth } from "../../../context/AuthContext";
 import { cn } from "../../../shared/ui";
 
 const navLinks = [
-  { to: Rutas.dashboard, label: "Resumen", icon: Home },
+  { to: Rutas.dashboard, label: "Resumen", icon: LayoutDashboard },
   {
     to: Rutas.dashboardUrl.registroSacramentos,
-    label: "Registro de sacramentos",
-    icon: Heart,
+    label: "Registro de Sacramentos",
+    icon: FileSpreadsheet,
   },
   {
     to: Rutas.dashboardUrl.constanciasSacramentos,
-    label: "Solicitudes de constancia",
-    icon: ScrollText,
-  },
-  {
-    to: Rutas.dashboardUrl.solicitudesCatequesis,
-    label: "Solicitudes de catequesis",
+    label: "Constancias de Sacramentos",
     icon: FileText,
   },
   {
+    to: Rutas.dashboardUrl.solicitudesCatequesis,
+    label: "Solicitudes de Catequesis",
+    icon: BookOpen,
+  },
+  {
     to: Rutas.dashboardUrl.donaciones,
-    label: "Gestión de donaciones",
-    icon: HandHeart,
+    label: "Gestión de Donaciones",
+    icon: Heart,
   },
   {
     to: Rutas.dashboardUrl.eventos,
-    label: "Gestión de eventos",
+    label: "Gestión de Eventos",
     icon: Calendar,
   },
   {
     to: Rutas.dashboardUrl.gestionLanding,
-    label: "Gestión del landing",
-    icon: Edit,
+    label: "Gestión del Landing (CMS)",
+    icon: Settings,
   },
   {
     to: Rutas.dashboardUrl.gestionUsuarios,
-    label: "Gestión de usuarios",
+    label: "Gestión de Usuarios",
     icon: Users,
   },
 ];
@@ -93,8 +91,24 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   },
 };
 
-const menuItemClassName =
-  "flex w-full min-h-11 cursor-pointer items-center gap-3 rounded-xl border-none bg-transparent px-3.5 py-3.5 text-left text-[15px] font-bold text-text-secondary no-underline transition-colors hover:bg-gray-100 hover:text-royal-blue focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
+const menuItemBaseClassName =
+  "flex w-full items-center gap-3 rounded-lg border-l-4 py-3 pr-4 pl-3 text-left text-xs font-semibold no-underline transition-all focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
+
+const menuItemInactiveClassName =
+  "border-transparent text-gray-400 hover:bg-white/5 hover:text-white [&_svg]:text-gray-500 hover:[&_svg]:text-white";
+
+const menuItemActiveClassName =
+  "border-brand-gold bg-brand-blue text-brand-gold [&_svg]:text-brand-gold";
+
+function getUserInitial(email?: string | null): string {
+  if (!email) return "A";
+  return email.charAt(0).toUpperCase();
+}
+
+function getRoleLabel(role?: string): string {
+  if (role === "Admin") return "Administrador";
+  return "Usuario";
+}
 
 function Dashboard() {
   const { user, logout } = useAuth();
@@ -123,114 +137,132 @@ function Dashboard() {
   };
 
   return (
-    <section className="relative flex min-h-[calc(100vh-80px)] bg-surface-muted">
-      <button
-        type="button"
-        className={cn(
-          "fixed inset-0 z-[1050] border-none bg-slate-900/45 opacity-0 pointer-events-none transition-opacity duration-200 lg:hidden",
-          menuAbierto && "opacity-100 pointer-events-auto",
-        )}
-        aria-label="Cerrar menú"
-        onClick={() => setMenuAbierto(false)}
-      />
+    <div className="relative flex min-h-screen flex-col bg-gray-50 lg:flex-row">
+      {/* Mobile top header */}
+      <div className="sticky top-0 z-30 flex items-center justify-between bg-brand-blue px-4 py-3 shadow-sm lg:hidden">
+        <Link
+          to={Rutas.home}
+          className="flex items-center gap-2 font-heading text-sm font-bold text-brand-gold no-underline"
+        >
+          SB San Blas
+        </Link>
+        <div className="flex items-center gap-3">
+          <span className="rounded-full border border-brand-gold/30 bg-brand-gold/20 px-2 py-0.5 text-[10px] font-bold text-brand-gold">
+            ADMIN
+          </span>
+          <button
+            type="button"
+            onClick={() => setMenuAbierto((prev) => !prev)}
+            className="cursor-pointer border-none bg-transparent text-white hover:text-brand-gold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={menuAbierto}
+          >
+            {menuAbierto ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
+      </div>
 
+      {/* Mobile backdrop */}
+      {menuAbierto && (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 border-none bg-slate-900/50 backdrop-blur-sm lg:hidden"
+          aria-label="Cerrar menú"
+          onClick={() => setMenuAbierto(false)}
+        />
+      )}
+
+      {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-[1060] flex h-dvh w-[min(86vw,300px)] -translate-x-[105%] flex-col border-r border-border bg-surface px-4 py-5 shadow-[8px_0_24px_rgba(15,23,42,0.08)] transition-transform duration-[250ms] ease-in-out",
-          "lg:sticky lg:top-0 lg:z-auto lg:h-auto lg:min-h-[calc(100vh-80px)] lg:w-[270px] lg:translate-x-0 lg:shadow-none",
-          menuAbierto && "translate-x-0",
+          "fixed top-0 z-50 flex h-screen w-64 flex-col justify-between bg-[#0b172a] text-gray-300 transition-transform duration-300 lg:sticky lg:translate-x-0",
+          menuAbierto ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
         aria-label="Menú del panel administrativo"
       >
-        <div className="mb-6 flex items-center gap-3 px-1.5">
-          <div className="inline-flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-royal-blue text-royal-gold">
-            <Shield size={22} />
+        <div>
+          <div className="border-b border-gray-800 p-6">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-brand-gold bg-brand-blue">
+                <span className="font-heading text-sm font-bold text-brand-gold">SB</span>
+              </div>
+              <div className="min-w-0">
+                <span className="block truncate font-heading text-sm font-bold text-white">
+                  San Blas Nicoya
+                </span>
+                <span className="block font-mono text-[9px] tracking-wider text-brand-gold uppercase">
+                  Panel de control
+                </span>
+              </div>
+            </div>
           </div>
-          <div>
-            <h2 className="mb-1.5 font-heading text-[22px] font-extrabold text-royal-blue">
-              Panel Admin
-            </h2>
-            <p className="text-xs font-black tracking-[0.2em] text-royal-gold uppercase">
-              Parroquia San Blas
-            </p>
-          </div>
-          <button
-            type="button"
-            className="ml-auto inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-none bg-slate-100 text-slate-700 lg:hidden focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-            aria-label="Cerrar menú"
-            onClick={() => setMenuAbierto(false)}
-          >
-            <X size={20} />
-          </button>
+
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+
+              return (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={menuItemBaseClassName}
+                  inactiveProps={{ className: menuItemInactiveClassName }}
+                  activeProps={{ className: menuItemActiveClassName }}
+                  activeOptions={{ exact: link.to === Rutas.dashboard }}
+                >
+                  <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-2">
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-
-            return (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={menuItemClassName}
-                activeProps={{
-                  className: cn(
-                    menuItemClassName,
-                    "bg-royal-blue text-white hover:bg-royal-blue hover:text-white [&_svg]:text-royal-gold",
-                  ),
-                }}
-                activeOptions={{ exact: link.to === Rutas.dashboard }}
-              >
-                <Icon size={18} />
-                <span>{link.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="mt-auto border-t border-border px-2 pt-4">
-          <p className="mb-3 break-words text-[0.82rem] text-slate-600">{user?.email}</p>
-          <button
-            type="button"
-            className="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-[10px] border border-slate-300 bg-surface px-3 py-2 text-[0.85rem] font-semibold text-royal-blue hover:bg-surface-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-            onClick={handleLogout}
-          >
-            <LogOut size={16} />
-            Cerrar sesión
-          </button>
+        <div className="border-t border-gray-800 bg-[#070f1d] p-4 text-xs">
+          <div className="mb-3 flex items-center gap-2.5">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-gold font-heading text-[10px] font-bold text-brand-blue uppercase">
+              {getUserInitial(user?.email)}
+            </div>
+            <div className="min-w-0 overflow-hidden">
+              <p className="truncate text-[11px] font-bold text-white">
+                {getRoleLabel(user?.role)}
+              </p>
+              <p className="truncate text-[9px] text-gray-500">{user?.email}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              to={Rutas.home}
+              className="w-full rounded bg-white/5 py-1.5 text-center text-[10px] font-semibold text-gray-400 no-underline transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            >
+              Ver sitio
+            </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full cursor-pointer rounded border-none bg-red-900/20 py-1.5 text-center text-[10px] font-semibold text-red-400 transition-colors hover:bg-red-900/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            >
+              Cerrar sesión
+            </button>
+          </div>
         </div>
       </aside>
 
-      <main className="w-full flex-1 p-4 sm:px-6 sm:py-5 lg:p-8 lg:px-9">
-        <header className="mb-4 flex items-start gap-3.5 rounded-[20px] border border-border bg-surface p-4 px-[1.1rem] shadow-[0_10px_25px_rgba(15,23,42,0.04)] lg:mb-6 lg:p-6 lg:px-7">
-          <button
-            type="button"
-            className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border-strong bg-surface text-royal-blue lg:hidden focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-            aria-label="Abrir menú de navegación"
-            aria-expanded={menuAbierto}
-            onClick={() => setMenuAbierto(true)}
-          >
-            <Menu size={20} />
-          </button>
-
-          <div>
-            <p className="mb-1.5 text-[0.72rem] font-extrabold tracking-[0.14em] text-royal-gold uppercase">
-              Administración
-            </p>
-            <h1 className="mb-1.5 font-heading text-[1.45rem] leading-tight text-royal-blue lg:text-[1.85rem]">
-              {pageInfo.title}
-            </h1>
-            <p className="max-w-[720px] text-[0.95rem] text-text-secondary">
-              {pageInfo.subtitle}
-            </p>
-          </div>
+      {/* Main content */}
+      <main className="h-[calc(100vh-50px)] flex-1 overflow-y-auto p-4 sm:p-6 lg:h-screen lg:p-8">
+        <header className="mb-4 rounded-[20px] border border-border bg-surface p-4 shadow-sm sm:p-6 lg:mb-6">
+          <p className="mb-1.5 text-[0.72rem] font-extrabold tracking-[0.14em] text-brand-gold uppercase">
+            Administración
+          </p>
+          <h1 className="mb-1.5 font-heading text-xl leading-tight text-brand-blue lg:text-3xl">
+            {pageInfo.title}
+          </h1>
+          <p className="max-w-3xl text-sm text-text-secondary">{pageInfo.subtitle}</p>
         </header>
 
-        <div>
-          <Outlet />
-        </div>
+        <Outlet />
       </main>
-    </section>
+    </div>
   );
 }
 
