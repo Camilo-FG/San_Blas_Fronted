@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import {
   createRootRoute,
   createRoute,
@@ -15,51 +15,52 @@ import Rutas from "./Rutas";
 import { clearAuthToken, getAuthToken } from "../utils/authToken";
 import { isTokenExpired } from "../utils/jwt";
 import { isAuthenticatedAdmin } from "../utils/authRouting";
+import { lazyWithRetry } from "../utils/lazyWithRetry";
 
-const Home = lazy(() => import("../modules/landing/pages/HomePage"));
+const Home = lazyWithRetry(() => import("../modules/landing/pages/HomePage"));
 
-const HistoriaPage = lazy(
+const HistoriaPage = lazyWithRetry(
   () => import("../modules/landing/pages/HistoriaPage"),
 );
-const SobreNosotrosPage = lazy(
+const SobreNosotrosPage = lazyWithRetry(
   () => import("../modules/landing/pages/SobreNosotrosPage"),
 );
-const BautizosPage = lazy(() => import("../modules/landing/pages/BautizosPage"));
-const HorariosPage = lazy(() => import("../modules/landing/pages/HorariosPage"));
-const ContactoPage = lazy(() => import("../modules/landing/pages/ContactoPage"));
-const DonacionesPage = lazy(() => import("../modules/donaciones/pages/donaciones"));
-const SolicSacramento = lazy(
+const BautizosPage = lazyWithRetry(() => import("../modules/landing/pages/BautizosPage"));
+const HorariosPage = lazyWithRetry(() => import("../modules/landing/pages/HorariosPage"));
+const ContactoPage = lazyWithRetry(() => import("../modules/landing/pages/ContactoPage"));
+const DonacionesPage = lazyWithRetry(() => import("../modules/donaciones/pages/donaciones"));
+const SolicSacramento = lazyWithRetry(
   () => import("../modules/solicSacramento/pages/solicSacramento"),
 );
-const CatequesisPage = lazy(
+const CatequesisPage = lazyWithRetry(
   () => import("../modules/catequesis/pages/CatequesisPage"),
 );
-const LoginPage = lazy(() => import("../modules/auth/pages/LoginPage"));
-const EventosPublicPage = lazy(
+const LoginPage = lazyWithRetry(() => import("../modules/auth/pages/LoginPage"));
+const EventosPublicPage = lazyWithRetry(
   () => import("../modules/eventos/pages/EventosPublicPage"),
 );
-const Dashboard = lazy(() => import("../modules/dashboard/pages/Dashboard"));
-const DashboardHome = lazy(
+const Dashboard = lazyWithRetry(() => import("../modules/dashboard/pages/Dashboard"));
+const DashboardHome = lazyWithRetry(
   () => import("../modules/dashboard/pages/DashboardHome"),
 );
-const GestionSolicitudesCatequesis = lazy(
+const GestionSolicitudesCatequesis = lazyWithRetry(
   () =>
     import("../modules/dashboard/catequesis/pages/GestionSolicitudesCatequesis"),
 );
-const DashSacra = lazy(() => import("../modules/dashboardSacramento/dashSacra"));
-const GestionDonaciones = lazy(
+const DashSacra = lazyWithRetry(() => import("../modules/dashboardSacramento/dashSacra"));
+const GestionDonaciones = lazyWithRetry(
   () => import("../modules/donaciones/pages/GestionDonaciones"),
 );
-const GestionSacramentos = lazy(
+const GestionSacramentos = lazyWithRetry(
   () => import("../modules/Registro de Sacramentos/Components/GestionSacramentos"),
 );
-const GestionEventos = lazy(
+const GestionEventos = lazyWithRetry(
   () => import("../modules/dashboard/eventos/pages/GestionEventos"),
 );
-const GestionLanding = lazy(
+const GestionLanding = lazyWithRetry(
   () => import("../modules/dashboard/landing/GestionLanding"),
 );
-const GestionUsuarios = lazy(
+const GestionUsuarios = lazyWithRetry(
   () => import("../modules/Gestión de Usuarios/pages/GestionUsuarios"),
 );
 
