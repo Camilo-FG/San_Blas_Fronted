@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef } from "react";
 import { X } from "lucide-react";
 import type { LandingFieldConfig } from "./landingSectionConfig";
-import "./LandingSectionModal.css";
+import { Button, Input, Label, Textarea } from "../../../shared/ui";
 
 interface LandingSectionModalProps {
   title: string;
@@ -23,7 +23,7 @@ function CharacterCounter({
   if (!maxLength) return null;
 
   return (
-    <span className="landing-modal__counter" aria-live="polite">
+    <span className="mt-1 block text-xs text-slate-400" aria-live="polite">
       {value.length}/{maxLength} caracteres
     </span>
   );
@@ -59,20 +59,26 @@ export default function LandingSectionModal({
   const imageUrl = imageField ? values[imageField.name] : "";
 
   return (
-    <div className="landing-modal" role="presentation" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[1200] flex items-end justify-center bg-slate-900/55 md:items-center md:p-4"
+      role="presentation"
+      onClick={onClose}
+    >
       <div
         ref={dialogRef}
-        className="landing-modal__panel"
+        className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-surface shadow-xl md:max-h-[88vh] md:max-w-2xl md:rounded-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="landing-modal__header">
-          <h3 id={titleId}>Personalizar {title}</h3>
+        <header className="flex items-center justify-between gap-4 border-b border-border-strong px-4 py-3.5">
+          <h3 id={titleId} className="m-0 text-lg font-bold text-slate-900">
+            Personalizar {title}
+          </h3>
           <button
             type="button"
-            className="landing-modal__close"
+            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
             onClick={onClose}
             aria-label="Cerrar editor"
             disabled={guardando}
@@ -82,7 +88,7 @@ export default function LandingSectionModal({
         </header>
 
         <form
-          className="landing-modal__body"
+          className="flex flex-col gap-4 overflow-y-auto px-4 py-4"
           onSubmit={(event) => {
             event.preventDefault();
             onSave();
@@ -94,12 +100,12 @@ export default function LandingSectionModal({
 
             if (field.type === "image") {
               return (
-                <div key={field.name} className="landing-modal__field">
-                  <label htmlFor={fieldId}>{field.label}</label>
+                <div key={field.name}>
+                  <Label htmlFor={fieldId}>{field.label}</Label>
                   {field.hint && (
-                    <p className="landing-modal__hint">{field.hint}</p>
+                    <p className="mb-1.5 text-sm text-text-muted">{field.hint}</p>
                   )}
-                  <input
+                  <Input
                     id={fieldId}
                     type="url"
                     value={value}
@@ -107,9 +113,15 @@ export default function LandingSectionModal({
                     onChange={(event) => onChange(field.name, event.target.value)}
                   />
                   {imageUrl && (
-                    <div className="landing-modal__preview">
-                      <p className="landing-modal__preview-label">Vista previa</p>
-                      <img src={imageUrl} alt="Vista previa de la imagen" />
+                    <div className="mt-3">
+                      <p className="mb-1.5 text-sm font-semibold text-text-muted">
+                        Vista previa
+                      </p>
+                      <img
+                        src={imageUrl}
+                        alt="Vista previa de la imagen"
+                        className="max-h-56 w-full rounded-xl border border-border-strong object-cover"
+                      />
                     </div>
                   )}
                 </div>
@@ -118,12 +130,12 @@ export default function LandingSectionModal({
 
             if (field.type === "textarea" || field.type === "lines") {
               return (
-                <div key={field.name} className="landing-modal__field">
-                  <label htmlFor={fieldId}>{field.label}</label>
+                <div key={field.name}>
+                  <Label htmlFor={fieldId}>{field.label}</Label>
                   {field.hint && (
-                    <p className="landing-modal__hint">{field.hint}</p>
+                    <p className="mb-1.5 text-sm text-text-muted">{field.hint}</p>
                   )}
-                  <textarea
+                  <Textarea
                     id={fieldId}
                     rows={field.rows ?? 4}
                     value={value}
@@ -137,10 +149,12 @@ export default function LandingSectionModal({
             }
 
             return (
-              <div key={field.name} className="landing-modal__field">
-                <label htmlFor={fieldId}>{field.label}</label>
-                {field.hint && <p className="landing-modal__hint">{field.hint}</p>}
-                <input
+              <div key={field.name}>
+                <Label htmlFor={fieldId}>{field.label}</Label>
+                {field.hint && (
+                  <p className="mb-1.5 text-sm text-text-muted">{field.hint}</p>
+                )}
+                <Input
                   id={fieldId}
                   type={field.type === "url" ? "url" : "text"}
                   value={value}
@@ -153,22 +167,18 @@ export default function LandingSectionModal({
             );
           })}
 
-          <footer className="landing-modal__footer">
-            <button
+          <footer className="mt-2 flex flex-col-reverse gap-2.5 border-t border-border-strong pt-4 md:flex-row md:justify-end">
+            <Button
               type="button"
-              className="landing-modal__btn landing-modal__btn--ghost"
+              variant="secondary"
               onClick={onClose}
               disabled={guardando}
             >
               Cancelar
-            </button>
-            <button
-              type="submit"
-              className="landing-modal__btn landing-modal__btn--primary"
-              disabled={guardando}
-            >
+            </Button>
+            <Button type="submit" variant="ghost" className="bg-blue-600 text-white hover:bg-blue-700" disabled={guardando}>
               {guardando ? "Guardando..." : "Guardar"}
-            </button>
+            </Button>
           </footer>
         </form>
       </div>

@@ -1,5 +1,5 @@
 import { useGetListComunion } from '../../hooks/hooksComunion/useGetListComunion';
-import '../styles/GetListComunion.css';
+import { AdminTable, AdminTableCell, AdminTableHead, AdminTableHeaderCell, AdminTablePanel, AdminTableRow } from '../../../../shared/ui';
 
 const GetListComunion = () => {
   const { data, isPending, error } = useGetListComunion();
@@ -9,33 +9,33 @@ const GetListComunion = () => {
   if (!data || data.length === 0) return <p>No hay comuniones registradas</p>;
 
   return (
-    <div className="comunion-table-container">
-      <h2>Lista de Comuniones</h2>
-      <table className="comunion-table">
-        <thead>
+    <AdminTablePanel className="w-full overflow-x-auto">
+      <h2 className="px-4 pt-4 font-heading text-xl font-extrabold text-royal-blue">Lista de Comuniones</h2>
+      <AdminTable className="min-w-[800px]">
+        <AdminTableHead>
           <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Día</th>
-            <th>Mes</th>
-            <th>Año</th>
-            <th>Lugar</th>
+            <AdminTableHeaderCell>ID</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Nombre</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Día</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Mes</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Año</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Lugar</AdminTableHeaderCell>
           </tr>
-        </thead>
+        </AdminTableHead>
         <tbody>
           {data.map((comunion) => (
-            <tr key={comunion.id}>
-              <td>{comunion.id}</td>
-              <td>{comunion.Nombre}</td>
-              <td>{comunion.DiaComunion}</td>
-              <td>{comunion.MesComunion}</td>
-              <td>{comunion.AnnioComunion}</td>
-              <td>{comunion.LugarComunion}</td>
-            </tr>
+            <AdminTableRow key={comunion.id}>
+              <AdminTableCell>{comunion.id}</AdminTableCell>
+              <AdminTableCell>{comunion.Nombre}</AdminTableCell>
+              <AdminTableCell>{comunion.DiaComunion}</AdminTableCell>
+              <AdminTableCell>{comunion.MesComunion}</AdminTableCell>
+              <AdminTableCell>{comunion.AnnioComunion}</AdminTableCell>
+              <AdminTableCell>{comunion.LugarComunion}</AdminTableCell>
+            </AdminTableRow>
           ))}
         </tbody>
-      </table>
-    </div>
+      </AdminTable>
+    </AdminTablePanel>
   );
 };
 

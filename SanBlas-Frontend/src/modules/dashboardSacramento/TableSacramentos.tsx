@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollText, Phone, IdCard, Eye, Search } from 'lucide-react';
+import { ScrollText, Phone, IdCard, Eye } from 'lucide-react';
 import { useUpdateSolicitudEstado } from '../solicSacramento/hooks/useUpdateSolicitudEstado';
 import { FormSacramento } from '../../types/formSacramento';
 import { createColumnHelper, flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table';
@@ -9,10 +9,26 @@ import { ApiError } from '../../services/apiClient';
 import { useAuth } from '../../context/AuthContext';
 import { AdminRecordCard } from '../../shared/components/admin/AdminRecordCard';
 import { AdminRecordDetailSheet } from '../../shared/components/admin/AdminRecordDetailSheet';
-import './dashSacra.css';
+import {
+  AdminModule,
+  AdminPagination,
+  AdminPaginationButton,
+  AdminSearch,
+  AdminTable,
+  AdminTableCell,
+  AdminTableFooter,
+  AdminTableHead,
+  AdminTableHeaderCell,
+  AdminTablePanel,
+  AdminTableRow,
+  AdminToolbar,
+  Badge,
+  Select,
+  cn,
+  type BadgeVariant,
+} from '../../shared/ui';
 
-
-const columnHelper = createColumnHelper<FormSacramento>()
+const columnHelper = createColumnHelper<FormSacramento>();
 
 const columns = [
   columnHelper.accessor('Nombre', {
@@ -45,7 +61,7 @@ const columns = [
   columnHelper.accessor('Estado', {
     header: () => 'Estado',
   }),
-]
+];
 
 const normalizeText = (value: unknown) =>
   String(value ?? '')
@@ -57,6 +73,23 @@ const normalizeText = (value: unknown) =>
 const nombreCompleto = (row: FormSacramento) =>
   [row.Nombre, row.PrimerApellido, row.SegundoApellido].filter(Boolean).join(' ');
 
+const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
+  const normalized = (estado ?? 'Pendiente').toLowerCase();
+  if (normalized === 'aprobado') return 'success';
+  if (normalized === 'rechazado') return 'danger';
+  return 'warning';
+};
+
+const estadoSelectClass = (estado?: string) =>
+  cn(
+    'rounded-full border bg-transparent font-bold',
+    (estado ?? 'Pendiente').toLowerCase() === 'aprobado' &&
+      'border-emerald-300 bg-success-bg text-success',
+    (estado ?? 'Pendiente').toLowerCase() === 'rechazado' &&
+      'border-red-300 bg-danger-bg text-danger',
+    (estado ?? 'Pendiente').toLowerCase() === 'pendiente' &&
+      'border-orange-300 bg-warning-bg text-warning',
+  );
 
 const TableSacramentos = () => {
   const [query, setQuery] = useState('');
@@ -146,8 +179,7 @@ const TableSacramentos = () => {
 
   const renderEstadoBadge = (estado?: string) => {
     const currentEstado = estado ?? 'Pendiente';
-    const estadoClass = `estado-badge estado-badge--${String(currentEstado).toLowerCase()}`;
-    return <span className={estadoClass}>{currentEstado}</span>;
+    return <Badge variant={getEstadoBadgeVariant(currentEstado)}>{currentEstado}</Badge>;
   };
 
   if (error) {
@@ -158,76 +190,82 @@ const TableSacramentos = () => {
   }
 
   return (
-    <div className="admin-module p-2">
-      <div className="admin-toolbar">
-        <div className="admin-toolbar__search">
-          <Search size={18} className="admin-toolbar__search-icon" />
-          <input
-            value={query}
-            type="search"
-            className="admin-search"
-            placeholder="Buscar por nombre, apellidos o cédula"
-            onChange={handleSearch}
-            aria-label="Buscar solicitudes de constancia"
-          />
-        </div>
-      </div>
+    <AdminModule className="p-2">
+      <AdminToolbar>
+        <AdminSearch
+          value={query}
+          type="search"
+          placeholder="Buscar por nombre, apellidos o cédula"
+          onChange={handleSearch}
+          aria-label="Buscar solicitudes de constancia"
+        />
+      </AdminToolbar>
+
       {!isPending && (
-        <div className="admin-responsive-data">
-          <div className="admin-responsive-data__table admin-table-panel table-responsive">
-          <table className="admin-table">
-            <thead>
-              {table.getHeaderGroups().map((hg) => (
-                <tr key={hg.id}>
-                  {hg.headers.map((h) => (
-                    <th key={h.id}>
-                      {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-                    </th>
+        <>
+          <div className="hidden md:block">
+            <AdminTablePanel>
+              <AdminTable>
+                <AdminTableHead>
+                  {table.getHeaderGroups().map((hg) => (
+                    <AdminTableRow key={hg.id}>
+                      {hg.headers.map((h) => (
+                        <AdminTableHeaderCell key={h.id}>
+                          {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+                        </AdminTableHeaderCell>
+                      ))}
+                    </AdminTableRow>
                   ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id}>
-                  {row.getVisibleCells().map((cell) => {
-                    if (cell.column.id === 'Estado') {
-                      const originalRow = row.original;
-                      const currentEstado = originalRow.Estado ?? 'Pendiente';
-                      const estadoClass = `estado-badge estado-badge--${String(currentEstado).toLowerCase()}`;
+                </AdminTableHead>
+                <tbody>
+                  {table.getRowModel().rows.map((row) => (
+                    <AdminTableRow key={row.id}>
+                      {row.getVisibleCells().map((cell) => {
+                        if (cell.column.id === 'Estado') {
+                          const originalRow = row.original;
+                          const currentEstado = originalRow.Estado ?? 'Pendiente';
 
-                      return (
-                        <td key={cell.id}>
-                          <div className={estadoClass}>
-                            {isAdmin ? (
-                              <select
-                                value={currentEstado}
-                                onChange={(e) => handleEstadoChange(originalRow.id, e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado')}
-                                disabled={isUpdatingEstado}
-                              >
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="Aprobado">Aprobado</option>
-                                <option value="Rechazado">Rechazado</option>
-                              </select>
-                            ) : (
-                              <span>{currentEstado}</span>
-                            )}
-                          </div>
-                        </td>
-                      );
-                    }
+                          return (
+                            <AdminTableCell key={cell.id}>
+                              <div className={cn('inline-flex items-center rounded-full p-1', estadoSelectClass(currentEstado))}>
+                                {isAdmin ? (
+                                  <Select
+                                    className="min-h-0 border-0 bg-transparent px-2 py-1 text-xs font-bold shadow-none focus-visible:ring-0"
+                                    value={currentEstado}
+                                    onChange={(e) =>
+                                      handleEstadoChange(
+                                        originalRow.id,
+                                        e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado',
+                                      )
+                                    }
+                                    disabled={isUpdatingEstado}
+                                  >
+                                    <option value="Pendiente">Pendiente</option>
+                                    <option value="Aprobado">Aprobado</option>
+                                    <option value="Rechazado">Rechazado</option>
+                                  </Select>
+                                ) : (
+                                  <span className="px-2 py-1">{currentEstado}</span>
+                                )}
+                              </div>
+                            </AdminTableCell>
+                          );
+                        }
 
-                    return (
-                      <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        return (
+                          <AdminTableCell key={cell.id}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </AdminTableCell>
+                        );
+                      })}
+                    </AdminTableRow>
+                  ))}
+                </tbody>
+              </AdminTable>
+            </AdminTablePanel>
           </div>
 
-          <div className="admin-responsive-data__cards">
+          <div className="flex flex-col gap-2.5 md:hidden">
             {filtered.map((row) => (
               <AdminRecordCard
                 key={String(row.id)}
@@ -251,20 +289,22 @@ const TableSacramentos = () => {
                 ]}
                 footer={
                   isAdmin ? (
-                    <select
-                      className="admin-record-card__inline-select"
+                    <Select
+                      className={cn('w-full', estadoSelectClass(row.Estado))}
                       value={row.Estado ?? 'Pendiente'}
                       disabled={isUpdatingEstado}
                       aria-label={`Estado de solicitud de ${nombreCompleto(row)}`}
-                      onChange={(e) => handleEstadoChange(
-                        row.id,
-                        e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado',
-                      )}
+                      onChange={(e) =>
+                        handleEstadoChange(
+                          row.id,
+                          e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado',
+                        )
+                      }
                     >
                       <option value="Pendiente">Pendiente</option>
                       <option value="Aprobado">Aprobado</option>
                       <option value="Rechazado">Rechazado</option>
-                    </select>
+                    </Select>
                   ) : undefined
                 }
                 actions={[
@@ -278,7 +318,7 @@ const TableSacramentos = () => {
               />
             ))}
           </div>
-        </div>
+        </>
       )}
 
       <AdminRecordDetailSheet
@@ -289,64 +329,75 @@ const TableSacramentos = () => {
         onClose={() => setSolicitudSeleccionada(null)}
         actions={
           solicitudSeleccionada && isAdmin ? (
-            <label className="admin-detail-estado">
+            <label className="flex w-full flex-col gap-1.5 text-sm font-semibold text-slate-700">
               <span>Cambiar estado</span>
-              <select
+              <Select
+                className={estadoSelectClass(solicitudSeleccionada.Estado)}
                 value={solicitudSeleccionada.Estado ?? 'Pendiente'}
-                onChange={(e) => handleEstadoChange(
-                  solicitudSeleccionada.id,
-                  e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado',
-                )}
+                onChange={(e) =>
+                  handleEstadoChange(
+                    solicitudSeleccionada.id,
+                    e.target.value as 'Pendiente' | 'Aprobado' | 'Rechazado',
+                  )
+                }
                 disabled={isUpdatingEstado}
               >
                 <option value="Pendiente">Pendiente</option>
                 <option value="Aprobado">Aprobado</option>
                 <option value="Rechazado">Rechazado</option>
-              </select>
+              </Select>
             </label>
           ) : undefined
         }
       >
         {solicitudSeleccionada && (
-          <div className="admin-detail-fields">
-            <p className="admin-detail-field"><strong>Cédula:</strong> {solicitudSeleccionada.Cedula}</p>
-            <p className="admin-detail-field"><strong>Correo:</strong> {solicitudSeleccionada.Correo}</p>
-            <p className="admin-detail-field"><strong>Teléfono:</strong> {solicitudSeleccionada.Telefono || 'No provisto'}</p>
-            <p className="admin-detail-field"><strong>Motivo:</strong> {solicitudSeleccionada.Motivo}</p>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <p className="m-0 text-sm text-slate-600">
+              <strong className="text-slate-800">Cédula:</strong> {solicitudSeleccionada.Cedula}
+            </p>
+            <p className="m-0 text-sm text-slate-600">
+              <strong className="text-slate-800">Correo:</strong> {solicitudSeleccionada.Correo}
+            </p>
+            <p className="m-0 text-sm text-slate-600">
+              <strong className="text-slate-800">Teléfono:</strong>{' '}
+              {solicitudSeleccionada.Telefono || 'No provisto'}
+            </p>
+            <p className="m-0 text-sm text-slate-600">
+              <strong className="text-slate-800">Motivo:</strong> {solicitudSeleccionada.Motivo}
+            </p>
           </div>
         )}
       </AdminRecordDetailSheet>
 
       {!isPending && table.getRowModel().rows.length > 0 && (
-        <div className="admin-table-footer">
+        <AdminTableFooter>
           <span>
-            Total de registros: <strong>{totalItems}</strong>
+            Total de registros: <strong className="text-royal-blue">{totalItems}</strong>
           </span>
-          <div className="admin-pagination">
-            <button
+          <AdminPagination>
+            <AdminPaginationButton
               type="button"
               onClick={goToPreviousPage}
               disabled={!canPreviousPage}
-              className="admin-pagination__btn"
             >
               ← Anterior
-            </button>
+            </AdminPaginationButton>
             <span>
-              Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+              Página <strong className="text-royal-blue">{currentPage}</strong> de{' '}
+              <strong className="text-royal-blue">{totalPages}</strong>
             </span>
-            <button
+            <AdminPaginationButton
               type="button"
               onClick={goToNextPage}
               disabled={!canNextPage}
-              className="admin-pagination__btn"
             >
               Siguiente →
-            </button>
-          </div>
-        </div>
+            </AdminPaginationButton>
+          </AdminPagination>
+        </AdminTableFooter>
       )}
-    </div>
+    </AdminModule>
   );
-}
+};
 
-export default TableSacramentos
+export default TableSacramentos;

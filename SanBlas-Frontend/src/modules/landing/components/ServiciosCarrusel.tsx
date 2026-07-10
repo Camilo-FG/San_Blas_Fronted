@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 import Rutas from "../../../routes/Rutas";
-import "./ServiciosCarousel.css";
+import { cn } from "../../../shared/ui/cn";
 
 interface ServiceItem {
   id: string;
@@ -136,6 +136,9 @@ const SERVICES: ServiceItem[] = [
   },
 ];
 
+const carouselButtonClass =
+  "flex w-full cursor-pointer items-center justify-center rounded-[14px] border-none bg-[rgba(23,37,84,0.08)] px-4 py-[13px] text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#172554] no-underline transition-all hover:-translate-y-0.5 hover:bg-[#172554] hover:text-white focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(183,131,47,0.45)] focus-visible:outline-offset-[3px] max-[420px]:px-3.5 max-[420px]:py-3 max-[420px]:text-[10px]";
+
 export default function ServiciosCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cardsToShow, setCardsToShow] = useState(3);
@@ -192,21 +195,25 @@ export default function ServiciosCarousel() {
   };
 
   return (
-    <section className="servicios-carousel">
-      <div className="servicios-carousel__container">
-        <div className="servicios-carousel__header">
-          <span>Guías y Sacramentos</span>
-          <h2>Servicios Ofrecidos</h2>
-          <p>
+    <section className="border-y border-[#f0f0f0] bg-surface py-24 max-[900px]:py-[76px] max-sm:py-[60px]">
+      <div className="mx-auto max-w-[1200px] px-6 max-sm:px-4">
+        <div className="mx-auto mb-12 max-w-[620px] text-center max-sm:mb-8">
+          <span className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.25em] text-[#b7832f] max-sm:text-[10px] max-sm:tracking-[0.18em]">
+            Guías y Sacramentos
+          </span>
+          <h2 className="m-0 font-serif text-[clamp(30px,4vw,42px)] leading-[1.15] text-[#172554] max-sm:text-[30px] max-[420px]:text-[27px]">
+            Servicios Ofrecidos
+          </h2>
+          <p className="mt-3 text-[15px] leading-[1.7] text-text-secondary max-sm:text-[13px] max-sm:leading-[1.6]">
             Acompañamiento y trámites espirituales administrados por la
             Parroquia San Blas.
           </p>
         </div>
 
-        <div className="servicios-carousel__wrapper">
-          <div className="servicios-carousel__viewport">
+        <div className="relative px-7 max-[900px]:px-[22px] max-sm:px-0">
+          <div className="overflow-hidden">
             <motion.div
-              className="servicios-carousel__track"
+              className="flex"
               animate={{
                 x: `-${currentIndex * (100 / SERVICES.length)}%`,
               }}
@@ -225,50 +232,57 @@ export default function ServiciosCarousel() {
                 return (
                   <article
                     key={service.id}
-                    className="servicios-carousel__card"
+                    className="group mx-3 box-border flex min-h-[460px] flex-col justify-between overflow-hidden rounded-[28px] border border-[rgba(120,82,30,0.08)] bg-[#fcfbf7] transition-all hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(100,70,20,0.12)] max-[900px]:min-h-[450px] max-sm:mx-0 max-sm:min-h-[430px] max-sm:rounded-[22px] max-[420px]:min-h-[415px]"
                     style={{
                       width: `calc(100% / ${SERVICES.length})`,
                     }}
                   >
                     <div>
-                      <div className="servicios-carousel__image-box">
+                      <div className="relative h-44 overflow-hidden after:absolute after:inset-0 after:bg-gradient-to-t after:from-[#fcfbf7] after:to-transparent max-sm:h-[165px] max-[420px]:h-[155px]">
                         <img
                           src={service.image}
                           alt={service.title}
+                          className="size-full object-cover transition-transform duration-700 group-hover:scale-[1.08]"
                           width={400}
                           height={176}
                           loading="lazy"
                           decoding="async"
                         />
 
-                        <span>{service.category}</span>
+                        <span className="absolute left-4 top-4 z-[2] rounded-full bg-white/95 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#73522f]">
+                          {service.category}
+                        </span>
                       </div>
 
-                      <div className="servicios-carousel__body">
-                        <div className="servicios-carousel__title-row">
-                          <div className="servicios-carousel__icon">
+                      <div className="p-6 max-sm:p-5">
+                        <div className="flex items-center gap-2.5 text-[#172554]">
+                          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(23,37,84,0.06)] text-[#b7832f]">
                             <Icon size={18} />
                           </div>
 
-                          <h3>{service.title}</h3>
+                          <h3 className="m-0 font-serif text-base leading-tight text-gray-900">
+                            {service.title}
+                          </h3>
                         </div>
 
-                        <p>{service.description}</p>
+                        <p className="mt-3.5 text-[13px] leading-[1.75] text-text-secondary">
+                          {service.description}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="servicios-carousel__footer">
+                    <div className="px-6 pb-6 max-sm:px-5 max-sm:pb-5">
                       {service.linkTo ? (
                         <Link
                           to={service.linkTo}
-                          className="servicios-carousel__button"
+                          className={carouselButtonClass}
                         >
                           {service.buttonLabel}
                         </Link>
                       ) : (
                         <button
                           type="button"
-                          className="servicios-carousel__button"
+                          className={carouselButtonClass}
                           onClick={() => setSelectedService(service)}
                         >
                           {service.buttonLabel}
@@ -285,7 +299,7 @@ export default function ServiciosCarousel() {
             <>
               <button
                 type="button"
-                className="servicios-carousel__arrow servicios-carousel__arrow--left"
+                className="absolute left-0 top-1/2 z-[5] flex size-[42px] -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-[#172554] transition-all hover:text-[#b7832f] hover:shadow-[0_10px_24px_rgba(0,0,0,0.12)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(183,131,47,0.45)] focus-visible:outline-offset-[3px] max-sm:hidden"
                 onClick={handlePrev}
                 aria-label="Ver servicios anteriores"
               >
@@ -294,7 +308,7 @@ export default function ServiciosCarousel() {
 
               <button
                 type="button"
-                className="servicios-carousel__arrow servicios-carousel__arrow--right"
+                className="absolute right-0 top-1/2 z-[5] flex size-[42px] -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-[#172554] transition-all hover:text-[#b7832f] hover:shadow-[0_10px_24px_rgba(0,0,0,0.12)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(183,131,47,0.45)] focus-visible:outline-offset-[3px] max-sm:hidden"
                 onClick={handleNext}
                 aria-label="Ver siguientes servicios"
               >
@@ -305,17 +319,18 @@ export default function ServiciosCarousel() {
         </div>
 
         {maxIndex > 0 && (
-          <div className="servicios-carousel__dots">
+          <div className="mt-8 flex justify-center gap-2 max-sm:mt-[26px]">
             {Array.from({ length: maxIndex + 1 }).map((_, index) => (
               <button
                 key={index}
                 type="button"
                 aria-label={`Ir al grupo de servicios ${index + 1}`}
-                className={`servicios-carousel__dot ${
+                className={cn(
+                  "h-2 cursor-pointer rounded-full border-none transition-all focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(183,131,47,0.45)] focus-visible:outline-offset-[3px]",
                   currentIndex === index
-                    ? "servicios-carousel__dot--active"
-                    : ""
-                }`}
+                    ? "w-7 bg-[#b7832f]"
+                    : "w-2 bg-gray-300",
+                )}
                 onClick={() => setCurrentIndex(index)}
               />
             ))}
@@ -325,9 +340,9 @@ export default function ServiciosCarousel() {
 
       <AnimatePresence>
         {selectedService && selectedService.modalDetails && (
-          <div className="servicios-modal">
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 max-sm:items-end max-sm:p-4">
             <motion.div
-              className="servicios-modal__backdrop"
+              className="fixed inset-0 bg-[rgba(23,37,84,0.65)] backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -335,7 +350,7 @@ export default function ServiciosCarousel() {
             />
 
             <motion.div
-              className="servicios-modal__content"
+              className="relative z-[2] max-h-[90vh] w-full max-w-[540px] overflow-hidden rounded-[28px] bg-surface shadow-[0_24px_70px_rgba(0,0,0,0.25)] max-sm:max-h-[90vh] max-sm:rounded-t-3xl max-sm:rounded-b-none"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -343,10 +358,11 @@ export default function ServiciosCarousel() {
               aria-modal="true"
               aria-labelledby="servicios-modal-title"
             >
-              <div className="servicios-modal__image">
+              <div className="relative h-[180px] max-sm:h-[150px]">
                 <img
                   src={selectedService.image}
                   alt={selectedService.title}
+                  className="size-full object-cover"
                   width={400}
                   height={240}
                   loading="lazy"
@@ -355,7 +371,7 @@ export default function ServiciosCarousel() {
 
                 <button
                   type="button"
-                  className="servicios-modal__close"
+                  className="absolute right-4 top-4 flex size-9 cursor-pointer items-center justify-center rounded-full border-none bg-white/95 text-[#172554] transition-all hover:scale-105 hover:bg-white focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(183,131,47,0.45)] focus-visible:outline-offset-[3px]"
                   onClick={() => setSelectedService(null)}
                   aria-label="Cerrar información del servicio"
                 >
@@ -363,48 +379,66 @@ export default function ServiciosCarousel() {
                 </button>
               </div>
 
-              <div className="servicios-modal__body">
-                <span className="servicios-modal__category">
+              <div className="max-h-[65vh] overflow-y-auto p-6 max-sm:max-h-[58vh] max-sm:p-5">
+                <span className="inline-block rounded-full bg-[rgba(183,131,47,0.15)] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#73522f]">
                   {selectedService.category}
                 </span>
 
-                <h3 id="servicios-modal-title">{selectedService.title}</h3>
+                <h3
+                  id="servicios-modal-title"
+                  className="my-3 mb-1 font-serif text-2xl leading-tight text-[#172554] max-sm:text-[22px]"
+                >
+                  {selectedService.title}
+                </h3>
 
-                <p className="servicios-modal__subtitle">
+                <p className="mb-4 text-[13px] italic text-[#73522f]">
                   {selectedService.modalDetails.subtitle}
                 </p>
 
-                <p>{selectedService.modalDetails.description}</p>
+                <p className="text-[13px] leading-[1.7] text-gray-600">
+                  {selectedService.modalDetails.description}
+                </p>
 
-                <div className="servicios-modal__info">
-                  <Clock size={20} />
+                <div className="mt-[18px] flex gap-3 rounded-[18px] bg-[rgba(183,131,47,0.08)] p-4 text-[#b7832f] max-sm:p-3.5">
+                  <Clock size={20} className="mt-0.5 shrink-0" />
 
                   <div>
-                    <strong>Horario y cronogramas:</strong>
-                    <p>{selectedService.modalDetails.schedule}</p>
+                    <strong className="text-[#172554]">Horario y cronogramas:</strong>
+                    <p className="mt-1.5 text-[13px] leading-[1.7] text-gray-600">
+                      {selectedService.modalDetails.schedule}
+                    </p>
                   </div>
                 </div>
 
                 <div>
-                  <h4>Requisitos obligatorios</h4>
+                  <h4 className="mt-5 text-[13px] uppercase tracking-[0.12em] text-[#172554]">
+                    Requisitos obligatorios
+                  </h4>
 
-                  <ul>
+                  <ul className="mt-2.5 list-disc pl-5">
                     {selectedService.modalDetails.requirements.map(
                       (requirement, index) => (
-                        <li key={index}>{requirement}</li>
+                        <li
+                          key={index}
+                          className="mb-1.5 text-[13px] leading-[1.7] text-gray-600"
+                        >
+                          {requirement}
+                        </li>
                       ),
                     )}
                   </ul>
                 </div>
 
-                <div className="servicios-modal__info">
-                  <PhoneCall size={20} />
+                <div className="mt-[18px] flex gap-3 rounded-[18px] bg-[rgba(183,131,47,0.08)] p-4 text-[#b7832f] max-sm:p-3.5">
+                  <PhoneCall size={20} className="mt-0.5 shrink-0" />
 
                   <div>
-                    <strong>Contacto:</strong>
-                    <p>{selectedService.modalDetails.contact}</p>
+                    <strong className="text-[#172554]">Contacto:</strong>
+                    <p className="mt-1.5 text-[13px] leading-[1.7] text-gray-600">
+                      {selectedService.modalDetails.contact}
+                    </p>
 
-                    <small>
+                    <small className="mt-2 flex items-center gap-1 text-gray-500">
                       <MapPin size={14} />
                       Parroquia San Blas, Nicoya, Guanacaste
                     </small>
@@ -412,9 +446,10 @@ export default function ServiciosCarousel() {
                 </div>
               </div>
 
-              <div className="servicios-modal__footer">
+              <div className="flex justify-end bg-gray-50 px-6 py-[18px] max-sm:px-5 max-sm:py-4">
                 <button
                   type="button"
+                  className="cursor-pointer rounded-[14px] border-none bg-[#172554] px-[22px] py-3 text-xs font-extrabold uppercase text-white transition-all hover:-translate-y-0.5 hover:bg-[#b7832f] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(183,131,47,0.45)] focus-visible:outline-offset-[3px] max-sm:w-full"
                   onClick={() => setSelectedService(null)}
                 >
                   Entendido

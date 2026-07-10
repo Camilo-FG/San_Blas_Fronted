@@ -8,7 +8,7 @@ import {
   type Evento,
 } from "../../../services/eventosService";
 import Rutas from "../../../routes/Rutas";
-import "./EventosCarousel.css";
+import { cn } from "../../../shared/ui/cn";
 
 const formatearFecha = (fecha: string) =>
   new Date(fecha).toLocaleDateString("es-CR", {
@@ -104,34 +104,40 @@ export default function EventosCarousel() {
   };
 
   return (
-    <section className="eventos-carousel" id="eventos">
-      <div className="eventos-carousel__container">
-        <div className="eventos-carousel__header">
-          <span>Comunidad parroquial</span>
-          <h2>Próximos eventos</h2>
-          <p>
+    <section className="border-t border-[#eef2f7] bg-surface-muted py-24 max-md:py-[72px] max-sm:py-16" id="eventos">
+      <div className="mx-auto max-w-[1200px] px-6 max-sm:px-[18px]">
+        <div className="mx-auto mb-12 max-w-[620px] text-center">
+          <span className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.25em] text-royal-gold">
+            Comunidad parroquial
+          </span>
+          <h2 className="m-0 font-heading text-[clamp(30px,4vw,42px)] leading-[1.15] text-royal-blue">
+            Próximos eventos
+          </h2>
+          <p className="mt-3 text-[15px] leading-[1.7] text-text-muted">
             Celebraciones, actividades y encuentros de la Parroquia San Blas.
           </p>
         </div>
 
         {cargando && (
-          <p className="eventos-carousel__message">Cargando eventos...</p>
+          <p className="pt-6 text-center text-text-muted">Cargando eventos...</p>
         )}
 
-        {error && <p className="eventos-carousel__message eventos-carousel__message--error">{error}</p>}
+        {error && (
+          <p className="pt-6 text-center text-danger">{error}</p>
+        )}
 
         {!cargando && !error && eventos.length === 0 && (
-          <p className="eventos-carousel__message">
+          <p className="pt-6 text-center text-text-muted">
             No hay eventos publicados por el momento.
           </p>
         )}
 
         {!cargando && !error && eventos.length > 0 && (
           <>
-            <div className="eventos-carousel__wrapper">
-              <div className="eventos-carousel__viewport">
+            <div className="relative px-7 max-md:px-2 max-sm:px-0">
+              <div className="overflow-hidden">
                 <motion.div
-                  className="eventos-carousel__track"
+                  className="flex"
                   animate={{
                     x: `-${currentIndex * (100 / eventos.length)}%`,
                   }}
@@ -147,29 +153,35 @@ export default function EventosCarousel() {
                   {eventos.map((evento) => (
                     <article
                       key={evento.id}
-                      className="eventos-carousel__card"
+                      className="mx-3 box-border flex min-h-[320px] flex-col gap-[18px] rounded-[22px] border border-[#e8edf2] bg-surface p-6 shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition-all hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] max-md:min-h-[300px] max-md:p-5 max-sm:mx-0"
                       style={{
                         width: `calc(100% / ${eventos.length})`,
                       }}
                     >
-                      <div className="eventos-carousel__date-badge">
-                        <CalendarDays size={18} aria-hidden="true" />
+                      <div className="inline-flex items-center gap-3 self-start rounded-[14px] bg-royal-blue px-3.5 py-2.5 text-white">
+                        <CalendarDays size={18} aria-hidden="true" className="shrink-0 text-royal-gold" />
                         <div>
-                          <strong>{formatearDia(evento.fechaInicio)}</strong>
-                          <span>{formatearMes(evento.fechaInicio)}</span>
+                          <strong className="block text-[1.35rem] leading-none">
+                            {formatearDia(evento.fechaInicio)}
+                          </strong>
+                          <span className="mt-0.5 block text-[0.72rem] tracking-[0.12em] text-white/82">
+                            {formatearMes(evento.fechaInicio)}
+                          </span>
                         </div>
                       </div>
 
-                      <div className="eventos-carousel__body">
-                        <p className="eventos-carousel__fecha">
+                      <div className="flex flex-1 flex-col gap-2.5">
+                        <p className="m-0 text-[0.78rem] font-extrabold uppercase tracking-wider text-royal-gold">
                           {formatearFecha(evento.fechaInicio)}
                         </p>
-                        <h3>{evento.titulo}</h3>
-                        <p className="eventos-carousel__lugar">
-                          <MapPin size={15} aria-hidden="true" />
+                        <h3 className="m-0 font-heading text-xl leading-tight text-royal-blue">
+                          {evento.titulo}
+                        </h3>
+                        <p className="m-0 flex items-center gap-1.5 text-[0.92rem] text-text-muted">
+                          <MapPin size={15} aria-hidden="true" className="shrink-0 text-royal-gold" />
                           {evento.lugar}
                         </p>
-                        <p className="eventos-carousel__descripcion">
+                        <p className="m-0 line-clamp-4 text-[0.95rem] leading-[1.65] text-slate-600">
                           {evento.descripcion}
                         </p>
                       </div>
@@ -182,7 +194,7 @@ export default function EventosCarousel() {
                 <>
                   <button
                     type="button"
-                    className="eventos-carousel__arrow eventos-carousel__arrow--left"
+                    className="absolute left-0 top-1/2 z-[2] flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-border-strong bg-surface text-royal-blue shadow-[0_8px_20px_rgba(15,23,42,0.08)] transition-all hover:scale-[1.04] hover:bg-royal-blue hover:text-white max-md:size-[38px] max-sm:hidden"
                     onClick={handlePrev}
                     aria-label="Ver eventos anteriores"
                   >
@@ -191,7 +203,7 @@ export default function EventosCarousel() {
 
                   <button
                     type="button"
-                    className="eventos-carousel__arrow eventos-carousel__arrow--right"
+                    className="absolute right-0 top-1/2 z-[2] flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-border-strong bg-surface text-royal-blue shadow-[0_8px_20px_rgba(15,23,42,0.08)] transition-all hover:scale-[1.04] hover:bg-royal-blue hover:text-white max-md:size-[38px] max-sm:hidden"
                     onClick={handleNext}
                     aria-label="Ver siguientes eventos"
                   >
@@ -202,17 +214,18 @@ export default function EventosCarousel() {
             </div>
 
             {maxIndex > 0 && (
-              <div className="eventos-carousel__dots">
+              <div className="mt-7 flex justify-center gap-2">
                 {Array.from({ length: maxIndex + 1 }).map((_, index) => (
                   <button
                     key={index}
                     type="button"
                     aria-label={`Ir al grupo de eventos ${index + 1}`}
-                    className={`eventos-carousel__dot ${
+                    className={cn(
+                      "size-2 cursor-pointer rounded-full border-none p-0 transition-all",
                       currentIndex === index
-                        ? "eventos-carousel__dot--active"
-                        : ""
-                    }`}
+                        ? "scale-125 bg-royal-blue"
+                        : "bg-slate-300",
+                    )}
                     onClick={() => setCurrentIndex(index)}
                   />
                 ))}
@@ -221,8 +234,11 @@ export default function EventosCarousel() {
           </>
         )}
 
-        <div className="eventos-carousel__footer-link">
-          <Link to={Rutas.eventosPublicos} className="eventos-carousel__link">
+        <div className="mt-8 text-center">
+          <Link
+            to={Rutas.eventosPublicos}
+            className="inline-flex items-center justify-center rounded-[10px] bg-royal-blue px-7 py-3.5 text-[0.88rem] font-extrabold uppercase tracking-wider text-white no-underline transition-all hover:-translate-y-0.5 hover:bg-royal-gold hover:text-royal-blue"
+          >
             Ver todos los eventos
           </Link>
         </div>

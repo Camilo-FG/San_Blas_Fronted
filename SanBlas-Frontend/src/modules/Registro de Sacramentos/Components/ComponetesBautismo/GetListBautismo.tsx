@@ -1,5 +1,5 @@
 import { useGetListBautismo } from '../../hooks/hooksBautismo/useGetListBautismo';
-import '../styles/GetListBautismo.css';
+import { AdminTable, AdminTableCell, AdminTableHead, AdminTableHeaderCell, AdminTablePanel, AdminTableRow } from '../../../../shared/ui';
 
 const GetListBautismo = () => {
   const { data, isPending, error } = useGetListBautismo();
@@ -9,47 +9,47 @@ const GetListBautismo = () => {
   if (!data || data.length === 0) return <p>No hay bautismos registrados</p>;
 
   return (
-    <div className="bautismo-table-container">
-      <h2>Lista de Bautismos</h2>
-      <table className="bautismo-table">
-        <thead>
+    <AdminTablePanel className="w-full overflow-x-auto">
+      <h2 className="px-4 pt-4 font-heading text-xl font-extrabold text-royal-blue">Lista de Bautismos</h2>
+      <AdminTable className="min-w-[1200px]">
+        <AdminTableHead>
           <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Cédula</th>
-            <th>Primer Apellido</th>
-            <th>Segundo Apellido</th>
-            <th>Parroquia</th>
-            <th>Fecha Bautismo</th>
-            <th>Año Bautismo</th>
-            <th>Prebísptero</th>
-            <th>Fecha Nacimiento</th>
-            <th>Hora Nacimiento</th>
-            <th>Abuelos Paternos</th>
-            <th>Abuelos Maternos</th>
+            <AdminTableHeaderCell>ID</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Nombre</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Cédula</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Primer Apellido</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Segundo Apellido</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Parroquia</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Fecha Bautismo</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Año Bautismo</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Prebísptero</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Fecha Nacimiento</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Hora Nacimiento</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Abuelos Paternos</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Abuelos Maternos</AdminTableHeaderCell>
           </tr>
-        </thead>
+        </AdminTableHead>
         <tbody>
           {data.map((bautismo) => (
-            <tr key={bautismo.id}>
-              <td>{bautismo.id}</td>
-              <td>{bautismo.Nombre}</td>
-              <td>{bautismo.cedula}</td>
-              <td>{bautismo.PrimerApellido}</td>
-              <td>{bautismo.SegundoApellido}</td>
-              <td>{bautismo.NombreParroquia}</td>
-              <td>{bautismo.FechaBautismo}</td>
-              <td>{bautismo.AnnioBautismo}</td>
-              <td>{bautismo.Prebispero}</td>
-              <td>{bautismo.fechaNacimiento}</td>
-              <td>{bautismo.horaNacimiento}</td>
-              <td>{bautismo.NombreAbuelosPaternos}</td>
-              <td>{bautismo.NombreAbuelosMaternos}</td>
-            </tr>
+            <AdminTableRow key={bautismo.id}>
+              <AdminTableCell>{bautismo.id}</AdminTableCell>
+              <AdminTableCell>{bautismo.Nombre}</AdminTableCell>
+              <AdminTableCell>{bautismo.cedula}</AdminTableCell>
+              <AdminTableCell>{bautismo.PrimerApellido}</AdminTableCell>
+              <AdminTableCell>{bautismo.SegundoApellido}</AdminTableCell>
+              <AdminTableCell>{bautismo.NombreParroquia}</AdminTableCell>
+              <AdminTableCell>{bautismo.FechaBautismo}</AdminTableCell>
+              <AdminTableCell>{bautismo.AnnioBautismo}</AdminTableCell>
+              <AdminTableCell>{bautismo.Prebispero}</AdminTableCell>
+              <AdminTableCell>{bautismo.fechaNacimiento}</AdminTableCell>
+              <AdminTableCell>{bautismo.horaNacimiento}</AdminTableCell>
+              <AdminTableCell>{bautismo.NombreAbuelosPaternos}</AdminTableCell>
+              <AdminTableCell>{bautismo.NombreAbuelosMaternos}</AdminTableCell>
+            </AdminTableRow>
           ))}
         </tbody>
-      </table>
-    </div>
+      </AdminTable>
+    </AdminTablePanel>
   );
 };
 

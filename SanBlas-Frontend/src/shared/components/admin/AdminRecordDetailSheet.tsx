@@ -1,6 +1,5 @@
 import { useEffect, useId, type ReactNode } from "react";
 import { X } from "lucide-react";
-import "./adminResponsiveData.css";
 
 interface AdminRecordDetailSheetProps {
   open: boolean;
@@ -48,30 +47,38 @@ export function AdminRecordDetailSheet({
   if (!open) return null;
 
   return (
-    <div className="admin-detail-sheet" role="presentation" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[1300] flex items-end justify-center bg-slate-900/55 md:items-center md:p-4"
+      role="presentation"
+      onClick={onClose}
+    >
       <div
-        className="admin-detail-sheet__panel"
+        className="flex max-h-[94vh] w-full flex-col rounded-t-[18px] bg-surface shadow-[0_-8px_30px_rgba(15,23,42,0.18)] md:max-h-[88vh] md:max-w-[640px] md:rounded-[18px]"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="admin-detail-sheet__header">
-          <div className="admin-detail-sheet__heading">
+        <header className="flex items-start justify-between gap-3 border-b border-border-strong px-[1.1rem] py-4">
+          <div>
             {subtitle && (
-              <p className="admin-detail-sheet__eyebrow">{subtitle}</p>
+              <p className="mb-1 text-[0.78rem] font-semibold text-text-muted">
+                {subtitle}
+              </p>
             )}
-            <h3 id={titleId}>{title}</h3>
+            <h3 id={titleId} className="text-[1.1rem] leading-snug text-royal-blue">
+              {title}
+            </h3>
             {badges && (
-              <div className="admin-detail-sheet__badges">{badges}</div>
+              <div className="mt-2 flex flex-wrap gap-1.5">{badges}</div>
             )}
           </div>
 
-          <div className="admin-detail-sheet__header-actions">
+          <div className="flex shrink-0 items-center gap-2">
             {primaryAction && (
               <button
                 type="button"
-                className="admin-detail-sheet__primary"
+                className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-[10px] border-none bg-blue-600 px-3 py-2 text-[0.85rem] font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                 onClick={primaryAction.onClick}
               >
                 {primaryAction.icon}
@@ -80,7 +87,7 @@ export function AdminRecordDetailSheet({
             )}
             <button
               type="button"
-              className="admin-detail-sheet__close"
+              className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-none bg-slate-100 text-slate-700 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
               onClick={onClose}
               aria-label="Cerrar detalle"
             >
@@ -89,10 +96,12 @@ export function AdminRecordDetailSheet({
           </div>
         </header>
 
-        <div className="admin-detail-sheet__body">{children}</div>
+        <div className="overflow-y-auto px-[1.1rem] py-4">{children}</div>
 
         {actions && (
-          <footer className="admin-detail-sheet__footer">{actions}</footer>
+          <footer className="flex flex-col gap-2.5 border-t border-border-strong px-[1.1rem] pt-3.5 pb-[1.1rem] md:flex-row md:flex-wrap md:justify-end">
+            {actions}
+          </footer>
         )}
       </div>
     </div>

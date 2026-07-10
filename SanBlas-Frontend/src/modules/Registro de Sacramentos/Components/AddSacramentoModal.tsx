@@ -1,6 +1,9 @@
 
 import { useState } from 'react';
-import './styles/AddSacramentoModal.css';
+import { Button, cn, Input, Label } from '../../../shared/ui';
+
+const modalInputClass =
+  "w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm transition-colors focus:border-blue-600 focus:outline-none";
 
 interface Props {
   isOpen: boolean;
@@ -62,79 +65,82 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
       case 'Bautismo':
         return (
           <>
-            <div className="modal-form-group">
-              <label>Nombre del bautizado</label>
-              <input type="text" placeholder="Nombre completo" onChange={(e) => setFormData({...formData, Nombre: e.target.value})} />
+            <div className="mb-5">
+              <Label>Nombre del bautizado</Label>
+              <Input type="text" placeholder="Nombre completo" className={modalInputClass} onChange={(e) => setFormData({...formData, Nombre: e.target.value})} />
             </div>
-            <div className="modal-form-row">
-              <div className="modal-form-group">
-                <label>Primer Apellido</label>
-                <input type="text" onChange={(e) => setFormData({...formData, PrimerApellido: e.target.value})} />
+            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
+              <div className="mb-5 flex-1">
+                <Label>Primer Apellido</Label>
+                <Input type="text" className={modalInputClass} onChange={(e) => setFormData({...formData, PrimerApellido: e.target.value})} />
               </div>
-              <div className="modal-form-group">
-                <label>Segundo Apellido</label>
-                <input type="text" onChange={(e) => setFormData({...formData, SegundoApellido: e.target.value})} />
+              <div className="mb-5 flex-1">
+                <Label>Segundo Apellido</Label>
+                <Input type="text" className={modalInputClass} onChange={(e) => setFormData({...formData, SegundoApellido: e.target.value})} />
               </div>
             </div>
-            <div className="modal-form-group">
-              <label>Cédula</label>
-              <input type="text" placeholder="0-0000-0000" onChange={(e) => setFormData({...formData, cedula: parseInt(e.target.value) || 0})} />
+            <div className="mb-5">
+              <Label>Cédula</Label>
+              <Input type="text" placeholder="0-0000-0000" className={modalInputClass} onChange={(e) => setFormData({...formData, cedula: parseInt(e.target.value) || 0})} />
             </div>
-            <div className="modal-form-row">
-              <div className="modal-form-group">
-                <label>Día de celebración</label>
-                <input 
+            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
+              <div className="mb-5 flex-1">
+                <Label>Día de celebración</Label>
+                <Input 
                   type="text" 
                   placeholder="12" 
                   value={formData.diaTemp}
+                  className={modalInputClass}
                   onChange={(e) => actualizarFecha('dia', e.target.value)} 
                 />
               </div>
-              <div className="modal-form-group">
-                <label>Mes de celebración</label>
-                <input 
+              <div className="mb-5 flex-1">
+                <Label>Mes de celebración</Label>
+                <Input 
                   type="text" 
                   placeholder="Mayo" 
                   value={formData.mesTemp}
+                  className={modalInputClass}
                   onChange={(e) => actualizarFecha('mes', e.target.value)} 
                 />
               </div>
-              <div className="modal-form-group">
-                <label>Año de celebración</label>
-                <input 
+              <div className="mb-5 flex-1">
+                <Label>Año de celebración</Label>
+                <Input 
                   type="text" 
                   placeholder="2026" 
                   value={formData.anioTemp}
+                  className={modalInputClass}
                   onChange={(e) => actualizarFecha('anio', e.target.value)} 
                 />
               </div>
             </div>
-            <div className="modal-form-group">
-              <label>Lugar de celebración sacramental</label>
-              <input type="text" placeholder="Santuario San Blas de Nicoya" onChange={(e) => setFormData({...formData, NombreParroquia: e.target.value})} />
+            <div className="mb-5">
+              <Label>Lugar de celebración sacramental</Label>
+              <Input type="text" placeholder="Santuario San Blas de Nicoya" className={modalInputClass} onChange={(e) => setFormData({...formData, NombreParroquia: e.target.value})} />
             </div>
-            <div className="modal-form-group">
-              <label>Prebísptero</label>
-              <input type="text" onChange={(e) => setFormData({...formData, Prebispero: e.target.value})} />
+            <div className="mb-5">
+              <Label>Prebísptero</Label>
+              <Input type="text" className={modalInputClass} onChange={(e) => setFormData({...formData, Prebispero: e.target.value})} />
             </div>
-            <div className="modal-form-row">
-              <div className="modal-form-group">
-                <label>Fecha de nacimiento</label>
-                <input type="date" onChange={(e) => setFormData({...formData, fechaNacimiento: e.target.value})} />
+            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
+              <div className="mb-5 flex-1">
+                <Label>Fecha de nacimiento</Label>
+                <Input type="date" className={modalInputClass} onChange={(e) => setFormData({...formData, fechaNacimiento: e.target.value})} />
               </div>
-              <div className="modal-form-group">
-                <label>Hora de nacimiento</label>
-                <input type="time" onChange={(e) => setFormData({...formData, horaNacimiento: e.target.value})} />
+              <div className="mb-5 flex-1">
+                <Label>Hora de nacimiento</Label>
+                <Input type="time" className={modalInputClass} onChange={(e) => setFormData({...formData, horaNacimiento: e.target.value})} />
               </div>
             </div>
-            <div className="modal-form-row">
-              <div className="modal-form-group">
-                <label>Nombre abuelos paternos</label>
-                <input type="text" onChange={(e) => setFormData({...formData, NombreAbuelosPaternos: e.target.value})} />
+            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
+              <div className="mb-5 flex-1">
+                <Label>Nombre abuelos paternos</Label>
+                <Input type="text" className={modalInputClass} onChange={(e) => setFormData({...formData, NombreAbuelosPaternos: e.target.value})} />
               </div>
-              <div className="modal-form-group">
-                <label>Nombre abuelos maternos</label>
-                <input type="text" onChange={(e) => setFormData({...formData, NombreAbuelosMaternos: e.target.value})} />
+              <div className="mb-5 flex-1">
+                <Label>Nombre abuelos maternos</Label>
+                <Input type="text" className={modalInputClass} onChange={(e) => setFormData({...formData, NombreAbuelosMaternos: e.target.value})} />
               </div>
             </div>
           </>
@@ -143,27 +149,27 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
       case 'Comunión':
         return (
           <>
-            <div className="modal-form-group">
-              <label>Nombre del comulgante</label>
-              <input type="text" placeholder="Nombre completo" onChange={(e) => setFormData({...formData, Nombre: e.target.value})} />
+            <div className="mb-5">
+              <Label>Nombre del comulgante</Label>
+              <Input type="text" placeholder="Nombre completo" className={modalInputClass} onChange={(e) => setFormData({...formData, Nombre: e.target.value})} />
             </div>
-            <div className="modal-form-row">
-              <div className="modal-form-group">
-                <label>Día de Comunión</label>
-                <input type="text" placeholder="15" onChange={(e) => setFormData({...formData, DiaComunion: e.target.value})} />
+            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
+              <div className="mb-5 flex-1">
+                <Label>Día de Comunión</Label>
+                <Input type="text" placeholder="15" className={modalInputClass} onChange={(e) => setFormData({...formData, DiaComunion: e.target.value})} />
               </div>
-              <div className="modal-form-group">
-                <label>Mes de Comunión</label>
-                <input type="text" placeholder="Junio" onChange={(e) => setFormData({...formData, MesComunion: e.target.value})} />
+              <div className="mb-5 flex-1">
+                <Label>Mes de Comunión</Label>
+                <Input type="text" placeholder="Junio" className={modalInputClass} onChange={(e) => setFormData({...formData, MesComunion: e.target.value})} />
               </div>
-              <div className="modal-form-group">
-                <label>Año de Comunión</label>
-                <input type="number" placeholder="2026" onChange={(e) => setFormData({...formData, AnnioComunion: parseInt(e.target.value)})} />
+              <div className="mb-5 flex-1">
+                <Label>Año de Comunión</Label>
+                <Input type="number" placeholder="2026" className={modalInputClass} onChange={(e) => setFormData({...formData, AnnioComunion: parseInt(e.target.value)})} />
               </div>
             </div>
-            <div className="modal-form-group">
-              <label>Lugar de celebración</label>
-              <input type="text" placeholder="Capilla Curime" onChange={(e) => setFormData({...formData, LugarComunion: e.target.value})} />
+            <div className="mb-5">
+              <Label>Lugar de celebración</Label>
+              <Input type="text" placeholder="Capilla Curime" className={modalInputClass} onChange={(e) => setFormData({...formData, LugarComunion: e.target.value})} />
             </div>
           </>
         );
@@ -171,27 +177,27 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
       case 'Confirmación':
         return (
           <>
-            <div className="modal-form-group">
-              <label>Nombre del confirmando</label>
-              <input type="text" placeholder="Nombre completo" onChange={(e) => setFormData({...formData, Nombre: e.target.value})} />
+            <div className="mb-5">
+              <Label>Nombre del confirmando</Label>
+              <Input type="text" placeholder="Nombre completo" className={modalInputClass} onChange={(e) => setFormData({...formData, Nombre: e.target.value})} />
             </div>
-            <div className="modal-form-row">
-              <div className="modal-form-group">
-                <label>Día de Confirmación</label>
-                <input type="text" placeholder="22" onChange={(e) => setFormData({...formData, DiaConfirmacion: e.target.value})} />
+            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
+              <div className="mb-5 flex-1">
+                <Label>Día de Confirmación</Label>
+                <Input type="text" placeholder="22" className={modalInputClass} onChange={(e) => setFormData({...formData, DiaConfirmacion: e.target.value})} />
               </div>
-              <div className="modal-form-group">
-                <label>Mes de Confirmación</label>
-                <input type="text" placeholder="Noviembre" onChange={(e) => setFormData({...formData, MesConfirmacion: e.target.value})} />
+              <div className="mb-5 flex-1">
+                <Label>Mes de Confirmación</Label>
+                <Input type="text" placeholder="Noviembre" className={modalInputClass} onChange={(e) => setFormData({...formData, MesConfirmacion: e.target.value})} />
               </div>
-              <div className="modal-form-group">
-                <label>Año de Confirmación</label>
-                <input type="number" placeholder="2026" onChange={(e) => setFormData({...formData, AnnioConfirmacion: parseInt(e.target.value)})} />
+              <div className="mb-5 flex-1">
+                <Label>Año de Confirmación</Label>
+                <Input type="number" placeholder="2026" className={modalInputClass} onChange={(e) => setFormData({...formData, AnnioConfirmacion: parseInt(e.target.value)})} />
               </div>
             </div>
-            <div className="modal-form-group">
-              <label>Lugar de celebración</label>
-              <input type="text" placeholder="Catedral Metropolitana" onChange={(e) => setFormData({...formData, LugarConfirmacion: e.target.value})} />
+            <div className="mb-5">
+              <Label>Lugar de celebración</Label>
+              <Input type="text" placeholder="Catedral Metropolitana" className={modalInputClass} onChange={(e) => setFormData({...formData, LugarConfirmacion: e.target.value})} />
             </div>
           </>
         );
@@ -199,42 +205,42 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
       case 'Matrimonio':
         return (
           <>
-            <div className="modal-form-row">
-              <div className="modal-form-group">
-                <label>Nombre del contrayente 1</label>
-                <input type="text" placeholder="Nombre completo" onChange={(e) => setFormData({...formData, NombreContrayente: e.target.value})} />
+            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
+              <div className="mb-5 flex-1">
+                <Label>Nombre del contrayente 1</Label>
+                <Input type="text" placeholder="Nombre completo" className={modalInputClass} onChange={(e) => setFormData({...formData, NombreContrayente: e.target.value})} />
               </div>
-              <div className="modal-form-group">
-                <label>Nombre del contrayente 2</label>
-                <input type="text" placeholder="Nombre completo" onChange={(e) => setFormData({...formData, NombreContrayente2: e.target.value})} />
-              </div>
-            </div>
-            <div className="modal-form-row">
-              <div className="modal-form-group">
-                <label>Día de Matrimonio</label>
-                <input type="text" placeholder="10" onChange={(e) => setFormData({...formData, DiaMatrimonio: e.target.value})} />
-              </div>
-              <div className="modal-form-group">
-                <label>Mes de Matrimonio</label>
-                <input type="text" placeholder="Diciembre" onChange={(e) => setFormData({...formData, MesMatrimonio: e.target.value})} />
-              </div>
-              <div className="modal-form-group">
-                <label>Año de Matrimonio</label>
-                <input type="number" placeholder="2026" onChange={(e) => setFormData({...formData, AnnioMatrimonio: parseInt(e.target.value)})} />
+              <div className="mb-5 flex-1">
+                <Label>Nombre del contrayente 2</Label>
+                <Input type="text" placeholder="Nombre completo" className={modalInputClass} onChange={(e) => setFormData({...formData, NombreContrayente2: e.target.value})} />
               </div>
             </div>
-            <div className="modal-form-group">
-              <label>Lugar de celebración</label>
-              <input type="text" placeholder="Iglesia Santa Ana" onChange={(e) => setFormData({...formData, LugarMatrimonio: e.target.value})} />
-            </div>
-            <div className="modal-form-row">
-              <div className="modal-form-group">
-                <label>Tomo</label>
-                <input type="number" onChange={(e) => setFormData({...formData, Tomo: parseInt(e.target.value)})} />
+            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
+              <div className="mb-5 flex-1">
+                <Label>Día de Matrimonio</Label>
+                <Input type="text" placeholder="10" className={modalInputClass} onChange={(e) => setFormData({...formData, DiaMatrimonio: e.target.value})} />
               </div>
-              <div className="modal-form-group">
-                <label>Folio</label>
-                <input type="number" onChange={(e) => setFormData({...formData, Folio: parseInt(e.target.value)})} />
+              <div className="mb-5 flex-1">
+                <Label>Mes de Matrimonio</Label>
+                <Input type="text" placeholder="Diciembre" className={modalInputClass} onChange={(e) => setFormData({...formData, MesMatrimonio: e.target.value})} />
+              </div>
+              <div className="mb-5 flex-1">
+                <Label>Año de Matrimonio</Label>
+                <Input type="number" placeholder="2026" className={modalInputClass} onChange={(e) => setFormData({...formData, AnnioMatrimonio: parseInt(e.target.value)})} />
+              </div>
+            </div>
+            <div className="mb-5">
+              <Label>Lugar de celebración</Label>
+              <Input type="text" placeholder="Iglesia Santa Ana" className={modalInputClass} onChange={(e) => setFormData({...formData, LugarMatrimonio: e.target.value})} />
+            </div>
+            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
+              <div className="mb-5 flex-1">
+                <Label>Tomo</Label>
+                <Input type="number" className={modalInputClass} onChange={(e) => setFormData({...formData, Tomo: parseInt(e.target.value)})} />
+              </div>
+              <div className="mb-5 flex-1">
+                <Label>Folio</Label>
+                <Input type="number" className={modalInputClass} onChange={(e) => setFormData({...formData, Folio: parseInt(e.target.value)})} />
               </div>
             </div>
           </>
@@ -246,18 +252,22 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>INSCRIPCIÓN SACRAMENTAL</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="flex max-h-[90vh] w-[90%] max-w-[800px] flex-col overflow-hidden rounded-xl bg-white" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-gray-200 bg-surface-muted px-6 py-5">
+          <h2 className="m-0 text-lg text-slate-800">INSCRIPCIÓN SACRAMENTAL</h2>
+          <button type="button" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100" onClick={onClose}>×</button>
         </div>
 
-        <div className="modal-tabs">
+        <div className="flex gap-2 border-b border-gray-200 px-6">
           {tiposSacramento.map((tipo) => (
             <button
               key={tipo}
-              className={`modal-tab ${tipoActivo === tipo ? 'modal-tab--active' : ''}`}
+              type="button"
+              className={cn(
+                "cursor-pointer border-0 bg-transparent px-5 py-3 text-sm font-medium text-gray-500 transition-colors hover:text-blue-600",
+                tipoActivo === tipo && "border-b-2 border-blue-600 text-blue-600",
+              )}
               onClick={() => setTipoActivo(tipo)}
             >
               {tipo.toUpperCase()}
@@ -266,17 +276,17 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="modal-body">
+          <div className="max-h-[60vh] overflow-y-auto p-6">
             {renderForm()}
           </div>
 
-          <div className="modal-footer">
-            <button type="button" className="modal-btn modal-btn--secondary" onClick={onClose}>
+          <div className="flex justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4">
+            <Button type="button" variant="secondary" onClick={onClose}>
               CANCELAR
-            </button>
-            <button type="submit" className="modal-btn modal-btn--primary">
+            </Button>
+            <Button type="submit">
               INSCRIBIR ACTA
-            </button>
+            </Button>
           </div>
         </form>
       </div>

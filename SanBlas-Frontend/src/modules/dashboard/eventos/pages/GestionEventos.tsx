@@ -5,7 +5,6 @@ import {
   Pencil,
   Trash2,
   Eye,
-  Search,
   Plus,
   CalendarDays,
 } from "lucide-react";
@@ -17,7 +16,19 @@ import type { Evento } from "../../../../services/eventosService";
 import type { EventoPayload } from "../../../../services/eventosService";
 import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
 import { AdminRecordDetailSheet } from "../../../../shared/components/admin/AdminRecordDetailSheet";
-import "./GestionEventos.css";
+import {
+  AdminModule,
+  AdminSearch,
+  AdminToolbar,
+  Badge,
+  Button,
+  EmptyState,
+  ErrorMessage,
+  Input,
+  Label,
+  Modal,
+  Textarea,
+} from "../../../../shared/ui";
 
 const formatearFecha = (fecha: string) =>
   new Date(fecha).toLocaleDateString("es-CR", {
@@ -93,106 +104,103 @@ const GestionEventos = () => {
   };
 
   const renderEstadoBadge = (publicado: boolean) => (
-    <span
-      className={`admin-status-badge ${
-        publicado ? "admin-status-badge--success" : "admin-status-badge--neutral"
-      }`}
-    >
+    <Badge variant={publicado ? "success" : "neutral"}>
       {publicado ? "Publicado" : "Borrador"}
-    </span>
+    </Badge>
   );
 
   return (
-    <section className="admin-module gestion-eventos">
-      {error && <p className="admin-error">{error}</p>}
+    <AdminModule>
+      {error && <ErrorMessage message={error} />}
 
-      <div className="admin-toolbar">
-        <div className="admin-toolbar__search">
-          <Search size={18} className="admin-toolbar__search-icon" />
-          <input
-            type="search"
-            className="admin-search"
-            placeholder="Buscar eventos..."
-            value={busqueda}
-            onChange={(event) => setBusqueda(event.target.value)}
-            aria-label="Buscar eventos"
-          />
-        </div>
-        <button type="button" className="admin-btn admin-btn--primary" onClick={abrirCrear}>
+      <AdminToolbar>
+        <AdminSearch
+          placeholder="Buscar eventos..."
+          value={busqueda}
+          onChange={(event) => setBusqueda(event.target.value)}
+          aria-label="Buscar eventos"
+        />
+        <Button variant="primary" onClick={abrirCrear}>
           <Plus size={18} />
           Nuevo evento
-        </button>
-      </div>
+        </Button>
+      </AdminToolbar>
 
       {cargando ? (
-        <p className="admin-empty">Cargando eventos...</p>
+        <EmptyState title="Cargando eventos..." />
       ) : eventosFiltrados.length === 0 ? (
-        <p className="admin-empty">
-          {busqueda
-            ? "No se encontraron eventos con ese criterio."
-            : "No hay eventos registrados."}
-        </p>
+        <EmptyState
+          title={
+            busqueda
+              ? "No se encontraron eventos con ese criterio."
+              : "No hay eventos registrados."
+          }
+        />
       ) : (
         <>
-          <div className="admin-event-grid">
+          <div className="hidden gap-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] lg:grid-cols-3">
             {eventosFiltrados.map((evento) => (
-              <article key={evento.id} className="admin-event-card">
+              <article
+                key={evento.id}
+                className="flex flex-col overflow-hidden rounded-2xl border border-border-strong bg-surface shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+              >
                 <div
-                  className={`admin-event-card__cover ${
-                    evento.publicado ? "" : "admin-event-card__cover--draft"
+                  className={`relative flex min-h-32 items-center justify-center text-white/90 ${
+                    evento.publicado
+                      ? "bg-gradient-to-br from-teal to-teal-hover"
+                      : "bg-gradient-to-br from-slate-500 to-slate-400"
                   }`}
                 >
                   <CalendarDays size={42} />
                   <span
-                    className={`admin-event-card__type ${
+                    className={`absolute top-2.5 right-2.5 rounded-full px-2.5 py-0.5 text-xs font-extrabold tracking-wide uppercase ${
                       evento.publicado
-                        ? "admin-event-card__type--published"
-                        : "admin-event-card__type--draft"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-sky-100 text-sky-700"
                     }`}
                   >
                     {evento.publicado ? "Evento" : "Borrador"}
                   </span>
                 </div>
 
-                <div className="admin-event-card__body">
-                  <h3 className="admin-event-card__title">{evento.titulo}</h3>
-                  <div className="admin-event-card__meta">
+                <div className="flex flex-1 flex-col gap-2 p-4">
+                  <h3 className="m-0 text-base font-extrabold leading-snug text-slate-900">
+                    {evento.titulo}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-text-muted">
                     <span>{formatearFecha(evento.fechaInicio)}</span>
-                    <span className="admin-event-card__time">
+                    <span className="rounded-full bg-info-bg px-2 py-0.5 text-xs font-bold text-info">
                       {formatearHora(evento.fechaInicio)}
                     </span>
                   </div>
-                  <p className="admin-event-card__desc">{evento.descripcion}</p>
-                  <p className="admin-event-card__meta">
+                  <p className="m-0 line-clamp-3 flex-1 text-sm leading-relaxed text-text-muted">
+                    {evento.descripcion}
+                  </p>
+                  <p className="m-0 flex items-center gap-1.5 text-sm text-text-muted">
                     <MapPin size={14} />
                     {evento.lugar}
                   </p>
                 </div>
 
-                <div className="admin-event-card__footer">
-                  <button
-                    type="button"
-                    className="admin-btn admin-btn--ghost"
-                    onClick={() => abrirEditar(evento)}
-                  >
+                <div className="grid grid-cols-2 gap-2 px-4 pb-4">
+                  <Button variant="ghost" onClick={() => abrirEditar(evento)}>
                     <Pencil size={16} />
                     Editar
-                  </button>
-                  <button
-                    type="button"
-                    className="admin-btn admin-btn--danger"
+                  </Button>
+                  <Button
+                    variant="danger"
                     onClick={() => handleEliminar(evento.id)}
                     disabled={guardando}
                   >
                     <Trash2 size={16} />
                     Eliminar
-                  </button>
+                  </Button>
                 </div>
               </article>
             ))}
           </div>
 
-          <div className="admin-responsive-data__cards">
+          <div className="flex flex-col gap-2.5 md:hidden">
             {eventosFiltrados.map((evento) => (
               <AdminRecordCard
                 key={evento.id}
@@ -261,149 +269,142 @@ const GestionEventos = () => {
         }
         actions={
           eventoSeleccionado ? (
-            <button
-              type="button"
-              className="admin-detail-action admin-detail-action--danger"
+            <Button
+              variant="danger"
               onClick={() => handleEliminar(eventoSeleccionado.id)}
               disabled={guardando}
             >
               <Trash2 size={16} />
               Eliminar
-            </button>
+            </Button>
           ) : undefined
         }
       >
         {eventoSeleccionado && (
           <>
-            <div className="admin-detail-fields">
-              <p className="admin-detail-field"><strong>Lugar:</strong> {eventoSeleccionado.lugar}</p>
-              <p className="admin-detail-field">
-                <strong>Fecha fin:</strong>{" "}
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <p className="m-0 text-sm text-slate-600">
+                <strong className="text-slate-800">Lugar:</strong> {eventoSeleccionado.lugar}
+              </p>
+              <p className="m-0 text-sm text-slate-600">
+                <strong className="text-slate-800">Fecha fin:</strong>{" "}
                 {eventoSeleccionado.fechaFin
                   ? formatearFecha(eventoSeleccionado.fechaFin)
                   : "No definida"}
               </p>
             </div>
-            <div className="admin-detail-block">
-              <strong>Descripción</strong>
-              <p className="admin-detail-block__content">{eventoSeleccionado.descripcion}</p>
+            <div className="mt-4">
+              <strong className="text-sm text-slate-800">Descripción</strong>
+              <p className="mt-1.5 rounded-xl border border-border-strong bg-surface-muted p-3 text-sm leading-relaxed whitespace-pre-wrap text-slate-600">
+                {eventoSeleccionado.descripcion}
+              </p>
             </div>
           </>
         )}
       </AdminRecordDetailSheet>
 
       {modalAbierto && (
-        <div className="gestion-eventos__modal-backdrop">
-          <div className="gestion-eventos__modal">
-            <h3>{editandoId ? "Editar evento" : "Nuevo evento"}</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="gestion-eventos__field">
-                <label htmlFor="titulo">Título</label>
-                <input
-                  id="titulo"
-                  value={formulario.titulo}
-                  onChange={(e) =>
-                    setFormulario({ ...formulario, titulo: e.target.value })
-                  }
-                  required
-                />
-              </div>
+        <Modal onClose={cerrarModal} title={editandoId ? "Editar evento" : "Nuevo evento"}>
+          <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue">
+            {editandoId ? "Editar evento" : "Nuevo evento"}
+          </h3>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+            <div>
+              <Label htmlFor="titulo">Título</Label>
+              <Input
+                id="titulo"
+                value={formulario.titulo}
+                onChange={(e) =>
+                  setFormulario({ ...formulario, titulo: e.target.value })
+                }
+                required
+              />
+            </div>
 
-              <div className="gestion-eventos__field">
-                <label htmlFor="descripcion">Descripción</label>
-                <textarea
-                  id="descripcion"
-                  value={formulario.descripcion}
-                  onChange={(e) =>
-                    setFormulario({
-                      ...formulario,
-                      descripcion: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
+            <div>
+              <Label htmlFor="descripcion">Descripción</Label>
+              <Textarea
+                id="descripcion"
+                value={formulario.descripcion}
+                onChange={(e) =>
+                  setFormulario({
+                    ...formulario,
+                    descripcion: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
 
-              <div className="gestion-eventos__field">
-                <label htmlFor="fechaInicio">Fecha de inicio</label>
-                <input
-                  id="fechaInicio"
-                  type="date"
-                  value={formulario.fechaInicio}
-                  onChange={(e) =>
-                    setFormulario({
-                      ...formulario,
-                      fechaInicio: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
+            <div>
+              <Label htmlFor="fechaInicio">Fecha de inicio</Label>
+              <Input
+                id="fechaInicio"
+                type="date"
+                value={formulario.fechaInicio}
+                onChange={(e) =>
+                  setFormulario({
+                    ...formulario,
+                    fechaInicio: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
 
-              <div className="gestion-eventos__field">
-                <label htmlFor="fechaFin">Fecha de fin (opcional)</label>
-                <input
-                  id="fechaFin"
-                  type="date"
-                  value={formulario.fechaFin ?? ""}
-                  onChange={(e) =>
-                    setFormulario({
-                      ...formulario,
-                      fechaFin: e.target.value || null,
-                    })
-                  }
-                />
-              </div>
+            <div>
+              <Label htmlFor="fechaFin">Fecha de fin (opcional)</Label>
+              <Input
+                id="fechaFin"
+                type="date"
+                value={formulario.fechaFin ?? ""}
+                onChange={(e) =>
+                  setFormulario({
+                    ...formulario,
+                    fechaFin: e.target.value || null,
+                  })
+                }
+              />
+            </div>
 
-              <div className="gestion-eventos__field">
-                <label htmlFor="lugar">Lugar</label>
-                <input
-                  id="lugar"
-                  value={formulario.lugar}
-                  onChange={(e) =>
-                    setFormulario({ ...formulario, lugar: e.target.value })
-                  }
-                  required
-                />
-              </div>
+            <div>
+              <Label htmlFor="lugar">Lugar</Label>
+              <Input
+                id="lugar"
+                value={formulario.lugar}
+                onChange={(e) =>
+                  setFormulario({ ...formulario, lugar: e.target.value })
+                }
+                required
+              />
+            </div>
 
-              <div className="gestion-eventos__field">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={formulario.publicado}
-                    onChange={(e) =>
-                      setFormulario({
-                        ...formulario,
-                        publicado: e.target.checked,
-                      })
-                    }
-                  />{" "}
-                  Publicado en el sitio web
-                </label>
-              </div>
+            <Label className="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formulario.publicado}
+                onChange={(e) =>
+                  setFormulario({
+                    ...formulario,
+                    publicado: e.target.checked,
+                  })
+                }
+              />
+              Publicado en el sitio web
+            </Label>
 
-              <div className="gestion-eventos__modal-actions">
-                <button
-                  type="button"
-                  className="admin-btn admin-btn--secondary"
-                  onClick={cerrarModal}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="admin-btn admin-btn--primary"
-                  disabled={guardando}
-                >
-                  {guardando ? "Guardando..." : "Guardar"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="mt-2 flex justify-end gap-3">
+              <Button type="button" variant="secondary" onClick={cerrarModal}>
+                Cancelar
+              </Button>
+              <Button type="submit" variant="primary" disabled={guardando}>
+                {guardando ? "Guardando..." : "Guardar"}
+              </Button>
+            </div>
+          </form>
+        </Modal>
       )}
-    </section>
+    </AdminModule>
   );
 };
 

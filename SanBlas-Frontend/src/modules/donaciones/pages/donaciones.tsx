@@ -3,42 +3,32 @@ import DonacionInfo from "../components/DonacionInfo";
 import DonacionForm from "../components/DonacionForm";
 
 function Donaciones() {
-  // referencia para el formulario
   const formRef = useRef<HTMLDivElement>(null);
 
-  // Esta función hace que la página baje suavemente
   const handleDonarInsumos = () => {
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <section className="donaciones">
-      <div className="donaciones__container">
-        <div className="donaciones__header">
-        </div>
-
+    <section className="w-full">
+      <div className="mx-auto w-full max-w-5xl px-4">
         <div className="donaciones__content">
-          {/* Parte informativa de arriba */}
-          <DonacionInfo 
-            sinpe="8888-1234" 
-            cuentaBancaria="CR67015100012345678901" 
-            banco="Banco Nacional" 
-            onDonarInsumos={handleDonarInsumos} 
+          <DonacionInfo
+            sinpe="8888-1234"
+            cuentaBancaria="CR67015100012345678901"
+            banco="Banco Nacional"
+            onDonarInsumos={handleDonarInsumos}
           />
 
-          <div ref={formRef} style={{ marginTop: '50px', paddingBottom: '60px', scrollMarginTop: '80px' }}>
-            <h3 style={{
-                color: '#003366',
-                textAlign: 'center',
-                marginBottom: '24px',
-                fontSize: '1.2rem',
-                fontWeight: 'bold'
-            }}>
-                Donación de Insumos
+          <div
+            ref={formRef}
+            className="mt-12 scroll-mt-20 pb-16"
+          >
+            <h3 className="mb-6 text-center text-xl font-bold text-royal-blue">
+              Donación de Insumos
             </h3>
             <DonacionForm />
           </div>
-
         </div>
       </div>
     </section>
