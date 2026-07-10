@@ -180,6 +180,19 @@
     line-height: 1.6;
 }
 
+.lineamientos-link {
+    display: inline-flex;
+    margin-top: 12px;
+    color: #003366;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.lineamientos-link:hover {
+    color: #8b5e00;
+}
+
 .payment-info p,
 .lineamientos-box p {
     margin: 5px 0;

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import CatequesisForm from "../components/CatequesisForm";
+import CatequesisInfoSection from "../components/CatequesisInfoSection";
 import { crearSolicitudCatequesis } from "../../../services/catequesis/catequesisService";
 import { ApiError } from "../../../services/apiClient";
 import type { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
+import "./CatequesisPage.css";
 
 const CatequesisPage = () => {
   const [loading, setLoading] = useState(false);
@@ -27,10 +29,10 @@ const CatequesisPage = () => {
   };
 
   return (
-    <CatequesisForm
-      loading={loading}
-      onSubmit={handleSubmit}
-    />
+    <main className="catequesis-page">
+      <CatequesisInfoSection />
+      <CatequesisForm loading={loading} onSubmit={handleSubmit} />
+    </main>
   );
 };
 

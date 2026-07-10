@@ -2,11 +2,13 @@ import { useCallback, useMemo, useState } from "react";
 import {
   CheckCircle,
   Clock,
+  Download,
   Eye,
   Search,
   XCircle,
   AlertCircle,
   GraduationCap,
+  MapPin,
   Phone,
   Calendar,
 } from "lucide-react";
@@ -19,6 +21,8 @@ import {
 
 import ModalSimple from "../ModalSimple/ModalSimple";
 import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
+import { obtenerEtiquetaNivelCatequesis } from "../../../catequesis/constants/nivelesCatequesis";
+import { FILIALES_CATEQUESIS } from "../../../catequesis/constants/filialesCatequesis";
 import { useSolicitudesCatequesis } from "../hooks/useSolicitudesCatequesis";
 import type {
   CatequesisEnrollmentRecord,
@@ -78,12 +82,17 @@ const obtenerClaseEstado = (estado?: string | null) => {
 };
 
 function GestionSolicitudesCatequesis() {
-  const { solicitudes, cambiarEstado, obtenerDetalle, cargando, guardando, error, detalleError, accionError, limpiarDetalleError, limpiarAccionError } =
+  const { solicitudes, cambiarEstado, obtenerDetalle, exportarExcel, cargando, guardando, exportando, error, detalleError, accionError, exportError, limpiarDetalleError, limpiarAccionError, limpiarExportError } =
     useSolicitudesCatequesis();
 
-  const [statusFilter, setStatusFilter] = useState<
+  const [filtroEstado, setFiltroEstado] = useState<
     "todos" | EstadoInscripcionCatequesis
   >("todos");
+  const [filtroFilial, setFiltroFilial] = useState<string>("todas");
+  const [filtroEstadoAplicado, setFiltroEstadoAplicado] = useState<
+    "todos" | EstadoInscripcionCatequesis
+  >("todos");
+  const [filtroFilialAplicado, setFiltroFilialAplicado] = useState<string>("todas");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSolicitud, setSelectedSolicitud] =
@@ -93,6 +102,11 @@ function GestionSolicitudesCatequesis() {
   const [rejectionReason, setRejectionReason] = useState("");
 
   const estadoSeleccionado = normalizarEstado(selectedSolicitud?.estado);
+
+  const aplicarFiltros = () => {
+    setFiltroEstadoAplicado(filtroEstado);
+    setFiltroFilialAplicado(filtroFilial);
+  };
 
   const filteredSolicitudes = useMemo(() => {
     const search = searchQuery.toLowerCase().trim();
@@ -109,19 +123,33 @@ function GestionSolicitudesCatequesis() {
       const telefono = solicitud.encargado?.telefono ?? "";
       const codigoSolicitud = solicitud.codigoSolicitud ?? "";
       const estadoNormalizado = normalizarEstado(solicitud.estado);
+      const filial = solicitud.catequesis?.centroCatequesis ?? "";
 
       const matchesStatus =
-        statusFilter === "todos" || estadoNormalizado === statusFilter;
+        filtroEstadoAplicado === "todos" ||
+        estadoNormalizado === filtroEstadoAplicado;
+
+      const matchesFilial =
+        filtroFilialAplicado === "todas" ||
+        filial.localeCompare(filtroFilialAplicado, "es", {
+          sensitivity: "accent",
+        }) === 0;
 
       const matchesSearch =
         nombreCatequizando.includes(search) ||
         nombreEncargado.includes(search) ||
         codigoSolicitud.toLowerCase().includes(search) ||
-        telefono.toLowerCase().includes(search);
+        telefono.toLowerCase().includes(search) ||
+        filial.toLowerCase().includes(search);
 
-      return matchesStatus && matchesSearch;
+      return matchesStatus && matchesFilial && matchesSearch;
     });
-  }, [solicitudes, statusFilter, searchQuery]);
+  }, [
+    solicitudes,
+    filtroEstadoAplicado,
+    filtroFilialAplicado,
+    searchQuery,
+  ]);
 
   const totalPendientes = useMemo(
     () =>
@@ -225,7 +253,16 @@ function GestionSolicitudesCatequesis() {
         header: "Nivel",
         cell: ({ row }) => (
           <span className="catequesis-admin__level">
-            {row.original.catequesis?.nivelAInscribirse || "No registrado"}
+            {obtenerEtiquetaNivelCatequesis(row.original.catequesis?.nivelAInscribirse)}
+          </span>
+        ),
+      },
+      {
+        id: "filial",
+        header: "Filial",
+        cell: ({ row }) => (
+          <span className="catequesis-admin__filial">
+            {row.original.catequesis?.centroCatequesis || "No registrada"}
           </span>
         ),
       },
@@ -368,31 +405,68 @@ function GestionSolicitudesCatequesis() {
           />
         </div>
 
-        <div className="catequesis-admin__filter-buttons">
-          {(
-            [
-              ["todos", "Todos"],
-              ["pendiente", "Pendiente"],
-              ["aprobado", "Aprobado"],
-              ["rechazado", "Rechazado"],
-              ["requiere_modificacion", "Modificación"],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setStatusFilter(value)}
-              className={
-                statusFilter === value
-                  ? "catequesis-admin__filter-btn catequesis-admin__filter-btn--active"
-                  : "catequesis-admin__filter-btn"
+        <div className="catequesis-admin__filter-form">
+          <label className="catequesis-admin__filter-field">
+            <span>Estado</span>
+            <select
+              value={filtroEstado}
+              onChange={(e) =>
+                setFiltroEstado(
+                  e.target.value as "todos" | EstadoInscripcionCatequesis,
+                )
               }
             >
-              {label}
-            </button>
-          ))}
+              <option value="todos">Todos</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="aprobado">Aprobado</option>
+              <option value="rechazado">Rechazado</option>
+              <option value="requiere_modificacion">Requiere modificación</option>
+            </select>
+          </label>
+
+          <label className="catequesis-admin__filter-field">
+            <span>Filial</span>
+            <select
+              value={filtroFilial}
+              onChange={(e) => setFiltroFilial(e.target.value)}
+            >
+              <option value="todas">Todas</option>
+              {FILIALES_CATEQUESIS.map((filial) => (
+                <option key={filial} value={filial}>
+                  {filial}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button
+            type="button"
+            className="catequesis-admin__apply-filter-btn"
+            onClick={aplicarFiltros}
+          >
+            Filtrar
+          </button>
+
+          <button
+            type="button"
+            className="catequesis-admin__filter-btn catequesis-admin__export-btn"
+            onClick={() => {
+              limpiarExportError();
+              void exportarExcel();
+            }}
+            disabled={exportando || cargando}
+          >
+            <Download size={16} />
+            {exportando ? "Exportando..." : "Exportar a Excel"}
+          </button>
         </div>
       </div>
+
+      {exportError && (
+        <p role="alert" className="catequesis-admin__inline-error">
+          {exportError}
+        </p>
+      )}
 
       <div className="catequesis-admin__table-card admin-table-panel">
         <div className="admin-responsive-data">
@@ -432,7 +506,7 @@ function GestionSolicitudesCatequesis() {
               ) : (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="catequesis-admin__empty"
                   >
                     No se encontraron matrículas con los filtros actuales.
@@ -448,7 +522,11 @@ function GestionSolicitudesCatequesis() {
               const nombre = `${solicitud.catequizando?.nombre ?? "Sin nombre"} ${solicitud.catequizando?.apellidos ?? ""}`.trim();
               const codigo = solicitud.codigoSolicitud || `CAT-${solicitud.id}`;
               const encargado = `${solicitud.encargado?.nombre ?? ""} ${solicitud.encargado?.apellidos ?? ""}`.trim() || "Sin encargado";
-              const nivel = solicitud.catequesis?.nivelAInscribirse ?? "Sin nivel";
+              const nivel = obtenerEtiquetaNivelCatequesis(
+                solicitud.catequesis?.nivelAInscribirse,
+              );
+              const filial =
+                solicitud.catequesis?.centroCatequesis || "No registrada";
 
               return (
                 <AdminRecordCard
@@ -468,6 +546,11 @@ function GestionSolicitudesCatequesis() {
                     </span>
                   }
                   meta={[
+                    {
+                      icon: <MapPin size={12} />,
+                      label: "Filial",
+                      value: filial,
+                    },
                     {
                       icon: <Calendar size={12} />,
                       label: "Fecha",
@@ -535,8 +618,9 @@ function GestionSolicitudesCatequesis() {
                 <div>
                   <span>Nivel a inscribirse</span>
                   <strong>
-                    {selectedSolicitud.catequesis?.nivelAInscribirse ||
-                      "No registrado"}
+                    {obtenerEtiquetaNivelCatequesis(
+                      selectedSolicitud.catequesis?.nivelAInscribirse,
+                    )}
                   </strong>
                 </div>
 
@@ -688,50 +772,98 @@ function GestionSolicitudesCatequesis() {
             </div>
 
             <div className="catequesis-admin__section">
-              <h3>Datos del Encargado</h3>
+              <h3>Datos de la Madre o Encargada</h3>
 
               <div className="catequesis-admin__details-grid">
                 <div>
                   <span>Nombre completo</span>
                   <strong>
-                    {selectedSolicitud.encargado?.nombre || "No registrado"}{" "}
-                    {selectedSolicitud.encargado?.apellidos || ""}
-                  </strong>
-                </div>
-
-                <div>
-                  <span>Cédula</span>
-                  <strong>
-                    {selectedSolicitud.encargado?.cedula || "No registrada"}
+                    {selectedSolicitud.madreCatequizando?.nombre || "No registrado"}{" "}
+                    {selectedSolicitud.madreCatequizando?.apellidos || ""}
                   </strong>
                 </div>
 
                 <div>
                   <span>Teléfono</span>
                   <strong>
-                    {selectedSolicitud.encargado?.telefono || "No registrado"}
+                    {selectedSolicitud.madreCatequizando?.telefono ||
+                      "No registrado"}
                   </strong>
                 </div>
 
                 <div>
-                  <span>Correo</span>
+                  <span>Ciudad</span>
                   <strong>
-                    {selectedSolicitud.encargado?.correo || "No registrado"}
+                    {selectedSolicitud.madreCatequizando?.direccion?.ciudad ||
+                      "No registrada"}
                   </strong>
                 </div>
 
                 <div>
-                  <span>Parentesco</span>
+                  <span>Provincia</span>
                   <strong>
-                    {selectedSolicitud.encargado?.parentesco || "No registrado"}
+                    {selectedSolicitud.madreCatequizando?.direccion?.provincia ||
+                      "No registrada"}
                   </strong>
                 </div>
 
                 <div className="catequesis-admin__grid-full">
                   <span>Dirección exacta</span>
                   <strong>
-                    {selectedSolicitud.encargado?.direccion?.direccionExacta ||
-                      "No registrada"}
+                    {selectedSolicitud.madreCatequizando?.direccion
+                      ?.direccionExacta || "No registrada"}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="catequesis-admin__section">
+              <h3>Datos del Padre</h3>
+
+              <div className="catequesis-admin__details-grid">
+                <div>
+                  <span>Nombre completo</span>
+                  <strong>
+                    {selectedSolicitud.padreCatequizando?.nombre || "No registrado"}{" "}
+                    {selectedSolicitud.padreCatequizando?.apellidos || ""}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Teléfono</span>
+                  <strong>
+                    {selectedSolicitud.padreCatequizando?.telefono ||
+                      "No registrado"}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="catequesis-admin__section">
+              <h3>Persona que Inscribe</h3>
+
+              <div className="catequesis-admin__details-grid">
+                <div>
+                  <span>Nombre completo</span>
+                  <strong>
+                    {selectedSolicitud.personaInscribe?.nombre || "No registrado"}{" "}
+                    {selectedSolicitud.personaInscribe?.apellidos || ""}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Parentesco</span>
+                  <strong>
+                    {selectedSolicitud.personaInscribe?.parentesco ||
+                      "No registrado"}
+                  </strong>
+                </div>
+
+                <div className="catequesis-admin__grid-full">
+                  <span>Correo electrónico</span>
+                  <strong>
+                    {selectedSolicitud.personaInscribe?.correo ||
+                      "No registrado"}
                   </strong>
                 </div>
               </div>
