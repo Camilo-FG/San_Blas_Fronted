@@ -1,5 +1,5 @@
 export const API_BASE_URL =
-  import.meta.env.VITE_API_URL ?? "http://localhost:5146/api";
+  import.meta.env.VITE_API_URL ?? "http://localhost:3000/api";
 
 export const FILES_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
