@@ -13,7 +13,7 @@ import {
   LANDING_SECTIONS,
   sectionDataToForm,
 } from "./landingSectionConfig";
-import "./GestionLanding.css";
+import { Button, ErrorMessage, PageLoader } from "../../../shared/ui";
 
 function GestionLanding() {
   const [sections, setSections] = useState<LandingSectionResponse[]>([]);
@@ -95,28 +95,27 @@ function GestionLanding() {
   };
 
   if (cargando) {
-    return <p className="landing-cms__status">Cargando contenido del landing...</p>;
+    return <PageLoader className="text-text-muted" />;
   }
 
   return (
-    <div className="landing-cms">
-      <p className="landing-cms__hint">
+    <div className="flex flex-col gap-4">
+      <p className="m-0 text-sm leading-relaxed text-text-muted">
         Seleccione una sección para editar textos e imágenes. Los cambios se
         reflejan en el sitio público.
       </p>
 
-      {error && (
-        <p className="landing-cms__error" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <ErrorMessage message={error} />}
       {mensaje && (
-        <p className="landing-cms__success" role="status">
+        <p
+          className="m-0 rounded-xl bg-success-bg px-4 py-3 text-sm text-success"
+          role="status"
+        >
           {mensaje}
         </p>
       )}
 
-      <div className="landing-cms__grid">
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
         {LANDING_SECTIONS.map((section) => {
           const stored = sections.find((item) => item.sectionKey === section.key);
           const updatedAt = stored?.updatedAt
@@ -124,20 +123,29 @@ function GestionLanding() {
             : "Sin cambios";
 
           return (
-            <article key={section.key} className="landing-cms__card">
-              <div className="landing-cms__card-head">
-                <h3>{section.label}</h3>
-                <p>{section.description}</p>
+            <article
+              key={section.key}
+              className="flex flex-col gap-3 rounded-2xl border border-border-strong bg-surface p-4 shadow-sm"
+            >
+              <div>
+                <h3 className="mb-1 text-base font-bold text-royal-blue">
+                  {section.label}
+                </h3>
+                <p className="m-0 text-sm leading-relaxed text-text-muted">
+                  {section.description}
+                </p>
               </div>
-              <p className="landing-cms__card-meta">Última actualización: {updatedAt}</p>
-              <button
-                type="button"
-                className="landing-cms__card-btn"
+              <p className="m-0 text-xs text-slate-400">
+                Última actualización: {updatedAt}
+              </p>
+              <Button
+                variant="ghost"
+                className="w-full bg-blue-600 text-white hover:bg-blue-700"
                 onClick={() => abrirEditor(section.key)}
               >
                 <Edit3 size={16} />
                 Personalizar
-              </button>
+              </Button>
             </article>
           );
         })}

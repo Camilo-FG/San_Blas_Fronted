@@ -9,6 +9,7 @@ import {
 
 import Navbar from "../shared/components/Navbar";
 import Footer from "../modules/landing/components/Footer";
+import { PageLoader } from "../shared/ui";
 import Rutas from "./Rutas";
 import { clearAuthToken, getAuthToken } from "../utils/authToken";
 import { isTokenExpired } from "../utils/jwt";
@@ -61,14 +62,6 @@ const GestionUsuarios = lazy(
   () => import("../modules/Gestión de Usuarios/pages/GestionUsuarios"),
 );
 
-function PageLoader() {
-  return (
-    <div className="page-loader" role="status" aria-live="polite">
-      Cargando...
-    </div>
-  );
-}
-
 function withSuspense(Component: React.LazyExoticComponent<() => React.JSX.Element>) {
   return function SuspenseRoute() {
     return (
@@ -81,10 +74,10 @@ function withSuspense(Component: React.LazyExoticComponent<() => React.JSX.Eleme
 
 function RootLayout() {
   return (
-    <div className="app-layout">
+    <div className="flex min-h-screen flex-col">
       <Navbar />
 
-      <main className="app-main">
+      <main className="min-w-0 flex-1">
         <Suspense fallback={<PageLoader />}>
           <Outlet />
         </Suspense>

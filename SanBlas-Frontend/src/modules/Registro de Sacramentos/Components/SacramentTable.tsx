@@ -1,52 +1,62 @@
-import { Pencil, Trash2, MapPin, Calendar, FileText, Eye } from 'lucide-react';
-import { AdminRecordCard } from '../../../shared/components/admin/AdminRecordCard';
-import './styles/SacramentTable.css';
+import { Pencil, Trash2, MapPin, Calendar, FileText, Eye } from "lucide-react";
+import { AdminRecordCard } from "../../../shared/components/admin/AdminRecordCard";
+import {
+  AdminTable,
+  AdminTableActions,
+  AdminTableCell,
+  AdminTableHead,
+  AdminTableHeaderCell,
+  AdminTablePanel,
+  AdminTableRow,
+  Button,
+  cn,
+} from "../../../shared/ui";
 
 interface Sacrament {
-  id: string;  
+  id: string;
   nombre: string;
   fechaCelebracion: string;
   lugar: string;
-  tipo: 'Bautismo' | 'Comunión' | 'Confirmación' | 'Matrimonio';
+  tipo: "Bautismo" | "Comunión" | "Confirmación" | "Matrimonio";
   detalles: any;
 }
 
 interface Props {
   sacramentos: Sacrament[];
   onViewDetails: (sacramento: Sacrament) => void;
-  onEdit: (sacramento: Sacrament) => void;      
-  onDelete: (sacramento: Sacrament) => void;    
+  onEdit: (sacramento: Sacrament) => void;
+  onDelete: (sacramento: Sacrament) => void;
   onSort?: (columna: string) => void;
   sortColumn?: string;
-  sortDirection?: 'asc' | 'desc';
+  sortDirection?: "asc" | "desc";
 }
 
 const colorPorTipo = {
-  'Bautismo': '#E8F5E9',
-  'Comunión': '#E3F2FD',
-  'Confirmación': '#FFF3E0',
-  'Matrimonio': '#F3E5F5'
+  Bautismo: "#E8F5E9",
+  Comunión: "#E3F2FD",
+  Confirmación: "#FFF3E0",
+  Matrimonio: "#F3E5F5",
 };
 
 const textColorPorTipo = {
-  'Bautismo': '#2E7D32',
-  'Comunión': '#1565C0',
-  'Confirmación': '#E65100',
-  'Matrimonio': '#6A1B9A'
+  Bautismo: "#2E7D32",
+  Comunión: "#1565C0",
+  Confirmación: "#E65100",
+  Matrimonio: "#6A1B9A",
 };
 
-const SacramentTable = ({ 
-  sacramentos, 
+const SacramentTable = ({
+  sacramentos,
   onViewDetails,
-  onEdit,           
-  onDelete,         
+  onEdit,
+  onDelete,
   onSort,
   sortColumn,
-  sortDirection
+  sortDirection,
 }: Props) => {
-  const renderTipoBadge = (tipo: Sacrament['tipo']) => (
+  const renderTipoBadge = (tipo: Sacrament["tipo"]) => (
     <span
-      className="sacrament-badge"
+      className="inline-block rounded-full px-3 py-1.5 text-xs font-semibold uppercase"
       style={{
         backgroundColor: colorPorTipo[tipo],
         color: textColorPorTipo[tipo],
@@ -56,70 +66,72 @@ const SacramentTable = ({
     </span>
   );
 
+  const sortableHeader = (column: string, label: string) => (
+    <AdminTableHeaderCell
+      onClick={() => onSort?.(column)}
+      className={cn(onSort && "cursor-pointer")}
+    >
+      {label}
+      {sortColumn === column && (sortDirection === "asc" ? " ↑" : " ↓")}
+    </AdminTableHeaderCell>
+  );
+
   return (
-    <div className="admin-responsive-data">
-      <div className="admin-responsive-data__table admin-table-panel sacrament-table-container">
-        <table className="admin-table sacrament-table">
-          <thead>
+    <div>
+      <AdminTablePanel className="hidden min-w-0 md:block">
+        <AdminTable className="min-w-[800px]">
+          <AdminTableHead>
             <tr>
-              <th onClick={() => onSort?.('tipo')} style={{ cursor: onSort ? 'pointer' : 'default' }}>
-                SACRAMENTO
-                {sortColumn === 'tipo' && (sortDirection === 'asc' ? ' ↑' : ' ↓')}
-              </th>
-              <th onClick={() => onSort?.('nombre')} style={{ cursor: onSort ? 'pointer' : 'default' }}>
-                REGISTRADO / CONTRAYENTE
-                {sortColumn === 'nombre' && (sortDirection === 'asc' ? ' ↑' : ' ↓')}
-              </th>
-              <th onClick={() => onSort?.('fechaCelebracion')} style={{ cursor: onSort ? 'pointer' : 'default' }}>
-                FECHA DE CELEBRACIÓN
-                {sortColumn === 'fechaCelebracion' && (sortDirection === 'asc' ? ' ↑' : ' ↓')}
-              </th>
-              <th onClick={() => onSort?.('lugar')} style={{ cursor: onSort ? 'pointer' : 'default' }}>
-                LUGAR / PARROQUIA
-                {sortColumn === 'lugar' && (sortDirection === 'asc' ? ' ↑' : ' ↓')}
-              </th>
-              <th>DETALLES</th>
-              <th>ACCIONES</th>
+              {sortableHeader("tipo", "SACRAMENTO")}
+              {sortableHeader("nombre", "REGISTRADO / CONTRAYENTE")}
+              {sortableHeader("fechaCelebracion", "FECHA DE CELEBRACIÓN")}
+              {sortableHeader("lugar", "LUGAR / PARROQUIA")}
+              <AdminTableHeaderCell>DETALLES</AdminTableHeaderCell>
+              <AdminTableHeaderCell>ACCIONES</AdminTableHeaderCell>
             </tr>
-          </thead>
+          </AdminTableHead>
           <tbody>
             {sacramentos.map((sacramento) => (
-              <tr key={sacramento.id}>
-                <td>{renderTipoBadge(sacramento.tipo)}</td>
-                <td>{sacramento.nombre}</td>
-                <td>{sacramento.fechaCelebracion}</td>
-                <td>{sacramento.lugar}</td>
-                <td>
-                  <button 
-                    className="view-details-btn"
+              <AdminTableRow key={sacramento.id}>
+                <AdminTableCell>{renderTipoBadge(sacramento.tipo)}</AdminTableCell>
+                <AdminTableCell>{sacramento.nombre}</AdminTableCell>
+                <AdminTableCell>{sacramento.fechaCelebracion}</AdminTableCell>
+                <AdminTableCell>{sacramento.lugar}</AdminTableCell>
+                <AdminTableCell>
+                  <button
+                    type="button"
+                    className="cursor-pointer rounded border-0 bg-transparent px-3 py-2 text-[13px] font-medium text-blue-600 transition-colors hover:bg-blue-50"
                     onClick={() => onViewDetails(sacramento)}
                   >
                     VER ACTA &gt;
                   </button>
-                </td>
-                <td>
-                  <div className="action-buttons">
-                    <button 
-                      className="edit-btn"
+                </AdminTableCell>
+                <AdminTableCell>
+                  <AdminTableActions>
+                    <Button
+                      type="button"
                       onClick={() => onEdit(sacramento)}
+                      className="bg-green-500 px-3 py-1.5 text-xs hover:bg-green-600"
                     >
-                       Editar
-                    </button>
-                    <button 
-                      className="delete-btn"
+                      Editar
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="danger"
                       onClick={() => onDelete(sacramento)}
+                      className="px-3 py-1.5 text-xs"
                     >
-                       Eliminar
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                      Eliminar
+                    </Button>
+                  </AdminTableActions>
+                </AdminTableCell>
+              </AdminTableRow>
             ))}
           </tbody>
-        </table>
-      </div>
+        </AdminTable>
+      </AdminTablePanel>
 
-      <div className="admin-responsive-data__cards">
+      <div className="flex flex-col gap-2.5 md:hidden">
         {sacramentos.map((sacramento) => (
           <AdminRecordCard
             key={sacramento.id}
@@ -132,32 +144,32 @@ const SacramentTable = ({
             meta={[
               {
                 icon: <Calendar size={12} />,
-                label: 'Celebración',
+                label: "Celebración",
                 value: sacramento.fechaCelebracion,
               },
               {
                 icon: <MapPin size={12} />,
-                label: 'Lugar',
+                label: "Lugar",
                 value: sacramento.lugar,
               },
             ]}
             actions={[
               {
-                label: 'Acta',
+                label: "Acta",
                 icon: <Eye size={15} />,
-                variant: 'ghost',
+                variant: "ghost",
                 onClick: () => onViewDetails(sacramento),
               },
               {
-                label: 'Editar',
+                label: "Editar",
                 icon: <Pencil size={15} />,
-                variant: 'primary',
+                variant: "primary",
                 onClick: () => onEdit(sacramento),
               },
               {
-                label: 'Eliminar',
+                label: "Eliminar",
                 icon: <Trash2 size={15} />,
-                variant: 'danger',
+                variant: "danger",
                 onClick: () => onDelete(sacramento),
               },
             ]}

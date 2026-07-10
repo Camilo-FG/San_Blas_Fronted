@@ -1,5 +1,5 @@
 import { useGetListMatrimonio } from '../../hooks/hooksMatrimonio/useGetListMatrimonio';
-import '../styles/GetListMatrimonio.css';
+import { AdminTable, AdminTableCell, AdminTableHead, AdminTableHeaderCell, AdminTablePanel, AdminTableRow } from '../../../../shared/ui';
 
 const GetListMatrimonio = () => {
   const { data, isPending, error } = useGetListMatrimonio();
@@ -9,39 +9,39 @@ const GetListMatrimonio = () => {
   if (!data || data.length === 0) return <p>No hay matrimonios registrados</p>;
 
   return (
-    <div className="matrimonio-table-container">
-      <h2>Lista de Matrimonios</h2>
-      <table className="matrimonio-table">
-        <thead>
+    <AdminTablePanel className="w-full overflow-x-auto">
+      <h2 className="px-4 pt-4 font-heading text-xl font-extrabold text-royal-blue">Lista de Matrimonios</h2>
+      <AdminTable className="min-w-[1000px]">
+        <AdminTableHead>
           <tr>
-            <th>ID</th>
-            <th>Contrayente 1</th>
-            <th>Contrayente 2</th>
-            <th>Día</th>
-            <th>Mes</th>
-            <th>Año</th>
-            <th>Lugar</th>
-            <th>Tomo</th>
-            <th>Folio</th>
+            <AdminTableHeaderCell>ID</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Contrayente 1</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Contrayente 2</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Día</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Mes</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Año</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Lugar</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Tomo</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Folio</AdminTableHeaderCell>
           </tr>
-        </thead>
+        </AdminTableHead>
         <tbody>
           {data.map((matrimonio) => (
-            <tr key={matrimonio.id}>
-              <td>{matrimonio.id}</td>
-              <td>{matrimonio.NombreContrayente}</td>
-              <td>{matrimonio.NombreContrayente2}</td>
-              <td>{matrimonio.DiaMatrimonio}</td>
-              <td>{matrimonio.MesMatrimonio}</td>
-              <td>{matrimonio.AnnioMatrimonio}</td>
-              <td>{matrimonio.LugarMatrimonio}</td>
-              <td>{matrimonio.Tomo}</td>
-              <td>{matrimonio.Folio}</td>
-            </tr>
+            <AdminTableRow key={matrimonio.id}>
+              <AdminTableCell>{matrimonio.id}</AdminTableCell>
+              <AdminTableCell>{matrimonio.NombreContrayente}</AdminTableCell>
+              <AdminTableCell>{matrimonio.NombreContrayente2}</AdminTableCell>
+              <AdminTableCell>{matrimonio.DiaMatrimonio}</AdminTableCell>
+              <AdminTableCell>{matrimonio.MesMatrimonio}</AdminTableCell>
+              <AdminTableCell>{matrimonio.AnnioMatrimonio}</AdminTableCell>
+              <AdminTableCell>{matrimonio.LugarMatrimonio}</AdminTableCell>
+              <AdminTableCell>{matrimonio.Tomo}</AdminTableCell>
+              <AdminTableCell>{matrimonio.Folio}</AdminTableCell>
+            </AdminTableRow>
           ))}
         </tbody>
-      </table>
-    </div>
+      </AdminTable>
+    </AdminTablePanel>
   );
 };
 

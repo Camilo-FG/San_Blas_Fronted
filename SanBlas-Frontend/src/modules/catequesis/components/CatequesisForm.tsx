@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "./CatequesisForm.css";
+import { Button, cn, Input, Label, Select, Textarea } from "../../../shared/ui";
 import { FILIALES_CATEQUESIS } from "../constants/filialesCatequesis";
 import { NIVELES_CATEQUESIS } from "../constants/nivelesCatequesis";
 import { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
@@ -71,6 +71,15 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
     },
   },
 });
+
+const infoBoxClass =
+  "mb-4 rounded-2xl border border-royal-gold/40 bg-royal-gold/10 p-3.5 text-sm leading-relaxed text-gray-600 sm:p-4";
+
+const fileInputClass = cn(
+  "cursor-pointer p-2.5",
+  "file:mr-3 file:cursor-pointer file:rounded-[10px] file:border-0 file:bg-royal-blue file:px-3.5 file:py-2 file:text-xs file:font-extrabold file:text-white",
+  "hover:file:bg-royal-gold hover:file:text-royal-blue",
+);
 
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const [form, setForm] = useState<CatequesisEnrollmentData>(
@@ -204,22 +213,22 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
   return (
     <form
-      className="catequesis-form"
+      className="mx-auto mt-6 flex max-w-[1100px] flex-col gap-5 px-3.5 sm:mt-10 sm:gap-7 sm:px-5"
       onSubmit={handleSubmit}
     >
-      <section className="form-section">
-        <div className="section-header">
+      <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
+        <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2>Datos de Catequesis</h2>
-            <p>Seleccione el centro y el nivel al que desea inscribir.</p>
+            <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">Datos de Catequesis</h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">Seleccione el centro y el nivel al que desea inscribir.</p>
           </div>
-          <span>Sección 1</span>
+          <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">Sección 1</span>
         </div>
 
-        <div className="form-grid">
-          <div className="form-field">
-            <label>Centro de catequesis *</label>
-            <select
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Centro de catequesis *</Label>
+            <Select
               value={form.catequesis.centroCatequesis || ""}
               onChange={(e) =>
                 updateForm("catequesis.centroCatequesis", e.target.value)
@@ -231,15 +240,15 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   {filial}
                 </option>
               ))}
-            </select>
+            </Select>
             {errors.centroCatequesis && (
-              <p className="error-text">{errors.centroCatequesis}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.centroCatequesis}</p>
             )}
           </div>
 
-          <div className="form-field">
-            <label>Nivel a inscribirse *</label>
-            <select
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Nivel a inscribirse *</Label>
+            <Select
               value={form.catequesis.nivelAInscribirse || ""}
               onChange={(e) =>
                 updateForm("catequesis.nivelAInscribirse", e.target.value)
@@ -251,17 +260,18 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   {nivel.label}
                 </option>
               ))}
-            </select>
+            </Select>
             {errors.nivelAInscribirse && (
-              <p className="error-text">{errors.nivelAInscribirse}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.nivelAInscribirse}</p>
             )}
           </div>
 
-          <div className="form-field full-width">
-            <label>Adjuntar fe de bautismo *</label>
-            <input
+          <div className="flex flex-col gap-1.5 md:col-span-2">
+            <Label className="text-xs font-black text-royal-blue">Adjuntar fe de bautismo *</Label>
+            <Input
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
+              className={fileInputClass}
               onChange={(e) =>
                 updateForm(
                   "catequesis.feBautismoArchivo",
@@ -270,25 +280,25 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             />
             {errors.feBautismoArchivo && (
-              <p className="error-text">{errors.feBautismoArchivo}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.feBautismoArchivo}</p>
             )}
           </div>
         </div>
       </section>
 
-      <section className="form-section">
-        <div className="section-header">
+      <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
+        <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2>Datos del Catequizando</h2>
-            <p>Información personal del niño o joven que será inscrito.</p>
+            <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">Datos del Catequizando</h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">Información personal del niño o joven que será inscrito.</p>
           </div>
-          <span>Sección 2</span>
+          <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">Sección 2</span>
         </div>
 
-        <div className="form-grid">
-          <div className="form-field">
-            <label>Nombre *</label>
-            <input
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Nombre *</Label>
+            <Input
               type="text"
               placeholder="Ej: Carlos Emanuel"
               value={form.catequizando.nombre}
@@ -297,13 +307,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             />
             {errors.nombreCatequizando && (
-              <p className="error-text">{errors.nombreCatequizando}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.nombreCatequizando}</p>
             )}
           </div>
 
-          <div className="form-field">
-            <label>Apellidos *</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Apellidos *</Label>
+            <Input
               type="text"
               placeholder="Ej: Pérez Gómez"
               value={form.catequizando.apellidos}
@@ -312,13 +322,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             />
             {errors.apellidosCatequizando && (
-              <p className="error-text">{errors.apellidosCatequizando}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.apellidosCatequizando}</p>
             )}
           </div>
 
-          <div className="form-field">
-            <label>Fecha de nacimiento *</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Fecha de nacimiento *</Label>
+            <Input
               type="date"
               value={form.catequizando.fechaNacimiento || ""}
               onChange={(e) =>
@@ -326,13 +336,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             />
             {errors.fechaNacimiento && (
-              <p className="error-text">{errors.fechaNacimiento}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.fechaNacimiento}</p>
             )}
           </div>
 
-          <div className="form-field">
-            <label>Dirección exacta *</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Dirección exacta *</Label>
+            <Input
               type="text"
               placeholder="Dirección exacta"
               value={form.catequizando.direccion.direccionExacta || ""}
@@ -344,25 +354,25 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             />
             {errors.direccionExacta && (
-              <p className="error-text">{errors.direccionExacta}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.direccionExacta}</p>
             )}
           </div>
         </div>
       </section>
 
-      <section className="form-section">
-        <div className="section-header">
+      <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
+        <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2>Datos de Bautismo</h2>
-            <p>Complete la información del registro de bautismo.</p>
+            <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">Datos de Bautismo</h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">Complete la información del registro de bautismo.</p>
           </div>
-          <span>Sección 3</span>
+          <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">Sección 3</span>
         </div>
 
-        <div className="form-grid">
-          <div className="form-field">
-            <label>Parroquia *</label>
-            <input
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Parroquia *</Label>
+            <Input
               type="text"
               value={form.catequizando.bautismo.parroquia || ""}
               onChange={(e) =>
@@ -370,13 +380,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             />
             {errors.parroquiaBautismo && (
-              <p className="error-text">{errors.parroquiaBautismo}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.parroquiaBautismo}</p>
             )}
           </div>
 
-          <div className="form-field">
-            <label>Fecha de bautismo</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Fecha de bautismo</Label>
+            <Input
               type="date"
               value={form.catequizando.bautismo.fecha || ""}
               onChange={(e) =>
@@ -385,9 +395,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
           </div>
 
-          <div className="form-field">
-            <label>Tomo</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Tomo</Label>
+            <Input
               type="text"
               value={form.catequizando.bautismo.tomo || ""}
               onChange={(e) =>
@@ -396,9 +406,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
           </div>
 
-          <div className="form-field">
-            <label>Folio</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Folio</Label>
+            <Input
               type="text"
               value={form.catequizando.bautismo.folio || ""}
               onChange={(e) =>
@@ -407,9 +417,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
           </div>
 
-          <div className="form-field">
-            <label>Asiento</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Asiento</Label>
+            <Input
               type="text"
               value={form.catequizando.bautismo.asiento || ""}
               onChange={(e) =>
@@ -420,19 +430,19 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         </div>
       </section>
 
-      <section className="form-section">
-        <div className="section-header">
+      <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
+        <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2>Adecuación y Salud del Catequizando</h2>
-            <p>Información educativa y de salud relevante para catequesis.</p>
+            <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">Adecuación y Salud del Catequizando</h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">Información educativa y de salud relevante para catequesis.</p>
           </div>
-          <span>Sección 4</span>
+          <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">Sección 4</span>
         </div>
 
-        <div className="form-grid">
-          <div className="form-field">
-            <label>¿Requiere adecuación en el centro educativo? *</label>
-            <select
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">¿Requiere adecuación en el centro educativo? *</Label>
+            <Select
               value={
                 form.catequizando.adecuacion
                   .requiereAdecuacionCentroEducativo === null
@@ -452,16 +462,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <option value="">Seleccione</option>
               <option value="no">No</option>
               <option value="si">Sí</option>
-            </select>
+            </Select>
             {errors.requiereAdecuacion && (
-              <p className="error-text">{errors.requiereAdecuacion}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.requiereAdecuacion}</p>
             )}
           </div>
 
           {form.catequizando.adecuacion.requiereAdecuacionCentroEducativo && (
-            <div className="form-field">
-              <label>Descripción de la adecuación *</label>
-              <textarea
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">Descripción de la adecuación *</Label>
+              <Textarea
                 value={form.catequizando.adecuacion.descripcionAdecuacion || ""}
                 onChange={(e) =>
                   updateForm(
@@ -471,14 +481,14 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }
               />
               {errors.descripcionAdecuacion && (
-                <p className="error-text">{errors.descripcionAdecuacion}</p>
+                <p className="m-0 text-xs font-extrabold text-red-600">{errors.descripcionAdecuacion}</p>
               )}
             </div>
           )}
 
-          <div className="form-field">
-            <label>¿Es portador de enfermedad crónica? *</label>
-            <select
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">¿Es portador de enfermedad crónica? *</Label>
+            <Select
               value={
                 form.catequizando.condicionSalud.portadorEnfermedadCronica ===
                 null
@@ -497,16 +507,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <option value="">Seleccione</option>
               <option value="no">No</option>
               <option value="si">Sí</option>
-            </select>
+            </Select>
             {errors.portadorEnfermedad && (
-              <p className="error-text">{errors.portadorEnfermedad}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.portadorEnfermedad}</p>
             )}
           </div>
 
           {form.catequizando.condicionSalud.portadorEnfermedadCronica && (
-            <div className="form-field">
-              <label>Descripción de enfermedad *</label>
-              <textarea
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">Descripción de enfermedad *</Label>
+              <Textarea
                 value={
                   form.catequizando.condicionSalud.descripcionEnfermedad || ""
                 }
@@ -518,26 +528,26 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }
               />
               {errors.descripcionEnfermedad && (
-                <p className="error-text">{errors.descripcionEnfermedad}</p>
+                <p className="m-0 text-xs font-extrabold text-red-600">{errors.descripcionEnfermedad}</p>
               )}
             </div>
           )}
         </div>
       </section>
 
-      <section className="form-section">
-        <div className="section-header">
+      <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
+        <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2>Datos de la Madre o Encargada</h2>
-            <p>Información de contacto de la persona responsable (opcional).</p>
+            <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">Datos de la Madre o Encargada</h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">Información de contacto de la persona responsable (opcional).</p>
           </div>
-          <span>Sección 5</span>
+          <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">Sección 5</span>
         </div>
 
-        <div className="form-grid">
-          <div className="form-field">
-            <label>Nombre</label>
-            <input
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Nombre</Label>
+            <Input
               type="text"
               value={form.madreCatequizando.nombre}
               onChange={(e) =>
@@ -546,9 +556,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
           </div>
 
-          <div className="form-field">
-            <label>Apellidos</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Apellidos</Label>
+            <Input
               type="text"
               value={form.madreCatequizando.apellidos}
               onChange={(e) =>
@@ -557,9 +567,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
           </div>
 
-          <div className="form-field">
-            <label>Dirección exacta</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Dirección exacta</Label>
+            <Input
               type="text"
               value={form.madreCatequizando.direccion.direccionExacta || ""}
               onChange={(e) =>
@@ -571,9 +581,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
           </div>
 
-          <div className="form-field">
-            <label>Ciudad</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Ciudad</Label>
+            <Input
               type="text"
               value={form.madreCatequizando.direccion.ciudad || ""}
               onChange={(e) =>
@@ -582,9 +592,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
           </div>
 
-          <div className="form-field">
-            <label>Provincia</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Provincia</Label>
+            <Input
               type="text"
               value={form.madreCatequizando.direccion.provincia || ""}
               onChange={(e) =>
@@ -596,9 +606,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
           </div>
 
-          <div className="form-field">
-            <label>Teléfono</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Teléfono</Label>
+            <Input
               type="text"
               placeholder="0000-0000"
               value={form.madreCatequizando.telefono}
@@ -610,19 +620,19 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         </div>
       </section>
 
-      <section className="form-section">
-        <div className="section-header">
+      <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
+        <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2>Datos del Padre</h2>
-            <p>Información de contacto del padre del catequizando (opcional).</p>
+            <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">Datos del Padre</h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">Información de contacto del padre del catequizando (opcional).</p>
           </div>
-          <span>Sección 6</span>
+          <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">Sección 6</span>
         </div>
 
-        <div className="form-grid">
-          <div className="form-field">
-            <label>Nombre</label>
-            <input
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Nombre</Label>
+            <Input
               type="text"
               value={form.padreCatequizando.nombre}
               onChange={(e) =>
@@ -631,9 +641,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
           </div>
 
-          <div className="form-field">
-            <label>Apellidos</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Apellidos</Label>
+            <Input
               type="text"
               value={form.padreCatequizando.apellidos}
               onChange={(e) =>
@@ -642,9 +652,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
           </div>
 
-          <div className="form-field">
-            <label>Teléfono</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Teléfono</Label>
+            <Input
               type="text"
               placeholder="0000-0000"
               value={form.padreCatequizando.telefono}
@@ -656,16 +666,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         </div>
       </section>
 
-      <section className="form-section">
-        <div className="section-header">
+      <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
+        <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2>Inscripción y Pago</h2>
-            <p>Datos de la persona que inscribe y comprobante SINPE.</p>
+            <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">Inscripción y Pago</h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">Datos de la persona que inscribe y comprobante SINPE.</p>
           </div>
-          <span>Sección 7</span>
+          <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">Sección 7</span>
         </div>
 
-        <div className="payment-info">
+        <div className={infoBoxClass}>
           <p>
             <strong>SINPE Parroquia:</strong> 8878-3025
           </p>
@@ -674,10 +684,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           </p>
         </div>
 
-        <div className="form-grid">
-          <div className="form-field">
-            <label>Nombre de quien inscribe *</label>
-            <input
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Nombre de quien inscribe *</Label>
+            <Input
               type="text"
               value={form.inscripcion.personaQueInscribe.nombre || ""}
               onChange={(e) =>
@@ -688,13 +698,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             />
             {errors.nombrePersonaInscribe && (
-              <p className="error-text">{errors.nombrePersonaInscribe}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.nombrePersonaInscribe}</p>
             )}
           </div>
 
-          <div className="form-field">
-            <label>Apellido de quien inscribe *</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Apellido de quien inscribe *</Label>
+            <Input
               type="text"
               value={form.inscripcion.personaQueInscribe.apellido || ""}
               onChange={(e) =>
@@ -705,13 +715,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             />
             {errors.apellidoPersonaInscribe && (
-              <p className="error-text">{errors.apellidoPersonaInscribe}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.apellidoPersonaInscribe}</p>
             )}
           </div>
 
-          <div className="form-field">
-            <label>Correo electrónico *</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Correo electrónico *</Label>
+            <Input
               type="email"
               placeholder="correo@ejemplo.com"
               value={form.inscripcion.personaQueInscribe.correo || ""}
@@ -723,13 +733,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             />
             {errors.correoPersonaInscribe && (
-              <p className="error-text">{errors.correoPersonaInscribe}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.correoPersonaInscribe}</p>
             )}
           </div>
 
-          <div className="form-field">
-            <label>Parentesco *</label>
-            <select
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Parentesco *</Label>
+            <Select
               value={form.inscripcion.parentesco || ""}
               onChange={(e) =>
                 updateForm("inscripcion.parentesco", e.target.value)
@@ -741,15 +751,15 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <option value="Abuelo(a)">Abuelo(a)</option>
               <option value="Tutor Legal">Tutor Legal</option>
               <option value="Otro">Otro</option>
-            </select>
+            </Select>
             {errors.parentesco && (
-              <p className="error-text">{errors.parentesco}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.parentesco}</p>
             )}
           </div>
 
-          <div className="form-field">
-            <label>Número de comprobante SINPE *</label>
-            <input
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-black text-royal-blue">Número de comprobante SINPE *</Label>
+            <Input
               type="text"
               value={form.inscripcion.pago.numeroComprobanteSINPE}
               onChange={(e) =>
@@ -760,15 +770,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             />
             {errors.numeroComprobanteSINPE && (
-              <p className="error-text">{errors.numeroComprobanteSINPE}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.numeroComprobanteSINPE}</p>
             )}
           </div>
 
-          <div className="form-field full-width">
-            <label>Archivo del comprobante *</label>
-            <input
+          <div className="flex flex-col gap-1.5 md:col-span-2">
+            <Label className="text-xs font-black text-royal-blue">Archivo del comprobante *</Label>
+            <Input
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
+              className={fileInputClass}
               onChange={(e) =>
                 updateForm(
                   "inscripcion.pago.archivoComprobante",
@@ -777,24 +788,24 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             />
             {errors.archivoComprobante && (
-              <p className="error-text">{errors.archivoComprobante}</p>
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.archivoComprobante}</p>
             )}
           </div>
         </div>
       </section>
 
-      <section className="form-section">
-        <div className="section-header">
+      <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
+        <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2>Lineamientos de Catequesis</h2>
-            <p>
+            <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">Lineamientos de Catequesis</h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
               Lea el documento de lineamientos antes de enviar la inscripción.
             </p>
           </div>
-          <span>Sección 7</span>
+          <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">Sección 7</span>
         </div>
 
-        <div className="lineamientos-box">
+        <div className={infoBoxClass}>
           <p>
             Antes de enviar la solicitud, debe leer y aceptar los lineamientos
             de catequesis.
@@ -804,36 +815,38 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             href="/lineamientos-catequesis-24-25.pdf"
             target="_blank"
             rel="noopener noreferrer"
-            className="lineamientos-link"
+            className="mt-3 inline-flex font-bold text-royal-blue underline underline-offset-[3px] hover:text-royal-gold-muted"
           >
             Descargar lineamientos de catequesis
           </a>
 
-          <label className="lineamientos-check">
+          <label className="mt-3 flex cursor-pointer items-start gap-2">
             <input
               type="checkbox"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-royal-blue"
               checked={aceptaLineamientos}
               onChange={(e) => setAceptaLineamientos(e.target.checked)}
             />
-            <span>
+            <span className="text-sm text-gray-600">
               Confirmo que he leído y acepto los lineamientos de catequesis.
             </span>
           </label>
 
           {errors.lineamientos && (
-            <p className="error-text">{errors.lineamientos}</p>
+            <p className="m-0 text-xs font-extrabold text-red-600">{errors.lineamientos}</p>
           )}
         </div>
       </section>
 
-      <div className="form-actions">
-        <button
+      <div className="flex justify-stretch pt-2.5 sm:justify-end">
+        <Button
           type="submit"
-          className="submit-button"
+          variant="royal"
+          className="w-full uppercase tracking-widest shadow-[0_14px_28px_rgba(0,51,102,0.18)] hover:-translate-y-0.5 hover:bg-royal-gold hover:text-royal-blue hover:shadow-[0_16px_30px_rgba(212,175,55,0.25)] sm:w-auto"
           disabled={loading}
         >
           {loading ? "Enviando inscripción..." : "Enviar inscripción"}
-        </button>
+        </Button>
       </div>
     </form>
   );
