@@ -1,5 +1,7 @@
 import { useState } from "react";
 import "./CatequesisForm.css";
+import { FILIALES_CATEQUESIS } from "../constants/filialesCatequesis";
+import { NIVELES_CATEQUESIS } from "../constants/nivelesCatequesis";
 import { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
 
 interface CatequesisFormProps {
@@ -49,10 +51,17 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
     telefono: "",
   },
 
+  padreCatequizando: {
+    nombre: "",
+    apellidos: "",
+    telefono: "",
+  },
+
   inscripcion: {
     personaQueInscribe: {
       nombre: null,
       apellido: null,
+      correo: null,
     },
     parentesco: null,
     pago: {
@@ -146,31 +155,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       newErrors.descripcionEnfermedad = "Describa la enfermedad crónica.";
     }
 
-    if (!form.madreCatequizando.nombre.trim()) {
-      newErrors.nombreMadre = "Digite el nombre de la madre o encargada.";
-    }
-
-    if (!form.madreCatequizando.apellidos.trim()) {
-      newErrors.apellidosMadre =
-        "Digite los apellidos de la madre o encargada.";
-    }
-
-    if (!form.madreCatequizando.telefono.trim()) {
-      newErrors.telefonoMadre = "Digite el teléfono de la madre o encargada.";
-    }
-
-    if (!form.madreCatequizando.direccion.direccionExacta?.trim()) {
-      newErrors.direccionMadre = "Digite la dirección de la madre o encargada.";
-    }
-
-    if (!form.madreCatequizando.direccion.ciudad?.trim()) {
-      newErrors.ciudadMadre = "Digite la ciudad de la madre o encargada.";
-    }
-
-    if (!form.madreCatequizando.direccion.provincia?.trim()) {
-      newErrors.provinciaMadre = "Digite la provincia de la madre o encargada.";
-    }
-
     if (!form.inscripcion.personaQueInscribe.nombre?.trim()) {
       newErrors.nombrePersonaInscribe =
         "Digite el nombre de la persona que inscribe.";
@@ -183,6 +167,14 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
     if (!form.inscripcion.parentesco) {
       newErrors.parentesco = "Seleccione el parentesco.";
+    }
+
+    const correo = form.inscripcion.personaQueInscribe.correo?.trim() ?? "";
+    if (!correo) {
+      newErrors.correoPersonaInscribe =
+        "Digite el correo de la persona que inscribe.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+      newErrors.correoPersonaInscribe = "Digite un correo válido.";
     }
 
     if (!form.inscripcion.pago.numeroComprobanteSINPE.trim()) {
@@ -234,13 +226,11 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             >
               <option value="">Seleccione</option>
-              <option value="Santuario Histórico San Blas">
-                Santuario Histórico San Blas
-              </option>
-              <option value="Curime">Curime</option>
-              <option value="San Martín">San Martín</option>
-              <option value="Pedregal">Pedregal</option>
-              <option value="Nambí">Nambí</option>
+              {FILIALES_CATEQUESIS.map((filial) => (
+                <option key={filial} value={filial}>
+                  {filial}
+                </option>
+              ))}
             </select>
             {errors.centroCatequesis && (
               <p className="error-text">{errors.centroCatequesis}</p>
@@ -256,12 +246,11 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               }
             >
               <option value="">Seleccione</option>
-              <option value="Primero (Primera Comunión)">
-                Primero (Primera Comunión)
-              </option>
-              <option value="Sétimo (Confirmación)">
-                Sétimo (Confirmación)
-              </option>
+              {NIVELES_CATEQUESIS.map((nivel) => (
+                <option key={nivel.value} value={nivel.value}>
+                  {nivel.label}
+                </option>
+              ))}
             </select>
             {errors.nivelAInscribirse && (
               <p className="error-text">{errors.nivelAInscribirse}</p>
@@ -540,14 +529,14 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         <div className="section-header">
           <div>
             <h2>Datos de la Madre o Encargada</h2>
-            <p>Información de contacto de la persona responsable.</p>
+            <p>Información de contacto de la persona responsable (opcional).</p>
           </div>
           <span>Sección 5</span>
         </div>
 
         <div className="form-grid">
           <div className="form-field">
-            <label>Nombre *</label>
+            <label>Nombre</label>
             <input
               type="text"
               value={form.madreCatequizando.nombre}
@@ -555,13 +544,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 updateForm("madreCatequizando.nombre", e.target.value)
               }
             />
-            {errors.nombreMadre && (
-              <p className="error-text">{errors.nombreMadre}</p>
-            )}
           </div>
 
           <div className="form-field">
-            <label>Apellidos *</label>
+            <label>Apellidos</label>
             <input
               type="text"
               value={form.madreCatequizando.apellidos}
@@ -569,13 +555,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 updateForm("madreCatequizando.apellidos", e.target.value)
               }
             />
-            {errors.apellidosMadre && (
-              <p className="error-text">{errors.apellidosMadre}</p>
-            )}
           </div>
 
           <div className="form-field">
-            <label>Dirección exacta *</label>
+            <label>Dirección exacta</label>
             <input
               type="text"
               value={form.madreCatequizando.direccion.direccionExacta || ""}
@@ -586,13 +569,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 )
               }
             />
-            {errors.direccionMadre && (
-              <p className="error-text">{errors.direccionMadre}</p>
-            )}
           </div>
 
           <div className="form-field">
-            <label>Ciudad *</label>
+            <label>Ciudad</label>
             <input
               type="text"
               value={form.madreCatequizando.direccion.ciudad || ""}
@@ -600,13 +580,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 updateForm("madreCatequizando.direccion.ciudad", e.target.value)
               }
             />
-            {errors.ciudadMadre && (
-              <p className="error-text">{errors.ciudadMadre}</p>
-            )}
           </div>
 
           <div className="form-field">
-            <label>Provincia *</label>
+            <label>Provincia</label>
             <input
               type="text"
               value={form.madreCatequizando.direccion.provincia || ""}
@@ -617,13 +594,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 )
               }
             />
-            {errors.provinciaMadre && (
-              <p className="error-text">{errors.provinciaMadre}</p>
-            )}
           </div>
 
           <div className="form-field">
-            <label>Teléfono *</label>
+            <label>Teléfono</label>
             <input
               type="text"
               placeholder="0000-0000"
@@ -632,9 +606,52 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 updateForm("madreCatequizando.telefono", e.target.value)
               }
             />
-            {errors.telefonoMadre && (
-              <p className="error-text">{errors.telefonoMadre}</p>
-            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="form-section">
+        <div className="section-header">
+          <div>
+            <h2>Datos del Padre</h2>
+            <p>Información de contacto del padre del catequizando (opcional).</p>
+          </div>
+          <span>Sección 6</span>
+        </div>
+
+        <div className="form-grid">
+          <div className="form-field">
+            <label>Nombre</label>
+            <input
+              type="text"
+              value={form.padreCatequizando.nombre}
+              onChange={(e) =>
+                updateForm("padreCatequizando.nombre", e.target.value)
+              }
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Apellidos</label>
+            <input
+              type="text"
+              value={form.padreCatequizando.apellidos}
+              onChange={(e) =>
+                updateForm("padreCatequizando.apellidos", e.target.value)
+              }
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Teléfono</label>
+            <input
+              type="text"
+              placeholder="0000-0000"
+              value={form.padreCatequizando.telefono}
+              onChange={(e) =>
+                updateForm("padreCatequizando.telefono", e.target.value)
+              }
+            />
           </div>
         </div>
       </section>
@@ -645,7 +662,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             <h2>Inscripción y Pago</h2>
             <p>Datos de la persona que inscribe y comprobante SINPE.</p>
           </div>
-          <span>Sección 6</span>
+          <span>Sección 7</span>
         </div>
 
         <div className="payment-info">
@@ -689,6 +706,24 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
             {errors.apellidoPersonaInscribe && (
               <p className="error-text">{errors.apellidoPersonaInscribe}</p>
+            )}
+          </div>
+
+          <div className="form-field">
+            <label>Correo electrónico *</label>
+            <input
+              type="email"
+              placeholder="correo@ejemplo.com"
+              value={form.inscripcion.personaQueInscribe.correo || ""}
+              onChange={(e) =>
+                updateForm(
+                  "inscripcion.personaQueInscribe.correo",
+                  e.target.value,
+                )
+              }
+            />
+            {errors.correoPersonaInscribe && (
+              <p className="error-text">{errors.correoPersonaInscribe}</p>
             )}
           </div>
 
@@ -766,12 +801,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           </p>
 
           <a
-            href="/lineamientos-catequesis.pdf"
+            href="/lineamientos-catequesis-24-25.pdf"
             target="_blank"
             rel="noopener noreferrer"
             className="lineamientos-link"
           >
-            Ver documento de lineamientos
+            Descargar lineamientos de catequesis
           </a>
 
           <label className="lineamientos-check">

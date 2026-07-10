@@ -1,0 +1,119 @@
+.catequesis-info {
+    max-width: 1100px;
+    margin: 40px auto 0;
+    padding: 28px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 22px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+.catequesis-info__header {
+    border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+}
+
+.catequesis-info__eyebrow {
+    margin: 0 0 8px;
+    color: #8b5e00;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.catequesis-info__header h1 {
+    margin: 0;
+    color: #003366;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: clamp(24px, 3vw, 30px);
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.catequesis-info__lead,
+.catequesis-info__note {
+    margin: 14px 0 0;
+    color: #4b5563;
+    font-size: 15px;
+    line-height: 1.75;
+}
+
+.catequesis-info__note {
+    margin-top: 12px;
+    padding: 14px 16px;
+    background: rgba(212, 175, 55, 0.12);
+    border: 1px solid rgba(212, 175, 55, 0.38);
+    border-radius: 14px;
+    font-size: 14px;
+}
+
+.catequesis-info__grid {
+    display: grid;
+    gap: 24px;
+}
+
+@media (min-width: 900px) {
+    .catequesis-info__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.catequesis-info__group h2 {
+    margin: 0 0 16px;
+    color: #003366;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.catequesis-info__levels {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.catequesis-info__levels li {
+    padding: 14px 16px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #d4af37;
+    border-radius: 14px;
+}
+
+.catequesis-info__levels strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #003366;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.catequesis-info__levels span {
+    display: block;
+    color: #4b5563;
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+@media (max-width: 640px) {
+    .catequesis-info {
+        margin-top: 24px;
+        padding: 20px;
+        border-radius: 18px;
+    }
+
+    .catequesis-info__lead,
+    .catequesis-info__note,
+    .catequesis-info__levels span {
+        font-size: 13px;
+    }
+
+    .catequesis-info__group h2 {
+        font-size: 18px;
+    }
+}

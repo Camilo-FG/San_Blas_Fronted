@@ -4,6 +4,7 @@ export {
   crearSolicitudCatequesis,
   actualizarEstadoSolicitud,
   agregarObservacionAdministrativa,
+  exportarInscripcionesCatequesis,
 } from "../../../../services/catequesis/catequesisService";
 
 // Alias para compatibilidad con imports existentes

@@ -46,6 +46,12 @@ export interface MadreCatequizandoData {
   telefono: string;
 }
 
+export interface PadreCatequizandoData {
+  nombre: string;
+  apellidos: string;
+  telefono: string;
+}
+
 export interface PagoInscripcionCatequesis {
   numeroComprobanteSINPE: string;
   archivoComprobante: File | string | null;
@@ -56,6 +62,7 @@ export interface InscripcionData {
   personaQueInscribe: {
     nombre: string | null;
     apellido: string | null;
+    correo: string | null;
   };
   parentesco: string | null;
   pago: PagoInscripcionCatequesis;
@@ -66,6 +73,7 @@ export interface CatequesisEnrollmentData {
   catequesis: CatequesisData;
   catequizando: CatequizandoData;
   madreCatequizando: MadreCatequizandoData;
+  padreCatequizando: PadreCatequizandoData;
   inscripcion: InscripcionData;
 }
 
@@ -110,6 +118,14 @@ export interface CatequesisEnrollmentRecord {
 
   catequesis: CatequesisData;
   catequizando: CatequizandoData;
+  madreCatequizando?: MadreCatequizandoData;
+  padreCatequizando?: PadreCatequizandoData;
+  personaInscribe?: {
+    nombre: string;
+    apellidos: string;
+    parentesco: string;
+    correo: string;
+  };
   encargado: EncargadoCatequesisData;
   pago: PagoCatequesisData;
 

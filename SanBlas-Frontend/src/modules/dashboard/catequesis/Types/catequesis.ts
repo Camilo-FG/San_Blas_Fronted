@@ -32,6 +32,23 @@ export interface CatequizandoData {
   condicionSalud: CondicionSaludCatequizando;
 }
 
+export interface PadreCatequizandoData {
+  nombre: string;
+  apellidos: string;
+  telefono: string;
+}
+
+export interface MadreCatequizandoData {
+  nombre: string;
+  apellidos: string;
+  direccion: {
+    direccionExacta: string | null;
+    ciudad: string | null;
+    provincia: string | null;
+  };
+  telefono: string;
+}
+
 export interface EncargadoCatequizandoData {
   nombre: string;
   apellidos: string;
@@ -72,6 +89,14 @@ export interface CatequesisEnrollmentRecord {
 
   catequesis: CatequesisData;
   catequizando: CatequizandoData;
+  madreCatequizando?: MadreCatequizandoData;
+  padreCatequizando?: PadreCatequizandoData;
+  personaInscribe?: {
+    nombre: string;
+    apellidos: string;
+    parentesco: string;
+    correo: string;
+  };
   encargado: EncargadoCatequizandoData;
   pago: PagoCatequesisData;
 

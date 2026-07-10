@@ -33,10 +33,16 @@ export interface CrearInscripcionBackendRequest {
     provincia: string;
     telefono: string;
   };
+  datosPadre: {
+    nombre: string;
+    apellidos: string;
+    telefono: string;
+  };
   datosPersonaInscribe: {
     nombre: string;
     apellidos: string;
     parentesco: string;
+    correo: string;
   };
   datosPago: {
     metodoPago: string;
@@ -93,10 +99,16 @@ export interface InscripcionDetalleBackend {
     provincia: string;
     telefono: string;
   };
+  padre: {
+    nombre: string;
+    apellidos: string;
+    telefono: string;
+  };
   personaInscribe: {
     nombre: string;
     apellidos: string;
     parentesco: string;
+    correo: string;
   };
   pago: {
     metodoPago: string;

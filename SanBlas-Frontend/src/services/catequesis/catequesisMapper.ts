@@ -115,10 +115,16 @@ export const mapFormToBackendRequest = (
     provincia: form.madreCatequizando.direccion.provincia?.trim() ?? "",
     telefono: form.madreCatequizando.telefono.trim(),
   },
+  datosPadre: {
+    nombre: form.padreCatequizando.nombre.trim(),
+    apellidos: form.padreCatequizando.apellidos.trim(),
+    telefono: form.padreCatequizando.telefono.trim(),
+  },
   datosPersonaInscribe: {
     nombre: form.inscripcion.personaQueInscribe.nombre?.trim() ?? "",
     apellidos: form.inscripcion.personaQueInscribe.apellido?.trim() ?? "",
     parentesco: form.inscripcion.parentesco?.trim() ?? "",
+    correo: form.inscripcion.personaQueInscribe.correo?.trim() ?? "",
   },
   datosPago: {
     metodoPago: "SINPE Móvil",
@@ -181,9 +187,44 @@ export const mapResumenToEnrollmentRecord = (
   };
 };
 
+const mapMadreFromBackend = (
+  madre?: InscripcionDetalleBackend["madre"],
+) => ({
+  nombre: madre?.nombre ?? "",
+  apellidos: madre?.apellidos ?? "",
+  direccion: {
+    direccionExacta: madre?.direccionExacta ?? null,
+    ciudad: madre?.ciudad ?? null,
+    provincia: madre?.provincia ?? null,
+  },
+  telefono: madre?.telefono ?? "",
+});
+
+const mapPadreFromBackend = (
+  padre?: InscripcionDetalleBackend["padre"],
+) => ({
+  nombre: padre?.nombre ?? "",
+  apellidos: padre?.apellidos ?? "",
+  telefono: padre?.telefono ?? "",
+});
+
+const mapPersonaInscribeFromBackend = (
+  persona?: InscripcionDetalleBackend["personaInscribe"],
+) => ({
+  nombre: persona?.nombre ?? "",
+  apellidos: persona?.apellidos ?? "",
+  parentesco: persona?.parentesco ?? "",
+  correo: persona?.correo ?? "",
+});
+
 export const mapDetalleToEnrollmentRecord = (
   detalle: InscripcionDetalleBackend,
-): CatequesisEnrollmentRecord => ({
+): CatequesisEnrollmentRecord => {
+  const madre = mapMadreFromBackend(detalle.madre);
+  const padre = mapPadreFromBackend(detalle.padre);
+  const personaInscribe = mapPersonaInscribeFromBackend(detalle.personaInscribe);
+
+  return {
   id: detalle.id,
   codigoSolicitud: `CAT-${detalle.id}`,
   estado: mapEstadoBackendToFrontend(detalle.estado),
@@ -194,6 +235,9 @@ export const mapDetalleToEnrollmentRecord = (
     nivelAInscribirse: detalle.nivelAInscribirse,
     feBautismoArchivo: detalle.feBautismoArchivo || null,
   },
+  madreCatequizando: madre,
+  padreCatequizando: padre,
+  personaInscribe,
   catequizando: {
     nombre: detalle.catequizando?.nombre ?? "",
     apellidos: detalle.catequizando?.apellidos ?? "",
@@ -220,15 +264,15 @@ export const mapDetalleToEnrollmentRecord = (
     },
   },
   encargado: {
-    nombre: detalle.personaInscribe?.nombre ?? detalle.madre?.nombre ?? "",
-    apellidos: detalle.personaInscribe?.apellidos ?? detalle.madre?.apellidos ?? "",
+    nombre: personaInscribe.nombre || madre.nombre,
+    apellidos: personaInscribe.apellidos || madre.apellidos,
     cedula: "",
-    telefono: detalle.madre?.telefono ?? "",
-    correo: "",
+    telefono: madre.telefono,
+    correo: personaInscribe.correo,
     direccion: {
-      direccionExacta: detalle.madre?.direccionExacta ?? null,
+      direccionExacta: madre.direccion.direccionExacta,
     },
-    parentesco: detalle.personaInscribe?.parentesco ?? "",
+    parentesco: personaInscribe.parentesco,
   },
   pago: {
     metodoPago: detalle.pago?.metodoPago ?? "",
@@ -236,4 +280,5 @@ export const mapDetalleToEnrollmentRecord = (
     monto: detalle.pago?.monto ?? 0,
     comprobanteArchivo: detalle.pago?.comprobanteArchivo || null,
   },
-});
+};
+};
