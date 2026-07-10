@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import { ApiError } from "../../../services/apiClient";
+import { DEMO_CREDENTIALS, isDemoSinInternet } from "../../../config/demoMode";
 import Rutas from "../../../routes/Rutas";
 import { getPostLoginPath } from "../../../utils/authRouting";
 import "./LoginPage.css";
@@ -60,6 +61,14 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
           Administradores acceden al panel. Usuarios regulares pueden enviar
           solicitudes de constancia y catequesis.
         </p>
+
+        {isDemoSinInternet && (
+          <p className="login-card__demo-hint">
+            Modo demostración sin internet: use{" "}
+            <strong>{DEMO_CREDENTIALS.email}</strong> /{" "}
+            <strong>{DEMO_CREDENTIALS.password}</strong>
+          </p>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="login-card__field">

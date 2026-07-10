@@ -13,6 +13,7 @@ import Rutas from "./Rutas";
 import { clearAuthToken, getAuthToken } from "../utils/authToken";
 import { isTokenExpired } from "../utils/jwt";
 import { isAuthenticatedAdmin } from "../utils/authRouting";
+import { getDemoUser } from "../services/demoAuth";
 
 const Home = lazy(() => import("../modules/landing/pages/HomePage"));
 
@@ -161,13 +162,17 @@ const dashboardRoute = createRoute({
   path: Rutas.dashboard,
   component: withSuspense(Dashboard),
   beforeLoad: ({ location }) => {
-    const token = getAuthToken();
-    if (!token || isTokenExpired(token)) {
-      if (token) clearAuthToken();
-      throw redirect({
-        to: Rutas.login,
-        search: { redirect: location.pathname },
-      });
+    const demoUser = getDemoUser();
+
+    if (!demoUser) {
+      const token = getAuthToken();
+      if (!token || isTokenExpired(token)) {
+        if (token) clearAuthToken();
+        throw redirect({
+          to: Rutas.login,
+          search: { redirect: location.pathname },
+        });
+      }
     }
 
     if (!isAuthenticatedAdmin()) {

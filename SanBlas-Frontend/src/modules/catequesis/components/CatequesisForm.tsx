@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FILIALES_CATEQUESIS } from "../constants/filialesCatequesis";
 import "./CatequesisForm.css";
 import { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
 
@@ -90,7 +91,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     const newErrors: Record<string, string> = {};
 
     if (!form.catequesis.centroCatequesis) {
-      newErrors.centroCatequesis = "Seleccione el centro de catequesis.";
+      newErrors.centroCatequesis = "Seleccione la filial.";
     }
 
     if (!form.catequesis.nivelAInscribirse) {
@@ -226,21 +227,19 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
         <div className="form-grid">
           <div className="form-field">
-            <label>Centro de catequesis *</label>
+            <label>Filial *</label>
             <select
               value={form.catequesis.centroCatequesis || ""}
               onChange={(e) =>
                 updateForm("catequesis.centroCatequesis", e.target.value)
               }
             >
-              <option value="">Seleccione</option>
-              <option value="Santuario Histórico San Blas">
-                Santuario Histórico San Blas
-              </option>
-              <option value="Curime">Curime</option>
-              <option value="San Martín">San Martín</option>
-              <option value="Pedregal">Pedregal</option>
-              <option value="Nambí">Nambí</option>
+              <option value="">Seleccione una filial</option>
+              {FILIALES_CATEQUESIS.map((filial) => (
+                <option key={filial} value={filial}>
+                  {filial}
+                </option>
+              ))}
             </select>
             {errors.centroCatequesis && (
               <p className="error-text">{errors.centroCatequesis}</p>

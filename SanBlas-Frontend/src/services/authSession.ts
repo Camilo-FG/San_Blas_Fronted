@@ -5,6 +5,7 @@ import {
   getUserIdFromToken,
   isTokenExpired,
 } from "../utils/jwt";
+import { clearDemoSession, getDemoUser } from "./demoAuth";
 
 export interface AuthUser {
   id: number | null;
@@ -14,9 +15,13 @@ export interface AuthUser {
 
 export const logout = (): void => {
   clearAuthToken();
+  clearDemoSession();
 };
 
 export const getCurrentUser = (): AuthUser | null => {
+  const demoUser = getDemoUser();
+  if (demoUser) return demoUser;
+
   const token = getAuthToken();
   if (!token || isTokenExpired(token)) {
     if (token) clearAuthToken();

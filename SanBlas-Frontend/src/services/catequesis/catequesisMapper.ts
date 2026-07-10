@@ -130,6 +130,72 @@ export const mapFormToBackendRequest = (
   },
 });
 
+export const mapFormToEnrollmentRecord = (
+  form: CatequesisEnrollmentData,
+  id: number,
+): CatequesisEnrollmentRecord => {
+  const fechaSolicitud = new Date().toISOString().split("T")[0];
+  const nombreArchivoFe =
+    form.catequesis.feBautismoArchivo instanceof File
+      ? form.catequesis.feBautismoArchivo.name
+      : typeof form.catequesis.feBautismoArchivo === "string"
+        ? form.catequesis.feBautismoArchivo
+        : null;
+  const nombreComprobante =
+    form.inscripcion.pago.archivoComprobante instanceof File
+      ? form.inscripcion.pago.archivoComprobante.name
+      : typeof form.inscripcion.pago.archivoComprobante === "string"
+        ? form.inscripcion.pago.archivoComprobante
+        : null;
+
+  return {
+    id,
+    codigoSolicitud: id < 0 ? `CAT-OFF-${Math.abs(id)}` : `CAT-${id}`,
+    estado: "pendiente",
+    fechaSolicitud,
+    observacionAdministrativa: id < 0
+      ? "Guardada sin conexión. Se sincronizará al recuperar internet."
+      : null,
+    catequesis: {
+      centroCatequesis: form.catequesis.centroCatequesis,
+      nivelAInscribirse: form.catequesis.nivelAInscribirse,
+      feBautismoArchivo: nombreArchivoFe,
+    },
+    catequizando: {
+      nombre: form.catequizando.nombre,
+      apellidos: form.catequizando.apellidos,
+      fechaNacimiento: form.catequizando.fechaNacimiento,
+      direccion: {
+        direccionExacta: form.catequizando.direccion.direccionExacta,
+      },
+      bautismo: { ...form.catequizando.bautismo },
+      adecuacion: { ...form.catequizando.adecuacion },
+      condicionSalud: { ...form.catequizando.condicionSalud },
+    },
+    encargado: {
+      nombre:
+        form.inscripcion.personaQueInscribe.nombre ??
+        form.madreCatequizando.nombre,
+      apellidos:
+        form.inscripcion.personaQueInscribe.apellido ??
+        form.madreCatequizando.apellidos,
+      cedula: "",
+      telefono: form.madreCatequizando.telefono,
+      correo: "",
+      direccion: {
+        direccionExacta: form.madreCatequizando.direccion.direccionExacta,
+      },
+      parentesco: form.inscripcion.parentesco ?? "",
+    },
+    pago: {
+      metodoPago: "SINPE Móvil",
+      numeroComprobante: form.inscripcion.pago.numeroComprobanteSINPE,
+      monto: 5000,
+      comprobanteArchivo: nombreComprobante,
+    },
+  };
+};
+
 export const mapResumenToEnrollmentRecord = (
   resumen: InscripcionResumenBackend,
 ): CatequesisEnrollmentRecord => {

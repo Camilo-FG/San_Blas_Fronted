@@ -39,6 +39,17 @@
   font-size: 0.95rem;
 }
 
+.login-card__demo-hint {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 .login-card__field {
   display: flex;
   flex-direction: column;

@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { API_BASE_URL, DEFAULT_HEADERS } from "../config/api";
+import { getDemoUser } from "./demoAuth";
 import {
   clearAuthToken,
   getAuthToken,
@@ -35,7 +36,7 @@ apiClient.interceptors.response.use(
       const url = error.config?.url ?? "";
       const isLoginRequest = url.includes("/Auth/login");
 
-      if (!isLoginRequest) {
+      if (!isLoginRequest && !getDemoUser()) {
         clearAuthToken();
         const currentPath = window.location.pathname;
         if (!currentPath.startsWith("/login")) {

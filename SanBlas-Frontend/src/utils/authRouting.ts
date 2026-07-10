@@ -1,6 +1,7 @@
 import { clearAuthToken, getAuthToken } from "../utils/authToken";
 import { getRoleFromToken, isTokenExpired } from "./jwt";
 import Rutas from "../routes/Rutas";
+import { getDemoUser } from "../services/demoAuth";
 
 export const USER_ALLOWED_PATHS = [
   Rutas.SolicitudesSacramentos,
@@ -22,6 +23,9 @@ export const getValidSessionToken = (): string | null => {
 };
 
 export const isAuthenticatedAdmin = (): boolean => {
+  const demoUser = getDemoUser();
+  if (demoUser?.role === "Admin") return true;
+
   const token = getValidSessionToken();
   return token !== null && isAdminFromToken(token);
 };

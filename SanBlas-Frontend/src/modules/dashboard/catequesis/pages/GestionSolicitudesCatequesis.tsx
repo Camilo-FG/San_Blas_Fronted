@@ -78,7 +78,7 @@ const obtenerClaseEstado = (estado?: string | null) => {
 };
 
 function GestionSolicitudesCatequesis() {
-  const { solicitudes, cambiarEstado, obtenerDetalle, cargando, guardando, error, detalleError, accionError, limpiarDetalleError, limpiarAccionError } =
+  const { solicitudes, cambiarEstado, obtenerDetalle, cargando, guardando, error, avisoOffline, detalleError, accionError, limpiarDetalleError, limpiarAccionError } =
     useSolicitudesCatequesis();
 
   const [statusFilter, setStatusFilter] = useState<
@@ -311,6 +311,12 @@ function GestionSolicitudesCatequesis() {
       {guardando && (
         <p className="catequesis-admin__saving" role="status">
           Guardando cambios...
+        </p>
+      )}
+
+      {avisoOffline && (
+        <p className="catequesis-admin__offline-notice" role="status">
+          {avisoOffline}
         </p>
       )}
 

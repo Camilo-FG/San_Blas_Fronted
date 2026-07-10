@@ -15,6 +15,7 @@ export const useSolicitudesCatequesis = () => {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
+  const [avisoOffline, setAvisoOffline] = useState("");
   const [detalleError, setDetalleError] = useState("");
   const [accionError, setAccionError] = useState("");
 
@@ -22,9 +23,16 @@ export const useSolicitudesCatequesis = () => {
     try {
       setCargando(true);
       setError("");
+      setAvisoOffline("");
 
-      const data = await obtenerSolicitudesCatequesis();
-      setSolicitudesState(data);
+      const { solicitudes, sinConexion } = await obtenerSolicitudesCatequesis();
+      setSolicitudesState(solicitudes);
+
+      if (sinConexion) {
+        setAvisoOffline(
+          "Sin conexión: mostrando solicitudes guardadas localmente.",
+        );
+      }
     } catch (err) {
       console.error(err);
       if (err instanceof ApiError) {
@@ -91,6 +99,7 @@ export const useSolicitudesCatequesis = () => {
     cargando,
     guardando,
     error,
+    avisoOffline,
     detalleError,
     accionError,
     limpiarDetalleError: () => setDetalleError(""),
