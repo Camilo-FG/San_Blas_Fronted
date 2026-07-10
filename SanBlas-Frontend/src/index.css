@@ -25,6 +25,12 @@
   --color-teal: #0f766e;
   --color-teal-hover: #0d9488;
   --color-focus-ring: #93c5fd;
+  --color-brand-blue: #003366;
+  --color-brand-gold: #d4af37;
+  --color-dashboard-sidebar: #0b172a;
+  --color-dashboard-sidebar-footer: #070f1d;
+  --color-dashboard-logout: #7f1d36;
+  --color-dashboard-logout-hover: #991b3a;
 
   --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
   --font-heading: "Playfair Display", Georgia, serif;
