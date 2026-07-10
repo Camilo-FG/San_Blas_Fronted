@@ -1,72 +1,47 @@
 import { useState } from "react";
-// TEMP-DESIGN-REVIEW: hooks reemplazados por datos quemados. Revertir: descomentar imports y borrar MOCK_DATA.
-// import { useGetListBautismo } from "../hooks/hooksBautismo/useGetListBautismo";
-// import { useGetListComunion } from "../hooks/hooksComunion/useGetListComunion";
-// import { useGetListConfirma } from "../hooks/hooksConfirma/useGetListConfirma";
-// import { useGetListMatrimonio } from "../hooks/hooksMatrimonio/useGetListMatrimonio";
+import { useGetListBautismo } from "../hooks/hooksBautismo/useGetListBautismo";
+import { useGetListComunion } from "../hooks/hooksComunion/useGetListComunion";
+import { useGetListConfirma } from "../hooks/hooksConfirma/useGetListConfirma";
+import { useGetListMatrimonio } from "../hooks/hooksMatrimonio/useGetListMatrimonio";
 import SacramentTable from "./SacramentTable";
 import DetailsDrawer from "./DetailsDrawer";
 import AddSacramentoModal from "./AddSacramentoModal";
 import EditSacramentoModal from "./EditSacramentoModal";
-// import { useCreateBautismo } from "../hooks/hooksBautismo/useCreateBautismo";
-// import { useCreateComunion } from "../hooks/hooksComunion/useCreateComunion";
-// import { useCreateConfirma } from "../hooks/hooksConfirma/useCreateConfirma";
-// import { useCreateMatrimonio } from "../hooks/hooksMatrimonio/useCreateMatrimonio";
-// import { usePutBautismo } from "../hooks/hooksBautismo/usePutBautismo";
-// import { usePutComunion } from "../hooks/hooksComunion/usePutComunion";
-// import { usePutConfirma } from "../hooks/hooksConfirma/usePutConfirma";
-// import { usePutMatrimonio } from "../hooks/hooksMatrimonio/usePutMatrimonio";
-// import { useDeleteBautismo } from "../hooks/hooksBautismo/useDeleteBautismo";
-// import { useDeleteComunion } from "../hooks/hooksComunion/useDeleteComunion";
-// import { useDeleteConfirma } from "../hooks/hooksConfirma/useDeleteConfirma";
-// import { useDeleteMatrimonio } from "../hooks/hooksMatrimonio/useDeleteMatrimonio";
+import { useCreateBautismo } from "../hooks/hooksBautismo/useCreateBautismo";
+import { useCreateComunion } from "../hooks/hooksComunion/useCreateComunion";
+import { useCreateConfirma } from "../hooks/hooksConfirma/useCreateConfirma";
+import { useCreateMatrimonio } from "../hooks/hooksMatrimonio/useCreateMatrimonio";
+import { usePutBautismo } from "../hooks/hooksBautismo/usePutBautismo";
+import { usePutComunion } from "../hooks/hooksComunion/usePutComunion";
+import { usePutConfirma } from "../hooks/hooksConfirma/usePutConfirma";
+import { usePutMatrimonio } from "../hooks/hooksMatrimonio/usePutMatrimonio";
+import { useDeleteBautismo } from "../hooks/hooksBautismo/useDeleteBautismo";
+import { useDeleteComunion } from "../hooks/hooksComunion/useDeleteComunion";
+import { useDeleteConfirma } from "../hooks/hooksConfirma/useDeleteConfirma";
+import { useDeleteMatrimonio } from "../hooks/hooksMatrimonio/useDeleteMatrimonio";
 import { AdminModule, AdminSearch, Button } from "../../../shared/ui";
 
-// TEMP-DESIGN-REVIEW: Datos quemados. Revertir: borrar MOCK_DATA y descomentar hooks + mutaciones de arriba.
-const MOCK_DATA = {
-  bautismos: [
-    { id: 1, Nombre: "María", PrimerApellido: "García", SegundoApellido: "López", Cedula: "123456789", FechaBautismo: "2024-03-15", NombreParroquia: "San Blás", Prebispero: "Padre José", horaNacimiento: "08:30", NombreAbuelosPaternos: "Juan García", NombreAbuelosMaternos: "Ana Pérez" },
-    { id: 2, Nombre: "Carlos", PrimerApellido: "Mendoza", SegundoApellido: "Rivas", Cedula: "987654321", FechaBautismo: "2024-06-22", NombreParroquia: "La Merced", Prebispero: "Padre Luis", horaNacimiento: "14:00", NombreAbuelosPaternos: "Pedro Mendoza", NombreAbuelosMaternos: "Sofía Rivas" },
-  ],
-  comuniones: [
-    { id: 1, Nombre: "Ana Martínez", DiaComunion: "12", MesComunion: "Mayo", AnnioComunion: "2024", LugarComunion: "Parroquia San Blás" },
-    { id: 2, Nombre: "Luis Hernández", DiaComunion: "8", MesComunion: "Octubre", AnnioComunion: "2024", LugarComunion: "Catedral de Nicoya" },
-  ],
-  confirmaciones: [
-    { id: 1, Nombre: "Sofía Ramírez", DiaConfirmacion: "20", MesConfirmacion: "Abril", AnnioConfirmacion: "2024", LugarConfirmacion: "Parroquia San Blás" },
-    { id: 2, Nombre: "Diego Chacón", DiaConfirmacion: "15", MesConfirmacion: "Septiembre", AnnioConfirmacion: "2024", LugarConfirmacion: "Iglesia de Santa Ana" },
-  ],
-  matrimonios: [
-    { id: 1, NombreContrayente: "José Campos", NombreContrayente2: "Laura Mora", DiaMatrimonio: "5", MesMatrimonio: "Febrero", AnnioMatrimonio: "2024", LugarMatrimonio: "Parroquia San Blás" },
-    { id: 2, NombreContrayente: "Andrés Vega", NombreContrayente2: "María Rojas", DiaMatrimonio: "18", MesMatrimonio: "Noviembre", AnnioMatrimonio: "2024", LugarMatrimonio: "Basílica de los Ángeles" },
-  ],
-};
-
 const GestionSacramentos = () => {
-  const bautismos = MOCK_DATA.bautismos;
-  const comuniones = MOCK_DATA.comuniones;
-  const confirmaciones = MOCK_DATA.confirmaciones;
-  const matrimonios = MOCK_DATA.matrimonios;
-  const isPending = false;
-  const error = null;
+  const { data: bautismos, isLoading: bautismosLoading, error: bautismosError, refetch: refetchBautismos } = useGetListBautismo();
+  const { data: comuniones, isLoading: comunionesLoading, error: comunionesError, refetch: refetchComuniones } = useGetListComunion();
+  const { data: confirmaciones, isLoading: confirmacionesLoading, error: confirmacionesError, refetch: refetchConfirmaciones } = useGetListConfirma();
+  const { data: matrimonios, isLoading: matrimoniosLoading, error: matrimoniosError, refetch: refetchMatrimonios } = useGetListMatrimonio();
 
-  const refetchBautismos = async () => {};
-  const refetchComuniones = async () => {};
-  const refetchConfirmaciones = async () => {};
-  const refetchMatrimonios = async () => {};
+  const isPending = bautismosLoading || comunionesLoading || confirmacionesLoading || matrimoniosLoading;
+  const error = bautismosError || comunionesError || confirmacionesError || matrimoniosError;
 
-  const createBautismo = { mutateAsync: async (d: any) => {} } as any;
-  const createComunion = { mutateAsync: async (d: any) => {} } as any;
-  const createConfirmacion = { mutateAsync: async (d: any) => {} } as any;
-  const createMatrimonio = { mutateAsync: async (d: any) => {} } as any;
-  const updateBautismo = { mutateAsync: async (d: any) => {} } as any;
-  const updateComunion = { mutateAsync: async (d: any) => {} } as any;
-  const updateConfirmacion = { mutateAsync: async (d: any) => {} } as any;
-  const updateMatrimonio = { mutateAsync: async (d: any) => {} } as any;
-  const deleteBautismo = { mutateAsync: async (id: number) => {} } as any;
-  const deleteComunion = { mutateAsync: async (id: number) => {} } as any;
-  const deleteConfirmacion = { mutateAsync: async (id: number) => {} } as any;
-  const deleteMatrimonio = { mutateAsync: async (id: number) => {} } as any;
+  const createBautismo = useCreateBautismo();
+  const createComunion = useCreateComunion();
+  const createConfirmacion = useCreateConfirma();
+  const createMatrimonio = useCreateMatrimonio();
+  const updateBautismo = usePutBautismo();
+  const updateComunion = usePutComunion();
+  const updateConfirmacion = usePutConfirma();
+  const updateMatrimonio = usePutMatrimonio();
+  const deleteBautismo = useDeleteBautismo();
+  const deleteComunion = useDeleteComunion();
+  const deleteConfirmacion = useDeleteConfirma();
+  const deleteMatrimonio = useDeleteMatrimonio();
 
   const [searchNombre, setSearchNombre] = useState("");
   const [searchCedula, setSearchCedula] = useState("");
