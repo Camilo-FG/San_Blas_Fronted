@@ -22,21 +22,22 @@ import { useDeleteMatrimonio } from "../hooks/hooksMatrimonio/useDeleteMatrimoni
 import { AdminModule, AdminSearch, Button } from "../../../shared/ui";
 
 const GestionSacramentos = () => {
-  const { data: bautismos, isPending: pendingBautismo, error: errorBautismo, refetch: refetchBautismos } = useGetListBautismo();
-  const { data: comuniones, isPending: pendingComunion, error: errorComunion, refetch: refetchComuniones } = useGetListComunion();
-  const { data: confirmaciones, isPending: pendingConfirmacion, error: errorConfirmacion, refetch: refetchConfirmaciones } = useGetListConfirma();
-  const { data: matrimonios, isPending: pendingMatrimonio, error: errorMatrimonio, refetch: refetchMatrimonios } = useGetListMatrimonio();
+  const { data: bautismos, isLoading: bautismosLoading, error: bautismosError, refetch: refetchBautismos } = useGetListBautismo();
+  const { data: comuniones, isLoading: comunionesLoading, error: comunionesError, refetch: refetchComuniones } = useGetListComunion();
+  const { data: confirmaciones, isLoading: confirmacionesLoading, error: confirmacionesError, refetch: refetchConfirmaciones } = useGetListConfirma();
+  const { data: matrimonios, isLoading: matrimoniosLoading, error: matrimoniosError, refetch: refetchMatrimonios } = useGetListMatrimonio();
+
+  const isPending = bautismosLoading || comunionesLoading || confirmacionesLoading || matrimoniosLoading;
+  const error = bautismosError || comunionesError || confirmacionesError || matrimoniosError;
 
   const createBautismo = useCreateBautismo();
   const createComunion = useCreateComunion();
   const createConfirmacion = useCreateConfirma();
   const createMatrimonio = useCreateMatrimonio();
-
   const updateBautismo = usePutBautismo();
   const updateComunion = usePutComunion();
   const updateConfirmacion = usePutConfirma();
   const updateMatrimonio = usePutMatrimonio();
-
   const deleteBautismo = useDeleteBautismo();
   const deleteComunion = useDeleteComunion();
   const deleteConfirmacion = useDeleteConfirma();
@@ -54,9 +55,6 @@ const GestionSacramentos = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingSacramento, setEditingSacramento] = useState<any>(null);
   const [editingTipo, setEditingTipo] = useState<string>("Bautismo");
-
-  const isPending = pendingBautismo || pendingComunion || pendingConfirmacion || pendingMatrimonio;
-  const error = errorBautismo || errorComunion || errorConfirmacion || errorMatrimonio;
 
   const handleSaveSacramento = async (data: any, tipo: string) => {
     if (tipo === "Bautismo") {
@@ -248,11 +246,7 @@ const GestionSacramentos = () => {
 
   return (
     <AdminModule className="w-full py-5">
-      <div className="mb-5 flex justify-end">
-        <Button onClick={() => setIsModalOpen(true)}>+ Agregar Sacramento</Button>
-      </div>
-
-      <div className="mb-6 flex flex-wrap gap-4">
+      <div className="mb-6 flex flex-wrap items-end gap-4">
         <AdminSearch
           type="text"
           placeholder="Nombre del registrado"
@@ -269,11 +263,13 @@ const GestionSacramentos = () => {
         />
         <input
           type="date"
-          placeholder="Fecha de celebración"
           value={searchFecha}
           onChange={(e) => setSearchFecha(e.target.value)}
-          className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+          className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-text focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
         />
+        <Button onClick={() => setIsModalOpen(true)} className="shrink-0">
+          + Agregar
+        </Button>
       </div>
 
       {isPending && <p>Cargando sacramentos...</p>}

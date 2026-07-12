@@ -1,0 +1,14 @@
+packages:
+  - '.'
+
+onlyBuiltDependencies:
+  - lightningcss
+  - fsevents
+
+overrides:
+  # cross-spawn: CVE-2024-21538 (command injection) — patched in 7.0.6
+  cross-spawn: ">=7.0.6"
+  # semver: CVE-2022-25883 (ReDoS) — patched in 7.5.2
+  semver: ">=7.5.2"
+  # axios: historical CVEs — keep at latest minor
+  axios: ">=1.7.4"
