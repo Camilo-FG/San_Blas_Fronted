@@ -195,6 +195,31 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       newErrors.archivoComprobante = "Debe adjuntar el comprobante de pago.";
     }
 
+    // Datos de la madre/encargada — son obligatorios en el backend
+    if (!form.madreCatequizando.nombre.trim()) {
+      newErrors.nombreMadre = "Digite el nombre de la madre o encargada.";
+    }
+
+    if (!form.madreCatequizando.apellidos.trim()) {
+      newErrors.apellidosMadre = "Digite los apellidos de la madre o encargada.";
+    }
+
+    if (!form.madreCatequizando.direccion.direccionExacta?.trim()) {
+      newErrors.direccionMadre = "Digite la dirección exacta.";
+    }
+
+    if (!form.madreCatequizando.direccion.ciudad?.trim()) {
+      newErrors.ciudadMadre = "Digite la ciudad.";
+    }
+
+    if (!form.madreCatequizando.direccion.provincia?.trim()) {
+      newErrors.provinciaMadre = "Digite la provincia.";
+    }
+
+    if (!form.madreCatequizando.telefono.trim()) {
+      newErrors.telefonoMadre = "Digite el teléfono.";
+    }
+
     if (!aceptaLineamientos) {
       newErrors.lineamientos = "Debe aceptar los lineamientos de catequesis.";
     }
@@ -539,14 +564,14 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">Datos de la Madre o Encargada</h2>
-            <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">Información de contacto de la persona responsable (opcional).</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">Información de contacto de la persona responsable.</p>
           </div>
           <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">Sección 5</span>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-black text-royal-blue">Nombre</Label>
+            <Label className="text-xs font-black text-royal-blue">Nombre *</Label>
             <Input
               type="text"
               value={form.madreCatequizando.nombre}
@@ -554,10 +579,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 updateForm("madreCatequizando.nombre", e.target.value)
               }
             />
+            {errors.nombreMadre && (
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.nombreMadre}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-black text-royal-blue">Apellidos</Label>
+            <Label className="text-xs font-black text-royal-blue">Apellidos *</Label>
             <Input
               type="text"
               value={form.madreCatequizando.apellidos}
@@ -565,10 +593,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 updateForm("madreCatequizando.apellidos", e.target.value)
               }
             />
+            {errors.apellidosMadre && (
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.apellidosMadre}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-black text-royal-blue">Dirección exacta</Label>
+            <Label className="text-xs font-black text-royal-blue">Dirección exacta *</Label>
             <Input
               type="text"
               value={form.madreCatequizando.direccion.direccionExacta || ""}
@@ -579,10 +610,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 )
               }
             />
+            {errors.direccionMadre && (
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.direccionMadre}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-black text-royal-blue">Ciudad</Label>
+            <Label className="text-xs font-black text-royal-blue">Ciudad *</Label>
             <Input
               type="text"
               value={form.madreCatequizando.direccion.ciudad || ""}
@@ -590,10 +624,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 updateForm("madreCatequizando.direccion.ciudad", e.target.value)
               }
             />
+            {errors.ciudadMadre && (
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.ciudadMadre}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-black text-royal-blue">Provincia</Label>
+            <Label className="text-xs font-black text-royal-blue">Provincia *</Label>
             <Input
               type="text"
               value={form.madreCatequizando.direccion.provincia || ""}
@@ -604,10 +641,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 )
               }
             />
+            {errors.provinciaMadre && (
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.provinciaMadre}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-black text-royal-blue">Teléfono</Label>
+            <Label className="text-xs font-black text-royal-blue">Teléfono *</Label>
             <Input
               type="text"
               placeholder="0000-0000"
@@ -616,6 +656,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 updateForm("madreCatequizando.telefono", e.target.value)
               }
             />
+            {errors.telefonoMadre && (
+              <p className="m-0 text-xs font-extrabold text-red-600">{errors.telefonoMadre}</p>
+            )}
           </div>
         </div>
       </section>

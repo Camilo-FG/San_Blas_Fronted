@@ -10,7 +10,7 @@ export const USER_ALLOWED_PATHS = [
 ] as const;
 
 export const isAdminFromToken = (token: string): boolean =>
-  getRoleFromToken(token) === "Admin";
+  getRoleFromToken(token) === "admin";
 
 export const getValidSessionToken = (): string | null => {
   const token = getAuthToken();

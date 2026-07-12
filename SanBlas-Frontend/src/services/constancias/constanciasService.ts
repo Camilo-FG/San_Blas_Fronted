@@ -9,7 +9,7 @@ import {
   mapFormToBackendRequest,
 } from "./constanciasMapper";
 
-const BASE = "/FormSacra";
+const BASE = "/solic-sacramento";
 
 const logConstancia = (
   action: string,
@@ -43,7 +43,7 @@ export const obtenerSolicitudesSacramentos = async (): Promise<
     logConstancia("obtenerSolicitudes ok", "H3,H5", {
       status,
       count: data?.length ?? 0,
-      sampleEstado: data?.[0]?.estado ?? null,
+      sampleEstado: data?.[0]?.Estado ?? null,
     });
     return data.map(mapBackendToFormSacramento);
   } catch (error) {
@@ -71,15 +71,15 @@ export const crearSolicitudSacramento = async (
   try {
     const payload = mapFormToBackendRequest(solicitud);
     logConstancia("crearSolicitud request", "H1,H4", {
-      tipoSacramento: payload.tipoSacramento,
-      cedulaLen: payload.cedula.length,
-      telefonoLen: payload.telefono.length,
+      tipoSacramento: payload.TipoSacramento,
+      cedulaLen: String(payload.Cedula).length,
+      telefonoLen: String(payload.Telefono).length,
     });
     const { data, status } = await apiClient.post<FormSacraBackend>(BASE, payload);
     logConstancia("crearSolicitud ok", "H1,H4", {
       status,
       id: data?.id,
-      estado: data?.estado,
+      Estado: data?.Estado,
     });
     return mapBackendToFormSacramento(data);
   } catch (error) {
@@ -97,13 +97,13 @@ export const actualizarEstadoSacramento = async (
   try {
     logConstancia("actualizarEstado request", "H2", { id, estado });
     const { data, status } = await apiClient.patch<FormSacraBackend>(
-      `${BASE}/${id}/estado`,
-      estado,
+      `${BASE}/${id}`,
+      { Estado: estado },
     );
     logConstancia("actualizarEstado ok", "H2,H5", {
       status,
       id: data?.id,
-      estado: data?.estado,
+      Estado: data?.Estado,
     });
     return mapBackendToFormSacramento(data);
   } catch (error) {
