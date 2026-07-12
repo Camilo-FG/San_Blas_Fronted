@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       user,
       isAuthenticated: user !== null,
-      isAdmin: user?.role === "Admin",
+      isAdmin: user?.role === "admin",
       login,
       logout,
     }),

@@ -38,4 +38,4 @@ export const getCurrentUser = (): AuthUser | null => {
 
 export const isAuthenticated = (): boolean => getCurrentUser() !== null;
 
-export const isAdmin = (): boolean => getCurrentUser()?.role === "Admin";
+export const isAdmin = (): boolean => getCurrentUser()?.role === "admin";

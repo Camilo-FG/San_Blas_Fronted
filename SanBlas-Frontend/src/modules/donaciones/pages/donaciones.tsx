@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 import DonacionInfo from "../components/DonacionInfo";
 import DonacionForm from "../components/DonacionForm";
 
@@ -10,25 +10,17 @@ function Donaciones() {
   };
 
   return (
-    <section className="w-full">
-      <div className="mx-auto w-full max-w-5xl px-4">
-        <div className="donaciones__content">
-          <DonacionInfo
-            sinpe="8888-1234"
-            cuentaBancaria="CR67015100012345678901"
-            banco="Banco Nacional"
-            onDonarInsumos={handleDonarInsumos}
-          />
+    <section className="w-full bg-white py-12 sm:py-16 lg:py-20">
+      <div className="mx-auto w-full max-w-4xl px-5 sm:px-8">
+        <DonacionInfo
+          sinpe="8888-1234"
+          cuentaBancaria="CR67015100012345678901"
+          banco="Banco Nacional"
+          onDonarInsumos={handleDonarInsumos}
+        />
 
-          <div
-            ref={formRef}
-            className="mt-12 scroll-mt-20 pb-16"
-          >
-            <h3 className="mb-6 text-center text-xl font-bold text-royal-blue">
-              Donación de Insumos
-            </h3>
-            <DonacionForm />
-          </div>
+        <div ref={formRef} className="mt-16 sm:mt-20 lg:mt-24">
+          <DonacionForm />
         </div>
       </div>
     </section>

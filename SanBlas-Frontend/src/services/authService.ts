@@ -14,7 +14,7 @@ export interface LoginCredentials {
 }
 
 export interface LoginResponse {
-  token: string;
+  accessToken: string;
 }
 
 export const login = async (
@@ -26,7 +26,7 @@ export const login = async (
       password: credentials.password,
     });
 
-    setAuthToken(data.token);
+    setAuthToken(data.accessToken);
     return getCurrentUser()!;
   } catch (error) {
     handleApiError(error);

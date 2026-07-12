@@ -36,7 +36,7 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
     try {
       const authUser = await login({ email, password });
       const destination = getPostLoginPath(
-        authUser.role === "Admin",
+        authUser.role === "admin",
         redirectTo,
       );
       navigate({ to: destination });

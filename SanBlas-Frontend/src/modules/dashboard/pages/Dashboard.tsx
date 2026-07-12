@@ -106,7 +106,7 @@ function getUserInitial(email?: string | null): string {
 }
 
 function getRoleLabel(role?: string): string {
-  if (role === "Admin") return "Administrador";
+  if (role === "admin") return "Administrador";
   return "Usuario";
 }
 
