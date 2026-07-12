@@ -22,20 +22,64 @@ export interface EventoPayload {
 
 const BASE = "/Evento";
 
+const logEventoApi = (
+  action: string,
+  hypothesisId: string,
+  data: Record<string, unknown>,
+) => {
+  // #region agent log
+  fetch("http://127.0.0.1:7472/ingest/a796af3c-8c46-4565-a5d6-9eb19acc69c6", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Debug-Session-Id": "fd9062",
+    },
+    body: JSON.stringify({
+      sessionId: "fd9062",
+      location: "eventosService.ts",
+      message: action,
+      data,
+      timestamp: Date.now(),
+      hypothesisId,
+    }),
+  }).catch(() => {});
+  // #endregion
+};
+
 export const obtenerEventosPublicos = async (): Promise<Evento[]> => {
   try {
-    const { data } = await apiClient.get<Evento[]>(`${BASE}/publicos`);
+    const { data, status } = await apiClient.get<Evento[]>(`${BASE}/publicos`);
+    const sample = data?.[0];
+    logEventoApi("obtenerEventosPublicos ok", "H3,H4", {
+      status,
+      count: data?.length ?? 0,
+      sampleKeys: sample ? Object.keys(sample) : [],
+      hasTitulo: sample ? "titulo" in sample : false,
+      hasTituloPascal: sample ? "Titulo" in sample : false,
+    });
     return data;
   } catch (error) {
+    logEventoApi("obtenerEventosPublicos error", "H1,H5", {
+      status: (error as { response?: { status?: number } })?.response?.status ?? 0,
+    });
     handleApiError(error);
   }
 };
 
 export const obtenerEventos = async (): Promise<Evento[]> => {
   try {
-    const { data } = await apiClient.get<Evento[]>(BASE);
+    const { data, status } = await apiClient.get<Evento[]>(BASE);
+    const sample = data?.[0];
+    logEventoApi("obtenerEventos ok", "H1,H4", {
+      status,
+      count: data?.length ?? 0,
+      sampleKeys: sample ? Object.keys(sample) : [],
+    });
     return data;
   } catch (error) {
+    logEventoApi("obtenerEventos error", "H1,H5", {
+      status: (error as { response?: { status?: number } })?.response?.status ?? 0,
+    });
     handleApiError(error);
   }
 };
@@ -51,9 +95,17 @@ export const obtenerEventoPorId = async (id: number): Promise<Evento> => {
 
 export const crearEvento = async (payload: EventoPayload): Promise<Evento> => {
   try {
-    const { data } = await apiClient.post<Evento>(BASE, payload);
+    logEventoApi("crearEvento request", "H2", {
+      fechaInicio: payload.fechaInicio,
+      publicado: payload.publicado,
+    });
+    const { data, status } = await apiClient.post<Evento>(BASE, payload);
+    logEventoApi("crearEvento ok", "H2,H3", { status, id: data?.id });
     return data;
   } catch (error) {
+    logEventoApi("crearEvento error", "H2,H5", {
+      status: (error as { response?: { status?: number } })?.response?.status ?? 0,
+    });
     handleApiError(error);
   }
 };
