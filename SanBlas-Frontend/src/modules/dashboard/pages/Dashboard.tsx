@@ -1,3 +1,4 @@
+import SeoHead from "../../../seo/SeoHead";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -137,7 +138,9 @@ function Dashboard() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-gray-50 lg:flex-row">
+    <>
+      <SeoHead page="/login" overrides={{ robots: "noindex, nofollow", title: "Panel Administrativo | Parroquia San Blas", description: "Panel de administración de la Parroquia San Blas de Nicoya." }} />
+      <div className="relative flex min-h-screen flex-col bg-gray-50 lg:flex-row">
       {/* Mobile top header */}
       <div className="sticky top-0 z-30 flex items-center justify-between bg-brand-blue px-4 py-3 shadow-sm lg:hidden">
         <Link
@@ -265,6 +268,7 @@ function Dashboard() {
         <Outlet />
       </main>
     </div>
+    </>
   );
 }
 

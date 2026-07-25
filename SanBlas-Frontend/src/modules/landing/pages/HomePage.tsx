@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import SeoHead from "../../../seo/SeoHead";
 import HeroSection from "../components/HeroSection";
 import HeroValuesSection from "../components/HeroValuesSection";
 
@@ -42,6 +43,7 @@ function SobreNosotrosPlaceholder() {
 const Home = () => {
   return (
     <>
+      <SeoHead page="/" />
       <HeroSection />
       <HeroValuesSection />
       <Suspense fallback={<CarouselPlaceholder />}>

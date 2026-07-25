@@ -1,3 +1,4 @@
+import SeoHead from "../../../seo/SeoHead";
 import { useLandingSection } from "../../../hooks/useLandingSection";
 
 type HorarioBloque = {
@@ -40,7 +41,9 @@ function HorariosPage() {
   const bloques = data.bloques ?? HORARIOS_DEFAULT.bloques;
 
   return (
-    <div className="horarios-page" style={{ padding: "40px", maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
+    <>
+      <SeoHead page="/horarios" />
+      <div className="horarios-page" style={{ padding: "40px", maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
       <h1 style={{ color: "#2c3e50", marginBottom: "20px" }}>{data.title}</h1>
       <p style={{ fontSize: "1.1rem", color: "#555", marginBottom: "30px" }}>
         {data.intro}
@@ -59,6 +62,7 @@ function HorariosPage() {
         ))}
       </div>
     </div>
+    </>
   );
 }
 

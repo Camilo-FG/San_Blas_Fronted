@@ -6,6 +6,7 @@ import { ApiError } from "../../../services/apiClient";
 import Rutas from "../../../routes/Rutas";
 import { getPostLoginPath } from "../../../utils/authRouting";
 import { Button, FieldError, Input, Label, cn } from "../../../shared/ui";
+import SeoHead from "../../../seo/SeoHead";
 
 interface LoginPageProps {
   redirectTo?: string;
@@ -52,7 +53,9 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
   };
 
   return (
-    <section className="flex min-h-[calc(100vh-160px)] items-center justify-center bg-gradient-to-b from-surface-muted to-slate-100 px-4 py-8">
+    <>
+      <SeoHead page="/login" />
+      <section className="flex min-h-[calc(100vh-160px)] items-center justify-center bg-gradient-to-b from-surface-muted to-slate-100 px-4 py-8">
       <div className="w-full max-w-[420px] rounded-2xl border border-border bg-surface p-8 shadow-[0_12px_30px_rgba(0,51,102,0.08)]">
         <p className="mb-2 text-xs font-extrabold tracking-[0.12em] text-royal-gold uppercase">
           Acceso a la parroquia
@@ -129,6 +132,7 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
         </Link>
       </div>
     </section>
+    </>
   );
 };
 
