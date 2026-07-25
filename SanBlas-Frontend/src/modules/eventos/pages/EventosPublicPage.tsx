@@ -1,3 +1,5 @@
+import SeoHead from "../../../seo/SeoHead";
+import { getEventSchema } from "../../../seo/structuredData";
 import { useEffect, useState } from "react";
 import { obtenerEventosPublicos, type Evento } from "../../../services/eventosService";
 import { ApiError } from "../../../services/apiClient";
@@ -37,7 +39,9 @@ const EventosPublicPage = () => {
   }, []);
 
   return (
-    <section className="mx-auto max-w-[1100px] px-6 py-12 pb-16">
+    <>
+      <SeoHead page="/eventos" jsonLd={eventos.length > 0 ? eventos.map(getEventSchema) : []} />
+      <section className="mx-auto max-w-[1100px] px-6 py-12 pb-16">
       <header className="mb-10 text-center">
         <p className="mb-2 text-xs font-extrabold uppercase tracking-[0.12em] text-royal-gold">
           Comunidad parroquial
@@ -81,6 +85,7 @@ const EventosPublicPage = () => {
         </div>
       )}
     </section>
+    </>
   );
 };
 

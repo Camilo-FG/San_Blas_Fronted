@@ -33,7 +33,7 @@ apiClient.interceptors.response.use(
   (error) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       const url = error.config?.url ?? "";
-      const isLoginRequest = url.includes("/Auth/login");
+      const isLoginRequest = url.toLowerCase().includes("/auth/login");
 
       if (!isLoginRequest) {
         clearAuthToken();

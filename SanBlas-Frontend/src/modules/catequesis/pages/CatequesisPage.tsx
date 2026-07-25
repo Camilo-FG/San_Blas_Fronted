@@ -4,6 +4,7 @@ import CatequesisInfoSection from "../components/CatequesisInfoSection";
 import { crearSolicitudCatequesis } from "../../../services/catequesis/catequesisService";
 import { ApiError } from "../../../services/apiClient";
 import type { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
+import SeoHead from "../../../seo/SeoHead";
 
 const CatequesisPage = () => {
   const [loading, setLoading] = useState(false);
@@ -28,10 +29,13 @@ const CatequesisPage = () => {
   };
 
   return (
-    <main className="px-3.5 pb-8 sm:px-5 sm:pb-10">
+    <>
+      <SeoHead page="/solicitudes-catequesis" />
+      <main className="px-3.5 pb-8 sm:px-5 sm:pb-10">
       <CatequesisInfoSection />
       <CatequesisForm loading={loading} onSubmit={handleSubmit} />
     </main>
+    </>
   );
 };
 

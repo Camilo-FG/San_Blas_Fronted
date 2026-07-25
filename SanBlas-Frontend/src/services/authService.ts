@@ -21,7 +21,7 @@ export const login = async (
   credentials: LoginCredentials,
 ): Promise<AuthUser> => {
   try {
-    const { data } = await apiClient.post<LoginResponse>("/Auth/login", {
+    const { data } = await apiClient.post<LoginResponse>("/auth/login", {
       email: credentials.email.trim(),
       password: credentials.password,
     });
