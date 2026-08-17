@@ -184,7 +184,7 @@ const FormSolic = () => {
               <form.Field
                 name="Nombre"
                 validators={{
-                  onBlur: ({ value }) => validarNombre(value),
+                  onChange: ({ value }) => validarNombre(value),
                 }}
               >
                 {(field) => (
@@ -216,7 +216,7 @@ const FormSolic = () => {
               <form.Field
                 name="PrimerApellido"
                 validators={{
-                  onBlur: ({ value }) => validarPrimerApellido(value),
+                  onChange: ({ value }) => validarPrimerApellido(value),
                 }}
               >
                 {(field) => (
@@ -248,7 +248,7 @@ const FormSolic = () => {
               <form.Field
                 name="SegundoApellido"
                 validators={{
-                  onBlur: ({ value }) => validarSegundoApellido(value),
+                  onChange: ({ value }) => validarSegundoApellido(value),
                 }}
               >
                 {(field) => (
@@ -280,7 +280,7 @@ const FormSolic = () => {
               <form.Field
                 name="Cedula"
                 validators={{
-                  onBlur: ({ value }) => validarCedula(value),
+                  onChange: ({ value }) => validarCedula(value),
                 }}
               >
                 {(field) => (
@@ -313,7 +313,7 @@ const FormSolic = () => {
               <form.Field
                 name="Correo"
                 validators={{
-                  onBlur: ({ value }) => validarCorreo(value),
+                  onChange: ({ value }) => validarCorreo(value),
                 }}
               >
                 {(field) => (
@@ -345,7 +345,7 @@ const FormSolic = () => {
               <form.Field
                 name="Telefono"
                 validators={{
-                  onBlur: ({ value }) => validarTelefono(value),
+                  onChange: ({ value }) => validarTelefono(value),
                 }}
               >
                 {(field) => (
@@ -378,7 +378,7 @@ const FormSolic = () => {
               <form.Field
                 name="TipoSacramento"
                 validators={{
-                  onBlur: ({ value }) => validarTipoSacramento(value),
+                  onChange: ({ value }) => validarTipoSacramento(value),
                 }}
               >
                 {(field) => (
@@ -413,7 +413,7 @@ const FormSolic = () => {
               <form.Field
                 name="Motivo"
                 validators={{
-                  onBlur: ({ value }) => validarMotivo(value),
+                  onChange: ({ value }) => validarMotivo(value),
                 }}
               >
                 {(field) => (
