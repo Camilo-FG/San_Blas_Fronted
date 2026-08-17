@@ -60,6 +60,21 @@ export const actualizarEstadoSacramento = async (
   }
 };
 
+export const rechazarSolicitudSacramento = async (
+  id: number,
+  motivoRechazo: string,
+): Promise<FormSacramento> => {
+  try {
+    const { data } = await apiClient.patch<FormSacraBackend>(
+      `${BASE}/${id}/rechazar`,
+      { motivoRechazo: motivoRechazo },
+    );
+    return mapBackendToFormSacramento(data);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
 // Alias para compatibilidad con imports existentes
 export const getSolicitudes = obtenerSolicitudesSacramentos;
 export const CreateSolicSacramento = crearSolicitudSacramento;

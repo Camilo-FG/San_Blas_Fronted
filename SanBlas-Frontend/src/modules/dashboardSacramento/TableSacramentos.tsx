@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, ScrollText, Phone, IdCard, Eye } from "lucide-react";
+import { ChevronLeft, ChevronRight, ScrollText, Phone, IdCard, Eye, Loader2, X } from "lucide-react";
 import type { FormSacramento } from "../../types/formSacramento";
 import {
   createColumnHelper,
@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-table";
 import { useGetSolicitudes } from "../solicSacramento/hooks/useGetSolicitudes";
 import { useUpdateSolicitudEstado } from "../solicSacramento/hooks/useUpdateSolicitudEstado";
+import { useRechazarSolicitudSacramento } from "../solicSacramento/hooks/useRechazarSolicitudSacramento";
 import { usePagination } from "../../shared/hooks/usePagination";
 import { ApiError } from "../../services/apiClient";
 import { useAuth } from "../../context/AuthContext";
@@ -29,9 +30,13 @@ import {
   AdminTableRow,
   AdminToolbar,
   Badge,
+  Button,
+  Modal,
   Select,
+  Textarea,
   cn,
   type BadgeVariant,
+  useToast,
 } from "../../shared/ui";
 
 const columnHelper = createColumnHelper<FormSacramento>();
@@ -68,12 +73,67 @@ const TableSacramentos = () => {
   const [query, setQuery] = useState("");
   const [solicitudSeleccionada, setSolicitudSeleccionada] =
     useState<FormSacramento | null>(null);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
+  const [rejectionReasonText, setRejectionReasonText] = useState("");
+  const [solicitudARechazar, setSolicitudARechazar] = useState<FormSacramento | null>(null);
   const { isAdmin } = useAuth();
   const { data, error, isPending } = useGetSolicitudes();
   const updateEstado = useUpdateSolicitudEstado();
+  const rechazarSolicitud = useRechazarSolicitudSacramento();
   const isUpdatingEstado = updateEstado.isPending;
+  const isSubmitting = rechazarSolicitud.isPending;
+  const { showToast } = useToast();
 
   const rows: FormSacramento[] = Array.isArray(data) ? data : [];
+
+  const rejectionReasons = [
+    "Documentación incompleta",
+    "Falta fe de bautismo",
+    "Comprobante de pago inválido",
+    "Datos incorrectos",
+    "No cumple requisitos",
+    "Otro",
+  ];
+
+  const handleOpenRejectModal = (solicitud: FormSacramento) => {
+    setSolicitudARechazar(solicitud);
+    setRejectionReasonSelect("");
+    setRejectionReasonText("");
+    setIsRejectModalOpen(true);
+  };
+
+  const handleCloseRejectModal = () => {
+    setIsRejectModalOpen(false);
+    setRejectionReasonSelect("");
+    setRejectionReasonText("");
+    setSolicitudARechazar(null);
+  };
+
+  const handleRejectSubmit = async () => {
+    const motivo = rejectionReasonSelect.trim() || rejectionReasonText.trim();
+    if (!solicitudARechazar || !motivo) return;
+
+    try {
+      await rechazarSolicitud.mutateAsync({
+        id: solicitudARechazar.id,
+        motivoRechazo: motivo,
+      });
+      showToast("Solicitud rechazada correctamente", "success");
+      handleCloseRejectModal();
+    } catch (err) {
+      const mensaje = err instanceof ApiError ? err.message : "No se pudo rechazar la solicitud.";
+      showToast(mensaje, "error");
+    }
+  };
+
+  const handleReasonSelectChange = (value: string) => {
+    setRejectionReasonSelect(value);
+  };
+
+  const handleReasonTextChange = (value: string) => {
+    setRejectionReasonText(value);
+  };
 
   const filtered = useMemo(() => {
     const normalizedQuery = normalizeText(query);
@@ -169,6 +229,17 @@ const TableSacramentos = () => {
     nextEstado: "Pendiente" | "Aprobado" | "Rechazado",
   ) => {
     if (id === undefined || id === null) return;
+
+    // Si se selecciona "Rechazado", abrir modal de rechazo en lugar de actualizar directamente
+    if (nextEstado === "Rechazado") {
+      const solicitud = rows.find((r) => String(r.id) === String(id));
+      if (solicitud) {
+        setSolicitudSeleccionada(null); // Cerrar modal de detalle
+        handleOpenRejectModal(solicitud); // Abrir modal de rechazo
+      }
+      return;
+    }
+
     updateEstado.mutate(
       { id, Estado: nextEstado },
       {
@@ -179,7 +250,7 @@ const TableSacramentos = () => {
         },
         onError: (err: unknown) => {
           const mensaje = err instanceof ApiError ? err.message : "No se pudo actualizar el estado.";
-          alert(mensaje);
+          showToast(mensaje, "error");
         },
       },
     );
@@ -335,6 +406,55 @@ const TableSacramentos = () => {
           </div>
         )}
       </AdminRecordDetailSheet>
+
+      {isRejectModalOpen && (
+        <Modal onClose={handleCloseRejectModal} title="Rechazar solicitud">
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-text-secondary">
+              Seleccione o escriba el motivo de rechazo para esta solicitud:
+            </p>
+            <Select
+              value={rejectionReasonSelect}
+              onChange={(e) => handleReasonSelectChange(e.target.value)}
+              className="w-full"
+              defaultValue=""
+            >
+              <option value="">-- Seleccione un motivo --</option>
+              {rejectionReasons.map((reason) => (
+                <option key={reason} value={reason}>
+                  {reason}
+                </option>
+              ))}
+            </Select>
+            <Textarea
+              value={rejectionReasonText}
+              onChange={(e) => handleReasonTextChange(e.target.value)}
+              placeholder="O escriba un motivo personalizado..."
+              rows={3}
+              className="min-h-[80px]"
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="secondary" onClick={handleCloseRejectModal} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleRejectSubmit}
+                disabled={!rejectionReasonSelect.trim() && !rejectionReasonText.trim() || isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Rechazando...
+                  </>
+                ) : (
+                  "Confirmar rechazo"
+                )}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {!isPending && table.getRowModel().rows.length > 0 && (
         <AdminTableFooter>
