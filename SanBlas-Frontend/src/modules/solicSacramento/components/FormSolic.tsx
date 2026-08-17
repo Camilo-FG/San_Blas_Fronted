@@ -4,7 +4,7 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 import { ApiError } from "../../../services/apiClient";
-import { Button, cn, Input, Label, Select } from "../../../shared/ui";
+import { Button, Input, Label } from "../../../shared/ui";
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
 
@@ -50,9 +50,6 @@ const validarTelefono = (valor: string) => {
   return undefined;
 };
 
-const validarTipoSacramento = (valor: string) =>
-  valor ? undefined : "Seleccioná el tipo de sacramento.";
-
 const validarMotivo = (valor: string) =>
   requerido(valor, "Indicá el motivo de la solicitud.");
 
@@ -75,7 +72,6 @@ const FormSolic = () => {
       Cedula: "",
       Correo: "",
       Telefono: "",
-      TipoSacramento: "",
       Motivo: "",
     },
     onSubmit: async ({ value }: any) => {
@@ -113,7 +109,6 @@ const FormSolic = () => {
     !validarCedula(valores.Cedula) &&
     !validarCorreo(valores.Correo) &&
     !validarTelefono(valores.Telefono) &&
-    !validarTipoSacramento(valores.TipoSacramento) &&
     !validarMotivo(valores.Motivo);
 
   const handleHacerOtraSolicitud = () => {
@@ -365,41 +360,6 @@ const FormSolic = () => {
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
-                      </span>
-                    )}
-                  </>
-                )}
-              </form.Field>
-            </div>
-
-            <div className="flex w-full min-w-0 flex-col gap-2">
-              <form.Field
-                name="TipoSacramento"
-                validators={{
-                  onChange: ({ value }) => validarTipoSacramento(value),
-                }}
-              >
-                {(field) => (
-                  <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
-                      Tipo de sacramento
-                    </Label>
-                    <Select
-                      value={field.state.value}
-                      name={field.name}
-                      id={field.name}
-                      className={cn(fieldClass, "cursor-pointer")}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                    >
-                      <option value="">Seleccione un sacramento</option>
-                      <option value="Bautismo">Bautismo</option>
-                      <option value="Confirmación">Confirmación</option>
-                      <option value="Matrimonio">Matrimonio</option>
-                    </Select>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
