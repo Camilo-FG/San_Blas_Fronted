@@ -8,6 +8,12 @@ import { Button, cn, Input, Label, Select } from "../../../shared/ui";
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
 
+const soloLetras = (valor: string) =>
+  valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "").replace(/\s{2,}/g, " ");
+
+const soloCorreo = (valor: string) =>
+  valor.replace(/[^a-zA-Z0-9@._+-]/g, "");
+
 const requerido = (valor: string, mensaje: string) =>
   valor.trim() ? undefined : mensaje;
 
@@ -142,7 +148,7 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: Juan"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => field.handleChange(soloLetras(e.target.value))}
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
@@ -175,7 +181,7 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: Pérez"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => field.handleChange(soloLetras(e.target.value))}
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
@@ -208,7 +214,7 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: González"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => field.handleChange(soloLetras(e.target.value))}
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
@@ -246,7 +252,7 @@ const FormSolic = () => {
                       inputMode="numeric"
                       placeholder="Ej: 123456789"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => field.handleChange(soloDigitos(e.target.value))}
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
@@ -285,7 +291,7 @@ const FormSolic = () => {
                       type="email"
                       placeholder="Ej: nombre@correo.com"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => field.handleChange(soloCorreo(e.target.value))}
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
@@ -323,7 +329,7 @@ const FormSolic = () => {
                       inputMode="numeric"
                       placeholder="Ej: 88888888"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => field.handleChange(soloDigitos(e.target.value))}
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
