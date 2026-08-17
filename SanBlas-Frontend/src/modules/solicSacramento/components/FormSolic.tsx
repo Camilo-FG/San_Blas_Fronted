@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
@@ -16,6 +16,44 @@ const soloCorreo = (valor: string) =>
 
 const requerido = (valor: string, mensaje: string) =>
   valor.trim() ? undefined : mensaje;
+
+const validarNombre = (valor: string) =>
+  requerido(valor, "El nombre es obligatorio.");
+
+const validarPrimerApellido = (valor: string) =>
+  requerido(valor, "El primer apellido es obligatorio.");
+
+const validarSegundoApellido = (valor: string) =>
+  requerido(valor, "El segundo apellido es obligatorio.");
+
+const validarCedula = (valor: string) => {
+  const cedula = soloDigitos(valor);
+  if (!cedula) return "La cédula es obligatoria.";
+  if (cedula.length !== 9) return "La cédula debe tener 9 dígitos.";
+  return undefined;
+};
+
+const validarCorreo = (valor: string) => {
+  const correo = valor.trim();
+  if (!correo) return "El correo es obligatorio.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+    return "Ingresá un correo válido.";
+  }
+  return undefined;
+};
+
+const validarTelefono = (valor: string) => {
+  const telefono = soloDigitos(valor);
+  if (!telefono) return "El teléfono es obligatorio.";
+  if (telefono.length !== 8) return "El teléfono debe tener 8 dígitos.";
+  return undefined;
+};
+
+const validarTipoSacramento = (valor: string) =>
+  valor ? undefined : "Seleccioná el tipo de sacramento.";
+
+const validarMotivo = (valor: string) =>
+  requerido(valor, "Indicá el motivo de la solicitud.");
 
 const fieldClass =
   "min-h-11 w-full rounded-xl border-[1.5px] border-slate-300 bg-[#fdfdfd] px-3.5 py-3 text-[0.96rem] text-slate-800 transition-[border-color,box-shadow,transform] focus:border-royal-gold focus:shadow-[0_0_0_4px_rgba(212,175,55,0.14)] focus:outline-none max-sm:min-h-11 max-sm:text-base max-sm:focus:translate-y-0";
@@ -64,6 +102,18 @@ const FormSolic = () => {
       }
     },
   });
+
+  const valores = useStore(form.store, (state) => state.values);
+
+  const formularioValido =
+    !validarNombre(valores.Nombre) &&
+    !validarPrimerApellido(valores.PrimerApellido) &&
+    !validarSegundoApellido(valores.SegundoApellido) &&
+    !validarCedula(valores.Cedula) &&
+    !validarCorreo(valores.Correo) &&
+    !validarTelefono(valores.Telefono) &&
+    !validarTipoSacramento(valores.TipoSacramento) &&
+    !validarMotivo(valores.Motivo);
 
   const handleHacerOtraSolicitud = () => {
     form.reset();
@@ -134,7 +184,7 @@ const FormSolic = () => {
               <form.Field
                 name="Nombre"
                 validators={{
-                  onBlur: ({ value }) => requerido(value, "El nombre es obligatorio."),
+                  onBlur: ({ value }) => validarNombre(value),
                 }}
               >
                 {(field) => (
@@ -166,8 +216,7 @@ const FormSolic = () => {
               <form.Field
                 name="PrimerApellido"
                 validators={{
-                  onBlur: ({ value }) =>
-                    requerido(value, "El primer apellido es obligatorio."),
+                  onBlur: ({ value }) => validarPrimerApellido(value),
                 }}
               >
                 {(field) => (
@@ -199,8 +248,7 @@ const FormSolic = () => {
               <form.Field
                 name="SegundoApellido"
                 validators={{
-                  onBlur: ({ value }) =>
-                    requerido(value, "El segundo apellido es obligatorio."),
+                  onBlur: ({ value }) => validarSegundoApellido(value),
                 }}
               >
                 {(field) => (
@@ -232,12 +280,7 @@ const FormSolic = () => {
               <form.Field
                 name="Cedula"
                 validators={{
-                  onBlur: ({ value }) => {
-                    const cedula = soloDigitos(value);
-                    if (!cedula) return "La cédula es obligatoria.";
-                    if (cedula.length !== 9) return "La cédula debe tener 9 dígitos.";
-                    return undefined;
-                  },
+                  onBlur: ({ value }) => validarCedula(value),
                 }}
               >
                 {(field) => (
@@ -270,14 +313,7 @@ const FormSolic = () => {
               <form.Field
                 name="Correo"
                 validators={{
-                  onBlur: ({ value }) => {
-                    const correo = value.trim();
-                    if (!correo) return "El correo es obligatorio.";
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-                      return "Ingresá un correo válido.";
-                    }
-                    return undefined;
-                  },
+                  onBlur: ({ value }) => validarCorreo(value),
                 }}
               >
                 {(field) => (
@@ -309,12 +345,7 @@ const FormSolic = () => {
               <form.Field
                 name="Telefono"
                 validators={{
-                  onBlur: ({ value }) => {
-                    const telefono = soloDigitos(value);
-                    if (!telefono) return "El teléfono es obligatorio.";
-                    if (telefono.length !== 8) return "El teléfono debe tener 8 dígitos.";
-                    return undefined;
-                  },
+                  onBlur: ({ value }) => validarTelefono(value),
                 }}
               >
                 {(field) => (
@@ -347,8 +378,7 @@ const FormSolic = () => {
               <form.Field
                 name="TipoSacramento"
                 validators={{
-                  onBlur: ({ value }) =>
-                    value ? undefined : "Seleccioná el tipo de sacramento.",
+                  onBlur: ({ value }) => validarTipoSacramento(value),
                 }}
               >
                 {(field) => (
@@ -383,8 +413,7 @@ const FormSolic = () => {
               <form.Field
                 name="Motivo"
                 validators={{
-                  onBlur: ({ value }) =>
-                    requerido(value, "Indicá el motivo de la solicitud."),
+                  onBlur: ({ value }) => validarMotivo(value),
                 }}
               >
                 {(field) => (
@@ -434,7 +463,7 @@ const FormSolic = () => {
             <Button
               className="col-span-1 mt-1.5 min-h-[52px] w-full bg-gradient-to-br from-royal-gold to-[#f0d67a] text-base font-extrabold text-royal-blue shadow-[0_10px_18px_rgba(212,175,55,0.22)] hover:-translate-y-px hover:shadow-[0_14px_24px_rgba(212,175,55,0.28)] disabled:cursor-not-allowed disabled:opacity-70 disabled:shadow-none sm:col-span-2"
               type="submit"
-              disabled={isPending}
+              disabled={!formularioValido || isPending}
             >
               {isPending ? "Guardando..." : "Guardar"}
             </Button>
