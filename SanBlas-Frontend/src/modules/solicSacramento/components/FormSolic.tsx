@@ -358,7 +358,9 @@ const FormSolic = () => {
                       inputMode="numeric"
                       placeholder="Ej: 88888888"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(soloDigitos(e.target.value))}
+                      onChange={(e) =>
+                        field.handleChange(soloDigitos(e.target.value).slice(0, 8))
+                      }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
