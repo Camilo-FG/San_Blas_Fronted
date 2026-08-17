@@ -43,9 +43,10 @@ const validarCorreo = (valor: string) => {
 };
 
 const validarTelefono = (valor: string) => {
-  const telefono = soloDigitos(valor);
-  if (!telefono) return "El teléfono es obligatorio.";
-  if (telefono.length !== 8) return "El teléfono debe tener 8 dígitos.";
+  if (!valor) return "El teléfono es obligatorio.";
+  if (!/^\d{8}$/.test(valor)) {
+    return "El teléfono debe contener exactamente 8 dígitos numéricos.";
+  }
   return undefined;
 };
 
