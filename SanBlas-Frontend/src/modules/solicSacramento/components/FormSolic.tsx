@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
@@ -51,7 +51,7 @@ const validarTelefono = (valor: string) => {
 };
 
 const validarMotivo = (valor: string) =>
-  requerido(valor, "Indicá el motivo de la solicitud.");
+  requerido(valor, "Campo obligatorio.");
 
 const fieldClass =
   "min-h-11 w-full rounded-xl border-[1.5px] border-slate-300 bg-[#fdfdfd] px-3.5 py-3 text-[0.96rem] text-slate-800 transition-[border-color,box-shadow,transform] focus:border-royal-gold focus:shadow-[0_0_0_4px_rgba(212,175,55,0.14)] focus:outline-none max-sm:min-h-11 max-sm:text-base max-sm:focus:translate-y-0";
@@ -102,14 +102,34 @@ const FormSolic = () => {
 
   const valores = useStore(form.store, (state) => state.values);
 
-  const formularioValido =
-    !validarNombre(valores.Nombre) &&
-    !validarPrimerApellido(valores.PrimerApellido) &&
-    !validarSegundoApellido(valores.SegundoApellido) &&
-    !validarCedula(valores.Cedula) &&
-    !validarCorreo(valores.Correo) &&
-    !validarTelefono(valores.Telefono) &&
-    !validarMotivo(valores.Motivo);
+  const obtenerPrimerCampoInvalido = () => {
+    if (validarNombre(valores.Nombre)) return "Nombre";
+    if (validarPrimerApellido(valores.PrimerApellido)) return "PrimerApellido";
+    if (validarSegundoApellido(valores.SegundoApellido)) return "SegundoApellido";
+    if (validarCedula(valores.Cedula)) return "Cedula";
+    if (validarCorreo(valores.Correo)) return "Correo";
+    if (validarTelefono(valores.Telefono)) return "Telefono";
+    if (validarMotivo(valores.Motivo)) return "Motivo";
+    return null;
+  };
+
+  const manejarEnvio = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await form.handleSubmit();
+    const campoInvalido = obtenerPrimerCampoInvalido();
+    if (campoInvalido) {
+      const elemento = document.getElementById(campoInvalido) as HTMLInputElement | null;
+      elemento?.focus();
+      elemento?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    if (!captchaToken) {
+      document
+        .getElementById("captcha-container")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
 
   const handleHacerOtraSolicitud = () => {
     form.reset();
@@ -170,11 +190,7 @@ const FormSolic = () => {
 
           <form
             className="grid w-full min-w-0 grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              form.handleSubmit();
-            }}
+            onSubmit={manejarEnvio}
           >
             <div className="flex w-full min-w-0 flex-col gap-2">
               <form.Field
@@ -406,7 +422,10 @@ const FormSolic = () => {
               </form.Field>
             </div>
 
-            <div className="col-span-1 overflow-x-auto rounded-xl border border-border bg-surface-muted p-4 sm:col-span-2">
+            <div
+              id="captcha-container"
+              className="col-span-1 overflow-x-auto rounded-xl border border-border bg-surface-muted p-4 sm:col-span-2"
+            >
               <ReCAPTCHA
                 ref={captchaRef}
                 sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
@@ -428,7 +447,7 @@ const FormSolic = () => {
             <Button
               className="col-span-1 mt-1.5 min-h-[52px] w-full bg-gradient-to-br from-royal-gold to-[#f0d67a] text-base font-extrabold text-royal-blue shadow-[0_10px_18px_rgba(212,175,55,0.22)] hover:-translate-y-px hover:shadow-[0_14px_24px_rgba(212,175,55,0.28)] disabled:cursor-not-allowed disabled:opacity-70 disabled:shadow-none sm:col-span-2"
               type="submit"
-              disabled={!formularioValido || isPending}
+              disabled={isPending}
             >
               {isPending ? "Guardando..." : "Guardar"}
             </Button>
