@@ -19,9 +19,10 @@ import { useDeleteBautismo } from "../hooks/hooksBautismo/useDeleteBautismo";
 import { useDeleteComunion } from "../hooks/hooksComunion/useDeleteComunion";
 import { useDeleteConfirma } from "../hooks/hooksConfirma/useDeleteConfirma";
 import { useDeleteMatrimonio } from "../hooks/hooksMatrimonio/useDeleteMatrimonio";
-import { AdminModule, AdminSearch, Button } from "../../../shared/ui";
+import { AdminModule, AdminSearch, Button, useToast } from "../../../shared/ui";
 
 const GestionSacramentos = () => {
+  const { showToast } = useToast();
   const { data: bautismos, isLoading: bautismosLoading, error: bautismosError, refetch: refetchBautismos } = useGetListBautismo();
   const { data: comuniones, isLoading: comunionesLoading, error: comunionesError, refetch: refetchComuniones } = useGetListComunion();
   const { data: confirmaciones, isLoading: confirmacionesLoading, error: confirmacionesError, refetch: refetchConfirmaciones } = useGetListConfirma();
@@ -57,26 +58,40 @@ const GestionSacramentos = () => {
   const [editingTipo, setEditingTipo] = useState<string>("Bautismo");
 
   const handleSaveSacramento = async (data: any, tipo: string) => {
-    if (tipo === "Bautismo") {
-      await createBautismo.mutateAsync({
-        id: 0,
-        ...data,
-        SegundoApellido: data.SegundoApellido || "",
-        Prebispero: data.Prebispero || "",
-        horaNacimiento: data.horaNacimiento || "",
-        NombreAbuelosPaternos: data.NombreAbuelosPaternos || "",
-        NombreAbuelosMaternos: data.NombreAbuelosMaternos || "",
-      });
-      await refetchBautismos();
-    } else if (tipo === "Comunión") {
-      await createComunion.mutateAsync({ id: 0, ...data });
-      await refetchComuniones();
-    } else if (tipo === "Confirmación") {
-      await createConfirmacion.mutateAsync({ id: 0, ...data });
-      await refetchConfirmaciones();
-    } else if (tipo === "Matrimonio") {
-      await createMatrimonio.mutateAsync({ id: 0, ...data });
-      await refetchMatrimonios();
+    try {
+      if (tipo === "Bautismo") {
+        await createBautismo.mutateAsync({
+          id: 0,
+          ...data,
+          SegundoApellido: data.SegundoApellido || "",
+          Prebispero: data.Prebispero || "",
+          horaNacimiento: data.horaNacimiento || "",
+          NombreAbuelosPaternos: data.NombreAbuelosPaternos || "",
+          NombreAbuelosMaternos: data.NombreAbuelosMaternos || "",
+        });
+        await refetchBautismos();
+      } else if (tipo === "Comunión") {
+        await createComunion.mutateAsync({ id: 0, ...data });
+        await refetchComuniones();
+      } else if (tipo === "Confirmación") {
+        await createConfirmacion.mutateAsync({ id: 0, ...data });
+        await refetchConfirmaciones();
+      } else if (tipo === "Matrimonio") {
+        await createMatrimonio.mutateAsync({ id: 0, ...data });
+        await refetchMatrimonios();
+      }
+      showToast("Acta sacramental registrada correctamente", "success");
+    } catch (err: any) {
+      const conflicto =
+        err?.response?.status === 409 ||
+        /ya existe|duplicado|conflicto/i.test(err?.message || "");
+      showToast(
+        conflicto
+          ? "Esta acta ya se encuentra registrada. Verifique los datos del libro."
+          : "No se pudo registrar el acta. Intente de nuevo.",
+        "error"
+      );
+      throw err;
     }
   };
 
