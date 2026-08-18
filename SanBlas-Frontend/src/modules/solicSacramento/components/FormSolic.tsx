@@ -436,7 +436,7 @@ const FormSolic = () => {
 
             <div
               id="captcha-container"
-              className="col-span-1 overflow-x-auto rounded-xl border border-border bg-surface-muted p-4 sm:col-span-2"
+              className="col-span-1 flex flex-col items-center overflow-x-auto rounded-xl border border-border bg-surface-muted p-4 sm:col-span-2"
             >
               <ReCAPTCHA
                 ref={captchaRef}
