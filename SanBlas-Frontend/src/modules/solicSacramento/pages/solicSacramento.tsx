@@ -25,7 +25,7 @@ const SolicSacramento = () => {
       <div className="mb-4 flex w-full max-w-full min-w-0 flex-col items-stretch justify-between gap-4 rounded-[16px] border border-border bg-surface p-4 shadow-sm sm:mb-7 sm:flex-row sm:items-center sm:gap-6 sm:rounded-[22px] sm:p-7">
         <div>
           <p className="m-0 mb-2.5 text-xs font-black tracking-[2px] text-royal-gold uppercase">
-            Solicitudes de sacramentos
+            Solicitud de sacramento
           </p>
           <h1 className="m-0 mb-2.5 font-heading text-[26px] font-extrabold text-royal-blue sm:text-[34px]">
             Registro de solicitud
