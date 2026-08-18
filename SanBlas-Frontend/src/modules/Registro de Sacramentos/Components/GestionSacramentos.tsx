@@ -50,8 +50,8 @@ const GestionSacramentos = () => {
   const [selectedSacramento, setSelectedSacramento] = useState<any>(null);
   const [selectedTipo, setSelectedTipo] = useState<string>("Bautismo");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [sortColumn, setSortColumn] = useState<string>("nombre");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [sortColumn, setSortColumn] = useState<string>("fechaCelebracion");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingSacramento, setEditingSacramento] = useState<any>(null);
@@ -297,6 +297,8 @@ const GestionSacramentos = () => {
           onSort={handleSort}
           sortColumn={sortColumn}
           sortDirection={sortDirection}
+          searchNombre={searchNombre}
+          searchCedula={searchCedula}
         />
       )}
 
