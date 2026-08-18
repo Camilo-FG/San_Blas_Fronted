@@ -4,6 +4,7 @@ import { useGetListComunion } from "../hooks/hooksComunion/useGetListComunion";
 import { useGetListConfirma } from "../hooks/hooksConfirma/useGetListConfirma";
 import { useGetListMatrimonio } from "../hooks/hooksMatrimonio/useGetListMatrimonio";
 import SacramentTable from "./SacramentTable";
+import SacramentoEmptyState from "./SacramentoEmptyState";
 import DetailsDrawer from "./DetailsDrawer";
 import AddSacramentoModal from "./AddSacramentoModal";
 import EditSacramentoModal from "./EditSacramentoModal";
@@ -49,8 +50,8 @@ const GestionSacramentos = () => {
   const [selectedSacramento, setSelectedSacramento] = useState<any>(null);
   const [selectedTipo, setSelectedTipo] = useState<string>("Bautismo");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [sortColumn, setSortColumn] = useState<string>("nombre");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [sortColumn, setSortColumn] = useState<string>("fechaCelebracion");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingSacramento, setEditingSacramento] = useState<any>(null);
@@ -223,6 +224,12 @@ const GestionSacramentos = () => {
     sortDirection,
   );
 
+  const hayBusquedaActiva =
+    searchNombre.trim() !== "" || searchCedula.trim() !== "" || searchFecha !== "";
+
+  const mostrarEstadoVacio =
+    !isPending && !error && sacramentosOrdenados.length === 0 && hayBusquedaActiva;
+
   const handleSort = (columna: string) => {
     if (sortColumn === columna) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -275,7 +282,13 @@ const GestionSacramentos = () => {
       {isPending && <p>Cargando sacramentos...</p>}
       {error && <p>Error: {error.message}</p>}
 
-      {!isPending && !error && (
+      {mostrarEstadoVacio && (
+        <div className="rounded-xl border border-border-strong bg-surface">
+          <SacramentoEmptyState />
+        </div>
+      )}
+
+      {!isPending && !error && !mostrarEstadoVacio && (
         <SacramentTable
           sacramentos={sacramentosOrdenados}
           onViewDetails={handleViewDetails}
@@ -284,6 +297,8 @@ const GestionSacramentos = () => {
           onSort={handleSort}
           sortColumn={sortColumn}
           sortDirection={sortDirection}
+          searchNombre={searchNombre}
+          searchCedula={searchCedula}
         />
       )}
 
