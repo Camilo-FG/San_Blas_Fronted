@@ -63,6 +63,9 @@ const GestionLanding = lazyWithRetry(
 const GestionUsuarios = lazyWithRetry(
   () => import("../modules/Gestión de Usuarios/pages/GestionUsuarios"),
 );
+const HistorialRechazos = lazyWithRetry(
+  () => import("../modules/dashboardSacramento/HistorialRechazos"),
+);
 
 function withSuspense(Component: React.LazyExoticComponent<() => React.JSX.Element>) {
   return function SuspenseRoute() {
@@ -249,6 +252,12 @@ const gestionUsuariosRoute = createRoute({
   component: withSuspense(GestionUsuarios),
 });
 
+const historialRechazosRoute = createRoute({
+  getParentRoute: () => dashboardRoute,
+  path: Rutas.dashboardPath.historialRechazos,
+  component: withSuspense(HistorialRechazos),
+});
+
 const routeTree = rootRoute.addChildren([
   homeRoute,
   sobreNosotrosRoute,
@@ -270,6 +279,7 @@ const routeTree = rootRoute.addChildren([
     eventosRoute,
     gestionLandingRoute,
     gestionUsuariosRoute,
+    historialRechazosRoute,
   ]),
 ]);
 

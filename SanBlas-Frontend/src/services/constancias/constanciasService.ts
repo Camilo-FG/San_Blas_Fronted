@@ -9,6 +9,17 @@ import {
   mapFormToBackendRequest,
 } from "./constanciasMapper";
 
+export interface HistorialRechazo {
+  id: number;
+  solicitud_id: number;
+  usuario_id: number;
+  motivo: string;
+  detalle: string | null;
+  creado_en: string;
+  nombre_solicitante: string | null;
+  nombre_usuario_rechazo: string | null;
+}
+
 const BASE = "/solic-sacramento";
 
 export const obtenerSolicitudesSacramentos = async (): Promise<
@@ -78,3 +89,14 @@ export const rechazarSolicitudSacramento = async (
 // Alias para compatibilidad con imports existentes
 export const getSolicitudes = obtenerSolicitudesSacramentos;
 export const CreateSolicSacramento = crearSolicitudSacramento;
+
+export const obtenerHistorialRechazos = async (): Promise<HistorialRechazo[]> => {
+  try {
+    const { data } = await apiClient.get<HistorialRechazo[]>(
+      `${BASE}/historial-rechazos`,
+    );
+    return data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
