@@ -4,7 +4,7 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 import { ApiError } from "../../../services/apiClient";
-import { Button, Input, Label } from "../../../shared/ui";
+import { Button, Input, Label, Textarea } from "../../../shared/ui";
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
 
@@ -181,7 +181,7 @@ const FormSolic = () => {
               Solicitud pastoral
             </p>
             <h2 className="m-0 mb-2 font-heading text-2xl font-extrabold text-royal-blue sm:text-[30px]">
-              Formulario de Sacramento
+              Solicitud de Sacramento
             </h2>
             <p className="m-0 text-sm leading-relaxed text-text-secondary sm:text-[15px]">
               Completa los datos para registrar una nueva solicitud.
@@ -201,7 +201,7 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Nombre
                     </Label>
                     <Input
@@ -236,7 +236,7 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Primer apellido
                     </Label>
                     <Input
@@ -271,7 +271,7 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Segundo apellido
                     </Label>
                     <Input
@@ -306,7 +306,7 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Cédula
                     </Label>
                     <Input
@@ -341,7 +341,7 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Correo
                     </Label>
                     <Input
@@ -373,7 +373,7 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Teléfono
                     </Label>
                     <Input
@@ -408,18 +408,16 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Motivo
                     </Label>
-                    <Input
+                    <Textarea
                       id={field.name}
                       name={field.name}
-                      type="text"
                       placeholder="Describe brevemente el motivo"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value.slice(0, 250))}
                       onBlur={field.handleBlur}
-                      className={fieldClass}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
                       {field.state.value.length}/250
