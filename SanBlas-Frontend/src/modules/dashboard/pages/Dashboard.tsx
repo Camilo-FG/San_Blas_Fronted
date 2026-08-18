@@ -12,6 +12,7 @@ import {
   Users,
   Menu,
   X,
+  History,
 } from "lucide-react";
 
 import Rutas from "../../../routes/Rutas";
@@ -29,6 +30,11 @@ const navLinks = [
     to: Rutas.dashboardUrl.constanciasSacramentos,
     label: "Constancias de Sacramentos",
     icon: FileText,
+  },
+  {
+    to: Rutas.dashboardUrl.historialRechazos,
+    label: "Historial de Rechazos",
+    icon: History,
   },
   {
     to: Rutas.dashboardUrl.solicitudesCatequesis,
@@ -89,6 +95,10 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   [Rutas.dashboardUrl.gestionUsuarios]: {
     title: "Gestión de usuarios",
     subtitle: "Administre cuentas, roles y accesos del sistema.",
+  },
+  [Rutas.dashboardUrl.historialRechazos]: {
+    title: "Historial de rechazos",
+    subtitle: "Consulte el registro de solicitudes rechazadas y sus justificaciones.",
   },
 };
 
