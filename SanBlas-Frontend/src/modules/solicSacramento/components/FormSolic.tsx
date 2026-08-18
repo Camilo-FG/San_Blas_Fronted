@@ -1,15 +1,57 @@
-import { useState } from "react";
-import { useForm } from "@tanstack/react-form";
+import { useState, type FormEvent } from "react";
+import { useForm, useStore } from "@tanstack/react-form";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 import { ApiError } from "../../../services/apiClient";
-import { Button, cn, Input, Label, Select } from "../../../shared/ui";
+import { Button, Input, Label, Textarea } from "../../../shared/ui";
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
 
+const soloLetras = (valor: string) =>
+  valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "").replace(/\s{2,}/g, " ");
+
+const soloCorreo = (valor: string) =>
+  valor.replace(/[^a-zA-Z0-9@._+-]/g, "");
+
 const requerido = (valor: string, mensaje: string) =>
   valor.trim() ? undefined : mensaje;
+
+const validarNombre = (valor: string) =>
+  requerido(valor, "El nombre es obligatorio.");
+
+const validarPrimerApellido = (valor: string) =>
+  requerido(valor, "El primer apellido es obligatorio.");
+
+const validarSegundoApellido = (valor: string) =>
+  requerido(valor, "El segundo apellido es obligatorio.");
+
+const validarCedula = (valor: string) => {
+  const cedula = soloDigitos(valor);
+  if (!cedula) return "La cédula es obligatoria.";
+  if (cedula.length !== 9) return "La cédula debe tener 9 dígitos.";
+  return undefined;
+};
+
+const validarCorreo = (valor: string) => {
+  const correo = valor.trim();
+  if (!correo) return "El correo es obligatorio.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+    return "Ingresá un correo válido.";
+  }
+  return undefined;
+};
+
+const validarTelefono = (valor: string) => {
+  if (!valor) return "El teléfono es obligatorio.";
+  if (!/^\d{8}$/.test(valor)) {
+    return "El teléfono debe contener exactamente 8 dígitos numéricos.";
+  }
+  return undefined;
+};
+
+const validarMotivo = (valor: string) =>
+  requerido(valor, "Campo obligatorio.");
 
 const fieldClass =
   "min-h-11 w-full rounded-xl border-[1.5px] border-slate-300 bg-[#fdfdfd] px-3.5 py-3 text-[0.96rem] text-slate-800 transition-[border-color,box-shadow,transform] focus:border-royal-gold focus:shadow-[0_0_0_4px_rgba(212,175,55,0.14)] focus:outline-none max-sm:min-h-11 max-sm:text-base max-sm:focus:translate-y-0";
@@ -30,7 +72,6 @@ const FormSolic = () => {
       Cedula: "",
       Correo: "",
       Telefono: "",
-      TipoSacramento: "",
       Motivo: "",
     },
     onSubmit: async ({ value }: any) => {
@@ -58,6 +99,37 @@ const FormSolic = () => {
       }
     },
   });
+
+  const valores = useStore(form.store, (state) => state.values);
+
+  const obtenerPrimerCampoInvalido = () => {
+    if (validarNombre(valores.Nombre)) return "Nombre";
+    if (validarPrimerApellido(valores.PrimerApellido)) return "PrimerApellido";
+    if (validarSegundoApellido(valores.SegundoApellido)) return "SegundoApellido";
+    if (validarCedula(valores.Cedula)) return "Cedula";
+    if (validarCorreo(valores.Correo)) return "Correo";
+    if (validarTelefono(valores.Telefono)) return "Telefono";
+    if (validarMotivo(valores.Motivo)) return "Motivo";
+    return null;
+  };
+
+  const manejarEnvio = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await form.handleSubmit();
+    const campoInvalido = obtenerPrimerCampoInvalido();
+    if (campoInvalido) {
+      const elemento = document.getElementById(campoInvalido) as HTMLInputElement | null;
+      elemento?.focus();
+      elemento?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    if (!captchaToken) {
+      document
+        .getElementById("captcha-container")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
 
   const handleHacerOtraSolicitud = () => {
     form.reset();
@@ -109,31 +181,27 @@ const FormSolic = () => {
               Solicitud pastoral
             </p>
             <h2 className="m-0 mb-2 font-heading text-2xl font-extrabold text-royal-blue sm:text-[30px]">
-              Formulario de Sacramento
+              Solicitud de Sacramento
             </h2>
             <p className="m-0 text-sm leading-relaxed text-text-secondary sm:text-[15px]">
-              Completa los datos para registrar una nueva solicitud.
+              Completa el formulario para solicitar tus constancia sacramental.
             </p>
           </div>
 
           <form
             className="grid w-full min-w-0 grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              form.handleSubmit();
-            }}
+            onSubmit={manejarEnvio}
           >
             <div className="flex w-full min-w-0 flex-col gap-2">
               <form.Field
                 name="Nombre"
                 validators={{
-                  onBlur: ({ value }) => requerido(value, "El nombre es obligatorio."),
+                  onChange: ({ value }) => validarNombre(value),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Nombre
                     </Label>
                     <Input
@@ -142,10 +210,13 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: Juan"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => field.handleChange(soloLetras(e.target.value).slice(0, 50))}
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
+                    <span className="text-right text-[0.78rem] font-medium text-text-secondary">
+                      {field.state.value.length}/50
+                    </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
@@ -160,13 +231,12 @@ const FormSolic = () => {
               <form.Field
                 name="PrimerApellido"
                 validators={{
-                  onBlur: ({ value }) =>
-                    requerido(value, "El primer apellido es obligatorio."),
+                  onChange: ({ value }) => validarPrimerApellido(value),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Primer apellido
                     </Label>
                     <Input
@@ -175,10 +245,13 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: Pérez"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => field.handleChange(soloLetras(e.target.value).slice(0, 50))}
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
+                    <span className="text-right text-[0.78rem] font-medium text-text-secondary">
+                      {field.state.value.length}/50
+                    </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
@@ -193,13 +266,12 @@ const FormSolic = () => {
               <form.Field
                 name="SegundoApellido"
                 validators={{
-                  onBlur: ({ value }) =>
-                    requerido(value, "El segundo apellido es obligatorio."),
+                  onChange: ({ value }) => validarSegundoApellido(value),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Segundo apellido
                     </Label>
                     <Input
@@ -208,10 +280,13 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: González"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => field.handleChange(soloLetras(e.target.value).slice(0, 50))}
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
+                    <span className="text-right text-[0.78rem] font-medium text-text-secondary">
+                      {field.state.value.length}/50
+                    </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
@@ -226,17 +301,12 @@ const FormSolic = () => {
               <form.Field
                 name="Cedula"
                 validators={{
-                  onBlur: ({ value }) => {
-                    const cedula = soloDigitos(value);
-                    if (!cedula) return "La cédula es obligatoria.";
-                    if (cedula.length !== 9) return "La cédula debe tener 9 dígitos.";
-                    return undefined;
-                  },
+                  onChange: ({ value }) => validarCedula(value),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Cédula
                     </Label>
                     <Input
@@ -246,7 +316,9 @@ const FormSolic = () => {
                       inputMode="numeric"
                       placeholder="Ej: 123456789"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) =>
+                        field.handleChange(soloDigitos(e.target.value).slice(0, 9))
+                      }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
@@ -264,19 +336,12 @@ const FormSolic = () => {
               <form.Field
                 name="Correo"
                 validators={{
-                  onBlur: ({ value }) => {
-                    const correo = value.trim();
-                    if (!correo) return "El correo es obligatorio.";
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-                      return "Ingresá un correo válido.";
-                    }
-                    return undefined;
-                  },
+                  onChange: ({ value }) => validarCorreo(value),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Correo
                     </Label>
                     <Input
@@ -285,7 +350,7 @@ const FormSolic = () => {
                       type="email"
                       placeholder="Ej: nombre@correo.com"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => field.handleChange(soloCorreo(e.target.value))}
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
@@ -303,17 +368,12 @@ const FormSolic = () => {
               <form.Field
                 name="Telefono"
                 validators={{
-                  onBlur: ({ value }) => {
-                    const telefono = soloDigitos(value);
-                    if (!telefono) return "El teléfono es obligatorio.";
-                    if (telefono.length !== 8) return "El teléfono debe tener 8 dígitos.";
-                    return undefined;
-                  },
+                  onChange: ({ value }) => validarTelefono(value),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Teléfono
                     </Label>
                     <Input
@@ -323,46 +383,12 @@ const FormSolic = () => {
                       inputMode="numeric"
                       placeholder="Ej: 88888888"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) =>
+                        field.handleChange(soloDigitos(e.target.value).slice(0, 8))
+                      }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
-                      </span>
-                    )}
-                  </>
-                )}
-              </form.Field>
-            </div>
-
-            <div className="flex w-full min-w-0 flex-col gap-2">
-              <form.Field
-                name="TipoSacramento"
-                validators={{
-                  onBlur: ({ value }) =>
-                    value ? undefined : "Seleccioná el tipo de sacramento.",
-                }}
-              >
-                {(field) => (
-                  <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
-                      Tipo de sacramento
-                    </Label>
-                    <Select
-                      value={field.state.value}
-                      name={field.name}
-                      id={field.name}
-                      className={cn(fieldClass, "cursor-pointer")}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                    >
-                      <option value="">Seleccione un sacramento</option>
-                      <option value="Bautismo">Bautismo</option>
-                      <option value="Confirmación">Confirmación</option>
-                      <option value="Matrimonio">Matrimonio</option>
-                    </Select>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
@@ -377,25 +403,25 @@ const FormSolic = () => {
               <form.Field
                 name="Motivo"
                 validators={{
-                  onBlur: ({ value }) =>
-                    requerido(value, "Indicá el motivo de la solicitud."),
+                  onChange: ({ value }) => validarMotivo(value),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
                       Motivo
                     </Label>
-                    <Input
+                    <Textarea
                       id={field.name}
                       name={field.name}
-                      type="text"
                       placeholder="Describe brevemente el motivo"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => field.handleChange(e.target.value.slice(0, 250))}
                       onBlur={field.handleBlur}
-                      className={fieldClass}
                     />
+                    <span className="text-right text-[0.78rem] font-medium text-text-secondary">
+                      {field.state.value.length}/250
+                    </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
@@ -406,7 +432,10 @@ const FormSolic = () => {
               </form.Field>
             </div>
 
-            <div className="col-span-1 overflow-x-auto rounded-xl border border-border bg-surface-muted p-4 sm:col-span-2">
+            <div
+              id="captcha-container"
+              className="col-span-1 flex flex-col items-center overflow-x-auto rounded-xl border border-border bg-surface-muted p-4 sm:col-span-2"
+            >
               <ReCAPTCHA
                 ref={captchaRef}
                 sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
