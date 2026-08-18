@@ -184,7 +184,7 @@ const FormSolic = () => {
               Solicitud de Sacramento
             </h2>
             <p className="m-0 text-sm leading-relaxed text-text-secondary sm:text-[15px]">
-              Completa los datos para registrar una nueva solicitud.
+              Completa el formulario para solicitar tus constancia sacramental.
             </p>
           </div>
 
