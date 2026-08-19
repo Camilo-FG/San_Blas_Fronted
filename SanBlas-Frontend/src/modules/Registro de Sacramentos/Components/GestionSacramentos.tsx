@@ -136,20 +136,62 @@ const GestionSacramentos = () => {
     setEditModalOpen(true);
   };
 
-  const handleEditSave = async (data: any, tipo: string) => {
-    if (tipo === "Bautismo") {
-      await updateBautismo.mutateAsync(data);
+  const handleEditSave = async (datos: Record<string, any>, tipoOriginal: string) => {
+    const { Bautismo, "Comunión": Comunion, "Confirmación": Confirmacion, Matrimonio } = datos;
+
+    if (Bautismo) {
+      if (tipoOriginal === "Bautismo" && Bautismo.id) {
+        await updateBautismo.mutateAsync(Bautismo);
+      } else {
+        await createBautismo.mutateAsync({
+          id: 0,
+          ...Bautismo,
+          fechaRegistro: new Date().toISOString(),
+        });
+      }
       await refetchBautismos();
-    } else if (tipo === "Comunión") {
-      await updateComunion.mutateAsync(data);
+    }
+
+    if (Comunion) {
+      if (tipoOriginal === "Comunión" && Comunion.id) {
+        await updateComunion.mutateAsync(Comunion);
+      } else {
+        await createComunion.mutateAsync({
+          id: 0,
+          ...Comunion,
+          fechaRegistro: new Date().toISOString(),
+        });
+      }
       await refetchComuniones();
-    } else if (tipo === "Confirmación") {
-      await updateConfirmacion.mutateAsync(data);
+    }
+
+    if (Confirmacion) {
+      if (tipoOriginal === "Confirmación" && Confirmacion.id) {
+        await updateConfirmacion.mutateAsync(Confirmacion);
+      } else {
+        await createConfirmacion.mutateAsync({
+          id: 0,
+          ...Confirmacion,
+          fechaRegistro: new Date().toISOString(),
+        });
+      }
       await refetchConfirmaciones();
-    } else if (tipo === "Matrimonio") {
-      await updateMatrimonio.mutateAsync(data);
+    }
+
+    if (Matrimonio) {
+      if (tipoOriginal === "Matrimonio" && Matrimonio.id) {
+        await updateMatrimonio.mutateAsync(Matrimonio);
+      } else {
+        await createMatrimonio.mutateAsync({
+          id: 0,
+          ...Matrimonio,
+          fechaRegistro: new Date().toISOString(),
+        });
+      }
       await refetchMatrimonios();
     }
+
+    showToast("Acta sacramental actualizada correctamente", "success");
   };
 
   const handleDelete = async (sacramento: any) => {
@@ -447,6 +489,7 @@ const GestionSacramentos = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveSacramento}
+        tieneBautismo={bautismosArray.length > 0}
       />
 
       <EditSacramentoModal
