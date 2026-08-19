@@ -12,7 +12,9 @@ import { useGetSolicitudes } from "../solicSacramento/hooks/useGetSolicitudes";
 import { useUpdateSolicitudEstado } from "../solicSacramento/hooks/useUpdateSolicitudEstado";
 import { useRechazarSolicitudSacramento } from "../solicSacramento/hooks/useRechazarSolicitudSacramento";
 import { usePagination } from "../../shared/hooks/usePagination";
+import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 import { ApiError } from "../../services/apiClient";
+import { toFriendlySolicitudesMessage } from "../../services/constancias/solicitudesQueryHandler";
 import { useAuth } from "../../context/AuthContext";
 import { AdminRecordCard } from "../../shared/components/admin/AdminRecordCard";
 import { AdminRecordDetailSheet } from "../../shared/components/admin/AdminRecordDetailSheet";
@@ -20,7 +22,6 @@ import {
   AdminModule,
   AdminPagination,
   AdminPaginationButton,
-  AdminSearch,
   AdminTable,
   AdminTableCell,
   AdminTableFooter,
@@ -44,13 +45,6 @@ const columnHelper = createColumnHelper<FormSacramento>();
 const nombreCompleto = (row: FormSacramento) =>
   [row.Nombre, row.PrimerApellido, row.SegundoApellido].filter(Boolean).join(" ");
 
-const normalizeText = (value: unknown) =>
-  String(value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-
 const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   const normalized = (estado ?? "Pendiente").toLowerCase();
   if (normalized === "aprobado") return "success";
@@ -70,15 +64,30 @@ const estadoSelectClass = (estado?: string) =>
   );
 
 const TableSacramentos = () => {
-  const [query, setQuery] = useState("");
+  const [filtroNombre, setFiltroNombre] = useState("");
+  const [filtroCedula, setFiltroCedula] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState<"Pendiente" | "Aprobado" | "Rechazado" | "">(
+    "",
+  );
   const [solicitudSeleccionada, setSolicitudSeleccionada] =
     useState<FormSacramento | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
   const [rejectionReasonText, setRejectionReasonText] = useState("");
   const [solicitudARechazar, setSolicitudARechazar] = useState<FormSacramento | null>(null);
+  const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
+  const debouncedCedula = useDebouncedValue(filtroCedula.trim(), 500);
+  const debouncedEstado = useDebouncedValue(filtroEstado, 300);
+  const filters = useMemo(
+    () => ({
+      nombre: debouncedNombre || undefined,
+      cedula: debouncedCedula || undefined,
+      estado: debouncedEstado || undefined,
+    }),
+    [debouncedNombre, debouncedCedula, debouncedEstado],
+  );
   const { isAdmin } = useAuth();
-  const { data, error, isPending } = useGetSolicitudes();
+  const { data, error, isPending, isFetching, refetch } = useGetSolicitudes(filters);
   const updateEstado = useUpdateSolicitudEstado();
   const rechazarSolicitud = useRechazarSolicitudSacramento();
   const isUpdatingEstado = updateEstado.isPending;
@@ -86,6 +95,8 @@ const TableSacramentos = () => {
   const { showToast } = useToast();
 
   const rows: FormSacramento[] = Array.isArray(data) ? data : [];
+  const isInitialLoading = isPending && rows.length === 0;
+  const isFiltering = isFetching && !isInitialLoading;
 
   const rejectionReasons = [
     "Documentación incompleta",
@@ -134,17 +145,6 @@ const TableSacramentos = () => {
   const handleReasonTextChange = (value: string) => {
     setRejectionReasonText(value);
   };
-
-  const filtered = useMemo(() => {
-    const normalizedQuery = normalizeText(query);
-    if (!normalizedQuery) return rows;
-    return rows.filter((row) => {
-      const searchable = [row.Nombre, row.PrimerApellido, row.SegundoApellido, String(row.Cedula)]
-        .map(normalizeText)
-        .join(" ");
-      return searchable.includes(normalizedQuery);
-    });
-  }, [query, rows]);
 
   const columns = useMemo(
     () => [
@@ -208,8 +208,9 @@ const TableSacramentos = () => {
   );
 
   const table = useReactTable({
-    data: filtered,
+    data: rows,
     columns,
+    autoResetPageIndex: true,
     getCoreRowModel: getCoreRowModel(),
     initialState: { pagination: { pageSize: 7 } },
     getPaginationRowModel: getPaginationRowModel(),
@@ -220,9 +221,6 @@ const TableSacramentos = () => {
     canPreviousPage, canNextPage,
     goToPreviousPage, goToNextPage,
   } = usePagination(table);
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setQuery(e.target.value || "");
 
   const handleEstadoChange = (
     id: number | string | undefined,
@@ -262,23 +260,77 @@ const TableSacramentos = () => {
   };
 
   if (error) {
-    const mensaje = error instanceof ApiError ? error.message : "No se pudieron cargar las solicitudes.";
-    return <div className="p-4 text-sm text-danger">{mensaje}</div>;
+    const mensaje = toFriendlySolicitudesMessage(error);
+    return (
+      <div className="rounded-lg border border-danger/30 bg-danger-bg p-4 text-sm text-danger">
+        <p className="m-0">{mensaje}</p>
+        <Button
+          type="button"
+          variant="secondary"
+          className="mt-3"
+          onClick={() => void refetch()}
+        >
+          Reintentar
+        </Button>
+      </div>
+    );
   }
 
   return (
     <AdminModule className="p-2">
       <AdminToolbar>
-        <AdminSearch
-          value={query}
-          type="search"
-          placeholder="Buscar por nombre, apellidos o cédula"
-          onChange={handleSearch}
-          aria-label="Buscar solicitudes de constancia"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            value={filtroNombre}
+            onChange={(e) => setFiltroNombre(e.target.value)}
+            placeholder="Nombre completo"
+            className="rounded border px-2 py-1 text-sm"
+            aria-label="Filtrar por nombre completo"
+            style={{ width: "200px" }}
+          />
+          <input
+            type="number"
+            value={filtroCedula || ""}
+            onChange={(e) => setFiltroCedula(e.target.value || "")}
+            placeholder="Cédula"
+            className="rounded border px-2 py-1 text-sm"
+            aria-label="Filtrar por cédula"
+            style={{ width: "120px" }}
+          />
+          <select
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value as "Pendiente" | "Aprobado" | "Rechazado" | "")}
+            className="rounded border px-2 py-1 text-sm"
+            aria-label="Filtrar por estado"
+            style={{ width: "150px" }}
+          >
+            <option value="">Todos</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Aprobado">Aprobado</option>
+            <option value="Rechazado">Rechazado</option>
+          </select>
+          {isFiltering && (
+            <Loader2
+              size={18}
+              className="animate-spin text-text-muted"
+              aria-label="Aplicando filtros"
+            />
+          )}
+        </div>
       </AdminToolbar>
 
-      {!isPending && (
+      {isInitialLoading && (
+        <p className="py-6 text-center text-sm text-text-muted">Cargando solicitudes...</p>
+      )}
+
+      {!isInitialLoading && rows.length === 0 && (
+        <p className="py-6 text-center text-sm text-text-muted">
+          No se encontraron solicitudes con los filtros seleccionados.
+        </p>
+      )}
+
+      {!isInitialLoading && rows.length > 0 && (
         <>
           <div className="hidden md:block">
             <AdminTablePanel>
@@ -336,7 +388,7 @@ const TableSacramentos = () => {
           </div>
 
           <div className="flex flex-col gap-2.5 md:hidden">
-            {filtered.map((row) => (
+            {table.getRowModel().rows.map(({ original: row }) => (
               <AdminRecordCard
                 key={String(row.id)}
                 icon={<ScrollText size={20} />}
@@ -456,7 +508,7 @@ const TableSacramentos = () => {
         </Modal>
       )}
 
-      {!isPending && table.getRowModel().rows.length > 0 && (
+      {!isInitialLoading && table.getRowModel().rows.length > 0 && (
         <AdminTableFooter>
           <span className="text-sm text-text-muted">
             <strong className="text-text">{totalItems}</strong> registros

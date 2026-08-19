@@ -75,6 +75,10 @@ const mensajePorEstado = (status: number): string => {
       return "No tiene permisos para realizar esta acción.";
     case 404:
       return "El recurso solicitado no fue encontrado.";
+    case 429:
+      return "Demasiadas solicitudes. Espere un momento e intente de nuevo.";
+    case 503:
+      return "El servicio no está disponible en este momento. Intente más tarde.";
     case 500:
       return "Ocurrió un error en el servidor. Intente más tarde.";
     default:
@@ -120,7 +124,9 @@ export const handleApiError = (error: unknown): never => {
 
   const mensajeBackend =
     data?.mensaje ??
-    data?.message ??
+    (typeof data?.message === "string" && !isTechnicalApiMessage(data.message)
+      ? data.message
+      : undefined) ??
     (mensajesValidacion.length > 0
       ? mensajesValidacion.join(" ")
       : data?.title);
@@ -131,3 +137,8 @@ export const handleApiError = (error: unknown): never => {
     erroresBackend,
   );
 };
+
+const isTechnicalApiMessage = (message: string): boolean =>
+  /(query failed|syntax error|typeorm|exception|stack|sql|postgres|ECONN|internal server error|at \w+\()/i.test(
+    message,
+  );
