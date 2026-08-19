@@ -9,4 +9,5 @@ export type FormSacramento = {
   TipoSacramento: string;
   Motivo: string;
   Estado?: string;
+  Fecha?: string;
 };
