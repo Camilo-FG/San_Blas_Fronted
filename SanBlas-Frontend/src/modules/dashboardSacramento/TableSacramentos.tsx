@@ -459,29 +459,6 @@ const TableSacramentos = () => {
                     value: row.Telefono?.toString() || "No provisto",
                   },
                 ]}
-                footer={
-                  isAdmin ? (
-                    <Select
-                      className={cn("w-full", estadoSelectClass(row.Estado))}
-                      value={row.Estado ?? "Pendiente"}
-                      disabled={isUpdatingEstado}
-                      aria-label={`Estado de solicitud de ${nombreCompleto(row)}`}
-                      onChange={(e) =>
-                        handleEstadoChange(
-                          row.id,
-                          e.target.value as
-                            | "Pendiente"
-                            | "Aprobado"
-                            | "Rechazado",
-                        )
-                      }
-                    >
-                      <option value="Pendiente">Pendiente</option>
-                      <option value="Aprobado">Aprobado</option>
-                      <option value="Rechazado">Rechazado</option>
-                    </Select>
-                  ) : undefined
-                }
                 actions={[
                   {
                     label: "Ver solicitud",
