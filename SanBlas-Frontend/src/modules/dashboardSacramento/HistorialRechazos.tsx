@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Eye, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import {
   createColumnHelper,
   flexRender,
@@ -17,7 +17,6 @@ import {
   AdminModule,
   AdminPagination,
   AdminPaginationButton,
-  AdminSearch,
   AdminTable,
   AdminTableCell,
   AdminTableFooter,
@@ -29,10 +28,8 @@ import {
   Badge,
   Button,
   Modal,
-  cn,
-  type BadgeVariant,
-  useToast,
 } from "../../shared/ui";
+import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 
 const columnHelper = createColumnHelper<HistorialRechazo>();
 
@@ -52,13 +49,27 @@ const truncateText = (text: string, maxLength: number): string => {
 };
 
 const HistorialRechazos = () => {
-  const [query, setQuery] = useState("");
+  const [filtroNombre, setFiltroNombre] = useState("");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [detalleSeleccionado, setDetalleSeleccionado] = useState<string | null>(null);
+  const [registroSeleccionado, setRegistroSeleccionado] = useState<HistorialRechazo | null>(null);
   const { data, error, isPending } = useGetHistorialRechazos();
-  const { showToast } = useToast();
 
   const rows: HistorialRechazo[] = Array.isArray(data) ? data : [];
+  const debouncedNombre = useDebouncedValue(filtroNombre.trim().toLowerCase(), 500);
+  const debouncedFechaDesde = useDebouncedValue(fechaDesde, 500);
+  const debouncedFechaHasta = useDebouncedValue(fechaHasta, 500);
+  const filteredRows = useMemo(
+    () => rows.filter((row) => {
+      const rowDate = row.creado_en.slice(0, 10);
+      const matchesName = !debouncedNombre || (row.nombre_solicitante ?? "").toLowerCase().includes(debouncedNombre);
+      const matchesFrom = !debouncedFechaDesde || rowDate >= debouncedFechaDesde;
+      const matchesTo = !debouncedFechaHasta || rowDate <= debouncedFechaHasta;
+      return matchesName && matchesFrom && matchesTo;
+    }),
+    [rows, debouncedNombre, debouncedFechaDesde, debouncedFechaHasta],
+  );
 
   const columns = useMemo(
     () => [
@@ -102,7 +113,7 @@ const HistorialRechazos = () => {
         header: () => "Detalle",
         cell: (info) => (
           <span className="block max-w-[260px] truncate text-sm text-text-secondary">
-            {truncateText(info.row.original.detalle ?? "", 60)}
+            {truncateText(info.row.original.detalle || "-", 50)}
           </span>
         ),
       }),
@@ -114,7 +125,7 @@ const HistorialRechazos = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setDetalleSeleccionado(info.row.original.detalle ?? "")}
+              onClick={() => setRegistroSeleccionado(info.row.original)}
               aria-label={`Ver detalle completo de la solicitud ${info.row.original.solicitud_id}`}
             >
               <Eye size={16} strokeWidth={1.5} />
@@ -127,11 +138,10 @@ const HistorialRechazos = () => {
   );
 
   const table = useReactTable({
-    data: rows,
+    data: filteredRows,
     columns,
     state: {
       sorting,
-      globalFilter: query,
     },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -159,9 +169,6 @@ const HistorialRechazos = () => {
     canPreviousPage: table.getCanPreviousPage(),
   };
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setQuery(e.target.value || "");
-
   if (error) {
     const mensaje = error instanceof ApiError ? error.message : "No se pudo cargar el historial de rechazos.";
     return <div className="p-4 text-sm text-danger">{mensaje}</div>;
@@ -170,18 +177,41 @@ const HistorialRechazos = () => {
   return (
     <AdminModule className="p-2">
       <AdminToolbar>
-        <AdminSearch
-          value={query}
-          type="search"
-          placeholder="Buscar por solicitud, motivo, usuario..."
-          onChange={handleSearch}
-          aria-label="Buscar en historial de rechazos"
-        />
+        <div className="flex w-full flex-wrap items-center gap-2">
+          <input
+            type="search"
+            value={filtroNombre}
+            onChange={(e) => setFiltroNombre(e.target.value)}
+            placeholder="Nombre del solicitante"
+            aria-label="Filtrar por nombre del solicitante"
+            className="min-h-11 rounded-xl border border-border-strong bg-surface-muted px-3.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+          />
+          <label className="flex items-center gap-2 text-sm text-text-secondary">
+            Desde
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => setFechaDesde(e.target.value)}
+              aria-label="Filtrar desde fecha"
+              className="min-h-11 rounded-xl border border-border-strong bg-surface-muted px-3 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            />
+          </label>
+          <label className="flex items-center gap-2 text-sm text-text-secondary">
+            Hasta
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => setFechaHasta(e.target.value)}
+              aria-label="Filtrar hasta fecha"
+              className="min-h-11 rounded-xl border border-border-strong bg-surface-muted px-3 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            />
+          </label>
+        </div>
       </AdminToolbar>
 
       {!isPending && (
         <>
-          {rows.length === 0 ? (
+          {filteredRows.length === 0 ? (
             <div className="py-12">
               <div className="rounded-2xl border border-dashed border-border-strong bg-surface px-4 py-8 text-center text-text-muted">
                 <p className="text-base font-semibold text-slate-700">No hay registros de solicitudes rechazadas</p>
@@ -252,7 +282,7 @@ const HistorialRechazos = () => {
                         </div>
                         <div>
                           <span className="font-medium text-text">Detalle: </span>
-                          {truncateText(row.original.detalle ?? "", 80)}
+                          {truncateText(row.original.detalle || "-", 50)}
                         </div>
                       </div>
 
@@ -260,7 +290,7 @@ const HistorialRechazos = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setDetalleSeleccionado(row.original.detalle ?? "")}
+                          onClick={() => setRegistroSeleccionado(row.original)}
                           aria-label={`Ver detalle completo de la solicitud ${row.original.solicitud_id}`}
                         >
                           <Eye size={16} strokeWidth={1.5} />
@@ -274,7 +304,7 @@ const HistorialRechazos = () => {
             </>
           )}
 
-          {rows.length > 0 && (
+          {filteredRows.length > 0 && (
             <AdminTableFooter>
               <span className="text-sm text-text-muted">
                 <strong className="text-text">{totalItems}</strong> registros
@@ -305,10 +335,29 @@ const HistorialRechazos = () => {
         </>
       )}
 
-      {detalleSeleccionado && (
-        <Modal onClose={() => setDetalleSeleccionado(null)} title="Detalle completo">
-          <div className="whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
-            {detalleSeleccionado}
+      {registroSeleccionado && (
+        <Modal
+          onClose={() => setRegistroSeleccionado(null)}
+          title="Detalle del Rechazo"
+          className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0"
+        >
+          <div className="flex items-center justify-between border-b border-border px-6 py-4 pr-16">
+            <h2 className="m-0 text-lg font-semibold text-text">Detalle del Rechazo</h2>
+          </div>
+          <div className="max-h-[55vh] overflow-y-auto px-6 py-5 text-sm leading-relaxed text-text-secondary">
+            <p className="mb-4 whitespace-pre-wrap">
+              <strong className="text-text">Justificación:</strong>{"\n"}
+              {registroSeleccionado.motivo || "No se ingresó una justificación adicional."}
+            </p>
+            <p className="m-0 whitespace-pre-wrap">
+              <strong className="text-text">Detalle:</strong>{"\n"}
+              {registroSeleccionado.detalle || "No se ingresó una justificación adicional."}
+            </p>
+          </div>
+          <div className="flex justify-end border-t border-border px-6 py-4">
+            <Button variant="secondary" onClick={() => setRegistroSeleccionado(null)}>
+              Cerrar
+            </Button>
           </div>
         </Modal>
       )}

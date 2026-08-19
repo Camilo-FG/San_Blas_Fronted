@@ -117,11 +117,12 @@ export const actualizarEstadoSacramento = async (
 export const rechazarSolicitudSacramento = async (
   id: number,
   motivoRechazo: string,
+  detalleRechazo?: string,
 ): Promise<FormSacramento> => {
   try {
     const { data } = await apiClient.patch<FormSacraBackend>(
       `${BASE}/${id}/rechazar`,
-      { motivoRechazo: motivoRechazo },
+      { motivoRechazo, detalleRechazo },
     );
     return mapBackendToFormSacramento(data);
   } catch (error) {
