@@ -67,7 +67,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: "Administre bautismos, comuniones, confirmaciones y matrimonios.",
   },
   [Rutas.dashboardUrl.constanciasSacramentos]: {
-    title: "Solicitudes de constancia",
+    title: "Solicitudes de constancias sacramentales",
     subtitle: "Revise y actualice el estado de las solicitudes recibidas.",
   },
   [Rutas.dashboardUrl.solicitudesCatequesis]: {
