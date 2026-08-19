@@ -11,8 +11,7 @@ const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
 const soloLetras = (valor: string) =>
   valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "").replace(/\s{2,}/g, " ");
 
-const soloCorreo = (valor: string) =>
-  valor.replace(/[^a-zA-Z0-9@._+-]/g, "");
+const soloCorreo = (valor: string) => valor.replace(/[^a-zA-Z0-9@._+-]/g, "");
 
 const requerido = (valor: string, mensaje: string) =>
   valor.trim() ? undefined : mensaje;
@@ -50,8 +49,7 @@ const validarTelefono = (valor: string) => {
   return undefined;
 };
 
-const validarMotivo = (valor: string) =>
-  requerido(valor, "Campo obligatorio.");
+const validarMotivo = (valor: string) => requerido(valor, "Campo obligatorio.");
 
 const fieldClass =
   "min-h-11 w-full rounded-xl border-[1.5px] border-slate-300 bg-[#fdfdfd] px-3.5 py-3 text-[0.96rem] text-slate-800 transition-[border-color,box-shadow,transform] focus:border-royal-gold focus:shadow-[0_0_0_4px_rgba(212,175,55,0.14)] focus:outline-none max-sm:min-h-11 max-sm:text-base max-sm:focus:translate-y-0";
@@ -61,8 +59,13 @@ const FormSolic = () => {
   const [enviado, setEnviado] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
-  const { captchaRef, captchaToken, handleCaptchaChange, handleCaptchaExpired, resetCaptcha } =
-    useCaptcha();
+  const {
+    captchaRef,
+    captchaToken,
+    handleCaptchaChange,
+    handleCaptchaExpired,
+    resetCaptcha,
+  } = useCaptcha();
 
   const form = useForm({
     defaultValues: {
@@ -72,6 +75,7 @@ const FormSolic = () => {
       Cedula: "",
       Correo: "",
       Telefono: "",
+      TipoSacramento: "Bautismo",
       Motivo: "",
     },
     onSubmit: async ({ value }: any) => {
@@ -105,7 +109,8 @@ const FormSolic = () => {
   const obtenerPrimerCampoInvalido = () => {
     if (validarNombre(valores.Nombre)) return "Nombre";
     if (validarPrimerApellido(valores.PrimerApellido)) return "PrimerApellido";
-    if (validarSegundoApellido(valores.SegundoApellido)) return "SegundoApellido";
+    if (validarSegundoApellido(valores.SegundoApellido))
+      return "SegundoApellido";
     if (validarCedula(valores.Cedula)) return "Cedula";
     if (validarCorreo(valores.Correo)) return "Correo";
     if (validarTelefono(valores.Telefono)) return "Telefono";
@@ -119,7 +124,9 @@ const FormSolic = () => {
     await form.handleSubmit();
     const campoInvalido = obtenerPrimerCampoInvalido();
     if (campoInvalido) {
-      const elemento = document.getElementById(campoInvalido) as HTMLInputElement | null;
+      const elemento = document.getElementById(
+        campoInvalido,
+      ) as HTMLInputElement | null;
       elemento?.focus();
       elemento?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
@@ -162,7 +169,8 @@ const FormSolic = () => {
             ¡Solicitud enviada con éxito!
           </h3>
           <p className="m-0 max-w-[460px] text-[0.98rem] leading-relaxed text-gray-600">
-            Recibimos tu solicitud de sacramento. En breve se revisará y te contactaremos.
+            Recibimos tu solicitud de sacramento. En breve se revisará y te
+            contactaremos.
           </p>
 
           <Button
@@ -201,7 +209,11 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Nombre
                     </Label>
                     <Input
@@ -210,7 +222,11 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: Juan"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(soloLetras(e.target.value).slice(0, 50))}
+                      onChange={(e) =>
+                        field.handleChange(
+                          soloLetras(e.target.value).slice(0, 50),
+                        )
+                      }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
@@ -236,7 +252,11 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Primer apellido
                     </Label>
                     <Input
@@ -245,7 +265,11 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: Pérez"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(soloLetras(e.target.value).slice(0, 50))}
+                      onChange={(e) =>
+                        field.handleChange(
+                          soloLetras(e.target.value).slice(0, 50),
+                        )
+                      }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
@@ -271,7 +295,11 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Segundo apellido
                     </Label>
                     <Input
@@ -280,7 +308,11 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: González"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(soloLetras(e.target.value).slice(0, 50))}
+                      onChange={(e) =>
+                        field.handleChange(
+                          soloLetras(e.target.value).slice(0, 50),
+                        )
+                      }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
@@ -306,7 +338,11 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Cédula
                     </Label>
                     <Input
@@ -317,7 +353,9 @@ const FormSolic = () => {
                       placeholder="Ej: 123456789"
                       value={field.state.value}
                       onChange={(e) =>
-                        field.handleChange(soloDigitos(e.target.value).slice(0, 9))
+                        field.handleChange(
+                          soloDigitos(e.target.value).slice(0, 9),
+                        )
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
@@ -341,7 +379,11 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Correo
                     </Label>
                     <Input
@@ -350,7 +392,9 @@ const FormSolic = () => {
                       type="email"
                       placeholder="Ej: nombre@correo.com"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(soloCorreo(e.target.value))}
+                      onChange={(e) =>
+                        field.handleChange(soloCorreo(e.target.value))
+                      }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
@@ -373,7 +417,11 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Teléfono
                     </Label>
                     <Input
@@ -384,7 +432,9 @@ const FormSolic = () => {
                       placeholder="Ej: 88888888"
                       value={field.state.value}
                       onChange={(e) =>
-                        field.handleChange(soloDigitos(e.target.value).slice(0, 8))
+                        field.handleChange(
+                          soloDigitos(e.target.value).slice(0, 8),
+                        )
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
@@ -408,7 +458,11 @@ const FormSolic = () => {
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} required className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Motivo
                     </Label>
                     <Textarea
@@ -416,7 +470,9 @@ const FormSolic = () => {
                       name={field.name}
                       placeholder="Describe brevemente el motivo"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value.slice(0, 250))}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value.slice(0, 250))
+                      }
                       onBlur={field.handleBlur}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">

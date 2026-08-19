@@ -25,13 +25,41 @@ import { AdminModule, AdminSearch, Button, useToast } from "../../../shared/ui";
 
 const GestionSacramentos = () => {
   const { showToast } = useToast();
-  const { data: bautismos, isLoading: bautismosLoading, error: bautismosError, refetch: refetchBautismos } = useGetListBautismo();
-  const { data: comuniones, isLoading: comunionesLoading, error: comunionesError, refetch: refetchComuniones } = useGetListComunion();
-  const { data: confirmaciones, isLoading: confirmacionesLoading, error: confirmacionesError, refetch: refetchConfirmaciones } = useGetListConfirma();
-  const { data: matrimonios, isLoading: matrimoniosLoading, error: matrimoniosError, refetch: refetchMatrimonios } = useGetListMatrimonio();
+  const {
+    data: bautismos,
+    isLoading: bautismosLoading,
+    error: bautismosError,
+    refetch: refetchBautismos,
+  } = useGetListBautismo();
+  const {
+    data: comuniones,
+    isLoading: comunionesLoading,
+    error: comunionesError,
+    refetch: refetchComuniones,
+  } = useGetListComunion();
+  const {
+    data: confirmaciones,
+    isLoading: confirmacionesLoading,
+    error: confirmacionesError,
+    refetch: refetchConfirmaciones,
+  } = useGetListConfirma();
+  const {
+    data: matrimonios,
+    isLoading: matrimoniosLoading,
+    error: matrimoniosError,
+    refetch: refetchMatrimonios,
+  } = useGetListMatrimonio();
 
-  const isPending = bautismosLoading || comunionesLoading || confirmacionesLoading || matrimoniosLoading;
-  const error = bautismosError || comunionesError || confirmacionesError || matrimoniosError;
+  const isPending =
+    bautismosLoading ||
+    comunionesLoading ||
+    confirmacionesLoading ||
+    matrimoniosLoading;
+  const error =
+    bautismosError ||
+    comunionesError ||
+    confirmacionesError ||
+    matrimoniosError;
 
   const createBautismo = useCreateBautismo();
   const createComunion = useCreateComunion();
@@ -63,36 +91,13 @@ const GestionSacramentos = () => {
   const [editingTipo, setEditingTipo] = useState<string>("Bautismo");
 
   const handleSaveSacramento = async (data: any, tipo: string) => {
-
-  
     const fechaRegistro = new Date().toISOString();
-    if (tipo === "Bautismo") {
-      await createBautismo.mutateAsync({
-        id: 0,
-        ...data,
-        fechaRegistro,
-        SegundoApellido: data.SegundoApellido || "",
-        Prebispero: data.Prebispero || "",
-        horaNacimiento: data.horaNacimiento || "",
-        NombreAbuelosPaternos: data.NombreAbuelosPaternos || "",
-        NombreAbuelosMaternos: data.NombreAbuelosMaternos || "",
-      });
-      await refetchBautismos();
-    } else if (tipo === "Comunión") {
-      await createComunion.mutateAsync({ id: 0, ...data, fechaRegistro });
-      await refetchComuniones();
-    } else if (tipo === "Confirmación") {
-      await createConfirmacion.mutateAsync({ id: 0, ...data, fechaRegistro });
-      await refetchConfirmaciones();
-    } else if (tipo === "Matrimonio") {
-      await createMatrimonio.mutateAsync({ id: 0, ...data, fechaRegistro });
-      await refetchMatrimonios();
-
     try {
       if (tipo === "Bautismo") {
         await createBautismo.mutateAsync({
           id: 0,
           ...data,
+          fechaRegistro,
           SegundoApellido: data.SegundoApellido || "",
           Prebispero: data.Prebispero || "",
           horaNacimiento: data.horaNacimiento || "",
@@ -101,13 +106,13 @@ const GestionSacramentos = () => {
         });
         await refetchBautismos();
       } else if (tipo === "Comunión") {
-        await createComunion.mutateAsync({ id: 0, ...data });
+        await createComunion.mutateAsync({ id: 0, ...data, fechaRegistro });
         await refetchComuniones();
       } else if (tipo === "Confirmación") {
-        await createConfirmacion.mutateAsync({ id: 0, ...data });
+        await createConfirmacion.mutateAsync({ id: 0, ...data, fechaRegistro });
         await refetchConfirmaciones();
       } else if (tipo === "Matrimonio") {
-        await createMatrimonio.mutateAsync({ id: 0, ...data });
+        await createMatrimonio.mutateAsync({ id: 0, ...data, fechaRegistro });
         await refetchMatrimonios();
       }
       showToast("Acta sacramental registrada correctamente", "success");
@@ -119,10 +124,9 @@ const GestionSacramentos = () => {
         conflicto
           ? "Esta acta ya se encuentra registrada. Verifique los datos del libro."
           : "No se pudo registrar el acta. Intente de nuevo.",
-        "error"
+        "error",
       );
       throw err;
-
     }
   };
 
@@ -177,7 +181,9 @@ const GestionSacramentos = () => {
 
   const bautismosArray = Array.isArray(bautismos) ? bautismos : [];
   const comunionesArray = Array.isArray(comuniones) ? comuniones : [];
-  const confirmacionesArray = Array.isArray(confirmaciones) ? confirmaciones : [];
+  const confirmacionesArray = Array.isArray(confirmaciones)
+    ? confirmaciones
+    : [];
   const matrimoniosArray = Array.isArray(matrimonios) ? matrimonios : [];
 
   const todosLosSacramentos = [
@@ -212,7 +218,8 @@ const GestionSacramentos = () => {
       fechaCelebracion:
         `${conf.DiaConfirmacion || conf.diaConfirmacion || ""} ${conf.MesConfirmacion || conf.mesConfirmacion || ""} ${conf.AnnioConfirmacion || conf.annioConfirmacion || ""}`.trim() ||
         "Fecha no especificada",
-      fechaRegistro: conf.fechaRegistro || conf.FechaRegistro || conf.createdAt || "",
+      fechaRegistro:
+        conf.fechaRegistro || conf.FechaRegistro || conf.createdAt || "",
       lugar: conf.LugarConfirmacion || conf.lugarConfirmacion || "",
       tipo: "Confirmación" as const,
       detalles: conf,
@@ -246,7 +253,11 @@ const GestionSacramentos = () => {
     return matchNombre && matchCedula && matchFecha;
   });
 
-  const ordenarDatos = (datos: any[], columna: string, direccion: "asc" | "desc") => {
+  const ordenarDatos = (
+    datos: any[],
+    columna: string,
+    direccion: "asc" | "desc",
+  ) => {
     return [...datos].sort((a, b) => {
       let valA = a[columna] ?? "";
       let valB = b[columna] ?? "";
@@ -274,10 +285,15 @@ const GestionSacramentos = () => {
   );
 
   const hayBusquedaActiva =
-    searchNombre.trim() !== "" || searchCedula.trim() !== "" || searchFecha !== "";
+    searchNombre.trim() !== "" ||
+    searchCedula.trim() !== "" ||
+    searchFecha !== "";
 
   const mostrarEstadoVacio =
-    !isPending && !error && sacramentosOrdenados.length === 0 && hayBusquedaActiva;
+    !isPending &&
+    !error &&
+    sacramentosOrdenados.length === 0 &&
+    hayBusquedaActiva;
 
   const handleSort = (columna: string) => {
     if (sortColumn === columna) {
@@ -357,21 +373,39 @@ const GestionSacramentos = () => {
           onChange={(e) => setFechaInput(e.target.value)}
           className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-text focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
         />
-        <Button type="submit" className="shrink-0">
+        <Button
+          type="submit"
+          className="shrink-0"
+        >
           BUSCAR
         </Button>
-        <Button type="button" onClick={handleLimpiar} variant="secondary" className="shrink-0">
+        <Button
+          type="button"
+          onClick={handleLimpiar}
+          variant="secondary"
+          className="shrink-0"
+        >
           LIMPIAR
         </Button>
-        <Button type="button" onClick={() => setIsModalOpen(true)} variant="primary" className="shrink-0">
+        <Button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          variant="primary"
+          className="shrink-0"
+        >
           + Agregar
         </Button>
       </form>
 
       {isPending && (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <Loader2 size={32} className="animate-spin text-text-muted" />
-          <p className="m-0 text-sm text-text-secondary">Buscando registros...</p>
+          <Loader2
+            size={32}
+            className="animate-spin text-text-muted"
+          />
+          <p className="m-0 text-sm text-text-secondary">
+            Buscando registros...
+          </p>
         </div>
       )}
 

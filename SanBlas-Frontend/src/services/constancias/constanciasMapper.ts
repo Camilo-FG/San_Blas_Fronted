@@ -7,8 +7,8 @@ import type {
 
 const soloDigitos = (valor: string): string => valor.replace(/\D/g, "");
 
-const normalizarTipoSacramento = (tipo: string): string =>
-  tipo
+const normalizarTipoSacramento = (tipo: string | undefined): string =>
+  (tipo ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();

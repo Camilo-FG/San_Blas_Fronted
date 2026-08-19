@@ -317,7 +317,9 @@ const TableSacramentos = () => {
           <Button
             type="button"
             variant="secondary"
-            onClick={() => navigate({ to: Rutas.dashboardUrl.historialRechazos })}
+            onClick={() =>
+              navigate({ to: Rutas.dashboardUrl.historialRechazos })
+            }
           >
             Ver historial de rechazos
           </Button>
