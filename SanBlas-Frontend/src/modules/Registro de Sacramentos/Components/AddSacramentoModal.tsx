@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { Button, cn, Input, Label } from '../../../shared/ui';
+import { Button, cn, Input, Label, useToast } from '../../../shared/ui';
+import {
+  capitalizarNombres,
+  normalizarCamposNombres,
+} from '../Utils/normalizarNombres';
 
 const getInputClass = (hasError: boolean) =>
   cn(
@@ -13,6 +17,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: any, tipo: string) => Promise<void> | void;
+  tieneBautismo: boolean;
 }
 
 const tiposSacramento = ['Bautismo', 'Comunión', 'Confirmación', 'Matrimonio'];
@@ -29,7 +34,8 @@ const descomponerFecha = (fecha: string) => {
   return { dia, mes: parseInt(mes), annio: parseInt(annio) };
 };
 
-const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
+const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) => {
+  const { showToast } = useToast();
   const [tipoActivo, setTipoActivo] = useState('Bautismo');
   const [formData, setFormData] = useState<any>({});
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -70,13 +76,14 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
         cedula, ...rest
       } = datos;
 
-      const nombrePaterno1 = [NombreAbueloPaterno1, Apellido1AbueloPaterno1, Apellido2AbueloPaterno1].filter(Boolean).join(' ');
-      const nombrePaterno2 = [NombreAbueloPaterno2, Apellido1AbueloPaterno2, Apellido2AbueloPaterno2].filter(Boolean).join(' ');
-      const nombreMaterno1 = [NombreAbueloMaterno1, Apellido1AbueloMaterno1, Apellido2AbueloMaterno1].filter(Boolean).join(' ');
-      const nombreMaterno2 = [NombreAbueloMaterno2, Apellido1AbueloMaterno2, Apellido2AbueloMaterno2].filter(Boolean).join(' ');
+      const c = (v: any) => capitalizarNombres(v);
+      const nombrePaterno1 = [c(NombreAbueloPaterno1), c(Apellido1AbueloPaterno1), c(Apellido2AbueloPaterno1)].filter(Boolean).join(' ');
+      const nombrePaterno2 = [c(NombreAbueloPaterno2), c(Apellido1AbueloPaterno2), c(Apellido2AbueloPaterno2)].filter(Boolean).join(' ');
+      const nombreMaterno1 = [c(NombreAbueloMaterno1), c(Apellido1AbueloMaterno1), c(Apellido2AbueloMaterno1)].filter(Boolean).join(' ');
+      const nombreMaterno2 = [c(NombreAbueloMaterno2), c(Apellido1AbueloMaterno2), c(Apellido2AbueloMaterno2)].filter(Boolean).join(' ');
 
       return {
-        ...rest,
+        ...normalizarCamposNombres(rest, ['Nombre', 'PrimerApellido', 'SegundoApellido', 'NombreParroquia', 'Prebispero']),
         cedula: parseInt(String(cedula).replace(/\D/g, '')) || 0,
         NombreAbuelosPaternos: [nombrePaterno1, nombrePaterno2].filter(Boolean).join(' y '),
         NombreAbuelosMaternos: [nombreMaterno1, nombreMaterno2].filter(Boolean).join(' y '),
@@ -85,26 +92,27 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
     if (tipoActivo === 'Comunión') {
       const { FechaComunion, ...rest } = datos;
       const { dia, mes, annio } = descomponerFecha(FechaComunion);
-      return { ...rest, DiaComunion: dia, MesComunion: MESES[mes - 1], AnnioComunion: annio };
+      return { ...normalizarCamposNombres(rest, ['Nombre', 'LugarComunion']), DiaComunion: dia, MesComunion: MESES[mes - 1], AnnioComunion: annio };
     }
     if (tipoActivo === 'Confirmación') {
       const { FechaConfirmacion, ...rest } = datos;
       const { dia, mes, annio } = descomponerFecha(FechaConfirmacion);
-      return { ...rest, DiaConfirmacion: dia, MesConfirmacion: MESES[mes - 1], AnnioConfirmacion: annio };
+      return { ...normalizarCamposNombres(rest, ['Nombre', 'LugarConfirmacion']), DiaConfirmacion: dia, MesConfirmacion: MESES[mes - 1], AnnioConfirmacion: annio };
     }
     if (tipoActivo === 'Matrimonio') {
       const { FechaMatrimonio, NombreContrayente1, Apellido1Contrayente1, Apellido2Contrayente1, NombreContrayente2, Apellido1Contrayente2, Apellido2Contrayente2, ...rest } = datos;
       const { dia, mes, annio } = descomponerFecha(FechaMatrimonio);
+      const c = (v: any) => capitalizarNombres(v);
       return {
-        ...rest,
-        NombreContrayente: [NombreContrayente1, Apellido1Contrayente1, Apellido2Contrayente1].filter(Boolean).join(' '),
-        NombreContrayente2: [NombreContrayente2, Apellido1Contrayente2, Apellido2Contrayente2].filter(Boolean).join(' '),
+        ...normalizarCamposNombres(rest, ['LugarMatrimonio']),
+        NombreContrayente: [c(NombreContrayente1), c(Apellido1Contrayente1), c(Apellido2Contrayente1)].filter(Boolean).join(' '),
+        NombreContrayente2: [c(NombreContrayente2), c(Apellido1Contrayente2), c(Apellido2Contrayente2)].filter(Boolean).join(' '),
         DiaMatrimonio: dia,
         MesMatrimonio: MESES[mes - 1],
         AnnioMatrimonio: annio,
       };
     }
-    return datos;
+    return normalizarCamposNombres(datos, ['Nombre']);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -132,6 +140,14 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
 
     if (Object.keys(nuevosErrores).length > 0) {
       setErrors(nuevosErrores);
+      return;
+    }
+
+    if (!tieneBautismo && tipoActivo !== 'Bautismo') {
+      showToast(
+        'Debe registrar primero el Bautismo antes de los demás sacramentos.',
+        'error',
+      );
       return;
     }
 
@@ -370,19 +386,29 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
         </div>
 
         <div className="flex gap-2 border-b border-gray-200 px-6">
-          {tiposSacramento.map((tipo) => (
-            <button
-              key={tipo}
-              type="button"
-              className={cn(
-                "cursor-pointer border-0 bg-transparent px-5 py-3 text-sm font-medium text-gray-500 transition-colors hover:text-blue-600",
-                tipoActivo === tipo && "border-b-2 border-blue-600 text-blue-600",
-              )}
-              onClick={() => setTipoActivo(tipo)}
-            >
-              {tipo.toUpperCase()}
-            </button>
-          ))}
+          {tiposSacramento.map((tipo) => {
+            const bloqueado = !tieneBautismo && tipo !== 'Bautismo';
+            return (
+              <button
+                key={tipo}
+                type="button"
+                disabled={bloqueado}
+                title={bloqueado ? 'Registre primero el Bautismo' : undefined}
+                className={cn(
+                  "px-5 py-3 text-sm font-medium transition-colors",
+                  bloqueado
+                    ? "cursor-not-allowed border-0 bg-transparent text-gray-300"
+                    : "cursor-pointer border-0 bg-transparent text-gray-500 hover:text-blue-600",
+                  tipoActivo === tipo &&
+                    !bloqueado &&
+                    "border-b-2 border-blue-600 text-blue-600",
+                )}
+                onClick={() => setTipoActivo(tipo)}
+              >
+                {tipo.toUpperCase()}
+              </button>
+            );
+          })}
         </div>
 
         <form onSubmit={handleSubmit} noValidate>

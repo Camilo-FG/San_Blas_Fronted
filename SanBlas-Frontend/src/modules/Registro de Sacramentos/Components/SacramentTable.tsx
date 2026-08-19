@@ -9,6 +9,7 @@ import {
   FileText,
   MapPin,
   Calendar,
+  Eye,
 } from "lucide-react";
 import {
   createColumnHelper,
@@ -373,8 +374,8 @@ function SacramentTable({
               actions={[
                 {
                   label: "Ver detalle",
-                  icon: <Pencil size={15} />,
-                  variant: "primary",
+                  icon: <Eye size={15} />,
+                  variant: "ghost",
                   onClick: () => onViewDetails(sacramento),
                 },
                 {
