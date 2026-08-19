@@ -185,6 +185,14 @@ const TableSacramentos = () => {
           </span>
         ),
       }),
+      columnHelper.accessor("Fecha", {
+        header: () => "Fecha",
+        cell: (info) => (
+          <span className="text-text-secondary">
+            {info.getValue() || "—"}
+          </span>
+        ),
+      }),
       columnHelper.display({
         id: "contacto",
         header: () => "Contacto",
@@ -410,37 +418,7 @@ const TableSacramentos = () => {
                             originalRow.Estado ?? "Pendiente";
                           return (
                             <AdminTableCell key={cell.id}>
-                              <div
-                                className={cn(
-                                  "inline-flex items-center rounded-full p-1",
-                                  estadoSelectClass(currentEstado),
-                                )}
-                              >
-                                {isAdmin ? (
-                                  <Select
-                                    className="min-h-0 border-0 bg-transparent px-2 py-1 text-xs font-bold shadow-none focus-visible:ring-0"
-                                    value={currentEstado}
-                                    onChange={(e) =>
-                                      handleEstadoChange(
-                                        originalRow.id,
-                                        e.target.value as
-                                          | "Pendiente"
-                                          | "Aprobado"
-                                          | "Rechazado",
-                                      )
-                                    }
-                                    disabled={isUpdatingEstado}
-                                  >
-                                    <option value="Pendiente">Pendiente</option>
-                                    <option value="Aprobado">Aprobado</option>
-                                    <option value="Rechazado">Rechazado</option>
-                                  </Select>
-                                ) : (
-                                  <span className="px-2 py-1 text-xs font-bold">
-                                    {currentEstado}
-                                  </span>
-                                )}
-                              </div>
+                              {renderEstadoBadge(currentEstado)}
                             </AdminTableCell>
                           );
                         }
