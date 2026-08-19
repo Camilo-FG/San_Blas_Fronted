@@ -1,4 +1,3 @@
-
 export type FormSacramento = {
   id?: number | string;
   Nombre: string;
