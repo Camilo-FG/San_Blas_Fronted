@@ -4,6 +4,7 @@ import {
   Phone,
   IdCard,
   Eye,
+  Search,
   Loader2,
   ChevronLeft,
   ChevronRight,
@@ -86,6 +87,8 @@ const TableSacramentos = () => {
   const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
   const [rejectionReasonText, setRejectionReasonText] = useState("");
   const [solicitudARechazar, setSolicitudARechazar] =
+    useState<FormSacramento | null>(null);
+  const [solicitudAprobar, setSolicitudAprobar] =
     useState<FormSacramento | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
@@ -171,6 +174,27 @@ const TableSacramentos = () => {
 
   const handleReasonTextChange = (value: string) => {
     setRejectionReasonText(value);
+  };
+
+  const confirmarAprobacion = () => {
+    if (!solicitudAprobar?.id) return;
+
+    updateEstado.mutate(
+      { id: solicitudAprobar.id, nuevoEstado: "Aprobado" },
+      {
+        onSuccess: () => {
+          setSolicitudAprobar(null);
+          showToast("Solicitud aprobada correctamente", "success");
+        },
+        onError: (err: unknown) => {
+          const mensaje =
+            err instanceof ApiError
+              ? err.message
+              : "No se pudo aprobar la solicitud.";
+          showToast(mensaje, "error");
+        },
+      },
+    );
   };
 
   const columns = useMemo(
@@ -262,6 +286,15 @@ const TableSacramentos = () => {
       return;
     }
 
+    if (nextEstado === "Aprobado") {
+      const solicitud = rows.find((r) => String(r.id) === String(id));
+      if (solicitud) {
+        setSolicitudSeleccionada(null);
+        setSolicitudAprobar(solicitud);
+      }
+      return;
+    }
+
     updateEstado.mutate(
       { id, nuevoEstado: nextEstado },
       {
@@ -316,57 +349,98 @@ const TableSacramentos = () => {
   return (
     <AdminModule className="p-2">
       <AdminToolbar>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() =>
-              navigate({ to: Rutas.dashboardUrl.historialRechazos })
-            }
-          >
-            Ver historial de rechazos
-          </Button>
-          <input
-            type="text"
-            value={filtroNombre}
-            onChange={(e) => setFiltroNombre(e.target.value)}
-            placeholder="Nombre completo"
-            className="rounded border px-2 py-1 text-sm"
-            aria-label="Filtrar por nombre completo"
-            style={{ width: "200px" }}
-          />
-          <input
-            type="number"
-            value={filtroCedula || ""}
-            onChange={(e) => setFiltroCedula(e.target.value || "")}
-            placeholder="Cédula"
-            className="rounded border px-2 py-1 text-sm"
-            aria-label="Filtrar por cédula"
-            style={{ width: "120px" }}
-          />
-          <select
-            value={filtroEstado}
-            onChange={(e) =>
-              setFiltroEstado(
-                e.target.value as "Pendiente" | "Aprobado" | "Rechazado" | "",
-              )
-            }
-            className="rounded border px-2 py-1 text-sm"
-            aria-label="Filtrar por estado"
-            style={{ width: "150px" }}
-          >
-            <option value="">Todos</option>
-            <option value="Pendiente">Pendiente</option>
-            <option value="Aprobado">Aprobado</option>
-            <option value="Rechazado">Rechazado</option>
-          </select>
-          {isFiltering && (
-            <Loader2
-              size={18}
-              className="animate-spin text-text-muted"
-              aria-label="Aplicando filtros"
-            />
-          )}
+        <div className="flex w-full flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex size-9 items-center justify-center rounded-xl bg-royal-blue text-white shadow-sm">
+                <Search
+                  size={17}
+                  strokeWidth={2.2}
+                />
+              </span>
+              <div>
+                <h2 className="m-0 text-sm font-extrabold text-royal-blue sm:text-base">
+                  Buscar solicitudes
+                </h2>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full sm:w-auto"
+              onClick={() =>
+                navigate({ to: Rutas.dashboardUrl.historialRechazos })
+              }
+            >
+              Ver historial de rechazos
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(150px,0.8fr)_minmax(170px,0.9fr)]">
+            <label className="flex min-w-0 flex-col gap-1.5">
+              <span className="text-xs font-bold tracking-wide text-text-secondary uppercase">
+                Solicitante
+              </span>
+              <input
+                type="text"
+                value={filtroNombre}
+                onChange={(e) => setFiltroNombre(e.target.value)}
+                placeholder="Nombre completo"
+                className="min-h-11 w-full rounded-xl border border-border-strong bg-surface-muted px-3.5 text-sm text-text outline-none transition-[border-color,box-shadow,background-color] placeholder:text-text-muted focus:border-royal-blue focus:bg-surface focus:ring-3 focus:ring-royal-blue/10"
+                aria-label="Filtrar por nombre completo"
+              />
+            </label>
+            <label className="flex min-w-0 flex-col gap-1.5">
+              <span className="text-xs font-bold tracking-wide text-text-secondary uppercase">
+                Cédula
+              </span>
+              <input
+                type="number"
+                value={filtroCedula || ""}
+                onChange={(e) => setFiltroCedula(e.target.value || "")}
+                placeholder="Número de cédula"
+                className="min-h-11 w-full rounded-xl border border-border-strong bg-surface-muted px-3.5 text-sm text-text outline-none transition-[border-color,box-shadow,background-color] placeholder:text-text-muted focus:border-royal-blue focus:bg-surface focus:ring-3 focus:ring-royal-blue/10"
+                aria-label="Filtrar por cédula"
+              />
+            </label>
+            <label className="flex min-w-0 flex-col gap-1.5">
+              <span className="text-xs font-bold tracking-wide text-text-secondary uppercase">
+                Estado
+              </span>
+              <select
+                value={filtroEstado}
+                onChange={(e) =>
+                  setFiltroEstado(
+                    e.target.value as
+                      | "Pendiente"
+                      | "Aprobado"
+                      | "Rechazado"
+                      | "",
+                  )
+                }
+                className="min-h-11 w-full rounded-xl border border-border-strong bg-surface-muted px-3.5 text-sm font-semibold text-text outline-none transition-[border-color,box-shadow,background-color] focus:border-royal-blue focus:bg-surface focus:ring-3 focus:ring-royal-blue/10"
+                aria-label="Filtrar por estado"
+              >
+                <option value="">Todos los estados</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Aprobado">Aprobado</option>
+                <option value="Rechazado">Rechazado</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="flex min-h-5 items-center justify-end gap-2 text-xs font-medium text-text-muted">
+            {isFiltering && (
+              <>
+                <Loader2
+                  size={15}
+                  className="animate-spin"
+                  aria-hidden="true"
+                />
+                <span>Actualizando resultados...</span>
+              </>
+            )}
+          </div>
         </div>
       </AdminToolbar>
 
@@ -432,7 +506,12 @@ const TableSacramentos = () => {
                                           | "Rechazado",
                                       )
                                     }
-                                    disabled={isUpdatingEstado}
+                                    disabled={
+                                      isUpdatingEstado ||
+                                      ["aprobado", "rechazado"].includes(
+                                        currentEstado.toLowerCase(),
+                                      )
+                                    }
                                   >
                                     <option value="Pendiente">Pendiente</option>
                                     <option value="Aprobado">Aprobado</option>
@@ -490,7 +569,12 @@ const TableSacramentos = () => {
                     <Select
                       className={cn("w-full", estadoSelectClass(row.Estado))}
                       value={row.Estado ?? "Pendiente"}
-                      disabled={isUpdatingEstado}
+                      disabled={
+                        isUpdatingEstado ||
+                        ["aprobado", "rechazado"].includes(
+                          row.Estado?.toLowerCase() ?? "",
+                        )
+                      }
                       aria-label={`Estado de solicitud de ${nombreCompleto(row)}`}
                       onChange={(e) =>
                         handleEstadoChange(
@@ -524,6 +608,7 @@ const TableSacramentos = () => {
 
       <AdminRecordDetailSheet
         open={solicitudSeleccionada !== null}
+        hideHeader
         title={
           solicitudSeleccionada
             ? nombreCompleto(solicitudSeleccionada)
@@ -538,7 +623,7 @@ const TableSacramentos = () => {
         onClose={() => setSolicitudSeleccionada(null)}
         actions={
           solicitudSeleccionada && isAdmin ? (
-            <label className="flex w-full flex-col gap-1.5 text-sm font-semibold text-text">
+            <label className="flex w-full flex-col gap-1.5 text-sm font-semibold text-text md:min-w-[260px] md:flex-[0_1_260px]">
               <span>Cambiar estado</span>
               <Select
                 className={estadoSelectClass(solicitudSeleccionada.Estado)}
@@ -549,7 +634,12 @@ const TableSacramentos = () => {
                     e.target.value as "Pendiente" | "Aprobado" | "Rechazado",
                   )
                 }
-                disabled={isUpdatingEstado}
+                disabled={
+                  isUpdatingEstado ||
+                  ["aprobado", "rechazado"].includes(
+                    solicitudSeleccionada.Estado?.toLowerCase() ?? "",
+                  )
+                }
               >
                 <option value="Pendiente">Pendiente</option>
                 <option value="Aprobado">Aprobado</option>
@@ -560,16 +650,98 @@ const TableSacramentos = () => {
         }
       >
         {solicitudSeleccionada && (
-          <div className="flex flex-col gap-2">
-            <h4 className="m-0 text-xs font-semibold tracking-wider text-text-muted uppercase">
-              Motivo
-            </h4>
-            <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
-              {solicitudSeleccionada.Motivo}
-            </p>
+          <div className="flex flex-col gap-4">
+            <h3 className="m-0 font-heading text-xl font-extrabold text-royal-blue">
+              Datos de la solicitud
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border bg-surface-muted px-3.5 py-3">
+                <h4 className="m-0 text-[0.7rem] font-bold tracking-wider text-text-muted uppercase">
+                  Nombre del solicitante
+                </h4>
+                <p className="m-0 mt-1 text-sm font-semibold text-text">
+                  {nombreCompleto(solicitudSeleccionada)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-border bg-surface-muted px-3.5 py-3">
+                <h4 className="m-0 text-[0.7rem] font-bold tracking-wider text-text-muted uppercase">
+                  Sacramento solicitado
+                </h4>
+                <p className="m-0 mt-1 text-sm font-semibold text-royal-blue">
+                  {solicitudSeleccionada.TipoSacramento}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border bg-surface-muted px-3.5 py-3">
+              <h4 className="m-0 text-[0.7rem] font-bold tracking-wider text-text-muted uppercase">
+                Motivo
+              </h4>
+              <p className="m-0 mt-1 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+                {solicitudSeleccionada.Motivo}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border bg-surface-muted px-3.5 py-3">
+              <h4 className="m-0 text-[0.7rem] font-bold tracking-wider text-text-muted uppercase">
+                Contacto
+              </h4>
+              <div className="mt-2 grid gap-2 text-sm text-text-secondary sm:grid-cols-2">
+                <p className="m-0 min-w-0 break-words">
+                  <span className="font-semibold text-text">Correo:</span>{" "}
+                  {solicitudSeleccionada.Correo}
+                </p>
+                <p className="m-0">
+                  <span className="font-semibold text-text">Teléfono:</span>{" "}
+                  {solicitudSeleccionada.Telefono || "-"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl border border-border bg-surface-muted px-3.5 py-3">
+              <h4 className="m-0 text-[0.7rem] font-bold tracking-wider text-text-muted uppercase">
+                Estado
+              </h4>
+              {renderEstadoBadge(solicitudSeleccionada.Estado)}
+            </div>
           </div>
         )}
       </AdminRecordDetailSheet>
+
+      {solicitudAprobar && (
+        <Modal
+          onClose={() => setSolicitudAprobar(null)}
+          title="Aprobar solicitud"
+        >
+          <div className="flex flex-col gap-5 pr-8">
+            <div>
+              <h3 className="m-0 text-lg font-extrabold text-royal-blue">
+                ¿Desea aprobar la solicitud?
+              </h3>
+              <p className="mt-2 mb-0 text-sm leading-relaxed text-text-secondary">
+                La solicitud de {nombreCompleto(solicitudAprobar)} cambiará a
+                estado aprobado.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => setSolicitudAprobar(null)}
+                disabled={isUpdatingEstado}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="royal"
+                onClick={confirmarAprobacion}
+                disabled={isUpdatingEstado}
+              >
+                {isUpdatingEstado ? "Aprobando..." : "Aprobar solicitud"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {isRejectModalOpen && (
         <Modal

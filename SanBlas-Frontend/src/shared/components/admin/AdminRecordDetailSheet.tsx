@@ -13,6 +13,7 @@ interface AdminRecordDetailSheetProps {
     onClick: () => void;
     icon?: ReactNode;
   };
+  hideHeader?: boolean;
   onClose: () => void;
 }
 
@@ -24,6 +25,7 @@ export function AdminRecordDetailSheet({
   children,
   actions,
   primaryAction,
+  hideHeader = false,
   onClose,
 }: AdminRecordDetailSheetProps) {
   const titleId = useId();
@@ -53,50 +55,75 @@ export function AdminRecordDetailSheet({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[94vh] w-full flex-col rounded-t-[18px] bg-surface shadow-[0_-8px_30px_rgba(15,23,42,0.18)] md:max-h-[88vh] md:max-w-[640px] md:rounded-[18px]"
+        className="relative flex max-h-[94vh] w-full flex-col rounded-t-[18px] bg-surface shadow-[0_-8px_30px_rgba(15,23,42,0.18)] md:max-h-[88vh] md:max-w-[640px] md:rounded-[18px]"
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titleId}
+        aria-labelledby={hideHeader ? undefined : titleId}
+        aria-label={hideHeader ? title : undefined}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="flex items-start justify-between gap-3 border-b border-border-strong px-[1.1rem] py-4">
-          <div>
-            {subtitle && (
-              <p className="mb-1 text-[0.78rem] font-semibold text-text-muted">
-                {subtitle}
-              </p>
-            )}
-            <h3 id={titleId} className="text-[1.1rem] leading-snug text-royal-blue">
-              {title}
-            </h3>
-            {badges && (
-              <div className="mt-2 flex flex-wrap gap-1.5">{badges}</div>
-            )}
-          </div>
+        {hideHeader && (
+          <button
+            type="button"
+            className="absolute top-3 right-3 z-10 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-none bg-slate-100 text-slate-700 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            onClick={onClose}
+            aria-label="Cerrar detalle"
+          >
+            <X size={20} />
+          </button>
+        )}
 
-          <div className="flex shrink-0 items-center gap-2">
-            {primaryAction && (
+        {!hideHeader && (
+          <header className="flex items-start justify-between gap-3 border-b border-border-strong px-[1.1rem] py-4">
+            <div>
+              {subtitle && (
+                <p className="mb-1 text-[0.78rem] font-semibold text-text-muted">
+                  {subtitle}
+                </p>
+              )}
+              <h3
+                id={titleId}
+                className="text-[1.1rem] leading-snug text-royal-blue"
+              >
+                {title}
+              </h3>
+              {badges && (
+                <div className="mt-2 flex flex-wrap gap-1.5">{badges}</div>
+              )}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2">
+              {primaryAction && (
+                <button
+                  type="button"
+                  className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-[10px] border-none bg-blue-600 px-3 py-2 text-[0.85rem] font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                  onClick={primaryAction.onClick}
+                >
+                  {primaryAction.icon}
+                  {primaryAction.label}
+                </button>
+              )}
               <button
                 type="button"
-                className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-[10px] border-none bg-blue-600 px-3 py-2 text-[0.85rem] font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-                onClick={primaryAction.onClick}
+                className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-none bg-slate-100 text-slate-700 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                onClick={onClose}
+                aria-label="Cerrar detalle"
               >
-                {primaryAction.icon}
-                {primaryAction.label}
+                <X size={20} />
               </button>
-            )}
-            <button
-              type="button"
-              className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-none bg-slate-100 text-slate-700 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-              onClick={onClose}
-              aria-label="Cerrar detalle"
-            >
-              <X size={20} />
-            </button>
-          </div>
-        </header>
+            </div>
+          </header>
+        )}
 
-        <div className="overflow-y-auto px-[1.1rem] py-4">{children}</div>
+        <div
+          className={
+            hideHeader
+              ? "overflow-y-auto px-[1.1rem] pt-14 pb-4"
+              : "overflow-y-auto px-[1.1rem] py-4"
+          }
+        >
+          {children}
+        </div>
 
         {actions && (
           <footer className="flex flex-col gap-2.5 border-t border-border-strong px-[1.1rem] pt-3.5 pb-[1.1rem] md:flex-row md:flex-wrap md:justify-end">

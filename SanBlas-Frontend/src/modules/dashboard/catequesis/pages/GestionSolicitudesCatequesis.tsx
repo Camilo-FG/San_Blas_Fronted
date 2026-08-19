@@ -96,8 +96,22 @@ const getEstadoBadgeVariant = (estado?: string | null): BadgeVariant => {
 };
 
 function GestionSolicitudesCatequesis() {
-  const { solicitudes, cambiarEstado, obtenerDetalle, exportarExcel, cargando, guardando, exportando, error, detalleError, accionError, exportError, limpiarDetalleError, limpiarAccionError, limpiarExportError } =
-    useSolicitudesCatequesis();
+  const {
+    solicitudes,
+    cambiarEstado,
+    obtenerDetalle,
+    exportarExcel,
+    cargando,
+    guardando,
+    exportando,
+    error,
+    detalleError,
+    accionError,
+    exportError,
+    limpiarDetalleError,
+    limpiarAccionError,
+    limpiarExportError,
+  } = useSolicitudesCatequesis();
 
   const [filtroEstado, setFiltroEstado] = useState<
     "todos" | EstadoInscripcionCatequesis
@@ -106,7 +120,8 @@ function GestionSolicitudesCatequesis() {
   const [filtroEstadoAplicado, setFiltroEstadoAplicado] = useState<
     "todos" | EstadoInscripcionCatequesis
   >("todos");
-  const [filtroFilialAplicado, setFiltroFilialAplicado] = useState<string>("todas");
+  const [filtroFilialAplicado, setFiltroFilialAplicado] =
+    useState<string>("todas");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSolicitud, setSelectedSolicitud] =
@@ -158,12 +173,7 @@ function GestionSolicitudesCatequesis() {
 
       return matchesStatus && matchesFilial && matchesSearch;
     });
-  }, [
-    solicitudes,
-    filtroEstadoAplicado,
-    filtroFilialAplicado,
-    searchQuery,
-  ]);
+  }, [solicitudes, filtroEstadoAplicado, filtroFilialAplicado, searchQuery]);
 
   const totalPendientes = useMemo(
     () =>
@@ -196,12 +206,15 @@ function GestionSolicitudesCatequesis() {
     limpiarAccionError();
   }, [limpiarDetalleError, limpiarAccionError]);
 
-  const openModal = useCallback(async (solicitud: CatequesisEnrollmentRecord) => {
-    const detalle = await obtenerDetalle(solicitud.id);
-    setSelectedSolicitud(detalle ?? solicitud);
-    setIsRejecting(false);
-    setRejectionReason("");
-  }, [obtenerDetalle]);
+  const openModal = useCallback(
+    async (solicitud: CatequesisEnrollmentRecord) => {
+      const detalle = await obtenerDetalle(solicitud.id);
+      setSelectedSolicitud(detalle ?? solicitud);
+      setIsRejecting(false);
+      setRejectionReason("");
+    },
+    [obtenerDetalle],
+  );
 
   const approveSolicitud = useCallback(
     async (id: number) => {
@@ -267,7 +280,9 @@ function GestionSolicitudesCatequesis() {
         header: "Nivel",
         cell: ({ row }) => (
           <span className="font-extrabold text-slate-700">
-            {obtenerEtiquetaNivelCatequesis(row.original.catequesis?.nivelAInscribirse)}
+            {obtenerEtiquetaNivelCatequesis(
+              row.original.catequesis?.nivelAInscribirse,
+            )}
           </span>
         ),
       },
@@ -342,7 +357,9 @@ function GestionSolicitudesCatequesis() {
   if (cargando) {
     return (
       <AdminModule>
-        <p className="text-sm text-text-muted">Cargando solicitudes de catequesis...</p>
+        <p className="text-sm text-text-muted">
+          Cargando solicitudes de catequesis...
+        </p>
       </AdminModule>
     );
   }
@@ -437,7 +454,9 @@ function GestionSolicitudesCatequesis() {
               <option value="pendiente">Pendiente</option>
               <option value="aprobado">Aprobado</option>
               <option value="rechazado">Rechazado</option>
-              <option value="requiere_modificacion">Requiere modificación</option>
+              <option value="requiere_modificacion">
+                Requiere modificación
+              </option>
             </Select>
           </div>
 
@@ -451,19 +470,26 @@ function GestionSolicitudesCatequesis() {
             >
               <option value="todas">Todas</option>
               {FILIALES_CATEQUESIS.map((filial) => (
-                <option key={filial} value={filial}>
+                <option
+                  key={filial}
+                  value={filial}
+                >
                   {filial}
                 </option>
               ))}
             </Select>
           </div>
 
-          <Button variant="royal" onClick={aplicarFiltros}>
+          <Button
+            variant="royal"
+            onClick={aplicarFiltros}
+          >
             Filtrar
           </Button>
 
           <Button
-            variant="outline"
+            variant="primary"
+            className="shrink-0"
             onClick={() => {
               limpiarExportError();
               void exportarExcel();
@@ -527,57 +553,60 @@ function GestionSolicitudesCatequesis() {
         </div>
 
         <div className="flex flex-col gap-2.5 p-2 md:hidden">
-            {filteredSolicitudes.map((solicitud) => {
-              const nombre = `${solicitud.catequizando?.nombre ?? "Sin nombre"} ${solicitud.catequizando?.apellidos ?? ""}`.trim();
-              const codigo = solicitud.codigoSolicitud || `CAT-${solicitud.id}`;
-              const encargado = `${solicitud.encargado?.nombre ?? ""} ${solicitud.encargado?.apellidos ?? ""}`.trim() || "Sin encargado";
-              const nivel = obtenerEtiquetaNivelCatequesis(
-                solicitud.catequesis?.nivelAInscribirse,
-              );
-              const filial =
-                solicitud.catequesis?.centroCatequesis || "No registrada";
+          {filteredSolicitudes.map((solicitud) => {
+            const nombre =
+              `${solicitud.catequizando?.nombre ?? "Sin nombre"} ${solicitud.catequizando?.apellidos ?? ""}`.trim();
+            const codigo = solicitud.codigoSolicitud || `CAT-${solicitud.id}`;
+            const encargado =
+              `${solicitud.encargado?.nombre ?? ""} ${solicitud.encargado?.apellidos ?? ""}`.trim() ||
+              "Sin encargado";
+            const nivel = obtenerEtiquetaNivelCatequesis(
+              solicitud.catequesis?.nivelAInscribirse,
+            );
+            const filial =
+              solicitud.catequesis?.centroCatequesis || "No registrada";
 
-              return (
-                <AdminRecordCard
-                  key={solicitud.id}
-                  icon={<GraduationCap size={20} />}
-                  accent="#0f766e"
-                  code={codigo}
-                  title={nombre}
-                  subtitle={nivel}
-                  badges={
-                    <Badge variant={getEstadoBadgeVariant(solicitud.estado)}>
-                      {obtenerTextoEstado(solicitud.estado)}
-                    </Badge>
-                  }
-                  meta={[
-                    {
-                      icon: <MapPin size={12} />,
-                      label: "Filial",
-                      value: filial,
-                    },
-                    {
-                      icon: <Calendar size={12} />,
-                      label: "Fecha",
-                      value: solicitud.fechaSolicitud || "No registrada",
-                    },
-                    {
-                      icon: <Phone size={12} />,
-                      label: "Encargado",
-                      value: encargado,
-                    },
-                  ]}
-                  actions={[
-                    {
-                      label: "Revisar expediente",
-                      icon: <Eye size={15} />,
-                      variant: "primary",
-                      onClick: () => openModal(solicitud),
-                    },
-                  ]}
-                />
-              );
-            })}
+            return (
+              <AdminRecordCard
+                key={solicitud.id}
+                icon={<GraduationCap size={20} />}
+                accent="#0f766e"
+                code={codigo}
+                title={nombre}
+                subtitle={nivel}
+                badges={
+                  <Badge variant={getEstadoBadgeVariant(solicitud.estado)}>
+                    {obtenerTextoEstado(solicitud.estado)}
+                  </Badge>
+                }
+                meta={[
+                  {
+                    icon: <MapPin size={12} />,
+                    label: "Filial",
+                    value: filial,
+                  },
+                  {
+                    icon: <Calendar size={12} />,
+                    label: "Fecha",
+                    value: solicitud.fechaSolicitud || "No registrada",
+                  },
+                  {
+                    icon: <Phone size={12} />,
+                    label: "Encargado",
+                    value: encargado,
+                  },
+                ]}
+                actions={[
+                  {
+                    label: "Revisar expediente",
+                    icon: <Eye size={15} />,
+                    variant: "primary",
+                    onClick: () => openModal(solicitud),
+                  },
+                ]}
+              />
+            );
+          })}
         </div>
       </AdminTablePanel>
 
@@ -601,7 +630,9 @@ function GestionSolicitudesCatequesis() {
             {accionError && <ErrorMessage message={accionError} />}
 
             <div className="flex flex-col gap-3.5">
-              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">Información de Catequesis</h3>
+              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">
+                Información de Catequesis
+              </h3>
 
               <div className="grid grid-cols-1 gap-3.5 rounded-3xl border border-slate-100 bg-slate-50 p-5 sm:grid-cols-2 [&_span]:mb-1 [&_span]:block [&_span]:text-[10px] [&_span]:font-extrabold [&_span]:tracking-wide [&_span]:text-slate-400 [&_span]:uppercase [&_strong]:text-sm [&_strong]:text-slate-700">
                 <div>
@@ -628,7 +659,9 @@ function GestionSolicitudesCatequesis() {
                       <a
                         href={
                           resolveUploadedFileUrl(
-                            String(selectedSolicitud.catequesis.feBautismoArchivo),
+                            String(
+                              selectedSolicitud.catequesis.feBautismoArchivo,
+                            ),
                           ) ?? "#"
                         }
                         target="_blank"
@@ -645,7 +678,9 @@ function GestionSolicitudesCatequesis() {
             </div>
 
             <div className="flex flex-col gap-3.5">
-              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">Datos del Catequizando</h3>
+              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">
+                Datos del Catequizando
+              </h3>
 
               <div className="grid grid-cols-1 gap-3.5 rounded-3xl border border-slate-100 bg-slate-50 p-5 sm:grid-cols-2 [&_span]:mb-1 [&_span]:block [&_span]:text-[10px] [&_span]:font-extrabold [&_span]:tracking-wide [&_span]:text-slate-400 [&_span]:uppercase [&_strong]:text-sm [&_strong]:text-slate-700">
                 <div>
@@ -675,7 +710,9 @@ function GestionSolicitudesCatequesis() {
             </div>
 
             <div className="flex flex-col gap-3.5">
-              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">Datos de Bautismo</h3>
+              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">
+                Datos de Bautismo
+              </h3>
 
               <div className="grid grid-cols-1 gap-3.5 rounded-3xl border border-slate-100 bg-slate-50 p-5 sm:grid-cols-2 [&_span]:mb-1 [&_span]:block [&_span]:text-[10px] [&_span]:font-extrabold [&_span]:tracking-wide [&_span]:text-slate-400 [&_span]:uppercase [&_strong]:text-sm [&_strong]:text-slate-700">
                 <div>
@@ -721,7 +758,9 @@ function GestionSolicitudesCatequesis() {
             </div>
 
             <div className="flex flex-col gap-3.5">
-              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">Adecuación Educativa</h3>
+              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">
+                Adecuación Educativa
+              </h3>
 
               <div className="grid grid-cols-1 gap-3.5 rounded-3xl border border-slate-100 bg-slate-50 p-5 sm:grid-cols-2 [&_span]:mb-1 [&_span]:block [&_span]:text-[10px] [&_span]:font-extrabold [&_span]:tracking-wide [&_span]:text-slate-400 [&_span]:uppercase [&_strong]:text-sm [&_strong]:text-slate-700">
                 <div>
@@ -745,7 +784,9 @@ function GestionSolicitudesCatequesis() {
             </div>
 
             <div className="flex flex-col gap-3.5">
-              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">Condición de Salud</h3>
+              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">
+                Condición de Salud
+              </h3>
 
               <div className="grid grid-cols-1 gap-3.5 rounded-3xl border border-slate-100 bg-slate-50 p-5 sm:grid-cols-2 [&_span]:mb-1 [&_span]:block [&_span]:text-[10px] [&_span]:font-extrabold [&_span]:tracking-wide [&_span]:text-slate-400 [&_span]:uppercase [&_strong]:text-sm [&_strong]:text-slate-700">
                 <div>
@@ -769,13 +810,16 @@ function GestionSolicitudesCatequesis() {
             </div>
 
             <div className="flex flex-col gap-3.5">
-              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">Datos de la Madre o Encargada</h3>
+              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">
+                Datos de la Madre o Encargada
+              </h3>
 
               <div className="grid grid-cols-1 gap-3.5 rounded-3xl border border-slate-100 bg-slate-50 p-5 sm:grid-cols-2 [&_span]:mb-1 [&_span]:block [&_span]:text-[10px] [&_span]:font-extrabold [&_span]:tracking-wide [&_span]:text-slate-400 [&_span]:uppercase [&_strong]:text-sm [&_strong]:text-slate-700">
                 <div>
                   <span>Nombre completo</span>
                   <strong>
-                    {selectedSolicitud.madreCatequizando?.nombre || "No registrado"}{" "}
+                    {selectedSolicitud.madreCatequizando?.nombre ||
+                      "No registrado"}{" "}
                     {selectedSolicitud.madreCatequizando?.apellidos || ""}
                   </strong>
                 </div>
@@ -799,8 +843,8 @@ function GestionSolicitudesCatequesis() {
                 <div>
                   <span>Provincia</span>
                   <strong>
-                    {selectedSolicitud.madreCatequizando?.direccion?.provincia ||
-                      "No registrada"}
+                    {selectedSolicitud.madreCatequizando?.direccion
+                      ?.provincia || "No registrada"}
                   </strong>
                 </div>
 
@@ -815,13 +859,16 @@ function GestionSolicitudesCatequesis() {
             </div>
 
             <div className="flex flex-col gap-3.5">
-              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">Datos del Padre</h3>
+              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">
+                Datos del Padre
+              </h3>
 
               <div className="grid grid-cols-1 gap-3.5 rounded-3xl border border-slate-100 bg-slate-50 p-5 sm:grid-cols-2 [&_span]:mb-1 [&_span]:block [&_span]:text-[10px] [&_span]:font-extrabold [&_span]:tracking-wide [&_span]:text-slate-400 [&_span]:uppercase [&_strong]:text-sm [&_strong]:text-slate-700">
                 <div>
                   <span>Nombre completo</span>
                   <strong>
-                    {selectedSolicitud.padreCatequizando?.nombre || "No registrado"}{" "}
+                    {selectedSolicitud.padreCatequizando?.nombre ||
+                      "No registrado"}{" "}
                     {selectedSolicitud.padreCatequizando?.apellidos || ""}
                   </strong>
                 </div>
@@ -837,13 +884,16 @@ function GestionSolicitudesCatequesis() {
             </div>
 
             <div className="flex flex-col gap-3.5">
-              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">Persona que Inscribe</h3>
+              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">
+                Persona que Inscribe
+              </h3>
 
               <div className="grid grid-cols-1 gap-3.5 rounded-3xl border border-slate-100 bg-slate-50 p-5 sm:grid-cols-2 [&_span]:mb-1 [&_span]:block [&_span]:text-[10px] [&_span]:font-extrabold [&_span]:tracking-wide [&_span]:text-slate-400 [&_span]:uppercase [&_strong]:text-sm [&_strong]:text-slate-700">
                 <div>
                   <span>Nombre completo</span>
                   <strong>
-                    {selectedSolicitud.personaInscribe?.nombre || "No registrado"}{" "}
+                    {selectedSolicitud.personaInscribe?.nombre ||
+                      "No registrado"}{" "}
                     {selectedSolicitud.personaInscribe?.apellidos || ""}
                   </strong>
                 </div>
@@ -867,7 +917,9 @@ function GestionSolicitudesCatequesis() {
             </div>
 
             <div className="flex flex-col gap-3.5">
-              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">Datos de Pago</h3>
+              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">
+                Datos de Pago
+              </h3>
 
               <div className="grid grid-cols-1 gap-3.5 rounded-3xl border border-slate-100 bg-slate-50 p-5 sm:grid-cols-2 [&_span]:mb-1 [&_span]:block [&_span]:text-[10px] [&_span]:font-extrabold [&_span]:tracking-wide [&_span]:text-slate-400 [&_span]:uppercase [&_strong]:text-sm [&_strong]:text-slate-700">
                 <div>
@@ -918,7 +970,9 @@ function GestionSolicitudesCatequesis() {
             </div>
 
             <div className="flex flex-col gap-3.5">
-              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">Gestión Administrativa</h3>
+              <h3 className="m-0 border-b border-slate-100 pb-2 text-sm font-black tracking-wide text-royal-blue uppercase">
+                Gestión Administrativa
+              </h3>
 
               <div className="grid grid-cols-1 gap-3.5 rounded-3xl border border-slate-100 bg-slate-50 p-5 sm:grid-cols-2 [&_span]:mb-1 [&_span]:block [&_span]:text-[10px] [&_span]:font-extrabold [&_span]:tracking-wide [&_span]:text-slate-400 [&_span]:uppercase [&_strong]:text-sm [&_strong]:text-slate-700">
                 <div>

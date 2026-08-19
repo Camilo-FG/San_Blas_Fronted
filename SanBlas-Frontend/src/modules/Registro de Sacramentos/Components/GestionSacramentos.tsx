@@ -136,8 +136,16 @@ const GestionSacramentos = () => {
     setEditModalOpen(true);
   };
 
-  const handleEditSave = async (datos: Record<string, any>, tipoOriginal: string) => {
-    const { Bautismo, "Comunión": Comunion, "Confirmación": Confirmacion, Matrimonio } = datos;
+  const handleEditSave = async (
+    datos: Record<string, any>,
+    tipoOriginal: string,
+  ) => {
+    const {
+      Bautismo,
+      Comunión: Comunion,
+      Confirmación: Confirmacion,
+      Matrimonio,
+    } = datos;
 
     if (Bautismo) {
       if (tipoOriginal === "Bautismo" && Bautismo.id) {
@@ -417,22 +425,23 @@ const GestionSacramentos = () => {
         />
         <Button
           type="submit"
+          variant="royal"
           className="shrink-0"
         >
-          BUSCAR
+          Buscar
         </Button>
         <Button
           type="button"
           onClick={handleLimpiar}
-          variant="secondary"
+          variant="royal"
           className="shrink-0"
         >
-          LIMPIAR
+          Limpiar
         </Button>
         <Button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          variant="primary"
+          variant="royal"
           className="shrink-0"
         >
           + Agregar

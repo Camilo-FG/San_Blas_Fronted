@@ -32,6 +32,18 @@ function Navbar() {
   }, []);
 
   useEffect(() => {
+    if (!menuAbierto) {
+      document.body.style.overflow = "";
+      return;
+    }
+
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuAbierto]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         userMenuRef.current &&
@@ -131,7 +143,10 @@ function Navbar() {
           >
             <button
               type="button"
-              className={cn(navLinkClass, "cursor-pointer border-none bg-transparent font-[inherit]")}
+              className={cn(
+                navLinkClass,
+                "cursor-pointer border-none bg-transparent font-[inherit]",
+              )}
               onClick={toggleServicios}
               aria-expanded={serviciosAbierto}
               aria-haspopup="true"
@@ -148,13 +163,38 @@ function Navbar() {
                 onMouseEnter={abrirServicios}
                 onMouseLeave={cerrarServiciosConDelay}
               >
-                <Link
-                  to={Rutas.FormsolicitudesCatequesis}
-                  className={submenuLinkClass}
-                  onClick={cerrarMenu}
-                >
-                  Matrícula a Catequesis
-                </Link>
+                <div className="group relative">
+                  <Link
+                    to={Rutas.FormsolicitudesCatequesis}
+                    hash="informacion"
+                    className={cn(
+                      submenuLinkClass,
+                      "flex items-center justify-between",
+                    )}
+                    onClick={cerrarMenu}
+                  >
+                    Matrícula a Catequesis
+                    <span className="text-xs text-text-muted">▸</span>
+                  </Link>
+                  <div className="invisible absolute top-0 left-[calc(100%+8px)] z-10 min-w-[245px] rounded-[14px] bg-surface p-2 opacity-0 shadow-[0_16px_35px_rgba(0,0,0,0.18)] transition-[opacity,visibility] group-hover:visible group-hover:opacity-100">
+                    <Link
+                      to={Rutas.FormsolicitudesCatequesis}
+                      hash="informacion"
+                      className={submenuLinkClass}
+                      onClick={cerrarMenu}
+                    >
+                      Información sobre catequesis
+                    </Link>
+                    <Link
+                      to={Rutas.FormsolicitudesCatequesis}
+                      hash="matricula"
+                      className={submenuLinkClass}
+                      onClick={cerrarMenu}
+                    >
+                      Formulario de inscripción
+                    </Link>
+                  </div>
+                </div>
 
                 <Link
                   to={Rutas.SolicitudesSacramentos}
@@ -237,7 +277,10 @@ function Navbar() {
           )}
 
           {isAuthenticated && (
-            <div className="relative flex items-center" ref={userMenuRef}>
+            <div
+              className="relative flex items-center"
+              ref={userMenuRef}
+            >
               <button
                 type="button"
                 className={cn(
@@ -301,8 +344,8 @@ function Navbar() {
       </div>
 
       {menuAbierto && (
-        <div className="animate-slide-menu fixed right-0 top-[68px] z-[1001] h-[calc(100vh-68px)] w-full max-w-[330px] border-l border-white/12 bg-royal-blue shadow-[-12px_0_30px_rgba(0,0,0,0.35)] max-sm:top-[61px] max-sm:h-[calc(100vh-61px)] max-[480px]:max-w-full">
-          <div className="flex flex-col gap-2.5 px-[22px] py-6">
+        <div className="animate-slide-menu fixed right-0 bottom-0 top-[68px] z-[1001] w-full max-w-[330px] overflow-y-auto overscroll-contain border-l border-white/12 bg-royal-blue shadow-[-12px_0_30px_rgba(0,0,0,0.35)] max-sm:top-[61px] max-[480px]:max-w-full">
+          <div className="flex min-h-full flex-col gap-2.5 bg-royal-blue px-[22px] py-6">
             <Link
               to={Rutas.home}
               hash="sobre-nosotros"
@@ -333,14 +376,28 @@ function Navbar() {
               </button>
 
               {serviciosAbierto && (
-                <div className="mt-2 flex flex-col gap-2 pl-3.5">
-                  <Link
-                    to={Rutas.FormsolicitudesCatequesis}
-                    className="py-[7px] text-[13px] font-bold uppercase text-white/82 no-underline transition-colors hover:text-royal-gold"
-                    onClick={cerrarMenu}
-                  >
-                    Matrícula a Catequesis
-                  </Link>
+                <div className="mt-2 flex flex-col gap-1 rounded-xl border border-white/20 bg-royal-blue-dark/80 p-2 pl-3.5 shadow-inner">
+                  <div className="flex flex-col gap-1">
+                    <span className="py-[7px] text-[13px] font-bold uppercase text-white/82">
+                      Matrícula a Catequesis
+                    </span>
+                    <Link
+                      to={Rutas.FormsolicitudesCatequesis}
+                      hash="informacion"
+                      className="py-[5px] pl-3 text-[12px] font-bold uppercase text-white/65 no-underline transition-colors hover:text-royal-gold"
+                      onClick={cerrarMenu}
+                    >
+                      Información sobre catequesis
+                    </Link>
+                    <Link
+                      to={Rutas.FormsolicitudesCatequesis}
+                      hash="matricula"
+                      className="py-[5px] pl-3 text-[12px] font-bold uppercase text-white/65 no-underline transition-colors hover:text-royal-gold"
+                      onClick={cerrarMenu}
+                    >
+                      Formulario de inscripción
+                    </Link>
+                  </div>
 
                   <Link
                     to={Rutas.SolicitudesSacramentos}
