@@ -59,7 +59,8 @@ const formatearCedula = (valor: string | number): string => {
   const soloDigitos = String(valor ?? "").replace(/\D/g, "");
   if (!soloDigitos) return "";
   if (soloDigitos.length <= 1) return soloDigitos;
-  if (soloDigitos.length <= 5) return `${soloDigitos[0]}-${soloDigitos.slice(1)}`;
+  if (soloDigitos.length <= 5)
+    return `${soloDigitos[0]}-${soloDigitos.slice(1)}`;
   return `${soloDigitos[0]}-${soloDigitos.slice(1, 5)}-${soloDigitos.slice(5)}`;
 };
 
@@ -157,7 +158,10 @@ function SacramentTable({
               className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-text-muted transition-colors hover:bg-surface-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
               aria-label="Editar"
             >
-              <Pencil size={15} strokeWidth={1.5} />
+              <Pencil
+                size={15}
+                strokeWidth={1.5}
+              />
             </button>
             <button
               type="button"
@@ -165,7 +169,10 @@ function SacramentTable({
               className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-text-muted transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
               aria-label="Eliminar"
             >
-              <Trash2 size={15} strokeWidth={1.5} />
+              <Trash2
+                size={15}
+                strokeWidth={1.5}
+              />
             </button>
           </AdminTableActions>
         ),
@@ -192,18 +199,29 @@ function SacramentTable({
     goToNextPage,
   } = usePagination(table);
 
-  const pageStart = totalItems === 0 ? 0 : (currentPage - 1) * table.getState().pagination.pageSize + 1;
-  const pageEnd = Math.min(currentPage * table.getState().pagination.pageSize, totalItems);
+  const pageStart =
+    totalItems === 0
+      ? 0
+      : (currentPage - 1) * table.getState().pagination.pageSize + 1;
+  const pageEnd = Math.min(
+    currentPage * table.getState().pagination.pageSize,
+    totalItems,
+  );
 
   const sortableHeader = (column: string, label: React.ReactNode) => (
     <AdminTableHeaderCell
+      key={column}
       onClick={() => onSort?.(column)}
       className={cn(onSort && "cursor-pointer select-none")}
     >
       <span className="inline-flex items-center gap-1.5">
         {label}
         {sortColumn === column ? (
-          <SortIcon size={13} strokeWidth={2.5} className="text-text-muted" />
+          <SortIcon
+            size={13}
+            strokeWidth={2.5}
+            className="text-text-muted"
+          />
         ) : (
           <span className="inline-block w-[13px]" />
         )}
@@ -230,7 +248,10 @@ function SacramentTable({
                       <AdminTableHeaderCell key={header.id}>
                         {header.isPlaceholder
                           ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
                       </AdminTableHeaderCell>
                     ),
                   )}
@@ -253,11 +274,17 @@ function SacramentTable({
                         key={cell.id}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
                       </AdminTableCell>
                     ) : (
                       <AdminTableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
                       </AdminTableCell>
                     ),
                   )}
@@ -281,7 +308,10 @@ function SacramentTable({
                   className="min-h-9 rounded-lg border border-border-strong bg-surface px-2 text-sm text-text focus-visible:outline-none"
                 >
                   {PAGE_SIZES.map((tam) => (
-                    <option key={tam} value={tam}>
+                    <option
+                      key={tam}
+                      value={tam}
+                    >
                       {tam}
                     </option>
                   ))}

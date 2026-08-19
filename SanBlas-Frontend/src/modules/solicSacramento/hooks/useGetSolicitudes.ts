@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { ApiError } from "../../../services/apiClient";
-import { obtenerSolicitudesSacramentos } from "../../../services/constancias/constanciasService";
+import {
+  obtenerSolicitudesSacramentos,
+  type SolicitudesSacramentosFilters,
+} from "../../../services/constancias/constanciasService";
 
-export const useGetSolicitudes = (filters?: {
-  nombre?: string;
-  cedula?: string;
-  estado?: string;
-}) => {
+export const useGetSolicitudes = (filters?: SolicitudesSacramentosFilters) => {
   return useQuery({
     queryKey: ["solicitudes", filters],
     queryFn: () => obtenerSolicitudesSacramentos(filters),

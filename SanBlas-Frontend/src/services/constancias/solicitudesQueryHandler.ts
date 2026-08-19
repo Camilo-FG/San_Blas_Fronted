@@ -10,8 +10,7 @@ export const MENSAJES_CONSULTA_SOLICITUDES = {
     "No fue posible consultar las solicitudes sacramentales. Intente más tarde.",
   respuestaInvalida:
     "La respuesta del servidor no es válida. Intente recargar la página.",
-  generico:
-    "Ocurrió un error al cargar las solicitudes. Intente nuevamente.",
+  generico: "Ocurrió un error al cargar las solicitudes. Intente nuevamente.",
 } as const;
 
 const isTechnicalMessage = (message: string): boolean =>
@@ -51,8 +50,13 @@ export const logSolicitudesQueryError = (
   }
 };
 
-export const assertSolicitudesArrayResponse = (
+export const assertSolicitudesResponse = (
   data: unknown,
-): data is Record<string, unknown>[] => {
-  return Array.isArray(data);
+): data is {
+  data: Record<string, unknown>[];
+  total: number;
+} => {
+  if (!data || typeof data !== "object") return false;
+  const response = data as Record<string, unknown>;
+  return Array.isArray(response.data) && typeof response.total === "number";
 };
