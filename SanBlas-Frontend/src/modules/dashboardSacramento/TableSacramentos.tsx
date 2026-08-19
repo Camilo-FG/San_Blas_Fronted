@@ -93,6 +93,9 @@ const TableSacramentos = () => {
   const [rejectionReasonText, setRejectionReasonText] = useState("");
   const [solicitudARechazar, setSolicitudARechazar] =
     useState<FormSacramento | null>(null);
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [solicitudAAprobar, setSolicitudAAprobar] =
+    useState<FormSacramento | null>(null);
   const [estadoMenuAbierto, setEstadoMenuAbierto] = useState(false);
   const estadoMenuRef = useRef<HTMLDivElement>(null);
   const [filtroEstadoMenuAbierto, setFiltroEstadoMenuAbierto] =
@@ -309,9 +312,16 @@ const TableSacramentos = () => {
   ) => {
     if (id === undefined || id === null) return;
 
+    const solicitud = rows.find((r) => String(r.id) === String(id));
+    const estadoActual = solicitud?.Estado ?? "Pendiente";
+
+    // Los estados "Aprobado" y "Rechazado" son permanentes e irreversibles
+    if (estadoActual === "Aprobado" || estadoActual === "Rechazado") {
+      return;
+    }
+
     // Si se selecciona "Rechazado", abrir modal de rechazo en lugar de actualizar directamente
     if (nextEstado === "Rechazado") {
-      const solicitud = rows.find((r) => String(r.id) === String(id));
       if (solicitud) {
         setSolicitudSeleccionada(null); // Cerrar modal de detalle
         handleOpenRejectModal(solicitud); // Abrir modal de rechazo
@@ -343,6 +353,23 @@ const TableSacramentos = () => {
       },
     );
   };
+
+  const handleApproveConfirm = () => {
+    if (!solicitudAAprobar) return;
+    handleEstadoChange(solicitudAAprobar.id, "Aprobado");
+    setIsApproveModalOpen(false);
+    setSolicitudAAprobar(null);
+  };
+
+  const handleCancelApprove = () => {
+    setIsApproveModalOpen(false);
+    setSolicitudAAprobar(null);
+  };
+
+  const estadoActualSolicitud = solicitudSeleccionada?.Estado ?? "Pendiente";
+  const esEstadoPermanente =
+    estadoActualSolicitud === "Aprobado" ||
+    estadoActualSolicitud === "Rechazado";
 
   const renderEstadoBadge = (estado?: string) => {
     const currentEstado = estado ?? "Pendiente";
@@ -595,13 +622,16 @@ const TableSacramentos = () => {
               <div className="relative" ref={estadoMenuRef}>
                 <button
                   type="button"
-                  disabled={isUpdatingEstado}
+                  disabled={isUpdatingEstado || esEstadoPermanente}
                   aria-haspopup="listbox"
                   aria-expanded={estadoMenuAbierto}
                   onClick={() => setEstadoMenuAbierto((prev) => !prev)}
                   className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-0 bg-surface px-3.5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <span>{solicitudSeleccionada.Estado ?? "Pendiente"}</span>
+                  <span>
+                    {solicitudSeleccionada.Estado ?? "Pendiente"}
+                    {esEstadoPermanente ? " (permanente)" : ""}
+                  </span>
                   <ChevronDown
                     size={16}
                     strokeWidth={2.5}
@@ -631,13 +661,20 @@ const TableSacramentos = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              handleEstadoChange(
-                                solicitudSeleccionada.id,
-                                opcion.valor as
-                                  | "Pendiente"
-                                  | "Aprobado"
-                                  | "Rechazado",
-                              );
+                              if (opcion.valor === "Rechazado") {
+                                handleEstadoChange(
+                                  solicitudSeleccionada.id,
+                                  "Rechazado",
+                                );
+                              } else if (opcion.valor === "Aprobado") {
+                                setSolicitudAAprobar(solicitudSeleccionada);
+                                setIsApproveModalOpen(true);
+                              } else {
+                                handleEstadoChange(
+                                  solicitudSeleccionada.id,
+                                  "Pendiente",
+                                );
+                              }
                               setEstadoMenuAbierto(false);
                             }}
                             className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
@@ -732,6 +769,43 @@ const TableSacramentos = () => {
                   </>
                 ) : (
                   "Confirmar rechazo"
+                )}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {isApproveModalOpen && solicitudAAprobar && (
+        <Modal
+          onClose={handleCancelApprove}
+          title="Confirmar aprobación"
+        >
+          <div className="flex flex-col gap-4">
+            <p className="text-sm leading-relaxed text-text-secondary">
+              ¿Está seguro/a de realizar este cambio? La acción no es
+              reversible.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="secondary"
+                onClick={handleCancelApprove}
+                disabled={isUpdatingEstado}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="royal"
+                onClick={handleApproveConfirm}
+                disabled={isUpdatingEstado}
+              >
+                {isUpdatingEstado ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Confirmando...
+                  </>
+                ) : (
+                  "Confirmar"
                 )}
               </Button>
             </div>
