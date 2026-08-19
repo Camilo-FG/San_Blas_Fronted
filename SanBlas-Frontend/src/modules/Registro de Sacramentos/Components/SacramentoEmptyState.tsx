@@ -7,7 +7,7 @@ const SacramentoEmptyState = () => {
         <Search size={28} strokeWidth={1.5} className="text-text-muted" />
       </span>
       <p className="m-0 max-w-md text-lg font-semibold text-text-secondary">
-        No se encontraron sacramentos con los criterios seleccionados
+        No se encontraron registros
       </p>
       <p className="m-0 max-w-md text-sm text-text-muted">
         Intente con menos filtros o verifique la información ingresada
