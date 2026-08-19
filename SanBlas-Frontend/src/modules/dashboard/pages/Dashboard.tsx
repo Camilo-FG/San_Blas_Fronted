@@ -27,7 +27,7 @@ const navLinks = [
   },
   {
     to: Rutas.dashboardUrl.constanciasSacramentos,
-    label: "Constancias de Sacramentos",
+    label: "Solicitudes de Sacramentos",
     icon: FileText,
   },
   {
