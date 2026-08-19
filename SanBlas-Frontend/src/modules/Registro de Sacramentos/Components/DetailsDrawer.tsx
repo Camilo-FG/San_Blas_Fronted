@@ -8,6 +8,14 @@ interface DetailsDrawerProps {
 const DetailsDrawer = ({ isOpen, onClose, sacramento, tipo }: DetailsDrawerProps) => {
   if (!isOpen) return null;
 
+  const formatearHora = (hora: any): string => {
+    if (!hora) return '';
+    if (typeof hora === 'string') return hora;
+    const horas = String(hora.hours ?? hora.Hours ?? hora.hour ?? '00').padStart(2, '0');
+    const minutos = String(hora.minutes ?? hora.Minutes ?? hora.minute ?? '00').padStart(2, '0');
+    return `${horas}:${minutos}`;
+  };
+
   const rowClass =
     "mb-3.5 flex flex-col gap-0.5 border-b border-slate-100 pb-3 sm:flex-row sm:items-start sm:gap-3";
   const labelClass =
@@ -50,7 +58,7 @@ const DetailsDrawer = ({ isOpen, onClose, sacramento, tipo }: DetailsDrawerProps
             </div>
             <div className={rowClass}>
               <span className={labelClass}>Hora de Nacimiento:</span>
-              <span className={valueClass}>{sacramento?.horaNacimiento || sacramento?.HoraNacimiento || ''}</span>
+              <span className={valueClass}>{formatearHora(sacramento?.horaNacimiento || sacramento?.HoraNacimiento)}</span>
             </div>
             <div className={rowClass}>
               <span className={labelClass}>Abuelos Paternos:</span>

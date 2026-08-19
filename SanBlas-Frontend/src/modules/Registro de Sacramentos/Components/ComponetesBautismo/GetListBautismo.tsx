@@ -1,6 +1,14 @@
 import { useGetListBautismo } from '../../hooks/hooksBautismo/useGetListBautismo';
 import { AdminTable, AdminTableCell, AdminTableHead, AdminTableHeaderCell, AdminTablePanel, AdminTableRow } from '../../../../shared/ui';
 
+const formatearHora = (hora: any): string => {
+  if (!hora) return '';
+  if (typeof hora === 'string') return hora;
+  const horas = String(hora.hours ?? hora.Hours ?? hora.hour ?? '00').padStart(2, '0');
+  const minutos = String(hora.minutes ?? hora.Minutes ?? hora.minute ?? '00').padStart(2, '0');
+  return `${horas}:${minutos}`;
+};
+
 const GetListBautismo = () => {
   const { data, isPending, error } = useGetListBautismo();
 
@@ -42,7 +50,7 @@ const GetListBautismo = () => {
               <AdminTableCell>{bautismo.AnnioBautismo}</AdminTableCell>
               <AdminTableCell>{bautismo.Prebispero}</AdminTableCell>
               <AdminTableCell>{bautismo.fechaNacimiento}</AdminTableCell>
-              <AdminTableCell>{bautismo.horaNacimiento}</AdminTableCell>
+              <AdminTableCell>{formatearHora(bautismo.horaNacimiento)}</AdminTableCell>
               <AdminTableCell>{bautismo.NombreAbuelosPaternos}</AdminTableCell>
               <AdminTableCell>{bautismo.NombreAbuelosMaternos}</AdminTableCell>
             </AdminTableRow>
