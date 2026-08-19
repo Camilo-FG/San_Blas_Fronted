@@ -58,23 +58,19 @@ const nombreCompleto = (row: FormSacramento) =>
     .filter(Boolean)
     .join(" ");
 
+const normalizeText = (value: unknown) =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
 const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   const normalized = (estado ?? "Pendiente").toLowerCase();
   if (normalized === "aprobado") return "success";
   if (normalized === "rechazado") return "danger";
   return "warning";
 };
-
-const estadoSelectClass = (estado?: string) =>
-  cn(
-    "rounded-full border bg-transparent font-bold",
-    (estado ?? "Pendiente").toLowerCase() === "aprobado" &&
-      "border-emerald-300 bg-success-bg text-success",
-    (estado ?? "Pendiente").toLowerCase() === "rechazado" &&
-      "border-red-300 bg-danger-bg text-danger",
-    (estado ?? "Pendiente").toLowerCase() === "pendiente" &&
-      "border-orange-300 bg-warning-bg text-warning",
-  );
 
 const TableSacramentos = () => {
   const navigate = useNavigate();
@@ -113,6 +109,26 @@ const TableSacramentos = () => {
   const rows: FormSacramento[] = Array.isArray(data) ? data : [];
   const isInitialLoading = isPending && rows.length === 0;
   const isFiltering = isFetching && !isInitialLoading;
+
+  const filteredRows = useMemo(
+    () =>
+      rows.filter((row) => {
+        const matchNombre =
+          !filtroNombre.trim() ||
+          normalizeText(nombreCompleto(row)).includes(
+            normalizeText(filtroNombre),
+          );
+        const matchCedula =
+          !filtroCedula.trim() ||
+          normalizeText(String(row.Cedula)).includes(
+            normalizeText(filtroCedula),
+          );
+        const matchEstado =
+          !filtroEstado || row.Estado === filtroEstado;
+        return matchNombre && matchCedula && matchEstado;
+      }),
+    [rows, filtroNombre, filtroCedula, filtroEstado],
+  );
 
   const rejectionReasons = [
     "Documentación incompleta",
@@ -233,7 +249,7 @@ const TableSacramentos = () => {
   );
 
   const table = useReactTable({
-    data: rows,
+    data: filteredRows,
     columns,
     autoResetPageIndex: true,
     getCoreRowModel: getCoreRowModel(),
@@ -334,16 +350,17 @@ const TableSacramentos = () => {
           <input
             type="text"
             value={filtroNombre}
-            onChange={(e) => setFiltroNombre(e.target.value)}
+            onChange={(e) => setFiltroNombre(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, ""))}
             placeholder="Nombre completo"
             className="rounded border px-2 py-1 text-sm"
             aria-label="Filtrar por nombre completo"
             style={{ width: "200px" }}
           />
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={filtroCedula || ""}
-            onChange={(e) => setFiltroCedula(e.target.value || "")}
+            onChange={(e) => setFiltroCedula(e.target.value.replace(/\D/g, ""))}
             placeholder="Cédula"
             className="rounded border px-2 py-1 text-sm"
             aria-label="Filtrar por cédula"
@@ -381,13 +398,13 @@ const TableSacramentos = () => {
         </p>
       )}
 
-      {!isInitialLoading && rows.length === 0 && (
+      {!isInitialLoading && filteredRows.length === 0 && (
         <p className="py-6 text-center text-sm text-text-muted">
           No se encontraron solicitudes con los filtros seleccionados.
         </p>
       )}
 
-      {!isInitialLoading && rows.length > 0 && (
+      {!isInitialLoading && filteredRows.length > 0 && (
         <>
           <div className="hidden md:block">
             <AdminTablePanel>
@@ -492,7 +509,7 @@ const TableSacramentos = () => {
             <label className="flex w-full flex-col gap-1.5 text-sm font-semibold text-text">
               <span>Cambiar estado</span>
               <Select
-                className={estadoSelectClass(solicitudSeleccionada.Estado)}
+                className="w-full cursor-pointer rounded-xl border border-border-strong bg-surface px-3.5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm focus-visible:border-royal-gold focus-visible:ring-2 focus-visible:ring-royal-gold/30 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
                 value={solicitudSeleccionada.Estado ?? "Pendiente"}
                 onChange={(e) =>
                   handleEstadoChange(
@@ -502,9 +519,15 @@ const TableSacramentos = () => {
                 }
                 disabled={isUpdatingEstado}
               >
-                <option value="Pendiente">Pendiente</option>
-                <option value="Aprobado">Aprobado</option>
-                <option value="Rechazado">Rechazado</option>
+                <option value="Pendiente" className="bg-surface font-bold text-warning">
+                  Pendiente
+                </option>
+                <option value="Aprobado" className="bg-surface font-bold text-success">
+                  Aprobado
+                </option>
+                <option value="Rechazado" className="bg-surface font-bold text-danger">
+                  Rechazado
+                </option>
               </Select>
             </label>
           ) : undefined
