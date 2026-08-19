@@ -226,10 +226,10 @@ const TableSacramentos = () => {
   };
 
   const confirmarAprobacion = () => {
-    if (!solicitudAprobar?.id) return;
+    if (!solicitudAAprobar?.id) return;
 
     updateEstado.mutate(
-      { id: solicitudAprobar.id, nuevoEstado: "Aprobado" },
+      { id: solicitudAAprobar.id, nuevoEstado: "Aprobado" },
       {
         onSuccess: () => {
           setSolicitudAprobar(null);
@@ -344,7 +344,8 @@ const TableSacramentos = () => {
       const solicitud = rows.find((r) => String(r.id) === String(id));
       if (solicitud) {
         setSolicitudSeleccionada(null);
-        setSolicitudAprobar(solicitud);
+        setIsApproveModalOpen(true);
+        setSolicitudAAprobar(solicitud);
       }
       return;
     }
@@ -382,8 +383,10 @@ const TableSacramentos = () => {
   };
 
   const handleCancelApprove = () => {
+    const restoredSolicitud = solicitudAAprobar;
     setIsApproveModalOpen(false);
     setSolicitudAAprobar(null);
+    setSolicitudSeleccionada(restoredSolicitud);
   };
 
   const estadoActualSolicitud = solicitudSeleccionada?.Estado ?? "Pendiente";
@@ -439,7 +442,7 @@ const TableSacramentos = () => {
               )
             }
             placeholder="Nombre completo"
-            className="rounded border px-2 py-1 text-sm"
+            className="min-h-11 w-full rounded-xl border border-border-strong bg-surface-muted py-2.5 pr-3.5 pl-2 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none min-w-[200px] flex-1"
             aria-label="Filtrar por nombre completo"
             style={{ width: "200px" }}
           />
@@ -449,7 +452,7 @@ const TableSacramentos = () => {
             value={filtroCedula || ""}
             onChange={(e) => setFiltroCedula(e.target.value.replace(/\D/g, ""))}
             placeholder="Cédula"
-            className="rounded border px-2 py-1 text-sm"
+            className="min-h-11 w-full rounded-xl border border-border-strong bg-surface-muted py-2.5 pr-3.5 pl-2 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none min-w-[200px] flex-1"
             aria-label="Filtrar por cédula"
             style={{ width: "120px" }}
           />
@@ -716,6 +719,7 @@ const TableSacramentos = () => {
                                   "Rechazado",
                                 );
                               } else if (opcion.valor === "Aprobado") {
+                                setSolicitudSeleccionada(null);
                                 setSolicitudAAprobar(solicitudSeleccionada);
                                 setIsApproveModalOpen(true);
                               } else {
@@ -806,7 +810,7 @@ const TableSacramentos = () => {
         )}
       </AdminRecordDetailSheet>
 
-      {solicitudAprobar && (
+      {solicitudAAprobar && (
         <Modal
           onClose={() => setSolicitudAprobar(null)}
           title="Aprobar solicitud"
@@ -817,7 +821,7 @@ const TableSacramentos = () => {
                 ¿Desea aprobar la solicitud?
               </h3>
               <p className="mt-2 mb-0 text-sm leading-relaxed text-text-secondary">
-                La solicitud de {nombreCompleto(solicitudAprobar)} cambiará a
+                La solicitud de {nombreCompleto(solicitudAAprobar)} cambiará a
                 estado aprobado.
               </p>
             </div>

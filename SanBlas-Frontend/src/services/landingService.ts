@@ -17,7 +17,7 @@ export const obtenerSeccionesLanding = async (): Promise<
   LandingSectionResponse[]
 > => {
   try {
-    const { data } = await apiClient.get<LandingSectionResponse[]>("/landing");
+    const { data } = await apiClient.get<LandingSectionResponse[]>("/api/landing");
     return data;
   } catch (error) {
     handleApiError(error);
@@ -29,8 +29,8 @@ export const obtenerSeccionLanding = async <T = Record<string, unknown>>(
 ): Promise<LandingSectionResponse<T>> => {
   try {
     const { data } = await apiClient.get<LandingSectionResponse<T>>(
-      `/landing/${sectionKey}`,
-    );
+        `/api/landing/${sectionKey}`,
+      );
     return data;
   } catch (error) {
     handleApiError(error);
@@ -43,7 +43,7 @@ export const actualizarSeccionLanding = async <T = Record<string, unknown>>(
 ): Promise<LandingSectionResponse<T>> => {
   try {
     const { data: response } = await apiClient.put<LandingSectionResponse<T>>(
-      `/landing/${sectionKey}`,
+      `/api/landing/${sectionKey}`,
       { data },
     );
     return response;
