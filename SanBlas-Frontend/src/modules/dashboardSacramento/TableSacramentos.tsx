@@ -16,6 +16,8 @@ import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 import { ApiError } from "../../services/apiClient";
 import { toFriendlySolicitudesMessage } from "../../services/constancias/solicitudesQueryHandler";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "@tanstack/react-router";
+import Rutas from "../../routes/Rutas";
 import { AdminRecordCard } from "../../shared/components/admin/AdminRecordCard";
 import { AdminRecordDetailSheet } from "../../shared/components/admin/AdminRecordDetailSheet";
 import {
@@ -64,6 +66,7 @@ const estadoSelectClass = (estado?: string) =>
   );
 
 const TableSacramentos = () => {
+  const navigate = useNavigate();
   const [filtroNombre, setFiltroNombre] = useState("");
   const [filtroCedula, setFiltroCedula] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<"Pendiente" | "Aprobado" | "Rechazado" | "">(
@@ -129,6 +132,7 @@ const TableSacramentos = () => {
       await rechazarSolicitud.mutateAsync({
         id: solicitudARechazar.id,
         motivoRechazo: motivo,
+        detalleRechazo: rejectionReasonText.trim() || undefined,
       });
       showToast("Solicitud rechazada correctamente", "success");
       handleCloseRejectModal();
@@ -280,6 +284,13 @@ const TableSacramentos = () => {
     <AdminModule className="p-2">
       <AdminToolbar>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => navigate({ to: Rutas.dashboardUrl.historialRechazos })}
+          >
+            Ver historial de rechazos
+          </Button>
           <input
             type="text"
             value={filtroNombre}
