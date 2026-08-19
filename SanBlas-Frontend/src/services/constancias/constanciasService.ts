@@ -1,7 +1,7 @@
 import type { FormSacramento } from "../../types/formSacramento";
 import { ApiError, apiClient, handleApiError } from "../apiClient";
 import type {
-  EstadoConstancia,
+  EstadoSolicitudBackend,
   FormSacraBackend,
 } from "./constanciasApiTypes";
 import {
@@ -56,10 +56,7 @@ export const obtenerSolicitudesSacramentos = async (
 
     if (!assertSolicitudesArrayResponse(data)) {
       logSolicitudesQueryError("obtenerSolicitudesSacramentos", data);
-      throw new ApiError(
-        MENSAJES_CONSULTA_SOLICITUDES.respuestaInvalida,
-        500,
-      );
+      throw new ApiError(MENSAJES_CONSULTA_SOLICITUDES.respuestaInvalida, 500);
     }
 
     return data.map(mapBackendToFormSacramento);
@@ -101,12 +98,12 @@ export const crearSolicitudSacramento = async (
 
 export const actualizarEstadoSacramento = async (
   id: number,
-  estado: EstadoConstancia,
+  nuevoEstado: EstadoSolicitudBackend,
 ): Promise<FormSacramento> => {
   try {
     const { data } = await apiClient.patch<FormSacraBackend>(
-      `${BASE}/${id}`,
-      { Estado: estado },
+      `${BASE}/cambiar-estado/${id}`,
+      { nuevoEstado },
     );
     return mapBackendToFormSacramento(data);
   } catch (error) {
@@ -133,7 +130,9 @@ export const rechazarSolicitudSacramento = async (
 export const getSolicitudes = obtenerSolicitudesSacramentos;
 export const CreateSolicSacramento = crearSolicitudSacramento;
 
-export const obtenerHistorialRechazos = async (): Promise<HistorialRechazo[]> => {
+export const obtenerHistorialRechazos = async (): Promise<
+  HistorialRechazo[]
+> => {
   try {
     const { data } = await apiClient.get<HistorialRechazo[]>(
       `${BASE}/historial-rechazos`,

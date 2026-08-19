@@ -1,4 +1,5 @@
 export type EstadoConstancia = "pendiente" | "aprobada" | "rechazada";
+export type EstadoSolicitudBackend = "Pendiente" | "Aprobado" | "Rechazado";
 
 export interface FormSacraBackend {
   id: number;

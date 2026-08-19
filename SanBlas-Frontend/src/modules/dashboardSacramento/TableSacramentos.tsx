@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, ScrollText, Phone, IdCard, Eye, Loader2, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ScrollText,
+  Phone,
+  IdCard,
+  Eye,
+  Loader2,
+  X,
+} from "lucide-react";
 import type { FormSacramento } from "../../types/formSacramento";
 import {
   createColumnHelper,
@@ -43,7 +52,9 @@ import {
 const columnHelper = createColumnHelper<FormSacramento>();
 
 const nombreCompleto = (row: FormSacramento) =>
-  [row.Nombre, row.PrimerApellido, row.SegundoApellido].filter(Boolean).join(" ");
+  [row.Nombre, row.PrimerApellido, row.SegundoApellido]
+    .filter(Boolean)
+    .join(" ");
 
 const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   const normalized = (estado ?? "Pendiente").toLowerCase();
@@ -66,15 +77,16 @@ const estadoSelectClass = (estado?: string) =>
 const TableSacramentos = () => {
   const [filtroNombre, setFiltroNombre] = useState("");
   const [filtroCedula, setFiltroCedula] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState<"Pendiente" | "Aprobado" | "Rechazado" | "">(
-    "",
-  );
+  const [filtroEstado, setFiltroEstado] = useState<
+    "Pendiente" | "Aprobado" | "Rechazado" | ""
+  >("");
   const [solicitudSeleccionada, setSolicitudSeleccionada] =
     useState<FormSacramento | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
   const [rejectionReasonText, setRejectionReasonText] = useState("");
-  const [solicitudARechazar, setSolicitudARechazar] = useState<FormSacramento | null>(null);
+  const [solicitudARechazar, setSolicitudARechazar] =
+    useState<FormSacramento | null>(null);
   const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
   const debouncedCedula = useDebouncedValue(filtroCedula.trim(), 500);
   const debouncedEstado = useDebouncedValue(filtroEstado, 300);
@@ -87,7 +99,8 @@ const TableSacramentos = () => {
     [debouncedNombre, debouncedCedula, debouncedEstado],
   );
   const { isAdmin } = useAuth();
-  const { data, error, isPending, isFetching, refetch } = useGetSolicitudes(filters);
+  const { data, error, isPending, isFetching, refetch } =
+    useGetSolicitudes(filters);
   const updateEstado = useUpdateSolicitudEstado();
   const rechazarSolicitud = useRechazarSolicitudSacramento();
   const isUpdatingEstado = updateEstado.isPending;
@@ -133,7 +146,10 @@ const TableSacramentos = () => {
       showToast("Solicitud rechazada correctamente", "success");
       handleCloseRejectModal();
     } catch (err) {
-      const mensaje = err instanceof ApiError ? err.message : "No se pudo rechazar la solicitud.";
+      const mensaje =
+        err instanceof ApiError
+          ? err.message
+          : "No se pudo rechazar la solicitud.";
       showToast(mensaje, "error");
     }
   };
@@ -181,7 +197,9 @@ const TableSacramentos = () => {
           return (
             <span className="flex flex-col gap-0.5 text-xs leading-snug text-text-secondary">
               <span>{r.Correo}</span>
-              <span className="tabular-nums">{r.Telefono?.toString() || "—"}</span>
+              <span className="tabular-nums">
+                {r.Telefono?.toString() || "—"}
+              </span>
             </span>
           );
         },
@@ -198,7 +216,10 @@ const TableSacramentos = () => {
             onClick={() => setSolicitudSeleccionada(info.row.original)}
             className="inline-flex cursor-pointer items-center gap-1 rounded-lg border-0 bg-transparent px-2 py-1.5 text-[0.7rem] font-bold tracking-wider text-info uppercase transition-colors hover:bg-info-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
-            <Eye size={13} strokeWidth={1.5} />
+            <Eye
+              size={13}
+              strokeWidth={1.5}
+            />
             Ver motivo
           </button>
         ),
@@ -217,9 +238,13 @@ const TableSacramentos = () => {
   });
 
   const {
-    totalItems, currentPage, totalPages,
-    canPreviousPage, canNextPage,
-    goToPreviousPage, goToNextPage,
+    totalItems,
+    currentPage,
+    totalPages,
+    canPreviousPage,
+    canNextPage,
+    goToPreviousPage,
+    goToNextPage,
   } = usePagination(table);
 
   const handleEstadoChange = (
@@ -239,15 +264,24 @@ const TableSacramentos = () => {
     }
 
     updateEstado.mutate(
-      { id, Estado: nextEstado },
+      { id, nuevoEstado: nextEstado },
       {
         onSuccess: () => {
-          if (solicitudSeleccionada && String(solicitudSeleccionada.id) === String(id)) {
-            setSolicitudSeleccionada({ ...solicitudSeleccionada, Estado: nextEstado });
+          if (
+            solicitudSeleccionada &&
+            String(solicitudSeleccionada.id) === String(id)
+          ) {
+            setSolicitudSeleccionada({
+              ...solicitudSeleccionada,
+              Estado: nextEstado,
+            });
           }
         },
         onError: (err: unknown) => {
-          const mensaje = err instanceof ApiError ? err.message : "No se pudo actualizar el estado.";
+          const mensaje =
+            err instanceof ApiError
+              ? err.message
+              : "No se pudo actualizar el estado.";
           showToast(mensaje, "error");
         },
       },
@@ -256,7 +290,11 @@ const TableSacramentos = () => {
 
   const renderEstadoBadge = (estado?: string) => {
     const currentEstado = estado ?? "Pendiente";
-    return <Badge variant={getEstadoBadgeVariant(currentEstado)}>{currentEstado}</Badge>;
+    return (
+      <Badge variant={getEstadoBadgeVariant(currentEstado)}>
+        {currentEstado}
+      </Badge>
+    );
   };
 
   if (error) {
@@ -300,7 +338,11 @@ const TableSacramentos = () => {
           />
           <select
             value={filtroEstado}
-            onChange={(e) => setFiltroEstado(e.target.value as "Pendiente" | "Aprobado" | "Rechazado" | "")}
+            onChange={(e) =>
+              setFiltroEstado(
+                e.target.value as "Pendiente" | "Aprobado" | "Rechazado" | "",
+              )
+            }
             className="rounded border px-2 py-1 text-sm"
             aria-label="Filtrar por estado"
             style={{ width: "150px" }}
@@ -321,7 +363,9 @@ const TableSacramentos = () => {
       </AdminToolbar>
 
       {isInitialLoading && (
-        <p className="py-6 text-center text-sm text-text-muted">Cargando solicitudes...</p>
+        <p className="py-6 text-center text-sm text-text-muted">
+          Cargando solicitudes...
+        </p>
       )}
 
       {!isInitialLoading && rows.length === 0 && (
@@ -340,7 +384,12 @@ const TableSacramentos = () => {
                     <AdminTableRow key={hg.id}>
                       {hg.headers.map((h) => (
                         <AdminTableHeaderCell key={h.id}>
-                          {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+                          {h.isPlaceholder
+                            ? null
+                            : flexRender(
+                                h.column.columnDef.header,
+                                h.getContext(),
+                              )}
                         </AdminTableHeaderCell>
                       ))}
                     </AdminTableRow>
@@ -352,15 +401,29 @@ const TableSacramentos = () => {
                       {row.getVisibleCells().map((cell) => {
                         if (cell.column.id === "Estado") {
                           const originalRow = row.original;
-                          const currentEstado = originalRow.Estado ?? "Pendiente";
+                          const currentEstado =
+                            originalRow.Estado ?? "Pendiente";
                           return (
                             <AdminTableCell key={cell.id}>
-                              <div className={cn("inline-flex items-center rounded-full p-1", estadoSelectClass(currentEstado))}>
+                              <div
+                                className={cn(
+                                  "inline-flex items-center rounded-full p-1",
+                                  estadoSelectClass(currentEstado),
+                                )}
+                              >
                                 {isAdmin ? (
                                   <Select
                                     className="min-h-0 border-0 bg-transparent px-2 py-1 text-xs font-bold shadow-none focus-visible:ring-0"
                                     value={currentEstado}
-                                    onChange={(e) => handleEstadoChange(originalRow.id, e.target.value as "Pendiente" | "Aprobado" | "Rechazado")}
+                                    onChange={(e) =>
+                                      handleEstadoChange(
+                                        originalRow.id,
+                                        e.target.value as
+                                          | "Pendiente"
+                                          | "Aprobado"
+                                          | "Rechazado",
+                                      )
+                                    }
                                     disabled={isUpdatingEstado}
                                   >
                                     <option value="Pendiente">Pendiente</option>
@@ -368,7 +431,9 @@ const TableSacramentos = () => {
                                     <option value="Rechazado">Rechazado</option>
                                   </Select>
                                 ) : (
-                                  <span className="px-2 py-1 text-xs font-bold">{currentEstado}</span>
+                                  <span className="px-2 py-1 text-xs font-bold">
+                                    {currentEstado}
+                                  </span>
                                 )}
                               </div>
                             </AdminTableCell>
@@ -376,7 +441,10 @@ const TableSacramentos = () => {
                         }
                         return (
                           <AdminTableCell key={cell.id}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
                           </AdminTableCell>
                         );
                       })}
@@ -398,8 +466,16 @@ const TableSacramentos = () => {
                 subtitle={row.TipoSacramento ?? "Sacramento"}
                 badges={renderEstadoBadge(row.Estado)}
                 meta={[
-                  { icon: <IdCard size={12} />, label: "Cédula", value: String(row.Cedula ?? "—") },
-                  { icon: <Phone size={12} />, label: "Teléfono", value: row.Telefono?.toString() || "No provisto" },
+                  {
+                    icon: <IdCard size={12} />,
+                    label: "Cédula",
+                    value: String(row.Cedula ?? "—"),
+                  },
+                  {
+                    icon: <Phone size={12} />,
+                    label: "Teléfono",
+                    value: row.Telefono?.toString() || "No provisto",
+                  },
                 ]}
                 footer={
                   isAdmin ? (
@@ -408,7 +484,15 @@ const TableSacramentos = () => {
                       value={row.Estado ?? "Pendiente"}
                       disabled={isUpdatingEstado}
                       aria-label={`Estado de solicitud de ${nombreCompleto(row)}`}
-                      onChange={(e) => handleEstadoChange(row.id, e.target.value as "Pendiente" | "Aprobado" | "Rechazado")}
+                      onChange={(e) =>
+                        handleEstadoChange(
+                          row.id,
+                          e.target.value as
+                            | "Pendiente"
+                            | "Aprobado"
+                            | "Rechazado",
+                        )
+                      }
                     >
                       <option value="Pendiente">Pendiente</option>
                       <option value="Aprobado">Aprobado</option>
@@ -417,7 +501,12 @@ const TableSacramentos = () => {
                   ) : undefined
                 }
                 actions={[
-                  { label: "Ver solicitud", icon: <Eye size={15} />, variant: "primary", onClick: () => setSolicitudSeleccionada(row) },
+                  {
+                    label: "Ver solicitud",
+                    icon: <Eye size={15} />,
+                    variant: "primary",
+                    onClick: () => setSolicitudSeleccionada(row),
+                  },
                 ]}
               />
             ))}
@@ -427,9 +516,17 @@ const TableSacramentos = () => {
 
       <AdminRecordDetailSheet
         open={solicitudSeleccionada !== null}
-        title={solicitudSeleccionada ? nombreCompleto(solicitudSeleccionada) : "Solicitud"}
+        title={
+          solicitudSeleccionada
+            ? nombreCompleto(solicitudSeleccionada)
+            : "Solicitud"
+        }
         subtitle={solicitudSeleccionada?.TipoSacramento}
-        badges={solicitudSeleccionada ? renderEstadoBadge(solicitudSeleccionada.Estado) : undefined}
+        badges={
+          solicitudSeleccionada
+            ? renderEstadoBadge(solicitudSeleccionada.Estado)
+            : undefined
+        }
         onClose={() => setSolicitudSeleccionada(null)}
         actions={
           solicitudSeleccionada && isAdmin ? (
@@ -438,7 +535,12 @@ const TableSacramentos = () => {
               <Select
                 className={estadoSelectClass(solicitudSeleccionada.Estado)}
                 value={solicitudSeleccionada.Estado ?? "Pendiente"}
-                onChange={(e) => handleEstadoChange(solicitudSeleccionada.id, e.target.value as "Pendiente" | "Aprobado" | "Rechazado")}
+                onChange={(e) =>
+                  handleEstadoChange(
+                    solicitudSeleccionada.id,
+                    e.target.value as "Pendiente" | "Aprobado" | "Rechazado",
+                  )
+                }
                 disabled={isUpdatingEstado}
               >
                 <option value="Pendiente">Pendiente</option>
@@ -451,7 +553,9 @@ const TableSacramentos = () => {
       >
         {solicitudSeleccionada && (
           <div className="flex flex-col gap-2">
-            <h4 className="m-0 text-xs font-semibold tracking-wider text-text-muted uppercase">Motivo</h4>
+            <h4 className="m-0 text-xs font-semibold tracking-wider text-text-muted uppercase">
+              Motivo
+            </h4>
             <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
               {solicitudSeleccionada.Motivo}
             </p>
@@ -460,7 +564,10 @@ const TableSacramentos = () => {
       </AdminRecordDetailSheet>
 
       {isRejectModalOpen && (
-        <Modal onClose={handleCloseRejectModal} title="Rechazar solicitud">
+        <Modal
+          onClose={handleCloseRejectModal}
+          title="Rechazar solicitud"
+        >
           <div className="flex flex-col gap-4">
             <p className="text-sm text-text-secondary">
               Seleccione o escriba el motivo de rechazo para esta solicitud:
@@ -473,7 +580,10 @@ const TableSacramentos = () => {
             >
               <option value="">-- Seleccione un motivo --</option>
               {rejectionReasons.map((reason) => (
-                <option key={reason} value={reason}>
+                <option
+                  key={reason}
+                  value={reason}
+                >
                   {reason}
                 </option>
               ))}
@@ -486,17 +596,28 @@ const TableSacramentos = () => {
               className="min-h-[80px]"
             />
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="secondary" onClick={handleCloseRejectModal} disabled={isSubmitting}>
+              <Button
+                variant="secondary"
+                onClick={handleCloseRejectModal}
+                disabled={isSubmitting}
+              >
                 Cancelar
               </Button>
               <Button
                 variant="danger"
                 onClick={handleRejectSubmit}
-                disabled={!rejectionReasonSelect.trim() && !rejectionReasonText.trim() || isSubmitting}
+                disabled={
+                  (!rejectionReasonSelect.trim() &&
+                    !rejectionReasonText.trim()) ||
+                  isSubmitting
+                }
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" />
+                    <Loader2
+                      size={16}
+                      className="animate-spin"
+                    />
                     Rechazando...
                   </>
                 ) : (
@@ -514,14 +635,31 @@ const TableSacramentos = () => {
             <strong className="text-text">{totalItems}</strong> registros
           </span>
           <AdminPagination>
-            <AdminPaginationButton type="button" onClick={goToPreviousPage} disabled={!canPreviousPage} aria-label="Página anterior">
-              <ChevronLeft size={16} strokeWidth={2} />
+            <AdminPaginationButton
+              type="button"
+              onClick={goToPreviousPage}
+              disabled={!canPreviousPage}
+              aria-label="Página anterior"
+            >
+              <ChevronLeft
+                size={16}
+                strokeWidth={2}
+              />
             </AdminPaginationButton>
             <span className="text-sm text-text-muted">
-              <strong className="text-text">{currentPage}</strong> de <strong className="text-text">{totalPages}</strong>
+              <strong className="text-text">{currentPage}</strong> de{" "}
+              <strong className="text-text">{totalPages}</strong>
             </span>
-            <AdminPaginationButton type="button" onClick={goToNextPage} disabled={!canNextPage} aria-label="Página siguiente">
-              <ChevronRight size={16} strokeWidth={2} />
+            <AdminPaginationButton
+              type="button"
+              onClick={goToNextPage}
+              disabled={!canNextPage}
+              aria-label="Página siguiente"
+            >
+              <ChevronRight
+                size={16}
+                strokeWidth={2}
+              />
             </AdminPaginationButton>
           </AdminPagination>
         </AdminTableFooter>
