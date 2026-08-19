@@ -165,14 +165,6 @@ const TableSacramentos = () => {
           </span>
         ),
       }),
-      columnHelper.accessor("TipoSacramento", {
-        header: () => "Sacramento",
-        cell: (info) => (
-          <span className="text-[0.7rem] font-semibold tracking-wider text-text-muted uppercase">
-            {info.getValue()}
-          </span>
-        ),
-      }),
       columnHelper.display({
         id: "contacto",
         header: () => "Contacto",
@@ -343,7 +335,6 @@ const TableSacramentos = () => {
                 accent="#1d4ed8"
                 code={`SOL-${row.id}`}
                 title={nombreCompleto(row)}
-                subtitle={row.TipoSacramento ?? "Sacramento"}
                 badges={renderEstadoBadge(row.Estado)}
                 meta={[
                   { icon: <IdCard size={12} />, label: "Cédula", value: String(row.Cedula ?? "—") },
@@ -376,7 +367,6 @@ const TableSacramentos = () => {
       <AdminRecordDetailSheet
         open={solicitudSeleccionada !== null}
         title={solicitudSeleccionada ? nombreCompleto(solicitudSeleccionada) : "Solicitud"}
-        subtitle={solicitudSeleccionada?.TipoSacramento}
         badges={solicitudSeleccionada ? renderEstadoBadge(solicitudSeleccionada.Estado) : undefined}
         onClose={() => setSolicitudSeleccionada(null)}
         actions={
