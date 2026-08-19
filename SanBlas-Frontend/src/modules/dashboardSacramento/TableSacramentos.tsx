@@ -95,6 +95,9 @@ const TableSacramentos = () => {
     useState<FormSacramento | null>(null);
   const [estadoMenuAbierto, setEstadoMenuAbierto] = useState(false);
   const estadoMenuRef = useRef<HTMLDivElement>(null);
+  const [filtroEstadoMenuAbierto, setFiltroEstadoMenuAbierto] =
+    useState(false);
+  const filtroEstadoMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickFuera = (event: MouseEvent) => {
@@ -103,6 +106,12 @@ const TableSacramentos = () => {
         !estadoMenuRef.current.contains(event.target as Node)
       ) {
         setEstadoMenuAbierto(false);
+      }
+      if (
+        filtroEstadoMenuRef.current &&
+        !filtroEstadoMenuRef.current.contains(event.target as Node)
+      ) {
+        setFiltroEstadoMenuAbierto(false);
       }
     };
     document.addEventListener("mousedown", handleClickFuera);
@@ -393,22 +402,68 @@ const TableSacramentos = () => {
             aria-label="Filtrar por cédula"
             style={{ width: "120px" }}
           />
-          <select
-            value={filtroEstado}
-            onChange={(e) =>
-              setFiltroEstado(
-                e.target.value as "Pendiente" | "Aprobado" | "Rechazado" | "",
-              )
-            }
-            className="rounded border px-2 py-1 text-sm"
-            aria-label="Filtrar por estado"
-            style={{ width: "150px" }}
-          >
-            <option value="">Todos</option>
-            <option value="Pendiente">Pendiente</option>
-            <option value="Aprobado">Aprobado</option>
-            <option value="Rechazado">Rechazado</option>
-          </select>
+          <div className="relative" ref={filtroEstadoMenuRef}>
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={filtroEstadoMenuAbierto}
+              onClick={() =>
+                setFiltroEstadoMenuAbierto((prev) => !prev)
+              }
+              className="flex w-[150px] cursor-pointer items-center justify-between gap-2 rounded border border-slate-300 bg-surface px-2 py-1 text-sm text-slate-800 transition-colors hover:bg-surface-muted"
+            >
+              <span>{filtroEstado || "Todos"}</span>
+              <ChevronDown
+                size={14}
+                strokeWidth={2.5}
+                className={`transition-transform duration-200 ${
+                  filtroEstadoMenuAbierto ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {filtroEstadoMenuAbierto && (
+              <ul
+                role="listbox"
+                className="absolute top-full left-0 z-50 mt-1.5 w-[150px] overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+              >
+                {(
+                  [
+                    { valor: "", label: "Todos" },
+                    { valor: "Pendiente", label: "Pendiente" },
+                    { valor: "Aprobado", label: "Aprobado" },
+                    { valor: "Rechazado", label: "Rechazado" },
+                  ] as const
+                ).map((opcion) => {
+                  const activo = filtroEstado === opcion.valor;
+                  return (
+                    <li key={opcion.label} role="option" aria-selected={activo}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFiltroEstado(
+                            opcion.valor as
+                              | "Pendiente"
+                              | "Aprobado"
+                              | "Rechazado"
+                              | "",
+                          );
+                          setFiltroEstadoMenuAbierto(false);
+                        }}
+                        className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
+                          activo
+                            ? "bg-royal-blue/10 text-royal-blue"
+                            : "text-slate-700 hover:bg-royal-blue/5"
+                        }`}
+                      >
+                        {opcion.label}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
           {isFiltering && (
             <Loader2
               size={18}
