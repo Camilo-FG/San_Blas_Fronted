@@ -66,6 +66,12 @@ const normalizeText = (value: unknown) =>
     .toLowerCase()
     .trim();
 
+const toFechaTime = (fecha?: string) => {
+  if (!fecha) return Number.NEGATIVE_INFINITY;
+  const t = new Date(fecha).getTime();
+  return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
+};
+
 const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   const normalized = (estado ?? "Pendiente").toLowerCase();
   if (normalized === "aprobado") return "success";
@@ -129,21 +135,25 @@ const TableSacramentos = () => {
 
   const filteredRows = useMemo(
     () =>
-      rows.filter((row) => {
-        const matchNombre =
-          !filtroNombre.trim() ||
-          normalizeText(nombreCompleto(row)).includes(
-            normalizeText(filtroNombre),
-          );
-        const matchCedula =
-          !filtroCedula.trim() ||
-          normalizeText(String(row.Cedula)).includes(
-            normalizeText(filtroCedula),
-          );
-        const matchEstado =
-          !filtroEstado || row.Estado === filtroEstado;
-        return matchNombre && matchCedula && matchEstado;
-      }),
+      rows
+        .filter((row) => {
+          const matchNombre =
+            !filtroNombre.trim() ||
+            normalizeText(nombreCompleto(row)).includes(
+              normalizeText(filtroNombre),
+            );
+          const matchCedula =
+            !filtroCedula.trim() ||
+            normalizeText(String(row.Cedula)).includes(
+              normalizeText(filtroCedula),
+            );
+          const matchEstado =
+            !filtroEstado || row.Estado === filtroEstado;
+          return matchNombre && matchCedula && matchEstado;
+        })
+        .sort(
+          (a, b) => toFechaTime(b.Fecha) - toFechaTime(a.Fecha),
+        ),
     [rows, filtroNombre, filtroCedula, filtroEstado],
   );
 
@@ -417,7 +427,9 @@ const TableSacramentos = () => {
 
       {!isInitialLoading && filteredRows.length === 0 && (
         <p className="py-6 text-center text-sm text-text-muted">
-          No se encontraron solicitudes con los filtros seleccionados.
+          {filtroNombre.trim() || filtroCedula.trim() || filtroEstado
+            ? "No se encontraron solicitudes con los filtros seleccionados."
+            : "Actualmente no existen solicitudes registradas."}
         </p>
       )}
 
