@@ -1,13 +1,19 @@
 import type { FormSacramento } from "../../types/formSacramento";
-import { apiClient, handleApiError } from "../apiClient";
+import { ApiError, apiClient, handleApiError } from "../apiClient";
 import type {
-  EstadoConstancia,
+  EstadoSolicitudBackend,
   FormSacraBackend,
 } from "./constanciasApiTypes";
 import {
   mapBackendToFormSacramento,
   mapFormToBackendRequest,
 } from "./constanciasMapper";
+import {
+  assertSolicitudesArrayResponse,
+  logSolicitudesQueryError,
+  MENSAJES_CONSULTA_SOLICITUDES,
+  toFriendlySolicitudesMessage,
+} from "./solicitudesQueryHandler";
 
 export interface HistorialRechazo {
   id: number;
@@ -22,13 +28,47 @@ export interface HistorialRechazo {
 
 const BASE = "/solic-sacramento";
 
-export const obtenerSolicitudesSacramentos = async (): Promise<
-  FormSacramento[]
-> => {
+export interface SolicitudesSacramentosFilters {
+  nombre?: string;
+  cedula?: string;
+  estado?: string;
+}
+
+export const obtenerSolicitudesSacramentos = async (
+  filters: SolicitudesSacramentosFilters = {},
+): Promise<FormSacramento[]> => {
   try {
-    const { data } = await apiClient.get<FormSacraBackend[]>(BASE);
+    const params = new URLSearchParams();
+    if (filters.nombre) {
+      params.append("nombre", filters.nombre);
+    }
+    if (filters.cedula) {
+      params.append("cedula", filters.cedula.toString());
+    }
+    if (filters.estado) {
+      params.append("estado", filters.estado);
+    }
+
+    const queryString = params.toString() ? `?${params.toString()}` : "";
+    const { data } = await apiClient.get<FormSacraBackend[]>(
+      `${BASE}${queryString}`,
+    );
+
+    if (!assertSolicitudesArrayResponse(data)) {
+      logSolicitudesQueryError("obtenerSolicitudesSacramentos", data);
+      throw new ApiError(MENSAJES_CONSULTA_SOLICITUDES.respuestaInvalida, 500);
+    }
+
     return data.map(mapBackendToFormSacramento);
   } catch (error) {
+    logSolicitudesQueryError("obtenerSolicitudesSacramentos", error);
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        toFriendlySolicitudesMessage(error),
+        error.status,
+        error.errores,
+      );
+    }
     handleApiError(error);
   }
 };
@@ -58,12 +98,12 @@ export const crearSolicitudSacramento = async (
 
 export const actualizarEstadoSacramento = async (
   id: number,
-  estado: EstadoConstancia,
+  nuevoEstado: EstadoSolicitudBackend,
 ): Promise<FormSacramento> => {
   try {
     const { data } = await apiClient.patch<FormSacraBackend>(
-      `${BASE}/${id}`,
-      { Estado: estado },
+      `${BASE}/cambiar-estado/${id}`,
+      { nuevoEstado },
     );
     return mapBackendToFormSacramento(data);
   } catch (error) {
@@ -74,11 +114,12 @@ export const actualizarEstadoSacramento = async (
 export const rechazarSolicitudSacramento = async (
   id: number,
   motivoRechazo: string,
+  detalleRechazo?: string,
 ): Promise<FormSacramento> => {
   try {
     const { data } = await apiClient.patch<FormSacraBackend>(
       `${BASE}/${id}/rechazar`,
-      { motivoRechazo: motivoRechazo },
+      { motivoRechazo, detalleRechazo },
     );
     return mapBackendToFormSacramento(data);
   } catch (error) {
@@ -90,7 +131,9 @@ export const rechazarSolicitudSacramento = async (
 export const getSolicitudes = obtenerSolicitudesSacramentos;
 export const CreateSolicSacramento = crearSolicitudSacramento;
 
-export const obtenerHistorialRechazos = async (): Promise<HistorialRechazo[]> => {
+export const obtenerHistorialRechazos = async (): Promise<
+  HistorialRechazo[]
+> => {
   try {
     const { data } = await apiClient.get<HistorialRechazo[]>(
       `${BASE}/historial-rechazos`,

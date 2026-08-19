@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, ScrollText, Phone, IdCard, Eye, Loader2, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ScrollText,
+  Phone,
+  IdCard,
+  Eye,
+  Loader2,
+  X,
+} from "lucide-react";
 import type { FormSacramento } from "../../types/formSacramento";
 import {
   createColumnHelper,
@@ -12,15 +21,18 @@ import { useGetSolicitudes } from "../solicSacramento/hooks/useGetSolicitudes";
 import { useUpdateSolicitudEstado } from "../solicSacramento/hooks/useUpdateSolicitudEstado";
 import { useRechazarSolicitudSacramento } from "../solicSacramento/hooks/useRechazarSolicitudSacramento";
 import { usePagination } from "../../shared/hooks/usePagination";
+import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 import { ApiError } from "../../services/apiClient";
+import { toFriendlySolicitudesMessage } from "../../services/constancias/solicitudesQueryHandler";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "@tanstack/react-router";
+import Rutas from "../../routes/Rutas";
 import { AdminRecordCard } from "../../shared/components/admin/AdminRecordCard";
 import { AdminRecordDetailSheet } from "../../shared/components/admin/AdminRecordDetailSheet";
 import {
   AdminModule,
   AdminPagination,
   AdminPaginationButton,
-  AdminSearch,
   AdminTable,
   AdminTableCell,
   AdminTableFooter,
@@ -42,14 +54,9 @@ import {
 const columnHelper = createColumnHelper<FormSacramento>();
 
 const nombreCompleto = (row: FormSacramento) =>
-  [row.Nombre, row.PrimerApellido, row.SegundoApellido].filter(Boolean).join(" ");
-
-const normalizeText = (value: unknown) =>
-  String(value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
+  [row.Nombre, row.PrimerApellido, row.SegundoApellido]
+    .filter(Boolean)
+    .join(" ");
 
 const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   const normalized = (estado ?? "Pendiente").toLowerCase();
@@ -70,15 +77,33 @@ const estadoSelectClass = (estado?: string) =>
   );
 
 const TableSacramentos = () => {
-  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+  const [filtroNombre, setFiltroNombre] = useState("");
+  const [filtroCedula, setFiltroCedula] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState<
+    "Pendiente" | "Aprobado" | "Rechazado" | ""
+  >("");
   const [solicitudSeleccionada, setSolicitudSeleccionada] =
     useState<FormSacramento | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
   const [rejectionReasonText, setRejectionReasonText] = useState("");
-  const [solicitudARechazar, setSolicitudARechazar] = useState<FormSacramento | null>(null);
+  const [solicitudARechazar, setSolicitudARechazar] =
+    useState<FormSacramento | null>(null);
+  const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
+  const debouncedCedula = useDebouncedValue(filtroCedula.trim(), 500);
+  const debouncedEstado = useDebouncedValue(filtroEstado, 300);
+  const filters = useMemo(
+    () => ({
+      nombre: debouncedNombre || undefined,
+      cedula: debouncedCedula || undefined,
+      estado: debouncedEstado || undefined,
+    }),
+    [debouncedNombre, debouncedCedula, debouncedEstado],
+  );
   const { isAdmin } = useAuth();
-  const { data, error, isPending } = useGetSolicitudes();
+  const { data, error, isPending, isFetching, refetch } =
+    useGetSolicitudes(filters);
   const updateEstado = useUpdateSolicitudEstado();
   const rechazarSolicitud = useRechazarSolicitudSacramento();
   const isUpdatingEstado = updateEstado.isPending;
@@ -86,6 +111,8 @@ const TableSacramentos = () => {
   const { showToast } = useToast();
 
   const rows: FormSacramento[] = Array.isArray(data) ? data : [];
+  const isInitialLoading = isPending && rows.length === 0;
+  const isFiltering = isFetching && !isInitialLoading;
 
   const rejectionReasons = [
     "Documentación incompleta",
@@ -118,11 +145,15 @@ const TableSacramentos = () => {
       await rechazarSolicitud.mutateAsync({
         id: solicitudARechazar.id,
         motivoRechazo: motivo,
+        detalleRechazo: rejectionReasonText.trim() || undefined,
       });
       showToast("Solicitud rechazada correctamente", "success");
       handleCloseRejectModal();
     } catch (err) {
-      const mensaje = err instanceof ApiError ? err.message : "No se pudo rechazar la solicitud.";
+      const mensaje =
+        err instanceof ApiError
+          ? err.message
+          : "No se pudo rechazar la solicitud.";
       showToast(mensaje, "error");
     }
   };
@@ -134,17 +165,6 @@ const TableSacramentos = () => {
   const handleReasonTextChange = (value: string) => {
     setRejectionReasonText(value);
   };
-
-  const filtered = useMemo(() => {
-    const normalizedQuery = normalizeText(query);
-    if (!normalizedQuery) return rows;
-    return rows.filter((row) => {
-      const searchable = [row.Nombre, row.PrimerApellido, row.SegundoApellido, String(row.Cedula)]
-        .map(normalizeText)
-        .join(" ");
-      return searchable.includes(normalizedQuery);
-    });
-  }, [query, rows]);
 
   const columns = useMemo(
     () => [
@@ -173,7 +193,9 @@ const TableSacramentos = () => {
           return (
             <span className="flex flex-col gap-0.5 text-xs leading-snug text-text-secondary">
               <span>{r.Correo}</span>
-              <span className="tabular-nums">{r.Telefono?.toString() || "—"}</span>
+              <span className="tabular-nums">
+                {r.Telefono?.toString() || "—"}
+              </span>
             </span>
           );
         },
@@ -190,7 +212,10 @@ const TableSacramentos = () => {
             onClick={() => setSolicitudSeleccionada(info.row.original)}
             className="inline-flex cursor-pointer items-center gap-1 rounded-lg border-0 bg-transparent px-2 py-1.5 text-[0.7rem] font-bold tracking-wider text-info uppercase transition-colors hover:bg-info-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
-            <Eye size={13} strokeWidth={1.5} />
+            <Eye
+              size={13}
+              strokeWidth={1.5}
+            />
             Ver motivo
           </button>
         ),
@@ -200,21 +225,23 @@ const TableSacramentos = () => {
   );
 
   const table = useReactTable({
-    data: filtered,
+    data: rows,
     columns,
+    autoResetPageIndex: true,
     getCoreRowModel: getCoreRowModel(),
     initialState: { pagination: { pageSize: 7 } },
     getPaginationRowModel: getPaginationRowModel(),
   });
 
   const {
-    totalItems, currentPage, totalPages,
-    canPreviousPage, canNextPage,
-    goToPreviousPage, goToNextPage,
+    totalItems,
+    currentPage,
+    totalPages,
+    canPreviousPage,
+    canNextPage,
+    goToPreviousPage,
+    goToNextPage,
   } = usePagination(table);
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setQuery(e.target.value || "");
 
   const handleEstadoChange = (
     id: number | string | undefined,
@@ -233,15 +260,24 @@ const TableSacramentos = () => {
     }
 
     updateEstado.mutate(
-      { id, Estado: nextEstado },
+      { id, nuevoEstado: nextEstado },
       {
         onSuccess: () => {
-          if (solicitudSeleccionada && String(solicitudSeleccionada.id) === String(id)) {
-            setSolicitudSeleccionada({ ...solicitudSeleccionada, Estado: nextEstado });
+          if (
+            solicitudSeleccionada &&
+            String(solicitudSeleccionada.id) === String(id)
+          ) {
+            setSolicitudSeleccionada({
+              ...solicitudSeleccionada,
+              Estado: nextEstado,
+            });
           }
         },
         onError: (err: unknown) => {
-          const mensaje = err instanceof ApiError ? err.message : "No se pudo actualizar el estado.";
+          const mensaje =
+            err instanceof ApiError
+              ? err.message
+              : "No se pudo actualizar el estado.";
           showToast(mensaje, "error");
         },
       },
@@ -250,27 +286,98 @@ const TableSacramentos = () => {
 
   const renderEstadoBadge = (estado?: string) => {
     const currentEstado = estado ?? "Pendiente";
-    return <Badge variant={getEstadoBadgeVariant(currentEstado)}>{currentEstado}</Badge>;
+    return (
+      <Badge variant={getEstadoBadgeVariant(currentEstado)}>
+        {currentEstado}
+      </Badge>
+    );
   };
 
   if (error) {
-    const mensaje = error instanceof ApiError ? error.message : "No se pudieron cargar las solicitudes.";
-    return <div className="p-4 text-sm text-danger">{mensaje}</div>;
+    const mensaje = toFriendlySolicitudesMessage(error);
+    return (
+      <div className="rounded-lg border border-danger/30 bg-danger-bg p-4 text-sm text-danger">
+        <p className="m-0">{mensaje}</p>
+        <Button
+          type="button"
+          variant="secondary"
+          className="mt-3"
+          onClick={() => void refetch()}
+        >
+          Reintentar
+        </Button>
+      </div>
+    );
   }
 
   return (
     <AdminModule className="p-2">
       <AdminToolbar>
-        <AdminSearch
-          value={query}
-          type="search"
-          placeholder="Buscar por nombre, apellidos o cédula"
-          onChange={handleSearch}
-          aria-label="Buscar solicitudes de constancia"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => navigate({ to: Rutas.dashboardUrl.historialRechazos })}
+          >
+            Ver historial de rechazos
+          </Button>
+          <input
+            type="text"
+            value={filtroNombre}
+            onChange={(e) => setFiltroNombre(e.target.value)}
+            placeholder="Nombre completo"
+            className="rounded border px-2 py-1 text-sm"
+            aria-label="Filtrar por nombre completo"
+            style={{ width: "200px" }}
+          />
+          <input
+            type="number"
+            value={filtroCedula || ""}
+            onChange={(e) => setFiltroCedula(e.target.value || "")}
+            placeholder="Cédula"
+            className="rounded border px-2 py-1 text-sm"
+            aria-label="Filtrar por cédula"
+            style={{ width: "120px" }}
+          />
+          <select
+            value={filtroEstado}
+            onChange={(e) =>
+              setFiltroEstado(
+                e.target.value as "Pendiente" | "Aprobado" | "Rechazado" | "",
+              )
+            }
+            className="rounded border px-2 py-1 text-sm"
+            aria-label="Filtrar por estado"
+            style={{ width: "150px" }}
+          >
+            <option value="">Todos</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Aprobado">Aprobado</option>
+            <option value="Rechazado">Rechazado</option>
+          </select>
+          {isFiltering && (
+            <Loader2
+              size={18}
+              className="animate-spin text-text-muted"
+              aria-label="Aplicando filtros"
+            />
+          )}
+        </div>
       </AdminToolbar>
 
-      {!isPending && (
+      {isInitialLoading && (
+        <p className="py-6 text-center text-sm text-text-muted">
+          Cargando solicitudes...
+        </p>
+      )}
+
+      {!isInitialLoading && rows.length === 0 && (
+        <p className="py-6 text-center text-sm text-text-muted">
+          No se encontraron solicitudes con los filtros seleccionados.
+        </p>
+      )}
+
+      {!isInitialLoading && rows.length > 0 && (
         <>
           <div className="hidden md:block">
             <AdminTablePanel>
@@ -280,7 +387,12 @@ const TableSacramentos = () => {
                     <AdminTableRow key={hg.id}>
                       {hg.headers.map((h) => (
                         <AdminTableHeaderCell key={h.id}>
-                          {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+                          {h.isPlaceholder
+                            ? null
+                            : flexRender(
+                                h.column.columnDef.header,
+                                h.getContext(),
+                              )}
                         </AdminTableHeaderCell>
                       ))}
                     </AdminTableRow>
@@ -292,15 +404,29 @@ const TableSacramentos = () => {
                       {row.getVisibleCells().map((cell) => {
                         if (cell.column.id === "Estado") {
                           const originalRow = row.original;
-                          const currentEstado = originalRow.Estado ?? "Pendiente";
+                          const currentEstado =
+                            originalRow.Estado ?? "Pendiente";
                           return (
                             <AdminTableCell key={cell.id}>
-                              <div className={cn("inline-flex items-center rounded-full p-1", estadoSelectClass(currentEstado))}>
+                              <div
+                                className={cn(
+                                  "inline-flex items-center rounded-full p-1",
+                                  estadoSelectClass(currentEstado),
+                                )}
+                              >
                                 {isAdmin ? (
                                   <Select
                                     className="min-h-0 border-0 bg-transparent px-2 py-1 text-xs font-bold shadow-none focus-visible:ring-0"
                                     value={currentEstado}
-                                    onChange={(e) => handleEstadoChange(originalRow.id, e.target.value as "Pendiente" | "Aprobado" | "Rechazado")}
+                                    onChange={(e) =>
+                                      handleEstadoChange(
+                                        originalRow.id,
+                                        e.target.value as
+                                          | "Pendiente"
+                                          | "Aprobado"
+                                          | "Rechazado",
+                                      )
+                                    }
                                     disabled={isUpdatingEstado}
                                   >
                                     <option value="Pendiente">Pendiente</option>
@@ -308,7 +434,9 @@ const TableSacramentos = () => {
                                     <option value="Rechazado">Rechazado</option>
                                   </Select>
                                 ) : (
-                                  <span className="px-2 py-1 text-xs font-bold">{currentEstado}</span>
+                                  <span className="px-2 py-1 text-xs font-bold">
+                                    {currentEstado}
+                                  </span>
                                 )}
                               </div>
                             </AdminTableCell>
@@ -316,7 +444,10 @@ const TableSacramentos = () => {
                         }
                         return (
                           <AdminTableCell key={cell.id}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
                           </AdminTableCell>
                         );
                       })}
@@ -328,7 +459,7 @@ const TableSacramentos = () => {
           </div>
 
           <div className="flex flex-col gap-2.5 md:hidden">
-            {filtered.map((row) => (
+            {table.getRowModel().rows.map(({ original: row }) => (
               <AdminRecordCard
                 key={String(row.id)}
                 icon={<ScrollText size={20} />}
@@ -337,8 +468,16 @@ const TableSacramentos = () => {
                 title={nombreCompleto(row)}
                 badges={renderEstadoBadge(row.Estado)}
                 meta={[
-                  { icon: <IdCard size={12} />, label: "Cédula", value: String(row.Cedula ?? "—") },
-                  { icon: <Phone size={12} />, label: "Teléfono", value: row.Telefono?.toString() || "No provisto" },
+                  {
+                    icon: <IdCard size={12} />,
+                    label: "Cédula",
+                    value: String(row.Cedula ?? "—"),
+                  },
+                  {
+                    icon: <Phone size={12} />,
+                    label: "Teléfono",
+                    value: row.Telefono?.toString() || "No provisto",
+                  },
                 ]}
                 footer={
                   isAdmin ? (
@@ -347,7 +486,15 @@ const TableSacramentos = () => {
                       value={row.Estado ?? "Pendiente"}
                       disabled={isUpdatingEstado}
                       aria-label={`Estado de solicitud de ${nombreCompleto(row)}`}
-                      onChange={(e) => handleEstadoChange(row.id, e.target.value as "Pendiente" | "Aprobado" | "Rechazado")}
+                      onChange={(e) =>
+                        handleEstadoChange(
+                          row.id,
+                          e.target.value as
+                            | "Pendiente"
+                            | "Aprobado"
+                            | "Rechazado",
+                        )
+                      }
                     >
                       <option value="Pendiente">Pendiente</option>
                       <option value="Aprobado">Aprobado</option>
@@ -356,7 +503,12 @@ const TableSacramentos = () => {
                   ) : undefined
                 }
                 actions={[
-                  { label: "Ver solicitud", icon: <Eye size={15} />, variant: "primary", onClick: () => setSolicitudSeleccionada(row) },
+                  {
+                    label: "Ver solicitud",
+                    icon: <Eye size={15} />,
+                    variant: "primary",
+                    onClick: () => setSolicitudSeleccionada(row),
+                  },
                 ]}
               />
             ))}
@@ -366,8 +518,17 @@ const TableSacramentos = () => {
 
       <AdminRecordDetailSheet
         open={solicitudSeleccionada !== null}
-        title={solicitudSeleccionada ? nombreCompleto(solicitudSeleccionada) : "Solicitud"}
-        badges={solicitudSeleccionada ? renderEstadoBadge(solicitudSeleccionada.Estado) : undefined}
+        title={
+          solicitudSeleccionada
+            ? nombreCompleto(solicitudSeleccionada)
+            : "Solicitud"
+        }
+        subtitle={solicitudSeleccionada?.TipoSacramento}
+        badges={
+          solicitudSeleccionada
+            ? renderEstadoBadge(solicitudSeleccionada.Estado)
+            : undefined
+        }
         onClose={() => setSolicitudSeleccionada(null)}
         actions={
           solicitudSeleccionada && isAdmin ? (
@@ -376,7 +537,12 @@ const TableSacramentos = () => {
               <Select
                 className={estadoSelectClass(solicitudSeleccionada.Estado)}
                 value={solicitudSeleccionada.Estado ?? "Pendiente"}
-                onChange={(e) => handleEstadoChange(solicitudSeleccionada.id, e.target.value as "Pendiente" | "Aprobado" | "Rechazado")}
+                onChange={(e) =>
+                  handleEstadoChange(
+                    solicitudSeleccionada.id,
+                    e.target.value as "Pendiente" | "Aprobado" | "Rechazado",
+                  )
+                }
                 disabled={isUpdatingEstado}
               >
                 <option value="Pendiente">Pendiente</option>
@@ -389,7 +555,9 @@ const TableSacramentos = () => {
       >
         {solicitudSeleccionada && (
           <div className="flex flex-col gap-2">
-            <h4 className="m-0 text-xs font-semibold tracking-wider text-text-muted uppercase">Motivo</h4>
+            <h4 className="m-0 text-xs font-semibold tracking-wider text-text-muted uppercase">
+              Motivo
+            </h4>
             <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
               {solicitudSeleccionada.Motivo}
             </p>
@@ -398,7 +566,10 @@ const TableSacramentos = () => {
       </AdminRecordDetailSheet>
 
       {isRejectModalOpen && (
-        <Modal onClose={handleCloseRejectModal} title="Rechazar solicitud">
+        <Modal
+          onClose={handleCloseRejectModal}
+          title="Rechazar solicitud"
+        >
           <div className="flex flex-col gap-4">
             <p className="text-sm text-text-secondary">
               Seleccione o escriba el motivo de rechazo para esta solicitud:
@@ -411,7 +582,10 @@ const TableSacramentos = () => {
             >
               <option value="">-- Seleccione un motivo --</option>
               {rejectionReasons.map((reason) => (
-                <option key={reason} value={reason}>
+                <option
+                  key={reason}
+                  value={reason}
+                >
                   {reason}
                 </option>
               ))}
@@ -424,17 +598,28 @@ const TableSacramentos = () => {
               className="min-h-[80px]"
             />
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="secondary" onClick={handleCloseRejectModal} disabled={isSubmitting}>
+              <Button
+                variant="secondary"
+                onClick={handleCloseRejectModal}
+                disabled={isSubmitting}
+              >
                 Cancelar
               </Button>
               <Button
                 variant="danger"
                 onClick={handleRejectSubmit}
-                disabled={!rejectionReasonSelect.trim() && !rejectionReasonText.trim() || isSubmitting}
+                disabled={
+                  (!rejectionReasonSelect.trim() &&
+                    !rejectionReasonText.trim()) ||
+                  isSubmitting
+                }
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" />
+                    <Loader2
+                      size={16}
+                      className="animate-spin"
+                    />
                     Rechazando...
                   </>
                 ) : (
@@ -446,20 +631,37 @@ const TableSacramentos = () => {
         </Modal>
       )}
 
-      {!isPending && table.getRowModel().rows.length > 0 && (
+      {!isInitialLoading && table.getRowModel().rows.length > 0 && (
         <AdminTableFooter>
           <span className="text-sm text-text-muted">
             <strong className="text-text">{totalItems}</strong> registros
           </span>
           <AdminPagination>
-            <AdminPaginationButton type="button" onClick={goToPreviousPage} disabled={!canPreviousPage} aria-label="Página anterior">
-              <ChevronLeft size={16} strokeWidth={2} />
+            <AdminPaginationButton
+              type="button"
+              onClick={goToPreviousPage}
+              disabled={!canPreviousPage}
+              aria-label="Página anterior"
+            >
+              <ChevronLeft
+                size={16}
+                strokeWidth={2}
+              />
             </AdminPaginationButton>
             <span className="text-sm text-text-muted">
-              <strong className="text-text">{currentPage}</strong> de <strong className="text-text">{totalPages}</strong>
+              <strong className="text-text">{currentPage}</strong> de{" "}
+              <strong className="text-text">{totalPages}</strong>
             </span>
-            <AdminPaginationButton type="button" onClick={goToNextPage} disabled={!canNextPage} aria-label="Página siguiente">
-              <ChevronRight size={16} strokeWidth={2} />
+            <AdminPaginationButton
+              type="button"
+              onClick={goToNextPage}
+              disabled={!canNextPage}
+              aria-label="Página siguiente"
+            >
+              <ChevronRight
+                size={16}
+                strokeWidth={2}
+              />
             </AdminPaginationButton>
           </AdminPagination>
         </AdminTableFooter>

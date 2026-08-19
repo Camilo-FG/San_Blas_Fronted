@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { useGetListBautismo } from "../hooks/hooksBautismo/useGetListBautismo";
 import { useGetListComunion } from "../hooks/hooksComunion/useGetListComunion";
 import { useGetListConfirma } from "../hooks/hooksConfirma/useGetListConfirma";
 import { useGetListMatrimonio } from "../hooks/hooksMatrimonio/useGetListMatrimonio";
 import SacramentTable from "./SacramentTable";
+import SacramentoEmptyState from "./SacramentoEmptyState";
 import DetailsDrawer from "./DetailsDrawer";
 import AddSacramentoModal from "./AddSacramentoModal";
 import EditSacramentoModal from "./EditSacramentoModal";
@@ -19,9 +21,10 @@ import { useDeleteBautismo } from "../hooks/hooksBautismo/useDeleteBautismo";
 import { useDeleteComunion } from "../hooks/hooksComunion/useDeleteComunion";
 import { useDeleteConfirma } from "../hooks/hooksConfirma/useDeleteConfirma";
 import { useDeleteMatrimonio } from "../hooks/hooksMatrimonio/useDeleteMatrimonio";
-import { AdminModule, AdminSearch, Button } from "../../../shared/ui";
+import { AdminModule, AdminSearch, Button, useToast } from "../../../shared/ui";
 
 const GestionSacramentos = () => {
+  const { showToast } = useToast();
   const { data: bautismos, isLoading: bautismosLoading, error: bautismosError, refetch: refetchBautismos } = useGetListBautismo();
   const { data: comuniones, isLoading: comunionesLoading, error: comunionesError, refetch: refetchComuniones } = useGetListComunion();
   const { data: confirmaciones, isLoading: confirmacionesLoading, error: confirmacionesError, refetch: refetchConfirmaciones } = useGetListConfirma();
@@ -43,24 +46,31 @@ const GestionSacramentos = () => {
   const deleteConfirmacion = useDeleteConfirma();
   const deleteMatrimonio = useDeleteMatrimonio();
 
+  const [nombreInput, setNombreInput] = useState("");
+  const [cedulaInput, setCedulaInput] = useState("");
+  const [fechaInput, setFechaInput] = useState("");
   const [searchNombre, setSearchNombre] = useState("");
   const [searchCedula, setSearchCedula] = useState("");
   const [searchFecha, setSearchFecha] = useState("");
   const [selectedSacramento, setSelectedSacramento] = useState<any>(null);
   const [selectedTipo, setSelectedTipo] = useState<string>("Bautismo");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [sortColumn, setSortColumn] = useState<string>("nombre");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [sortColumn, setSortColumn] = useState<string>("fechaCelebracion");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingSacramento, setEditingSacramento] = useState<any>(null);
   const [editingTipo, setEditingTipo] = useState<string>("Bautismo");
 
   const handleSaveSacramento = async (data: any, tipo: string) => {
+
+  
+    const fechaRegistro = new Date().toISOString();
     if (tipo === "Bautismo") {
       await createBautismo.mutateAsync({
         id: 0,
         ...data,
+        fechaRegistro,
         SegundoApellido: data.SegundoApellido || "",
         Prebispero: data.Prebispero || "",
         horaNacimiento: data.horaNacimiento || "",
@@ -69,14 +79,50 @@ const GestionSacramentos = () => {
       });
       await refetchBautismos();
     } else if (tipo === "Comunión") {
-      await createComunion.mutateAsync({ id: 0, ...data });
+      await createComunion.mutateAsync({ id: 0, ...data, fechaRegistro });
       await refetchComuniones();
     } else if (tipo === "Confirmación") {
-      await createConfirmacion.mutateAsync({ id: 0, ...data });
+      await createConfirmacion.mutateAsync({ id: 0, ...data, fechaRegistro });
       await refetchConfirmaciones();
     } else if (tipo === "Matrimonio") {
-      await createMatrimonio.mutateAsync({ id: 0, ...data });
+      await createMatrimonio.mutateAsync({ id: 0, ...data, fechaRegistro });
       await refetchMatrimonios();
+
+    try {
+      if (tipo === "Bautismo") {
+        await createBautismo.mutateAsync({
+          id: 0,
+          ...data,
+          SegundoApellido: data.SegundoApellido || "",
+          Prebispero: data.Prebispero || "",
+          horaNacimiento: data.horaNacimiento || "",
+          NombreAbuelosPaternos: data.NombreAbuelosPaternos || "",
+          NombreAbuelosMaternos: data.NombreAbuelosMaternos || "",
+        });
+        await refetchBautismos();
+      } else if (tipo === "Comunión") {
+        await createComunion.mutateAsync({ id: 0, ...data });
+        await refetchComuniones();
+      } else if (tipo === "Confirmación") {
+        await createConfirmacion.mutateAsync({ id: 0, ...data });
+        await refetchConfirmaciones();
+      } else if (tipo === "Matrimonio") {
+        await createMatrimonio.mutateAsync({ id: 0, ...data });
+        await refetchMatrimonios();
+      }
+      showToast("Acta sacramental registrada correctamente", "success");
+    } catch (err: any) {
+      const conflicto =
+        err?.response?.status === 409 ||
+        /ya existe|duplicado|conflicto/i.test(err?.message || "");
+      showToast(
+        conflicto
+          ? "Esta acta ya se encuentra registrada. Verifique los datos del libro."
+          : "No se pudo registrar el acta. Intente de nuevo.",
+        "error"
+      );
+      throw err;
+
     }
   };
 
@@ -142,6 +188,7 @@ const GestionSacramentos = () => {
         "Sin nombre",
       cedula: b.cedula || b.Cedula || "",
       fechaCelebracion: b.FechaBautismo || b.fechaBautismo || "",
+      fechaRegistro: b.fechaRegistro || b.FechaRegistro || b.createdAt || "",
       lugar: b.NombreParroquia || b.nombreParroquia || "",
       tipo: "Bautismo" as const,
       detalles: b,
@@ -153,6 +200,7 @@ const GestionSacramentos = () => {
       fechaCelebracion:
         `${c.DiaComunion || c.diaComunion || ""} ${c.MesComunion || c.mesComunion || ""} ${c.AnnioComunion || c.annioComunion || ""}`.trim() ||
         "Fecha no especificada",
+      fechaRegistro: c.fechaRegistro || c.FechaRegistro || c.createdAt || "",
       lugar: c.LugarComunion || c.lugarComunion || "",
       tipo: "Comunión" as const,
       detalles: c,
@@ -164,6 +212,7 @@ const GestionSacramentos = () => {
       fechaCelebracion:
         `${conf.DiaConfirmacion || conf.diaConfirmacion || ""} ${conf.MesConfirmacion || conf.mesConfirmacion || ""} ${conf.AnnioConfirmacion || conf.annioConfirmacion || ""}`.trim() ||
         "Fecha no especificada",
+      fechaRegistro: conf.fechaRegistro || conf.FechaRegistro || conf.createdAt || "",
       lugar: conf.LugarConfirmacion || conf.lugarConfirmacion || "",
       tipo: "Confirmación" as const,
       detalles: conf,
@@ -177,6 +226,7 @@ const GestionSacramentos = () => {
       fechaCelebracion:
         `${m.DiaMatrimonio || m.diaMatrimonio || ""} ${m.MesMatrimonio || m.mesMatrimonio || ""} ${m.AnnioMatrimonio || m.annioMatrimonio || ""}`.trim() ||
         "Fecha no especificada",
+      fechaRegistro: m.fechaRegistro || m.FechaRegistro || m.createdAt || "",
       lugar: m.LugarMatrimonio || m.lugarMatrimonio || "",
       tipo: "Matrimonio" as const,
       detalles: m,
@@ -223,6 +273,12 @@ const GestionSacramentos = () => {
     sortDirection,
   );
 
+  const hayBusquedaActiva =
+    searchNombre.trim() !== "" || searchCedula.trim() !== "" || searchFecha !== "";
+
+  const mostrarEstadoVacio =
+    !isPending && !error && sacramentosOrdenados.length === 0 && hayBusquedaActiva;
+
   const handleSort = (columna: string) => {
     if (sortColumn === columna) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -230,6 +286,28 @@ const GestionSacramentos = () => {
       setSortColumn(columna);
       setSortDirection("asc");
     }
+  };
+
+  const aplicarMascaraCedula = (valor: string) => {
+    const digitos = valor.replace(/\D/g, "").slice(0, 9);
+    if (digitos.length <= 1) return digitos;
+    if (digitos.length <= 5) return `${digitos[0]}-${digitos.slice(1)}`;
+    return `${digitos[0]}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
+  };
+
+  const handleBuscar = () => {
+    setSearchNombre(nombreInput.trim());
+    setSearchCedula(cedulaInput.replace(/\D/g, ""));
+    setSearchFecha(fechaInput);
+  };
+
+  const handleLimpiar = () => {
+    setNombreInput("");
+    setCedulaInput("");
+    setFechaInput("");
+    setSearchNombre("");
+    setSearchCedula("");
+    setSearchFecha("");
   };
 
   const handleViewDetails = (sacramento: any) => {
@@ -246,36 +324,72 @@ const GestionSacramentos = () => {
 
   return (
     <AdminModule className="w-full py-5">
-      <div className="mb-6 flex flex-wrap items-end gap-4">
+      <div className="mb-6">
+        <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue">
+          CONSULTA DE REGISTROS SACRAMENTALES
+        </h2>
+      </div>
+
+      <form
+        className="mb-6 flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-4 shadow-sm"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleBuscar();
+        }}
+      >
         <AdminSearch
           type="text"
-          placeholder="Nombre del registrado"
-          value={searchNombre}
-          onChange={(e) => setSearchNombre(e.target.value)}
+          placeholder="Cédula (0-0000-0000)"
+          value={cedulaInput}
+          onChange={(e) => setCedulaInput(aplicarMascaraCedula(e.target.value))}
           className="min-w-[200px] flex-1"
         />
         <AdminSearch
           type="text"
-          placeholder="Cédula"
-          value={searchCedula}
-          onChange={(e) => setSearchCedula(e.target.value)}
+          placeholder="Nombre o apellidos"
+          value={nombreInput}
+          onChange={(e) => setNombreInput(e.target.value)}
           className="min-w-[200px] flex-1"
         />
         <input
           type="date"
-          value={searchFecha}
-          onChange={(e) => setSearchFecha(e.target.value)}
+          value={fechaInput}
+          onChange={(e) => setFechaInput(e.target.value)}
           className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-text focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
         />
-        <Button onClick={() => setIsModalOpen(true)} className="shrink-0">
+        <Button type="submit" className="shrink-0">
+          BUSCAR
+        </Button>
+        <Button type="button" onClick={handleLimpiar} variant="secondary" className="shrink-0">
+          LIMPIAR
+        </Button>
+        <Button type="button" onClick={() => setIsModalOpen(true)} variant="primary" className="shrink-0">
           + Agregar
         </Button>
-      </div>
+      </form>
 
-      {isPending && <p>Cargando sacramentos...</p>}
-      {error && <p>Error: {error.message}</p>}
+      {isPending && (
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+          <Loader2 size={32} className="animate-spin text-text-muted" />
+          <p className="m-0 text-sm text-text-secondary">Buscando registros...</p>
+        </div>
+      )}
 
-      {!isPending && !error && (
+      {error && !isPending && (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-danger-bg bg-danger-bg/40 px-6 py-16 text-center">
+          <p className="m-0 text-sm font-medium text-danger">
+            Ocurrió un error al realizar la búsqueda
+          </p>
+        </div>
+      )}
+
+      {mostrarEstadoVacio && (
+        <div className="rounded-xl border border-border-strong bg-surface">
+          <SacramentoEmptyState />
+        </div>
+      )}
+
+      {!isPending && !error && !mostrarEstadoVacio && (
         <SacramentTable
           sacramentos={sacramentosOrdenados}
           onViewDetails={handleViewDetails}
@@ -284,6 +398,7 @@ const GestionSacramentos = () => {
           onSort={handleSort}
           sortColumn={sortColumn}
           sortDirection={sortDirection}
+          searchNombre={searchNombre}
         />
       )}
 
