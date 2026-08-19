@@ -475,15 +475,15 @@ const FormSolic = () => {
                       id={field.name}
                       name={field.name}
                       placeholder="Describe brevemente el motivo"
-                      maxLength={50}
+                      maxLength={250}
                       value={field.state.value}
                       onChange={(e) =>
-                        field.handleChange(e.target.value.slice(0, 50))
+                        field.handleChange(e.target.value.slice(0, 250))
                       }
                       onBlur={field.handleBlur}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/50
+                      {field.state.value.length}/250
                     </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">

@@ -27,7 +27,7 @@ const navLinks = [
   },
   {
     to: Rutas.dashboardUrl.constanciasSacramentos,
-    label: "Constancias de Sacramentos",
+    label: "Solicitudes de Sacramentos",
     icon: FileText,
   },
   {
@@ -67,7 +67,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: "Administre bautismos, comuniones, confirmaciones y matrimonios.",
   },
   [Rutas.dashboardUrl.constanciasSacramentos]: {
-    title: "Solicitudes de constancia",
+    title: "Solicitudes de constancias sacramentales",
     subtitle: "Revise y actualice el estado de las solicitudes recibidas.",
   },
   [Rutas.dashboardUrl.solicitudesCatequesis]: {
@@ -97,7 +97,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
 };
 
 const menuItemBaseClassName =
-  "flex w-full items-center gap-3 rounded-lg border-l-4 py-3 pr-4 pl-3 text-left text-xs font-semibold no-underline transition-all focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
+  "flex w-full items-center gap-3 rounded-lg border-l-4 py-3 pr-4 pl-3 text-left text-xs font-semibold no-underline transition-all duration-200 ease-out hover:translate-x-1.5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
 const menuItemInactiveClassName =
   "border-transparent text-gray-400 hover:bg-white/5 hover:text-white [&_svg]:text-gray-500 hover:[&_svg]:text-white";

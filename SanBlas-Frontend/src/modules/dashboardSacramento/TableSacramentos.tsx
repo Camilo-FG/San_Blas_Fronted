@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ScrollText,
   Phone,
   IdCard,
   Eye,
   Loader2,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import type { FormSacramento } from "../../types/formSacramento";
 import {
@@ -55,23 +56,25 @@ const nombreCompleto = (row: FormSacramento) =>
     .filter(Boolean)
     .join(" ");
 
+const normalizeText = (value: unknown) =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+const toFechaTime = (fecha?: string) => {
+  if (!fecha) return Number.NEGATIVE_INFINITY;
+  const t = new Date(fecha).getTime();
+  return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
+};
+
 const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   const normalized = (estado ?? "Pendiente").toLowerCase();
   if (normalized === "aprobado") return "success";
   if (normalized === "rechazado") return "danger";
   return "warning";
 };
-
-const estadoSelectClass = (estado?: string) =>
-  cn(
-    "rounded-full border bg-transparent font-bold",
-    (estado ?? "Pendiente").toLowerCase() === "aprobado" &&
-      "border-emerald-300 bg-success-bg text-success",
-    (estado ?? "Pendiente").toLowerCase() === "rechazado" &&
-      "border-red-300 bg-danger-bg text-danger",
-    (estado ?? "Pendiente").toLowerCase() === "pendiente" &&
-      "border-orange-300 bg-warning-bg text-warning",
-  );
 
 const TableSacramentos = () => {
   const navigate = useNavigate();
@@ -87,6 +90,34 @@ const TableSacramentos = () => {
   const [rejectionReasonText, setRejectionReasonText] = useState("");
   const [solicitudARechazar, setSolicitudARechazar] =
     useState<FormSacramento | null>(null);
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [solicitudAAprobar, setSolicitudAAprobar] =
+    useState<FormSacramento | null>(null);
+  const [estadoMenuAbierto, setEstadoMenuAbierto] = useState(false);
+  const estadoMenuRef = useRef<HTMLDivElement>(null);
+  const [filtroEstadoMenuAbierto, setFiltroEstadoMenuAbierto] =
+    useState(false);
+  const filtroEstadoMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickFuera = (event: MouseEvent) => {
+      if (
+        estadoMenuRef.current &&
+        !estadoMenuRef.current.contains(event.target as Node)
+      ) {
+        setEstadoMenuAbierto(false);
+      }
+      if (
+        filtroEstadoMenuRef.current &&
+        !filtroEstadoMenuRef.current.contains(event.target as Node)
+      ) {
+        setFiltroEstadoMenuAbierto(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, []);
+
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
   const debouncedCedula = useDebouncedValue(filtroCedula.trim(), 500);
@@ -120,6 +151,30 @@ const TableSacramentos = () => {
   const canNextPage = currentPage < totalPages;
   const isInitialLoading = isPending && rows.length === 0;
   const isFiltering = isFetching && !isInitialLoading;
+
+  const filteredRows = useMemo(
+    () =>
+      rows
+        .filter((row) => {
+          const matchNombre =
+            !filtroNombre.trim() ||
+            normalizeText(nombreCompleto(row)).includes(
+              normalizeText(filtroNombre),
+            );
+          const matchCedula =
+            !filtroCedula.trim() ||
+            normalizeText(String(row.Cedula)).includes(
+              normalizeText(filtroCedula),
+            );
+          const matchEstado =
+            !filtroEstado || row.Estado === filtroEstado;
+          return matchNombre && matchCedula && matchEstado;
+        })
+        .sort(
+          (a, b) => toFechaTime(b.Fecha) - toFechaTime(a.Fecha),
+        ),
+    [rows, filtroNombre, filtroCedula, filtroEstado],
+  );
 
   const rejectionReasons = [
     "Documentación incompleta",
@@ -192,11 +247,11 @@ const TableSacramentos = () => {
           </span>
         ),
       }),
-      columnHelper.accessor("TipoSacramento", {
-        header: () => "Sacramento",
+      columnHelper.accessor("Fecha", {
+        header: () => "Fecha",
         cell: (info) => (
-          <span className="text-[0.7rem] font-semibold tracking-wider text-text-muted uppercase">
-            {info.getValue()}
+          <span className="text-text-secondary">
+            {info.getValue() || "—"}
           </span>
         ),
       }),
@@ -240,7 +295,7 @@ const TableSacramentos = () => {
   );
 
   const table = useReactTable({
-    data: rows,
+    data: filteredRows,
     columns,
     autoResetPageIndex: true,
     getCoreRowModel: getCoreRowModel(),
@@ -252,9 +307,16 @@ const TableSacramentos = () => {
   ) => {
     if (id === undefined || id === null) return;
 
+    const solicitud = rows.find((r) => String(r.id) === String(id));
+    const estadoActual = solicitud?.Estado ?? "Pendiente";
+
+    // Los estados "Aprobado" y "Rechazado" son permanentes e irreversibles
+    if (estadoActual === "Aprobado" || estadoActual === "Rechazado") {
+      return;
+    }
+
     // Si se selecciona "Rechazado", abrir modal de rechazo en lugar de actualizar directamente
     if (nextEstado === "Rechazado") {
-      const solicitud = rows.find((r) => String(r.id) === String(id));
       if (solicitud) {
         setSolicitudSeleccionada(null); // Cerrar modal de detalle
         handleOpenRejectModal(solicitud); // Abrir modal de rechazo
@@ -286,6 +348,23 @@ const TableSacramentos = () => {
       },
     );
   };
+
+  const handleApproveConfirm = () => {
+    if (!solicitudAAprobar) return;
+    handleEstadoChange(solicitudAAprobar.id, "Aprobado");
+    setIsApproveModalOpen(false);
+    setSolicitudAAprobar(null);
+  };
+
+  const handleCancelApprove = () => {
+    setIsApproveModalOpen(false);
+    setSolicitudAAprobar(null);
+  };
+
+  const estadoActualSolicitud = solicitudSeleccionada?.Estado ?? "Pendiente";
+  const esEstadoPermanente =
+    estadoActualSolicitud === "Aprobado" ||
+    estadoActualSolicitud === "Rechazado";
 
   const renderEstadoBadge = (estado?: string) => {
     const currentEstado = estado ?? "Pendiente";
@@ -329,37 +408,84 @@ const TableSacramentos = () => {
           <input
             type="text"
             value={filtroNombre}
-            onChange={(e) => setFiltroNombre(e.target.value)}
+            onChange={(e) => setFiltroNombre(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, ""))}
             placeholder="Nombre completo"
             className="rounded border px-2 py-1 text-sm"
             aria-label="Filtrar por nombre completo"
             style={{ width: "200px" }}
           />
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={filtroCedula || ""}
-            onChange={(e) => setFiltroCedula(e.target.value || "")}
+            onChange={(e) => setFiltroCedula(e.target.value.replace(/\D/g, ""))}
             placeholder="Cédula"
             className="rounded border px-2 py-1 text-sm"
             aria-label="Filtrar por cédula"
             style={{ width: "120px" }}
           />
-          <select
-            value={filtroEstado}
-            onChange={(e) =>
-              setFiltroEstado(
-                e.target.value as "Pendiente" | "Aprobado" | "Rechazado" | "",
-              )
-            }
-            className="rounded border px-2 py-1 text-sm"
-            aria-label="Filtrar por estado"
-            style={{ width: "150px" }}
-          >
-            <option value="">Todos</option>
-            <option value="Pendiente">Pendiente</option>
-            <option value="Aprobado">Aprobado</option>
-            <option value="Rechazado">Rechazado</option>
-          </select>
+          <div className="relative" ref={filtroEstadoMenuRef}>
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={filtroEstadoMenuAbierto}
+              onClick={() =>
+                setFiltroEstadoMenuAbierto((prev) => !prev)
+              }
+              className="flex w-[150px] cursor-pointer items-center justify-between gap-2 rounded border border-slate-300 bg-surface px-2 py-1 text-sm text-slate-800 transition-colors hover:bg-surface-muted"
+            >
+              <span>{filtroEstado || "Todos"}</span>
+              <ChevronDown
+                size={14}
+                strokeWidth={2.5}
+                className={`transition-transform duration-200 ${
+                  filtroEstadoMenuAbierto ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {filtroEstadoMenuAbierto && (
+              <ul
+                role="listbox"
+                className="absolute top-full left-0 z-50 mt-1.5 w-[150px] overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+              >
+                {(
+                  [
+                    { valor: "", label: "Todos" },
+                    { valor: "Pendiente", label: "Pendiente" },
+                    { valor: "Aprobado", label: "Aprobado" },
+                    { valor: "Rechazado", label: "Rechazado" },
+                  ] as const
+                ).map((opcion) => {
+                  const activo = filtroEstado === opcion.valor;
+                  return (
+                    <li key={opcion.label} role="option" aria-selected={activo}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFiltroEstado(
+                            opcion.valor as
+                              | "Pendiente"
+                              | "Aprobado"
+                              | "Rechazado"
+                              | "",
+                          );
+                          setFiltroEstadoMenuAbierto(false);
+                        }}
+                        className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
+                          activo
+                            ? "bg-royal-blue/10 text-royal-blue"
+                            : "text-slate-700 hover:bg-royal-blue/5"
+                        }`}
+                      >
+                        {opcion.label}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
           {isFiltering && (
             <Loader2
               size={18}
@@ -376,13 +502,15 @@ const TableSacramentos = () => {
         </p>
       )}
 
-      {!isInitialLoading && rows.length === 0 && (
+      {!isInitialLoading && filteredRows.length === 0 && (
         <p className="py-6 text-center text-sm text-text-muted">
-          No se encontraron solicitudes con los filtros seleccionados.
+          {filtroNombre.trim() || filtroCedula.trim() || filtroEstado
+            ? "No se encontraron solicitudes con los filtros seleccionados."
+            : "Actualmente no existen solicitudes registradas."}
         </p>
       )}
 
-      {!isInitialLoading && rows.length > 0 && (
+      {!isInitialLoading && filteredRows.length > 0 && (
         <>
           <div className="hidden md:block">
             <AdminTablePanel>
@@ -413,37 +541,7 @@ const TableSacramentos = () => {
                             originalRow.Estado ?? "Pendiente";
                           return (
                             <AdminTableCell key={cell.id}>
-                              <div
-                                className={cn(
-                                  "inline-flex items-center rounded-full p-1",
-                                  estadoSelectClass(currentEstado),
-                                )}
-                              >
-                                {isAdmin ? (
-                                  <Select
-                                    className="min-h-0 border-0 bg-transparent px-2 py-1 text-xs font-bold shadow-none focus-visible:ring-0"
-                                    value={currentEstado}
-                                    onChange={(e) =>
-                                      handleEstadoChange(
-                                        originalRow.id,
-                                        e.target.value as
-                                          | "Pendiente"
-                                          | "Aprobado"
-                                          | "Rechazado",
-                                      )
-                                    }
-                                    disabled={isUpdatingEstado}
-                                  >
-                                    <option value="Pendiente">Pendiente</option>
-                                    <option value="Aprobado">Aprobado</option>
-                                    <option value="Rechazado">Rechazado</option>
-                                  </Select>
-                                ) : (
-                                  <span className="px-2 py-1 text-xs font-bold">
-                                    {currentEstado}
-                                  </span>
-                                )}
-                              </div>
+                              {renderEstadoBadge(currentEstado)}
                             </AdminTableCell>
                           );
                         }
@@ -471,7 +569,6 @@ const TableSacramentos = () => {
                 accent="#1d4ed8"
                 code={`SOL-${row.id}`}
                 title={nombreCompleto(row)}
-                subtitle={row.TipoSacramento ?? "Sacramento"}
                 badges={renderEstadoBadge(row.Estado)}
                 meta={[
                   {
@@ -485,29 +582,6 @@ const TableSacramentos = () => {
                     value: row.Telefono?.toString() || "No provisto",
                   },
                 ]}
-                footer={
-                  isAdmin ? (
-                    <Select
-                      className={cn("w-full", estadoSelectClass(row.Estado))}
-                      value={row.Estado ?? "Pendiente"}
-                      disabled={isUpdatingEstado}
-                      aria-label={`Estado de solicitud de ${nombreCompleto(row)}`}
-                      onChange={(e) =>
-                        handleEstadoChange(
-                          row.id,
-                          e.target.value as
-                            | "Pendiente"
-                            | "Aprobado"
-                            | "Rechazado",
-                        )
-                      }
-                    >
-                      <option value="Pendiente">Pendiente</option>
-                      <option value="Aprobado">Aprobado</option>
-                      <option value="Rechazado">Rechazado</option>
-                    </Select>
-                  ) : undefined
-                }
                 actions={[
                   {
                     label: "Ver solicitud",
@@ -540,21 +614,81 @@ const TableSacramentos = () => {
           solicitudSeleccionada && isAdmin ? (
             <label className="flex w-full flex-col gap-1.5 text-sm font-semibold text-text">
               <span>Cambiar estado</span>
-              <Select
-                className={estadoSelectClass(solicitudSeleccionada.Estado)}
-                value={solicitudSeleccionada.Estado ?? "Pendiente"}
-                onChange={(e) =>
-                  handleEstadoChange(
-                    solicitudSeleccionada.id,
-                    e.target.value as "Pendiente" | "Aprobado" | "Rechazado",
-                  )
-                }
-                disabled={isUpdatingEstado}
-              >
-                <option value="Pendiente">Pendiente</option>
-                <option value="Aprobado">Aprobado</option>
-                <option value="Rechazado">Rechazado</option>
-              </Select>
+              <div className="relative" ref={estadoMenuRef}>
+                <button
+                  type="button"
+                  disabled={isUpdatingEstado || esEstadoPermanente}
+                  aria-haspopup="listbox"
+                  aria-expanded={estadoMenuAbierto}
+                  onClick={() => setEstadoMenuAbierto((prev) => !prev)}
+                  className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-0 bg-surface px-3.5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <span>
+                    {solicitudSeleccionada.Estado ?? "Pendiente"}
+                    {esEstadoPermanente ? " (permanente)" : ""}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2.5}
+                    className={`transition-transform duration-200 ${
+                      estadoMenuAbierto ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {estadoMenuAbierto && (
+                  <ul
+                    role="listbox"
+                    className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+                  >
+                    {(
+                      [
+                        { valor: "Pendiente", dot: "bg-amber-500", text: "text-warning" },
+                        { valor: "Aprobado", dot: "bg-emerald-500", text: "text-success" },
+                        { valor: "Rechazado", dot: "bg-red-500", text: "text-danger" },
+                      ] as const
+                    ).map((opcion) => {
+                      const activo =
+                        (solicitudSeleccionada.Estado ?? "Pendiente") ===
+                        opcion.valor;
+                      return (
+                        <li key={opcion.valor} role="option" aria-selected={activo}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (opcion.valor === "Rechazado") {
+                                handleEstadoChange(
+                                  solicitudSeleccionada.id,
+                                  "Rechazado",
+                                );
+                              } else if (opcion.valor === "Aprobado") {
+                                setSolicitudAAprobar(solicitudSeleccionada);
+                                setIsApproveModalOpen(true);
+                              } else {
+                                handleEstadoChange(
+                                  solicitudSeleccionada.id,
+                                  "Pendiente",
+                                );
+                              }
+                              setEstadoMenuAbierto(false);
+                            }}
+                            className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
+                              activo
+                                ? "bg-royal-blue/10 text-royal-blue"
+                                : `text-slate-700 hover:bg-royal-blue/5 ${opcion.text}`
+                            }`}
+                          >
+                            <span
+                              className={`size-2 shrink-0 rounded-full ${opcion.dot}`}
+                            />
+                            {opcion.valor}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             </label>
           ) : undefined
         }
@@ -630,6 +764,43 @@ const TableSacramentos = () => {
                   </>
                 ) : (
                   "Confirmar rechazo"
+                )}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {isApproveModalOpen && solicitudAAprobar && (
+        <Modal
+          onClose={handleCancelApprove}
+          title="Confirmar aprobación"
+        >
+          <div className="flex flex-col gap-4">
+            <p className="text-sm leading-relaxed text-text-secondary">
+              ¿Está seguro/a de realizar este cambio? La acción no es
+              reversible.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="secondary"
+                onClick={handleCancelApprove}
+                disabled={isUpdatingEstado}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="royal"
+                onClick={handleApproveConfirm}
+                disabled={isUpdatingEstado}
+              >
+                {isUpdatingEstado ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Confirmando...
+                  </>
+                ) : (
+                  "Confirmar"
                 )}
               </Button>
             </div>
