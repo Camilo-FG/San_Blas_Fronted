@@ -8,20 +8,17 @@ import {
   IdCard,
   Eye,
   Loader2,
-  X,
 } from "lucide-react";
 import type { FormSacramento } from "../../types/formSacramento";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { useGetSolicitudes } from "../solicSacramento/hooks/useGetSolicitudes";
 import { useUpdateSolicitudEstado } from "../solicSacramento/hooks/useUpdateSolicitudEstado";
 import { useRechazarSolicitudSacramento } from "../solicSacramento/hooks/useRechazarSolicitudSacramento";
-import { usePagination } from "../../shared/hooks/usePagination";
 import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 import { ApiError } from "../../services/apiClient";
 import { toFriendlySolicitudesMessage } from "../../services/constancias/solicitudesQueryHandler";
@@ -53,7 +50,7 @@ import {
 } from "../../shared/ui";
 
 const columnHelper = createColumnHelper<FormSacramento>();
-
+const PAGE_SIZE = 10;
 const nombreCompleto = (row: FormSacramento) =>
   [row.Nombre, row.PrimerApellido, row.SegundoApellido]
     .filter(Boolean)
@@ -121,6 +118,7 @@ const TableSacramentos = () => {
     return () => document.removeEventListener("mousedown", handleClickFuera);
   }, []);
 
+  const [currentPage, setCurrentPage] = useState(1);
   const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
   const debouncedCedula = useDebouncedValue(filtroCedula.trim(), 500);
   const debouncedEstado = useDebouncedValue(filtroEstado, 300);
@@ -129,9 +127,14 @@ const TableSacramentos = () => {
       nombre: debouncedNombre || undefined,
       cedula: debouncedCedula || undefined,
       estado: debouncedEstado || undefined,
+      page: currentPage,
     }),
-    [debouncedNombre, debouncedCedula, debouncedEstado],
+    [debouncedNombre, debouncedCedula, debouncedEstado, currentPage],
   );
+  const filtersChanged = `${debouncedNombre}|${debouncedCedula}|${debouncedEstado}`;
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filtersChanged]);
   const { isAdmin } = useAuth();
   const { data, error, isPending, isFetching, refetch } =
     useGetSolicitudes(filters);
@@ -141,7 +144,11 @@ const TableSacramentos = () => {
   const isSubmitting = rechazarSolicitud.isPending;
   const { showToast } = useToast();
 
-  const rows: FormSacramento[] = Array.isArray(data) ? data : [];
+  const rows: FormSacramento[] = data?.data ?? [];
+  const totalItems = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const canPreviousPage = currentPage > 1;
+  const canNextPage = currentPage < totalPages;
   const isInitialLoading = isPending && rows.length === 0;
   const isFiltering = isFetching && !isInitialLoading;
 
@@ -194,7 +201,7 @@ const TableSacramentos = () => {
 
   const handleRejectSubmit = async () => {
     const motivo = rejectionReasonSelect.trim() || rejectionReasonText.trim();
-    if (!solicitudARechazar || !motivo) return;
+    if (!solicitudARechazar || solicitudARechazar.id == null || !motivo) return;
 
     try {
       await rechazarSolicitud.mutateAsync({
@@ -292,19 +299,7 @@ const TableSacramentos = () => {
     columns,
     autoResetPageIndex: true,
     getCoreRowModel: getCoreRowModel(),
-    initialState: { pagination: { pageSize: 7 } },
-    getPaginationRowModel: getPaginationRowModel(),
   });
-
-  const {
-    totalItems,
-    currentPage,
-    totalPages,
-    canPreviousPage,
-    canNextPage,
-    goToPreviousPage,
-    goToNextPage,
-  } = usePagination(table);
 
   const handleEstadoChange = (
     id: number | string | undefined,
@@ -740,7 +735,7 @@ const TableSacramentos = () => {
               onChange={(e) => handleReasonTextChange(e.target.value)}
               placeholder="O escriba un motivo personalizado..."
               rows={3}
-              className="min-h-[80px]"
+              className="min-h-20"
             />
             <div className="flex justify-end gap-2 pt-2">
               <Button
@@ -821,7 +816,7 @@ const TableSacramentos = () => {
           <AdminPagination>
             <AdminPaginationButton
               type="button"
-              onClick={goToPreviousPage}
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
               disabled={!canPreviousPage}
               aria-label="Página anterior"
             >
@@ -836,7 +831,9 @@ const TableSacramentos = () => {
             </span>
             <AdminPaginationButton
               type="button"
-              onClick={goToNextPage}
+              onClick={() =>
+                setCurrentPage((page) => Math.min(totalPages, page + 1))
+              }
               disabled={!canNextPage}
               aria-label="Página siguiente"
             >

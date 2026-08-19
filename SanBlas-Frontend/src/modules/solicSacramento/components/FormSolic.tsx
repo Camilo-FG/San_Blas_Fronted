@@ -391,13 +391,19 @@ const FormSolic = () => {
                       name={field.name}
                       type="email"
                       placeholder="Ej: nombre@correo.com"
+                      maxLength={50}
                       value={field.state.value}
                       onChange={(e) =>
-                        field.handleChange(soloCorreo(e.target.value))
+                        field.handleChange(
+                          soloCorreo(e.target.value).slice(0, 50),
+                        )
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
+                    <span className="text-right text-[0.78rem] font-medium text-text-secondary">
+                      {field.state.value.length}/50
+                    </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
@@ -469,14 +475,15 @@ const FormSolic = () => {
                       id={field.name}
                       name={field.name}
                       placeholder="Describe brevemente el motivo"
+                      maxLength={50}
                       value={field.state.value}
                       onChange={(e) =>
-                        field.handleChange(e.target.value.slice(0, 250))
+                        field.handleChange(e.target.value.slice(0, 50))
                       }
                       onBlur={field.handleBlur}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/250
+                      {field.state.value.length}/50
                     </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
@@ -511,11 +518,12 @@ const FormSolic = () => {
             </div>
 
             <Button
-              className="col-span-1 mt-1.5 min-h-[52px] w-full bg-gradient-to-br from-royal-gold to-[#f0d67a] text-base font-extrabold text-royal-blue shadow-[0_10px_18px_rgba(212,175,55,0.22)] hover:-translate-y-px hover:shadow-[0_14px_24px_rgba(212,175,55,0.28)] disabled:cursor-not-allowed disabled:opacity-70 disabled:shadow-none sm:col-span-2"
+              variant="royal"
+              className="col-span-1 mt-7 w-full rounded-2xl px-6 py-4 text-[0.95rem] transition-colors focus:outline-none focus:ring-2 focus:ring-royal-gold/40 sm:col-span-2 sm:py-[1.15rem] sm:text-base"
               type="submit"
               disabled={isPending}
             >
-              {isPending ? "Guardando..." : "Guardar"}
+              {isPending ? "Enviando..." : "Enviar solicitud de sacramento"}
             </Button>
             {errorEnvio && (
               <p className="col-span-1 text-[0.84rem] font-semibold text-red-500 sm:col-span-2">

@@ -3,13 +3,14 @@ import { ApiError, apiClient, handleApiError } from "../apiClient";
 import type {
   EstadoSolicitudBackend,
   FormSacraBackend,
+  SolicitudesSacramentosResponseBackend,
 } from "./constanciasApiTypes";
 import {
   mapBackendToFormSacramento,
   mapFormToBackendRequest,
 } from "./constanciasMapper";
 import {
-  assertSolicitudesArrayResponse,
+  assertSolicitudesResponse,
   logSolicitudesQueryError,
   MENSAJES_CONSULTA_SOLICITUDES,
   toFriendlySolicitudesMessage,
@@ -32,11 +33,15 @@ export interface SolicitudesSacramentosFilters {
   nombre?: string;
   cedula?: string;
   estado?: string;
+  page?: number;
 }
 
 export const obtenerSolicitudesSacramentos = async (
   filters: SolicitudesSacramentosFilters = {},
-): Promise<FormSacramento[]> => {
+): Promise<{
+  data: FormSacramento[];
+  total: number;
+}> => {
   try {
     const params = new URLSearchParams();
     if (filters.nombre) {
@@ -48,18 +53,21 @@ export const obtenerSolicitudesSacramentos = async (
     if (filters.estado) {
       params.append("estado", filters.estado);
     }
-
+    params.append("page", String(filters.page ?? 1));
     const queryString = params.toString() ? `?${params.toString()}` : "";
-    const { data } = await apiClient.get<FormSacraBackend[]>(
+    const { data } = await apiClient.get<SolicitudesSacramentosResponseBackend>(
       `${BASE}${queryString}`,
     );
 
-    if (!assertSolicitudesArrayResponse(data)) {
+    if (!assertSolicitudesResponse(data)) {
       logSolicitudesQueryError("obtenerSolicitudesSacramentos", data);
       throw new ApiError(MENSAJES_CONSULTA_SOLICITUDES.respuestaInvalida, 500);
     }
 
-    return data.map(mapBackendToFormSacramento);
+    return {
+      data: data.data.map(mapBackendToFormSacramento),
+      total: data.total,
+    };
   } catch (error) {
     logSolicitudesQueryError("obtenerSolicitudesSacramentos", error);
     if (error instanceof ApiError) {

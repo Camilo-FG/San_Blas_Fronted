@@ -14,6 +14,11 @@ export interface FormSacraBackend {
   Estado?: string | null;
 }
 
+export interface SolicitudesSacramentosResponseBackend {
+  data: FormSacraBackend[];
+  total: number;
+}
+
 export interface CrearConstanciaBackendRequest {
   Nombre: string;
   PrimerApellido: string;
