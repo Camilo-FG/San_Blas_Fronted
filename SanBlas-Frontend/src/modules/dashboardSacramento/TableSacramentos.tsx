@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ScrollText,
@@ -86,6 +87,22 @@ const TableSacramentos = () => {
   const [rejectionReasonText, setRejectionReasonText] = useState("");
   const [solicitudARechazar, setSolicitudARechazar] =
     useState<FormSacramento | null>(null);
+  const [estadoMenuAbierto, setEstadoMenuAbierto] = useState(false);
+  const estadoMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickFuera = (event: MouseEvent) => {
+      if (
+        estadoMenuRef.current &&
+        !estadoMenuRef.current.contains(event.target as Node)
+      ) {
+        setEstadoMenuAbierto(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, []);
+
   const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
   const debouncedCedula = useDebouncedValue(filtroCedula.trim(), 500);
   const debouncedEstado = useDebouncedValue(filtroEstado, 300);
@@ -508,27 +525,71 @@ const TableSacramentos = () => {
           solicitudSeleccionada && isAdmin ? (
             <label className="flex w-full flex-col gap-1.5 text-sm font-semibold text-text">
               <span>Cambiar estado</span>
-              <Select
-                className="w-full cursor-pointer rounded-xl border border-border-strong bg-surface px-3.5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm focus-visible:border-royal-gold focus-visible:ring-2 focus-visible:ring-royal-gold/30 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
-                value={solicitudSeleccionada.Estado ?? "Pendiente"}
-                onChange={(e) =>
-                  handleEstadoChange(
-                    solicitudSeleccionada.id,
-                    e.target.value as "Pendiente" | "Aprobado" | "Rechazado",
-                  )
-                }
-                disabled={isUpdatingEstado}
-              >
-                <option value="Pendiente" className="bg-surface font-bold text-warning">
-                  Pendiente
-                </option>
-                <option value="Aprobado" className="bg-surface font-bold text-success">
-                  Aprobado
-                </option>
-                <option value="Rechazado" className="bg-surface font-bold text-danger">
-                  Rechazado
-                </option>
-              </Select>
+              <div className="relative" ref={estadoMenuRef}>
+                <button
+                  type="button"
+                  disabled={isUpdatingEstado}
+                  aria-haspopup="listbox"
+                  aria-expanded={estadoMenuAbierto}
+                  onClick={() => setEstadoMenuAbierto((prev) => !prev)}
+                  className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-0 bg-surface px-3.5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <span>{solicitudSeleccionada.Estado ?? "Pendiente"}</span>
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2.5}
+                    className={`transition-transform duration-200 ${
+                      estadoMenuAbierto ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {estadoMenuAbierto && (
+                  <ul
+                    role="listbox"
+                    className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+                  >
+                    {(
+                      [
+                        { valor: "Pendiente", dot: "bg-amber-500", text: "text-warning" },
+                        { valor: "Aprobado", dot: "bg-emerald-500", text: "text-success" },
+                        { valor: "Rechazado", dot: "bg-red-500", text: "text-danger" },
+                      ] as const
+                    ).map((opcion) => {
+                      const activo =
+                        (solicitudSeleccionada.Estado ?? "Pendiente") ===
+                        opcion.valor;
+                      return (
+                        <li key={opcion.valor} role="option" aria-selected={activo}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleEstadoChange(
+                                solicitudSeleccionada.id,
+                                opcion.valor as
+                                  | "Pendiente"
+                                  | "Aprobado"
+                                  | "Rechazado",
+                              );
+                              setEstadoMenuAbierto(false);
+                            }}
+                            className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
+                              activo
+                                ? "bg-royal-blue/10 text-royal-blue"
+                                : `text-slate-700 hover:bg-royal-blue/5 ${opcion.text}`
+                            }`}
+                          >
+                            <span
+                              className={`size-2 shrink-0 rounded-full ${opcion.dot}`}
+                            />
+                            {opcion.valor}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             </label>
           ) : undefined
         }
