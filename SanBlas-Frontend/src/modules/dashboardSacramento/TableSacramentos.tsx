@@ -377,7 +377,22 @@ const TableSacramentos = () => {
 
   const handleApproveConfirm = () => {
     if (!solicitudAAprobar) return;
-    handleEstadoChange(solicitudAAprobar.id, "Aprobado");
+    updateEstado.mutate(
+      { id: solicitudAAprobar.id, nuevoEstado: "Aprobado" },
+      {
+        onSuccess: () => {
+          setSolicitudAprobar(null);
+          showToast("Solicitud aprobada correctamente", "success");
+        },
+        onError: (err: unknown) => {
+          const mensaje =
+            err instanceof ApiError
+              ? err.message
+              : "No se pudo aprobar la solicitud.";
+          showToast(mensaje, "error");
+        },
+      },
+    );
     setIsApproveModalOpen(false);
     setSolicitudAAprobar(null);
   };
