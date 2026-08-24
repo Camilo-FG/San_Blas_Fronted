@@ -202,6 +202,47 @@ const FormSolic = () => {
           >
             <div className="flex w-full min-w-0 flex-col gap-2">
               <form.Field
+                name="Cedula"
+                validators={{
+                  onChange: ({ value }) => validarCedula(value),
+                }}
+              >
+                {(field) => (
+                  <>
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
+                      Cédula
+                    </Label>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Ej: 123456789"
+                      value={field.state.value}
+                      onChange={(e) =>
+                        field.handleChange(
+                          soloDigitos(e.target.value).slice(0, 9),
+                        )
+                      }
+                      onBlur={field.handleBlur}
+                      className={fieldClass}
+                    />
+                    {field.state.meta.errors[0] && (
+                      <span className="text-[0.84rem] font-semibold text-red-500">
+                        ⚠ {field.state.meta.errors[0]}
+                      </span>
+                    )}
+                  </>
+                )}
+              </form.Field>
+            </div>
+
+            <div className="flex w-full min-w-0 flex-col gap-2">
+              <form.Field
                 name="Nombre"
                 validators={{
                   onChange: ({ value }) => validarNombre(value),
@@ -319,47 +360,6 @@ const FormSolic = () => {
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
                       {field.state.value.length}/50
                     </span>
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
-                      </span>
-                    )}
-                  </>
-                )}
-              </form.Field>
-            </div>
-
-            <div className="flex w-full min-w-0 flex-col gap-2">
-              <form.Field
-                name="Cedula"
-                validators={{
-                  onChange: ({ value }) => validarCedula(value),
-                }}
-              >
-                {(field) => (
-                  <>
-                    <Label
-                      htmlFor={field.name}
-                      required
-                      className="text-sm font-bold text-royal-blue"
-                    >
-                      Cédula
-                    </Label>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Ej: 123456789"
-                      value={field.state.value}
-                      onChange={(e) =>
-                        field.handleChange(
-                          soloDigitos(e.target.value).slice(0, 9),
-                        )
-                      }
-                      onBlur={field.handleBlur}
-                      className={fieldClass}
-                    />
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
