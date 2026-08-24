@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 interface DetailsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,6 +25,16 @@ const value = (sacramento: any, keys: string[]): string => {
 
 const DetailsDrawer = ({ isOpen, onClose, sacramento, tipo }: DetailsDrawerProps) => {
   if (!isOpen) return null;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const nombre = value(sacramento, ['Nombre', 'nombre']);
   const primerApellido = value(sacramento, ['PrimerApellido', 'primerApellido']);

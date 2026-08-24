@@ -80,6 +80,42 @@ const GestionSacramentos = () => {
   const [searchNombre, setSearchNombre] = useState("");
   const [searchCedula, setSearchCedula] = useState("");
   const [searchFecha, setSearchFecha] = useState("");
+
+  const MESES = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  const matchFechaFlexible = (fechaStr: string, search: string): boolean => {
+    if (!search.trim()) return true;
+    const parts = search.trim().split(/[\s\/\-]+/).filter(Boolean);
+    if (parts.length === 0) return true;
+
+    const fechaLower = fechaStr.toLowerCase();
+
+    if (parts.length === 1) {
+      const p = parts[0];
+      if (/^\d{4}$/.test(p)) {
+        return fechaLower.includes(p.toLowerCase());
+      }
+      return fechaLower.includes(p.toLowerCase());
+    }
+
+    if (parts.length === 2) {
+      const [p1, p2] = parts;
+      const p1Lower = p1.toLowerCase();
+      const p2Lower = p2.toLowerCase();
+      return (
+        (fechaLower.includes(p1Lower) && fechaLower.includes(p2Lower))
+      );
+    }
+
+    if (parts.length >= 3) {
+      return parts.every(p => fechaLower.includes(p.toLowerCase()));
+    }
+
+    return false;
+  };
   const [selectedSacramento, setSelectedSacramento] = useState<any>(null);
   const [selectedTipo, setSelectedTipo] = useState<string>("Bautismo");
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -298,7 +334,7 @@ const GestionSacramentos = () => {
     const matchNombre =
       searchNombre === "" || nombreLower.includes(searchNombre.toLowerCase());
     const matchCedula = searchCedula === "" || cedulaStr.includes(searchCedula);
-    const matchFecha = searchFecha === "" || fechaStr.includes(searchFecha);
+    const matchFecha = matchFechaFlexible(fechaStr, searchFecha);
 
     return matchNombre && matchCedula && matchFecha;
   });
@@ -355,11 +391,16 @@ const GestionSacramentos = () => {
   };
 
   const aplicarMascaraCedula = (valor: string) => {
-    const digitos = valor.replace(/\D/g, "").slice(0, 9);
+    let digitos = valor.replace(/\D/g, "").slice(0, 9);
+    if (digitos.length >= 1 && digitos[0] === '0') {
+      digitos = digitos.slice(1);
+    }
     if (digitos.length <= 1) return digitos;
     if (digitos.length <= 5) return `${digitos[0]}-${digitos.slice(1)}`;
     return `${digitos[0]}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
   };
+
+  const soloLetras = (valor: string) => valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
 
   const handleBuscar = () => {
     setSearchNombre(nombreInput.trim());
@@ -414,7 +455,7 @@ const GestionSacramentos = () => {
           type="text"
           placeholder="Nombre o apellidos"
           value={nombreInput}
-          onChange={(e) => setNombreInput(e.target.value)}
+          onChange={(e) => setNombreInput(soloLetras(e.target.value))}
           className="min-w-[200px] flex-1"
         />
         <input
