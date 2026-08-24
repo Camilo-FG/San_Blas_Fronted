@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, cn, Input, Label, useToast } from '../../../shared/ui';
 import {
   capitalizarNombres,
@@ -41,10 +41,47 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
+  const soloLetras = (valor: string) => valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+
+  const soloDigitos = (valor: string) => valor.replace(/\D/g, '');
+
+  const validarCedulaCR = (valor: string) => {
+    const digitos = soloDigitos(valor);
+    if (digitos.length === 0) return '';
+    if (digitos[0] === '0') return digitos.slice(1);
+    return digitos.slice(0, 9);
+  };
+
+  const formatearCedulaCR = (digitos: string) => {
+    if (digitos.length <= 1) return digitos;
+    if (digitos.length <= 5) return `${digitos[0]}-${digitos.slice(1)}`;
+    return `${digitos[0]}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
+  };
+
   const setField = (campo: string, valor: any) => {
-    setFormData({ ...formData, [campo]: valor });
+    let valorProcesado = valor;
+    if (['Nombre', 'PrimerApellido', 'SegundoApellido', 'NombreParroquia', 'Prebispero', 'LugarComunion', 'LugarConfirmacion', 'LugarMatrimonio', 'NombreAbueloPaterno1', 'Apellido1AbueloPaterno1', 'Apellido2AbueloPaterno1', 'NombreAbueloPaterno2', 'Apellido1AbueloPaterno2', 'Apellido2AbueloPaterno2', 'NombreAbueloMaterno1', 'Apellido1AbueloMaterno1', 'Apellido2AbueloMaterno1', 'NombreAbueloMaterno2', 'Apellido1AbueloMaterno2', 'Apellido2AbueloMaterno2', 'NombreContrayente1', 'Apellido1Contrayente1', 'Apellido2Contrayente1', 'NombreContrayente2', 'Apellido1Contrayente2', 'Apellido2Contrayente2'].includes(campo)) {
+      valorProcesado = soloLetras(String(valor));
+    } else if (campo === 'cedula') {
+      const digitos = validarCedulaCR(String(valor));
+      valorProcesado = formatearCedulaCR(digitos);
+    } else if (['Tomo', 'Folio', 'Asiento', 'AnnioBautismo', 'AnnioComunion', 'AnnioConfirmacion', 'AnnioMatrimonio', 'tomo', 'folio'].includes(campo)) {
+      valorProcesado = soloDigitos(String(valor));
+    }
+    setFormData({ ...formData, [campo]: valorProcesado });
     setErrors((prev) => ({ ...prev, [campo]: false }));
   };
 
@@ -125,7 +162,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       if (!esValido(formData[campo])) nuevosErrores[campo] = true;
     });
 
-    if (tipoActivo === 'Bautismo' && !/^[0-9]-\d{4}-\d{4}$/.test(String(formData.cedula || ''))) {
+    if (tipoActivo === 'Bautismo' && !/^[1-9]-\d{4}-\d{4}$/.test(String(formData.cedula || ''))) {
       nuevosErrores.cedula = true;
     }
 
@@ -417,11 +454,11 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
           </div>
 
           <div className="flex justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4">
-            <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
-              CANCELAR
-            </Button>
             <Button type="submit" variant="primary" disabled={saving}>
               {saving ? "GUARDANDO..." : "INSCRIBIR ACTA"}
+            </Button>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
+              CANCELAR
             </Button>
           </div>
         </form>

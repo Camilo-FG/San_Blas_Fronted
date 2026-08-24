@@ -166,6 +166,17 @@ function SacramentTable({
             </button>
             <button
               type="button"
+              onClick={() => onViewDetails(info.row.original)}
+              className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-text-muted transition-colors hover:bg-surface-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+              aria-label="Ver detalle"
+            >
+              <Eye
+                size={15}
+                strokeWidth={1.5}
+              />
+            </button>
+            <button
+              type="button"
               onClick={() => onDelete(info.row.original)}
               className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-text-muted transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
               aria-label="Eliminar"
@@ -179,7 +190,7 @@ function SacramentTable({
         ),
       }),
     ],
-    [searchNombre, onEdit, onDelete],
+    [searchNombre, onEdit, onDelete, onViewDetails],
   );
 
   const table = useReactTable({

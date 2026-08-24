@@ -64,7 +64,43 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
     'Confirmación': {},
     'Matrimonio': {},
   });
+  const [activeTab, setActiveTab] = useState(tipo);
   const [saving, setSaving] = useState(false);
+  const isScrollingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen || !containerRef.current) return;
+    const container = containerRef.current;
+    const handleScroll = () => {
+      if (isScrollingRef.current) return;
+      const sections = tiposSacramento.map(t => sectionRefs.current[t]).filter(Boolean) as HTMLElement[];
+      let current = '';
+      let minDistance = Infinity;
+      for (const section of sections) {
+        const rect = section.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const distance = Math.abs(rect.top - containerRect.top);
+        if (distance < minDistance) {
+          minDistance = distance;
+          current = tiposSacramento.find(t => sectionRefs.current[t] === section) || '';
+        }
+      }
+      if (current) setActiveTab(current);
+    };
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!sacramento) return;
@@ -129,10 +165,38 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
 
   if (!isOpen) return null;
 
+  const soloLetras = (valor: string) => valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+
+  const soloDigitos = (valor: string) => valor.replace(/\D/g, '');
+
+  const validarCedulaCR = (valor: string) => {
+    const digitos = soloDigitos(valor);
+    if (digitos.length === 0) return '';
+    if (digitos[0] === '0') return digitos.slice(1);
+    return digitos.slice(0, 9);
+  };
+
+  const formatearCedulaCR = (digitos: string) => {
+    if (digitos.length <= 1) return digitos;
+    if (digitos.length <= 5) return `${digitos[0]}-${digitos.slice(1)}`;
+    return `${digitos[0]}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
+  };
+
   const setField = (seccion: string, campo: string, valor: any) => {
+    let valorProcesado = valor;
+    const camposTexto = ['Nombre', 'PrimerApellido', 'SegundoApellido', 'NombreParroquia', 'Prebispero', 'LugarComunion', 'LugarConfirmacion', 'LugarMatrimonio', 'NombreContrayente', 'NombreContrayente2', 'nombreAbuelosPaternos', 'nombreAbuelosMaternos'];
+    const camposNumericos = ['Tomo', 'Folio', 'Asiento', 'AnnioBautismo', 'AnnioComunion', 'AnnioConfirmacion', 'AnnioMatrimonio', 'tomo', 'folio'];
+    if (camposTexto.includes(campo)) {
+      valorProcesado = soloLetras(String(valor));
+    } else if (campo === 'cedula') {
+      const digitos = validarCedulaCR(String(valor));
+      valorProcesado = formatearCedulaCR(digitos);
+    } else if (camposNumericos.includes(campo)) {
+      valorProcesado = soloDigitos(String(valor));
+    }
     setSecciones((prev) => ({
       ...prev,
-      [seccion]: { ...prev[seccion], [campo]: valor },
+      [seccion]: { ...prev[seccion], [campo]: valorProcesado },
     }));
   };
 
@@ -140,10 +204,13 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
     const container = containerRef.current;
     const seccionEl = sectionRefs.current[seccion];
     if (container && seccionEl) {
+      isScrollingRef.current = true;
+      setActiveTab(seccion);
       container.scrollTo({
         top: seccionEl.offsetTop - container.offsetTop - 8,
         behavior: 'smooth',
       });
+      setTimeout(() => { isScrollingRef.current = false; }, 500);
     }
   };
 
@@ -338,6 +405,16 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (saving) return;
+
+    // Validar cédula en Bautismo si tiene datos
+    const bautismo = secciones.Bautismo;
+    if (bautismo.Nombre || bautismo.cedula || bautismo.fechaBautismo) {
+      if (bautismo.cedula && !/^[1-9]-\d{4}-\d{4}$/.test(String(bautismo.cedula || ''))) {
+        showToast('Cédula inválida. Formato: 1-XXXX-XXXX (primer dígito 1-9)', 'error');
+        return;
+      }
+    }
+
     const datos = prepararSecciones();
     if (Object.keys(datos).length === 0) {
       showToast('Complete al menos una sección para guardar.', 'error');
@@ -369,9 +446,12 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
               type="button"
               className={cn(
                 "shrink-0 cursor-pointer border-0 bg-transparent px-5 py-3 text-sm font-medium text-gray-500 transition-colors hover:text-blue-600",
-                tipoTab === tipo && "border-b-2 border-blue-600 text-blue-600",
+                activeTab === tipoTab && "border-b-2 border-blue-600 text-blue-600",
               )}
-              onClick={() => scrollA(tipoTab)}
+              onClick={() => {
+                setActiveTab(tipoTab);
+                scrollA(tipoTab);
+              }}
             >
               {tipoTab.toUpperCase()}
             </button>
@@ -399,11 +479,11 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
           </div>
 
           <div className="flex justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4">
-            <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
-              CANCELAR
-            </Button>
             <Button type="submit" variant="primary" disabled={saving}>
               {saving ? "GUARDANDO..." : "GUARDAR CAMBIOS"}
+            </Button>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
+              CANCELAR
             </Button>
           </div>
         </form>
