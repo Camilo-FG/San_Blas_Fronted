@@ -52,6 +52,13 @@ import {
 
 const columnHelper = createColumnHelper<FormSacramento>();
 const PAGE_SIZE = 10;
+const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
+const formatearCedula = (valor: string) => {
+  const digitos = soloDigitos(valor).slice(0, 9);
+  if (digitos.length <= 1) return digitos;
+  if (digitos.length <= 5) return `${digitos.slice(0, 1)}-${digitos.slice(1)}`;
+  return `${digitos.slice(0, 1)}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
+};
 const nombreCompleto = (row: FormSacramento) =>
   [row.Nombre, row.PrimerApellido, row.SegundoApellido]
     .filter(Boolean)
@@ -261,7 +268,7 @@ const TableSacramentos = () => {
         header: () => "Cédula",
         cell: (info) => (
           <span className="tabular-nums text-text-secondary">
-            {info.getValue()}
+            {formatearCedula(String(info.getValue() ?? ""))}
           </span>
         ),
       }),
