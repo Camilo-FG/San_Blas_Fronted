@@ -793,14 +793,6 @@ const TableSacramentos = () => {
                   {nombreCompleto(solicitudSeleccionada)}
                 </p>
               </div>
-              <div className="rounded-xl border border-border bg-surface-muted px-3.5 py-3">
-                <h4 className="m-0 text-[0.7rem] font-bold tracking-wider text-text-muted uppercase">
-                  Sacramento solicitado
-                </h4>
-                <p className="m-0 mt-1 text-sm font-semibold text-royal-blue">
-                  {solicitudSeleccionada.TipoSacramento}
-                </p>
-              </div>
             </div>
 
             <div className="rounded-xl border border-border bg-surface-muted px-3.5 py-3">
