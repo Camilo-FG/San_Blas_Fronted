@@ -4,6 +4,7 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 import { ApiError } from "../../../services/apiClient";
+import { existeCedula } from "../../../services/cedulaService";
 import { Button, Input, Label, Textarea } from "../../../shared/ui";
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
@@ -67,6 +68,8 @@ const FormSolic = () => {
   const [enviado, setEnviado] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const [errorCedula, setErrorCedula] = useState<string | null>(null);
+  const [verificandoCedula, setVerificandoCedula] = useState(false);
   const {
     captchaRef,
     captchaToken,
@@ -97,16 +100,23 @@ const FormSolic = () => {
         await mutateAsync(value);
         form.reset();
         setCaptchaError(null);
+        setErrorCedula(null);
         resetCaptcha();
         setEnviado(true);
       } catch (error) {
-        const mensaje =
-          error instanceof ApiError
-            ? error.errores
-              ? Object.values(error.errores).flat().filter(Boolean).join(" ") ||
-                error.message
-              : error.message
-            : "No se pudo enviar la solicitud. Intente nuevamente.";
+          const mensaje =
+            error instanceof ApiError
+              ? error.errores
+                ? Object.values(error.errores)
+                    .flat()
+                    .filter(
+                      (m) =>
+                        Boolean(m) &&
+                        !/Cedula must not be less than \d+/.test(m),
+                    )
+                    .join(" ") || error.message
+                : error.message
+              : "No se pudo enviar la solicitud. Intente nuevamente.";
         setErrorEnvio(mensaje);
       }
     },
@@ -139,6 +149,34 @@ const FormSolic = () => {
       elemento?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+
+    setVerificandoCedula(true);
+    try {
+      const existe = await existeCedula(soloDigitos(valores.Cedula));
+      if (!existe) {
+        setErrorCedula("La cédula ingresada no existe.");
+        const cedulaInput = document.getElementById(
+          "Cedula",
+        ) as HTMLInputElement | null;
+        cedulaInput?.focus();
+        cedulaInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      setErrorCedula(null);
+    } catch (error) {
+      setErrorCedula(
+        "No se pudo verificar la cédula. Intente nuevamente.",
+      );
+      const cedulaInput = document.getElementById(
+        "Cedula",
+      ) as HTMLInputElement | null;
+      cedulaInput?.focus();
+      cedulaInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    } finally {
+      setVerificandoCedula(false);
+    }
+
     if (!captchaToken) {
       document
         .getElementById("captcha-container")
@@ -149,6 +187,7 @@ const FormSolic = () => {
   const handleHacerOtraSolicitud = () => {
     form.reset();
     setCaptchaError(null);
+    setErrorCedula(null);
     setErrorEnvio(null);
     resetCaptcha();
     setEnviado(false);
@@ -231,15 +270,24 @@ const FormSolic = () => {
                       inputMode="numeric"
                       placeholder="Ej: 1-2345-6789"
                       value={field.state.value}
-                      onChange={(e) =>
-                        field.handleChange(formatearCedula(e.target.value))
-                      }
+                      onChange={(e) => {
+                        field.handleChange(formatearCedula(e.target.value));
+                        if (errorCedula) setErrorCedula(null);
+                      }}
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
+                      </span>
+                    )}
+                    {errorCedula && (
+                      <span
+                        role="alert"
+                        className="text-[0.84rem] font-semibold text-red-500"
+                      >
+                        ⚠ {errorCedula}
                       </span>
                     )}
                   </>
@@ -529,7 +577,11 @@ const FormSolic = () => {
               type="submit"
               disabled={isPending}
             >
-              {isPending ? "Enviando..." : "Enviar solicitud de sacramento"}
+              {isPending
+                ? "Enviando..."
+                : verificandoCedula
+                  ? "Verificando cédula..."
+                  : "Enviar solicitud de sacramento"}
             </Button>
             {errorEnvio && (
               <p className="col-span-1 text-[0.84rem] font-semibold text-red-500 sm:col-span-2">
