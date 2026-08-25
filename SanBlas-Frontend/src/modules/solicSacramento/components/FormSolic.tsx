@@ -17,6 +17,12 @@ const formatearCedula = (valor: string) => {
   return `${digitos.slice(0, 1)}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
 };
 
+const formatearTelefono = (valor: string) => {
+  const digitos = soloDigitos(valor).slice(0, 8);
+  if (digitos.length <= 4) return digitos;
+  return `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
+};
+
 const soloLetras = (valor: string) =>
   valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "").replace(/\s{2,}/g, " ");
 
@@ -51,8 +57,9 @@ const validarCorreo = (valor: string) => {
 };
 
 const validarTelefono = (valor: string) => {
-  if (!valor) return "El teléfono es obligatorio.";
-  if (!/^\d{8}$/.test(valor)) {
+  const telefono = soloDigitos(valor);
+  if (!telefono) return "El teléfono es obligatorio.";
+  if (!/^\d{8}$/.test(telefono)) {
     return "El teléfono debe contener exactamente 8 dígitos numéricos.";
   }
   return undefined;
@@ -527,12 +534,10 @@ const FormSolic = () => {
                       name={field.name}
                       type="tel"
                       inputMode="numeric"
-                      placeholder="Ej: 88888888"
+                      placeholder="Ej: 8888-8888"
                       value={field.state.value}
                       onChange={(e) =>
-                        field.handleChange(
-                          soloDigitos(e.target.value).slice(0, 8),
-                        )
+                        field.handleChange(formatearTelefono(e.target.value))
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
