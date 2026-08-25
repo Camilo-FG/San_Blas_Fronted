@@ -8,6 +8,14 @@ import { Button, Input, Label, Textarea } from "../../../shared/ui";
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
 
+const formatearCedula = (valor: string) => {
+  const digitos = soloDigitos(valor).slice(0, 9);
+  if (digitos.length <= 1) return digitos;
+  if (digitos.length <= 5)
+    return `${digitos.slice(0, 1)}-${digitos.slice(1)}`;
+  return `${digitos.slice(0, 1)}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
+};
+
 const soloLetras = (valor: string) =>
   valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "").replace(/\s{2,}/g, " ");
 
@@ -221,12 +229,10 @@ const FormSolic = () => {
                       name={field.name}
                       type="text"
                       inputMode="numeric"
-                      placeholder="Ej: 123456789"
+                      placeholder="Ej: 1-2345-6789"
                       value={field.state.value}
                       onChange={(e) =>
-                        field.handleChange(
-                          soloDigitos(e.target.value).slice(0, 9),
-                        )
+                        field.handleChange(formatearCedula(e.target.value))
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
