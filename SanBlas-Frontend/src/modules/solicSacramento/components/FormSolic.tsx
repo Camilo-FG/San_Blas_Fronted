@@ -364,14 +364,14 @@ const FormSolic = () => {
                       value={field.state.value}
                       onChange={(e) =>
                         field.handleChange(
-                          soloLetras(e.target.value).slice(0, 50),
+                          soloLetras(e.target.value).slice(0, 20),
                         )
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/50
+                      {field.state.value.length}/20
                     </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
@@ -407,14 +407,14 @@ const FormSolic = () => {
                       value={field.state.value}
                       onChange={(e) =>
                         field.handleChange(
-                          soloLetras(e.target.value).slice(0, 50),
+                          soloLetras(e.target.value).slice(0, 20),
                         )
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/50
+                      {field.state.value.length}/20
                     </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
@@ -450,14 +450,14 @@ const FormSolic = () => {
                       value={field.state.value}
                       onChange={(e) =>
                         field.handleChange(
-                          soloLetras(e.target.value).slice(0, 50),
+                          soloLetras(e.target.value).slice(0, 20),
                         )
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/50
+                      {field.state.value.length}/20
                     </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
@@ -490,18 +490,18 @@ const FormSolic = () => {
                       name={field.name}
                       type="email"
                       placeholder="Ej: nombre@correo.com"
-                      maxLength={50}
+                      maxLength={35}
                       value={field.state.value}
                       onChange={(e) =>
                         field.handleChange(
-                          soloCorreo(e.target.value).slice(0, 50),
+                          soloCorreo(e.target.value).slice(0, 35),
                         )
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/50
+                      {field.state.value.length}/35
                     </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
