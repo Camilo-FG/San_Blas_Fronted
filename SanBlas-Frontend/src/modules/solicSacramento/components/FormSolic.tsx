@@ -69,6 +69,9 @@ const FormSolic = () => {
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const [errorCedula, setErrorCedula] = useState<string | null>(null);
+  const [errorMotivoBackend, setErrorMotivoBackend] = useState<string | null>(
+    null,
+  );
   const [verificandoCedula, setVerificandoCedula] = useState(false);
   const exitoRef = useRef<HTMLDivElement | null>(null);
 
@@ -108,23 +111,47 @@ const FormSolic = () => {
         form.reset();
         setCaptchaError(null);
         setErrorCedula(null);
+        setErrorMotivoBackend(null);
         resetCaptcha();
         setEnviado(true);
       } catch (error) {
-          const mensaje =
-            error instanceof ApiError
-              ? error.errores
-                ? Object.values(error.errores)
-                    .flat()
-                    .filter(
-                      (m) =>
-                        Boolean(m) &&
-                        !/Cedula must not be less than \d+/.test(m),
-                    )
-                    .join(" ") || error.message
-                : error.message
-              : "No se pudo enviar la solicitud. Intente nuevamente.";
-        setErrorEnvio(mensaje);
+        const erroresMotivo: string[] = [];
+        const esErrorMotivo = (clave: string, mensaje: string) =>
+          /motivo/i.test(clave) || /contiene caracteres no permitidos/i.test(mensaje);
+        let mensaje = "No se pudo enviar la solicitud. Intente nuevamente.";
+        if (error instanceof ApiError) {
+          if (error.errores) {
+            mensaje =
+              Object.entries(error.errores)
+                .flatMap(([clave, mensajes]) =>
+                  (Array.isArray(mensajes) ? mensajes : [mensajes]).map(
+                    (m) => ({ clave, m }),
+                  ),
+                )
+                .filter(({ m }) => Boolean(m))
+                .filter(({ clave, m }) => {
+                  if (esErrorMotivo(clave, m)) {
+                    erroresMotivo.push(m);
+                    return false;
+                  }
+                  return !/Cedula must not be less than \d+/.test(m);
+                })
+                .map(({ m }) => m)
+                .join(" ") || error.message;
+          } else if (/motivo/i.test(error.message)) {
+            erroresMotivo.push(error.message);
+            mensaje = "";
+          } else {
+            mensaje = error.message;
+          }
+        }
+        if (erroresMotivo.length > 0) {
+          setErrorMotivoBackend(erroresMotivo.join(" "));
+          document
+            .getElementById("Motivo")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        setErrorEnvio(mensaje || null);
       }
     },
   });
@@ -195,6 +222,7 @@ const FormSolic = () => {
     form.reset();
     setCaptchaError(null);
     setErrorCedula(null);
+    setErrorMotivoBackend(null);
     setErrorEnvio(null);
     resetCaptcha();
     setEnviado(false);
@@ -541,14 +569,23 @@ const FormSolic = () => {
                       placeholder="Describe brevemente el motivo"
                       maxLength={250}
                       value={field.state.value}
-                      onChange={(e) =>
-                        field.handleChange(e.target.value.slice(0, 250))
-                      }
+                      onChange={(e) => {
+                        field.handleChange(e.target.value.slice(0, 250));
+                        if (errorMotivoBackend) setErrorMotivoBackend(null);
+                      }}
                       onBlur={field.handleBlur}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
                       {field.state.value.length}/250
                     </span>
+                    {errorMotivoBackend && (
+                      <span
+                        role="alert"
+                        className="text-[0.84rem] font-semibold text-red-500"
+                      >
+                        ⚠ {errorMotivoBackend}
+                      </span>
+                    )}
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
