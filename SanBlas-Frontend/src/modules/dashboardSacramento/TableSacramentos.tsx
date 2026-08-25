@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ChevronDown,
   ChevronLeft,
@@ -9,6 +9,8 @@ import {
   Eye,
   Search,
   Loader2,
+  Mail,
+  X,
 } from "lucide-react";
 import type { FormSacramento } from "../../types/formSacramento";
 import {
@@ -27,7 +29,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "@tanstack/react-router";
 import Rutas from "../../routes/Rutas";
 import { AdminRecordCard } from "../../shared/components/admin/AdminRecordCard";
-import { AdminRecordDetailSheet } from "../../shared/components/admin/AdminRecordDetailSheet";
 import {
   AdminModule,
   AdminPagination,
@@ -52,6 +53,32 @@ import {
 
 const columnHelper = createColumnHelper<FormSacramento>();
 const PAGE_SIZE = 10;
+
+const EtiquetaSeccion = ({ children }: { children: ReactNode }) => (
+  <span className="m-0 flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] text-[#16243c] uppercase">
+    <span
+      className="h-3 w-px bg-[#aa7323]"
+      aria-hidden="true"
+    />
+    {children}
+  </span>
+);
+
+const ESTADO_MODAL_STYLES = {
+  Pendiente: {
+    dot: "bg-[#aa7323]",
+    pill: "border-[#aa7323]/30 bg-[#aa7323]/10 text-[#aa7323]",
+  },
+  Aprobado: {
+    dot: "bg-emerald-600",
+    pill: "border-emerald-600/25 bg-emerald-600/10 text-emerald-700",
+  },
+  Rechazado: {
+    dot: "bg-red-600",
+    pill: "border-red-600/25 bg-red-600/10 text-red-700",
+  },
+} as const;
+
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
 const formatearCedula = (valor: string) => {
   const digitos = soloDigitos(valor).slice(0, 9);
@@ -122,6 +149,22 @@ const TableSacramentos = () => {
     document.addEventListener("mousedown", handleClickFuera);
     return () => document.removeEventListener("mousedown", handleClickFuera);
   }, []);
+
+  useEffect(() => {
+    if (!solicitudSeleccionada) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSolicitudSeleccionada(null);
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "";
+    };
+  }, [solicitudSeleccionada]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
@@ -661,174 +704,217 @@ const TableSacramentos = () => {
         </>
       )}
 
-      <AdminRecordDetailSheet
-        open={solicitudSeleccionada !== null}
-        hideHeader
-        title={
-          solicitudSeleccionada
-            ? nombreCompleto(solicitudSeleccionada)
-            : "Solicitud"
-        }
-        subtitle={solicitudSeleccionada?.TipoSacramento}
-        badges={
-          solicitudSeleccionada
-            ? renderEstadoBadge(solicitudSeleccionada.Estado)
-            : undefined
-        }
-        onClose={() => setSolicitudSeleccionada(null)}
-        actions={
-          solicitudSeleccionada && isAdmin ? (
-            <label className="flex w-full flex-col gap-1.5 text-sm font-semibold text-text md:min-w-[260px] md:flex-[0_1_260px]">
-              <span>Cambiar estado</span>
-              <div
-                className="relative"
-                ref={estadoMenuRef}
-              >
-                <button
-                  type="button"
-                  disabled={isUpdatingEstado || esEstadoPermanente}
-                  aria-haspopup="listbox"
-                  aria-expanded={estadoMenuAbierto}
-                  onClick={() => setEstadoMenuAbierto((prev) => !prev)}
-                  className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border-0 bg-surface px-3.5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
+      {solicitudSeleccionada && (
+        <div
+          className="fixed inset-0 z-[1300] flex items-end justify-center bg-[#060f20]/70 md:items-center md:p-4"
+          role="presentation"
+          onClick={() => setSolicitudSeleccionada(null)}
+        >
+          <div
+            className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
+            style={{ fontFamily: "'Geist', sans-serif" }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Datos de la solicitud"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="flex items-center justify-between gap-4 bg-[#f1f5fa] px-6 py-4">
+              <div className="min-w-0">
+                <p className="m-0 text-[11px] font-semibold tracking-[0.22em] text-[#aa7323] uppercase">
+                  Solicitud
+                </p>
+                <h2
+                  className="m-0 mt-1 text-[24px] leading-tight font-semibold tracking-tight text-[#16243c]"
+                  style={{ fontFamily: "'Geist', sans-serif" }}
                 >
-                  <span>
-                    {solicitudSeleccionada.Estado ?? "Pendiente"}
-                    {esEstadoPermanente ? " (permanente)" : ""}
-                  </span>
-                  <ChevronDown
-                    size={16}
-                    strokeWidth={2.5}
-                    className={`transition-transform duration-200 ${
-                      estadoMenuAbierto ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
+                  Datos de la solicitud
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSolicitudSeleccionada(null)}
+                aria-label="Cerrar detalle"
+                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] transition-colors hover:bg-[#e4eaf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#aa7323]"
+              >
+                <X size={16} />
+              </button>
+            </header>
 
-                {estadoMenuAbierto && (
-                  <ul
-                    role="listbox"
-                    className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+            <div className="flex flex-col gap-4 overflow-y-auto p-6">
+              <div className="grid items-stretch gap-4 md:grid-cols-2">
+                <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
+                  <EtiquetaSeccion>Nombre del solicitante</EtiquetaSeccion>
+                  <p className="m-0 text-sm font-semibold text-[#16243c]">
+                    {nombreCompleto(solicitudSeleccionada)}
+                  </p>
+                </section>
+
+                <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
+                  <EtiquetaSeccion>Contacto</EtiquetaSeccion>
+                  <div className="flex items-start gap-2">
+                    <Mail
+                      size={16}
+                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                    />
+                    <div className="min-w-0">
+                      <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
+                        Correo
+                      </p>
+                      <p className="m-0 mt-1 break-words text-sm font-semibold text-[#16243c]">
+                        {solicitudSeleccionada.Correo || "—"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="h-px w-full bg-[#16243c]/10" />
+                  <div className="flex items-start gap-2">
+                    <Phone
+                      size={16}
+                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                    />
+                    <div className="min-w-0">
+                      <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
+                        Teléfono
+                      </p>
+                      <p className="m-0 mt-1 text-sm font-semibold text-[#16243c]">
+                        {solicitudSeleccionada.Telefono || "—"}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
+                <EtiquetaSeccion>Motivo</EtiquetaSeccion>
+                <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap text-[#16243c]">
+                  {solicitudSeleccionada.Motivo || "—"}
+                </p>
+              </section>
+
+              <div className="grid gap-4 rounded-[12px] border border-[#aa7323]/25 bg-[#aa7323]/[0.07] p-4 md:grid-cols-2">
+                <div className="flex flex-col gap-3">
+                  <EtiquetaSeccion>Estado actual</EtiquetaSeccion>
+                  <span
+                    className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${
+                      ESTADO_MODAL_STYLES[
+                        solicitudSeleccionada.Estado ?? "Pendiente"
+                      ].pill
+                    }`}
                   >
-                    {(
-                      [
-                        {
-                          valor: "Pendiente",
-                          dot: "bg-amber-500",
-                          text: "text-warning",
-                        },
-                        {
-                          valor: "Aprobado",
-                          dot: "bg-emerald-500",
-                          text: "text-success",
-                        },
-                        {
-                          valor: "Rechazado",
-                          dot: "bg-red-500",
-                          text: "text-danger",
-                        },
-                      ] as const
-                    ).map((opcion) => {
-                      const activo =
-                        (solicitudSeleccionada.Estado ?? "Pendiente") ===
-                        opcion.valor;
-                      return (
-                        <li
-                          key={opcion.valor}
-                          role="option"
-                          aria-selected={activo}
+                    <span
+                      className={`size-1.5 rounded-full ${
+                        ESTADO_MODAL_STYLES[
+                          solicitudSeleccionada.Estado ?? "Pendiente"
+                        ].dot
+                      }`}
+                    />
+                    {solicitudSeleccionada.Estado ?? "Pendiente"}
+                  </span>
+                </div>
+
+                {isAdmin && (
+                  <div className="flex flex-col gap-3">
+                    <EtiquetaSeccion>Cambiar estado</EtiquetaSeccion>
+                    <div
+                      className="relative"
+                      ref={estadoMenuRef}
+                    >
+                      <button
+                        type="button"
+                        disabled={isUpdatingEstado || esEstadoPermanente}
+                        aria-haspopup="listbox"
+                        aria-expanded={estadoMenuAbierto}
+                        onClick={() => setEstadoMenuAbierto((prev) => !prev)}
+                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors hover:bg-[#f1f5fa] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <span>
+                          {solicitudSeleccionada.Estado ?? "Pendiente"}
+                          {esEstadoPermanente ? " (permanente)" : ""}
+                        </span>
+                        <ChevronDown
+                          size={16}
+                          strokeWidth={2.5}
+                          className={`transition-transform duration-200 ${
+                            estadoMenuAbierto ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+
+                      {estadoMenuAbierto && (
+                        <ul
+                          role="listbox"
+                          className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
                         >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (opcion.valor === "Rechazado") {
-                                handleEstadoChange(
-                                  solicitudSeleccionada.id,
-                                  "Rechazado",
-                                );
-                              } else if (opcion.valor === "Aprobado") {
-                                setSolicitudSeleccionada(null);
-                                setSolicitudAAprobar(solicitudSeleccionada);
-                                setIsApproveModalOpen(true);
-                              } else {
-                                handleEstadoChange(
-                                  solicitudSeleccionada.id,
-                                  "Pendiente",
-                                );
-                              }
-                              setEstadoMenuAbierto(false);
-                            }}
-                            className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
-                              activo
-                                ? "bg-royal-blue/10 text-royal-blue"
-                                : `text-slate-700 hover:bg-royal-blue/5 ${opcion.text}`
-                            }`}
-                          >
-                            <span
-                              className={`size-2 shrink-0 rounded-full ${opcion.dot}`}
-                            />
-                            {opcion.valor}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                          {(
+                            [
+                              {
+                                valor: "Pendiente",
+                                dot: ESTADO_MODAL_STYLES.Pendiente.dot,
+                              },
+                              {
+                                valor: "Aprobado",
+                                dot: ESTADO_MODAL_STYLES.Aprobado.dot,
+                              },
+                              {
+                                valor: "Rechazado",
+                                dot: ESTADO_MODAL_STYLES.Rechazado.dot,
+                              },
+                            ] as const
+                          ).map((opcion) => {
+                            const activo =
+                              (solicitudSeleccionada.Estado ?? "Pendiente") ===
+                              opcion.valor;
+                            return (
+                              <li
+                                key={opcion.valor}
+                                role="option"
+                                aria-selected={activo}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (opcion.valor === "Rechazado") {
+                                      handleEstadoChange(
+                                        solicitudSeleccionada.id,
+                                        "Rechazado",
+                                      );
+                                    } else if (opcion.valor === "Aprobado") {
+                                      setSolicitudSeleccionada(null);
+                                      setSolicitudAAprobar(
+                                        solicitudSeleccionada,
+                                      );
+                                      setIsApproveModalOpen(true);
+                                    } else {
+                                      handleEstadoChange(
+                                        solicitudSeleccionada.id,
+                                        "Pendiente",
+                                      );
+                                    }
+                                    setEstadoMenuAbierto(false);
+                                  }}
+                                  className={`flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm font-medium transition-colors ${
+                                    activo
+                                      ? "bg-[#aa7323]/10 text-[#16243c]"
+                                      : "text-[#16243c] hover:bg-[#f1f5fa]"
+                                  }`}
+                                >
+                                  <span
+                                    className={`size-1.5 shrink-0 rounded-full ${opcion.dot}`}
+                                  />
+                                  {opcion.valor}
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
-            </label>
-          ) : undefined
-        }
-      >
-        {solicitudSeleccionada && (
-          <div className="flex flex-col gap-4">
-            <h3 className="m-0 font-heading text-xl font-extrabold text-royal-blue">
-              Datos de la solicitud
-            </h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-border bg-surface-muted px-3.5 py-3">
-                <h4 className="m-0 text-[0.7rem] font-bold tracking-wider text-text-muted uppercase">
-                  Nombre del solicitante
-                </h4>
-                <p className="m-0 mt-1 text-sm font-semibold text-text">
-                  {nombreCompleto(solicitudSeleccionada)}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-border bg-surface-muted px-3.5 py-3">
-              <h4 className="m-0 text-[0.7rem] font-bold tracking-wider text-text-muted uppercase">
-                Motivo
-              </h4>
-              <p className="m-0 mt-1 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
-                {solicitudSeleccionada.Motivo}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border bg-surface-muted px-3.5 py-3">
-              <h4 className="m-0 text-[0.7rem] font-bold tracking-wider text-text-muted uppercase">
-                Contacto
-              </h4>
-              <div className="mt-2 grid gap-2 text-sm text-text-secondary sm:grid-cols-2">
-                <p className="m-0 min-w-0 break-words">
-                  <span className="font-semibold text-text">Correo:</span>{" "}
-                  {solicitudSeleccionada.Correo}
-                </p>
-                <p className="m-0">
-                  <span className="font-semibold text-text">Teléfono:</span>{" "}
-                  {solicitudSeleccionada.Telefono || "-"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between rounded-xl border border-border bg-surface-muted px-3.5 py-3">
-              <h4 className="m-0 text-[0.7rem] font-bold tracking-wider text-text-muted uppercase">
-                Estado
-              </h4>
-              {renderEstadoBadge(solicitudSeleccionada.Estado)}
             </div>
           </div>
-        )}
-      </AdminRecordDetailSheet>
+        </div>
+      )}
 
       {solicitudAAprobar && (
         <Modal
