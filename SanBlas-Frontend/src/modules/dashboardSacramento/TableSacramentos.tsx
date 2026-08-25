@@ -128,6 +128,8 @@ const TableSacramentos = () => {
     useState<FormSacramento | null>(null);
   const [estadoMenuAbierto, setEstadoMenuAbierto] = useState(false);
   const estadoMenuRef = useRef<HTMLDivElement>(null);
+  const modalBackdropRef = useRef<HTMLDivElement>(null);
+  const modalBodyRef = useRef<HTMLDivElement>(null);
   const [filtroEstadoMenuAbierto, setFiltroEstadoMenuAbierto] = useState(false);
   const filtroEstadoMenuRef = useRef<HTMLDivElement>(null);
 
@@ -157,12 +159,27 @@ const TableSacramentos = () => {
       if (event.key === "Escape") setSolicitudSeleccionada(null);
     };
 
+    const main = document.querySelector("main");
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevMainOverflow = main?.style.overflow ?? "";
+
     document.addEventListener("keydown", handleEscape);
     document.body.style.overflow = "hidden";
+    if (main) main.style.overflow = "hidden";
+
+    const backdrop = modalBackdropRef.current;
+    const bloquearRueda = (event: WheelEvent) => {
+      if (!modalBodyRef.current?.contains(event.target as Node)) {
+        event.preventDefault();
+      }
+    };
+    backdrop?.addEventListener("wheel", bloquearRueda, { passive: false });
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "";
+      backdrop?.removeEventListener("wheel", bloquearRueda);
+      document.body.style.overflow = prevBodyOverflow;
+      if (main) main.style.overflow = prevMainOverflow;
     };
   }, [solicitudSeleccionada]);
 
@@ -706,6 +723,7 @@ const TableSacramentos = () => {
 
       {solicitudSeleccionada && (
         <div
+          ref={modalBackdropRef}
           className="fixed inset-0 z-[1300] flex items-end justify-center bg-[#060f20]/70 md:items-center md:p-4"
           role="presentation"
           onClick={() => setSolicitudSeleccionada(null)}
@@ -740,7 +758,10 @@ const TableSacramentos = () => {
               </button>
             </header>
 
-            <div className="flex flex-col gap-4 overflow-y-auto p-6">
+            <div
+              ref={modalBodyRef}
+              className="flex flex-col gap-4 overflow-y-auto overscroll-contain p-6"
+            >
               <div className="grid items-stretch gap-4 md:grid-cols-2">
                 <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
                   <EtiquetaSeccion>Nombre del solicitante</EtiquetaSeccion>
