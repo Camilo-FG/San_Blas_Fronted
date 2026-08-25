@@ -1,12 +1,27 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 import { ApiError } from "../../../services/apiClient";
+import { existeCedula } from "../../../services/cedulaService";
 import { Button, Input, Label, Textarea } from "../../../shared/ui";
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
+
+const formatearCedula = (valor: string) => {
+  const digitos = soloDigitos(valor).slice(0, 9);
+  if (digitos.length <= 1) return digitos;
+  if (digitos.length <= 5)
+    return `${digitos.slice(0, 1)}-${digitos.slice(1)}`;
+  return `${digitos.slice(0, 1)}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
+};
+
+const formatearTelefono = (valor: string) => {
+  const digitos = soloDigitos(valor).slice(0, 8);
+  if (digitos.length <= 4) return digitos;
+  return `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
+};
 
 const soloLetras = (valor: string) =>
   valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "").replace(/\s{2,}/g, " ");
@@ -42,8 +57,9 @@ const validarCorreo = (valor: string) => {
 };
 
 const validarTelefono = (valor: string) => {
-  if (!valor) return "El teléfono es obligatorio.";
-  if (!/^\d{8}$/.test(valor)) {
+  const telefono = soloDigitos(valor);
+  if (!telefono) return "El teléfono es obligatorio.";
+  if (!/^\d{8}$/.test(telefono)) {
     return "El teléfono debe contener exactamente 8 dígitos numéricos.";
   }
   return undefined;
@@ -59,6 +75,18 @@ const FormSolic = () => {
   const [enviado, setEnviado] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const [errorCedula, setErrorCedula] = useState<string | null>(null);
+  const [errorMotivoBackend, setErrorMotivoBackend] = useState<string | null>(
+    null,
+  );
+  const [verificandoCedula, setVerificandoCedula] = useState(false);
+  const exitoRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (enviado) {
+      exitoRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [enviado]);
   const {
     captchaRef,
     captchaToken,
@@ -89,17 +117,48 @@ const FormSolic = () => {
         await mutateAsync(value);
         form.reset();
         setCaptchaError(null);
+        setErrorCedula(null);
+        setErrorMotivoBackend(null);
         resetCaptcha();
         setEnviado(true);
       } catch (error) {
-        const mensaje =
-          error instanceof ApiError
-            ? error.errores
-              ? Object.values(error.errores).flat().filter(Boolean).join(" ") ||
-                error.message
-              : error.message
-            : "No se pudo enviar la solicitud. Intente nuevamente.";
-        setErrorEnvio(mensaje);
+        const erroresMotivo: string[] = [];
+        const esErrorMotivo = (clave: string, mensaje: string) =>
+          /motivo/i.test(clave) || /contiene caracteres no permitidos/i.test(mensaje);
+        let mensaje = "No se pudo enviar la solicitud. Intente nuevamente.";
+        if (error instanceof ApiError) {
+          if (error.errores) {
+            mensaje =
+              Object.entries(error.errores)
+                .flatMap(([clave, mensajes]) =>
+                  (Array.isArray(mensajes) ? mensajes : [mensajes]).map(
+                    (m) => ({ clave, m }),
+                  ),
+                )
+                .filter(({ m }) => Boolean(m))
+                .filter(({ clave, m }) => {
+                  if (esErrorMotivo(clave, m)) {
+                    erroresMotivo.push(m);
+                    return false;
+                  }
+                  return !/Cedula must not be less than \d+/.test(m);
+                })
+                .map(({ m }) => m)
+                .join(" ") || error.message;
+          } else if (/motivo/i.test(error.message)) {
+            erroresMotivo.push(error.message);
+            mensaje = "";
+          } else {
+            mensaje = error.message;
+          }
+        }
+        if (erroresMotivo.length > 0) {
+          setErrorMotivoBackend(erroresMotivo.join(" "));
+          document
+            .getElementById("Motivo")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        setErrorEnvio(mensaje || null);
       }
     },
   });
@@ -131,6 +190,34 @@ const FormSolic = () => {
       elemento?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+
+    setVerificandoCedula(true);
+    try {
+      const existe = await existeCedula(soloDigitos(valores.Cedula));
+      if (!existe) {
+        setErrorCedula("La cédula ingresada no existe.");
+        const cedulaInput = document.getElementById(
+          "Cedula",
+        ) as HTMLInputElement | null;
+        cedulaInput?.focus();
+        cedulaInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      setErrorCedula(null);
+    } catch (error) {
+      setErrorCedula(
+        "No se pudo verificar la cédula. Intente nuevamente.",
+      );
+      const cedulaInput = document.getElementById(
+        "Cedula",
+      ) as HTMLInputElement | null;
+      cedulaInput?.focus();
+      cedulaInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    } finally {
+      setVerificandoCedula(false);
+    }
+
     if (!captchaToken) {
       document
         .getElementById("captcha-container")
@@ -141,6 +228,8 @@ const FormSolic = () => {
   const handleHacerOtraSolicitud = () => {
     form.reset();
     setCaptchaError(null);
+    setErrorCedula(null);
+    setErrorMotivoBackend(null);
     setErrorEnvio(null);
     resetCaptcha();
     setEnviado(false);
@@ -149,7 +238,10 @@ const FormSolic = () => {
   return (
     <div className="mx-auto box-border min-w-0 w-full max-w-[760px] overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:rounded-[22px] sm:p-8">
       {enviado ? (
-        <div className="flex min-h-[260px] flex-col items-center justify-center gap-3.5 py-3 text-center sm:min-h-[320px]">
+        <div
+          ref={exitoRef}
+          className="flex min-h-[260px] flex-col items-center justify-center gap-3.5 py-3 text-center sm:min-h-[320px]"
+        >
           <div className="flex h-[60px] w-[60px] items-center justify-center rounded-2xl bg-gradient-to-br from-green-600 to-green-400 shadow-[0_10px_24px_rgba(34,197,94,0.24)]">
             <svg
               width="28"
@@ -202,6 +294,54 @@ const FormSolic = () => {
           >
             <div className="flex w-full min-w-0 flex-col gap-2">
               <form.Field
+                name="Cedula"
+                validators={{
+                  onChange: ({ value }) => validarCedula(value),
+                }}
+              >
+                {(field) => (
+                  <>
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
+                      Cédula
+                    </Label>
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Ej: 1-2345-6789"
+                      value={field.state.value}
+                      onChange={(e) => {
+                        field.handleChange(formatearCedula(e.target.value));
+                        if (errorCedula) setErrorCedula(null);
+                      }}
+                      onBlur={field.handleBlur}
+                      className={fieldClass}
+                    />
+                    {field.state.meta.errors[0] && (
+                      <span className="text-[0.84rem] font-semibold text-red-500">
+                        ⚠ {field.state.meta.errors[0]}
+                      </span>
+                    )}
+                    {errorCedula && (
+                      <span
+                        role="alert"
+                        className="text-[0.84rem] font-semibold text-red-500"
+                      >
+                        ⚠ {errorCedula}
+                      </span>
+                    )}
+                  </>
+                )}
+              </form.Field>
+            </div>
+
+            <div className="flex w-full min-w-0 flex-col gap-2">
+              <form.Field
                 name="Nombre"
                 validators={{
                   onChange: ({ value }) => validarNombre(value),
@@ -224,14 +364,14 @@ const FormSolic = () => {
                       value={field.state.value}
                       onChange={(e) =>
                         field.handleChange(
-                          soloLetras(e.target.value).slice(0, 50),
+                          soloLetras(e.target.value).slice(0, 20),
                         )
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/50
+                      {field.state.value.length}/20
                     </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
@@ -267,14 +407,14 @@ const FormSolic = () => {
                       value={field.state.value}
                       onChange={(e) =>
                         field.handleChange(
-                          soloLetras(e.target.value).slice(0, 50),
+                          soloLetras(e.target.value).slice(0, 20),
                         )
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/50
+                      {field.state.value.length}/20
                     </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
@@ -310,56 +450,15 @@ const FormSolic = () => {
                       value={field.state.value}
                       onChange={(e) =>
                         field.handleChange(
-                          soloLetras(e.target.value).slice(0, 50),
+                          soloLetras(e.target.value).slice(0, 20),
                         )
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/50
+                      {field.state.value.length}/20
                     </span>
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
-                      </span>
-                    )}
-                  </>
-                )}
-              </form.Field>
-            </div>
-
-            <div className="flex w-full min-w-0 flex-col gap-2">
-              <form.Field
-                name="Cedula"
-                validators={{
-                  onChange: ({ value }) => validarCedula(value),
-                }}
-              >
-                {(field) => (
-                  <>
-                    <Label
-                      htmlFor={field.name}
-                      required
-                      className="text-sm font-bold text-royal-blue"
-                    >
-                      Cédula
-                    </Label>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Ej: 123456789"
-                      value={field.state.value}
-                      onChange={(e) =>
-                        field.handleChange(
-                          soloDigitos(e.target.value).slice(0, 9),
-                        )
-                      }
-                      onBlur={field.handleBlur}
-                      className={fieldClass}
-                    />
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
@@ -391,18 +490,18 @@ const FormSolic = () => {
                       name={field.name}
                       type="email"
                       placeholder="Ej: nombre@correo.com"
-                      maxLength={50}
+                      maxLength={35}
                       value={field.state.value}
                       onChange={(e) =>
                         field.handleChange(
-                          soloCorreo(e.target.value).slice(0, 50),
+                          soloCorreo(e.target.value).slice(0, 35),
                         )
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/50
+                      {field.state.value.length}/35
                     </span>
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
@@ -435,12 +534,10 @@ const FormSolic = () => {
                       name={field.name}
                       type="tel"
                       inputMode="numeric"
-                      placeholder="Ej: 88888888"
+                      placeholder="Ej: 8888-8888"
                       value={field.state.value}
                       onChange={(e) =>
-                        field.handleChange(
-                          soloDigitos(e.target.value).slice(0, 8),
-                        )
+                        field.handleChange(formatearTelefono(e.target.value))
                       }
                       onBlur={field.handleBlur}
                       className={fieldClass}
@@ -477,14 +574,23 @@ const FormSolic = () => {
                       placeholder="Describe brevemente el motivo"
                       maxLength={250}
                       value={field.state.value}
-                      onChange={(e) =>
-                        field.handleChange(e.target.value.slice(0, 250))
-                      }
+                      onChange={(e) => {
+                        field.handleChange(e.target.value.slice(0, 250));
+                        if (errorMotivoBackend) setErrorMotivoBackend(null);
+                      }}
                       onBlur={field.handleBlur}
                     />
                     <span className="text-right text-[0.78rem] font-medium text-text-secondary">
                       {field.state.value.length}/250
                     </span>
+                    {errorMotivoBackend && (
+                      <span
+                        role="alert"
+                        className="text-[0.84rem] font-semibold text-red-500"
+                      >
+                        ⚠ {errorMotivoBackend}
+                      </span>
+                    )}
                     {field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
@@ -523,7 +629,11 @@ const FormSolic = () => {
               type="submit"
               disabled={isPending}
             >
-              {isPending ? "Enviando..." : "Enviar solicitud de sacramento"}
+              {isPending
+                ? "Enviando..."
+                : verificandoCedula
+                  ? "Verificando cédula..."
+                  : "Enviar solicitud de sacramento"}
             </Button>
             {errorEnvio && (
               <p className="col-span-1 text-[0.84rem] font-semibold text-red-500 sm:col-span-2">
