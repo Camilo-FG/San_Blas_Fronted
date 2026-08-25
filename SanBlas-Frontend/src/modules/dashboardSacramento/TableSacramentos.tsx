@@ -86,6 +86,12 @@ const formatearCedula = (valor: string) => {
   if (digitos.length <= 5) return `${digitos.slice(0, 1)}-${digitos.slice(1)}`;
   return `${digitos.slice(0, 1)}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
 };
+
+const formatearTelefono = (valor: string) => {
+  const digitos = soloDigitos(String(valor ?? "")).slice(0, 8);
+  if (digitos.length <= 4) return digitos;
+  return `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
+};
 const nombreCompleto = (row: FormSacramento) =>
   [row.Nombre, row.PrimerApellido].filter(Boolean).join(" ");
 
@@ -796,8 +802,8 @@ const TableSacramentos = () => {
                       <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
                         Teléfono
                       </p>
-                      <p className="m-0 mt-1 text-sm font-semibold text-[#16243c]">
-                        {solicitudSeleccionada.Telefono || "—"}
+                      <p className="m-0 mt-1 text-sm font-semibold tabular-nums text-[#16243c]">
+                        {formatearTelefono(solicitudSeleccionada.Telefono) || "—"}
                       </p>
                     </div>
                   </div>
