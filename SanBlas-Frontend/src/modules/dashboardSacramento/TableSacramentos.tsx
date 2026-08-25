@@ -60,9 +60,7 @@ const formatearCedula = (valor: string) => {
   return `${digitos.slice(0, 1)}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
 };
 const nombreCompleto = (row: FormSacramento) =>
-  [row.Nombre, row.PrimerApellido, row.SegundoApellido]
-    .filter(Boolean)
-    .join(" ");
+  [row.Nombre, row.PrimerApellido].filter(Boolean).join(" ");
 
 const normalizeText = (value: unknown) =>
   String(value ?? "")
