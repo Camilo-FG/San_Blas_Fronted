@@ -851,7 +851,7 @@ const TableSacramentos = () => {
                         aria-haspopup="listbox"
                         aria-expanded={estadoMenuAbierto}
                         onClick={() => setEstadoMenuAbierto((prev) => !prev)}
-                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-200 hover:border-[#aa7323]/60 hover:bg-[#f1f5fa] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         <span>
                           {solicitudSeleccionada.Estado ?? "Pendiente"}
@@ -909,10 +909,10 @@ const TableSacramentos = () => {
                                     }
                                     setEstadoMenuAbierto(false);
                                   }}
-                                  className={`flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm font-medium transition-colors ${
+                                  className={`flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm font-medium transition-colors duration-200 ${
                                     activo
                                       ? "bg-[#aa7323]/10 text-[#16243c]"
-                                      : "text-[#16243c]"
+                                      : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
                                   }`}
                                 >
                                   <span
