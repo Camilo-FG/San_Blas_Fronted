@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
@@ -70,6 +70,13 @@ const FormSolic = () => {
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const [errorCedula, setErrorCedula] = useState<string | null>(null);
   const [verificandoCedula, setVerificandoCedula] = useState(false);
+  const exitoRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (enviado) {
+      exitoRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [enviado]);
   const {
     captchaRef,
     captchaToken,
@@ -196,7 +203,10 @@ const FormSolic = () => {
   return (
     <div className="mx-auto box-border min-w-0 w-full max-w-[760px] overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:rounded-[22px] sm:p-8">
       {enviado ? (
-        <div className="flex min-h-[260px] flex-col items-center justify-center gap-3.5 py-3 text-center sm:min-h-[320px]">
+        <div
+          ref={exitoRef}
+          className="flex min-h-[260px] flex-col items-center justify-center gap-3.5 py-3 text-center sm:min-h-[320px]"
+        >
           <div className="flex h-[60px] w-[60px] items-center justify-center rounded-2xl bg-gradient-to-br from-green-600 to-green-400 shadow-[0_10px_24px_rgba(34,197,94,0.24)]">
             <svg
               width="28"
