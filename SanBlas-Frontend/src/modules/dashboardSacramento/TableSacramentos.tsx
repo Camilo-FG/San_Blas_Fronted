@@ -571,7 +571,15 @@ const TableSacramentos = () => {
         <>
           <div className="hidden md:block">
             <AdminTablePanel>
-              <AdminTable>
+              <AdminTable className="table-fixed">
+                <colgroup>
+                  <col className="w-[22%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[24%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[13%]" />
+                </colgroup>
                 <AdminTableHead>
                   {table.getHeaderGroups().map((hg) => (
                     <AdminTableRow key={hg.id}>
