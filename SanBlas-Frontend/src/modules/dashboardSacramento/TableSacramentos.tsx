@@ -868,10 +868,6 @@ const TableSacramentos = () => {
                           {(
                             [
                               {
-                                valor: "Pendiente",
-                                dot: ESTADO_MODAL_STYLES.Pendiente.dot,
-                              },
-                              {
                                 valor: "Aprobado",
                                 dot: ESTADO_MODAL_STYLES.Aprobado.dot,
                               },
@@ -898,17 +894,12 @@ const TableSacramentos = () => {
                                         solicitudSeleccionada.id,
                                         "Rechazado",
                                       );
-                                    } else if (opcion.valor === "Aprobado") {
+                                    } else {
                                       setSolicitudSeleccionada(null);
                                       setSolicitudAAprobar(
                                         solicitudSeleccionada,
                                       );
                                       setIsApproveModalOpen(true);
-                                    } else {
-                                      handleEstadoChange(
-                                        solicitudSeleccionada.id,
-                                        "Pendiente",
-                                      );
                                     }
                                     setEstadoMenuAbierto(false);
                                   }}
