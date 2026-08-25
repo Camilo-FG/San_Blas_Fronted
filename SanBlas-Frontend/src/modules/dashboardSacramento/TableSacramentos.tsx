@@ -729,14 +729,14 @@ const TableSacramentos = () => {
           onClick={() => setSolicitudSeleccionada(null)}
         >
           <div
-            className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
+            className="flex w-full flex-col rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
             style={{ fontFamily: "'Geist', sans-serif" }}
             role="dialog"
             aria-modal="true"
             aria-label="Datos de la solicitud"
             onClick={(event) => event.stopPropagation()}
           >
-            <header className="flex items-center justify-between gap-4 bg-[#f1f5fa] px-6 py-4">
+            <header className="flex items-center justify-between gap-4 rounded-t-[16px] bg-[#f1f5fa] px-6 py-4">
               <div className="min-w-0">
                 <p className="m-0 text-[11px] font-semibold tracking-[0.22em] text-[#aa7323] uppercase">
                   Solicitud
@@ -752,7 +752,7 @@ const TableSacramentos = () => {
                 type="button"
                 onClick={() => setSolicitudSeleccionada(null)}
                 aria-label="Cerrar detalle"
-                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] transition-colors hover:bg-[#e4eaf3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#aa7323]"
+                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#aa7323]"
               >
                 <X size={16} />
               </button>
@@ -760,7 +760,7 @@ const TableSacramentos = () => {
 
             <div
               ref={modalBodyRef}
-              className="flex flex-col gap-4 overflow-y-auto overscroll-contain p-6"
+              className="flex flex-col gap-4 p-6"
             >
               <div className="grid items-stretch gap-4 md:grid-cols-2">
                 <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
@@ -845,7 +845,7 @@ const TableSacramentos = () => {
                         aria-haspopup="listbox"
                         aria-expanded={estadoMenuAbierto}
                         onClick={() => setEstadoMenuAbierto((prev) => !prev)}
-                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors hover:bg-[#f1f5fa] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         <span>
                           {solicitudSeleccionada.Estado ?? "Pendiente"}
@@ -906,7 +906,7 @@ const TableSacramentos = () => {
                                   className={`flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm font-medium transition-colors ${
                                     activo
                                       ? "bg-[#aa7323]/10 text-[#16243c]"
-                                      : "text-[#16243c] hover:bg-[#f1f5fa]"
+                                      : "text-[#16243c]"
                                   }`}
                                 >
                                   <span
