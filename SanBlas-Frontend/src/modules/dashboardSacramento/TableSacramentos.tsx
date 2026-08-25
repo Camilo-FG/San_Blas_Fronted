@@ -812,7 +812,7 @@ const TableSacramentos = () => {
 
               <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
                 <EtiquetaSeccion>Motivo</EtiquetaSeccion>
-                <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap text-[#16243c]">
+                <p className="m-0 min-w-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c]">
                   {solicitudSeleccionada.Motivo || "—"}
                 </p>
               </section>
