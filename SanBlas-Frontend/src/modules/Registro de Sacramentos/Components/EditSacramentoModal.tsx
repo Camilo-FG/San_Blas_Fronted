@@ -1,590 +1,578 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, cn, Input, Label, useToast } from '../../../shared/ui';
-import { normalizarCamposNombres } from '../Utils/normalizarNombres';
-
-const modalInputClass =
-  "w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm transition-colors focus:border-blue-600 focus:outline-none";
-
-const getInputClass = (hasError: boolean) =>
-  cn(
-    "w-full rounded-md border px-3 py-2.5 text-sm transition-colors focus:outline-none",
-    hasError
-      ? "border-red-500 focus:border-red-600 bg-red-50"
-      : "border-gray-300 focus:border-blue-600"
-  );
+import { Loader2 } from 'lucide-react';
+import { useObtenerSacramentosPersona } from '../hooks/hooksNuevos/useObtenerSacramentosPersona';
+import { useObtenerSacramentoNuevo } from '../hooks/hooksNuevos/useObtenerSacramentoNuevo';
+import { useListarParroquias } from '../hooks/hooksNuevos/useListarParroquias';
+import { useListarPresbiteros } from '../hooks/hooksNuevos/useListarPresbiteros';
+import {
+  ActualizarSacramentoInput,
+  CrearSacramentoInput,
+  DetalleBautismo,
+  ParentescoAbuelo,
+  PersonaDetalle,
+  SacramentoDetalle,
+  TipoSacramento,
+  TIPO_SACRAMENTO_LABEL,
+} from '../../../types/sacramentosNuevos';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (datos: Record<string, any>, tipoOriginal: string) => Promise<void> | void;
-  sacramento: any;
-  tipo: string;
+  sacramentoId: number | null;
+  cedula: string | null;
+  onUpdate: (id: number, dto: ActualizarSacramentoInput) => Promise<void>;
+  onCreate: (dto: CrearSacramentoInput) => Promise<void>;
 }
 
-const tiposSacramento = ['Bautismo', 'Comunión', 'Confirmación', 'Matrimonio'];
+const TIPOS: TipoSacramento[] = ['bautismo', 'comunion', 'confirmacion', 'matrimonio'];
 
-const CAMPOS_REQUERIDOS = {
-    Bautismo: [
-      'Nombre', 'PrimerApellido', 'SegundoApellido', 'cedula',
-      'fechaBautismo', 'annioBautismo', 'nombreParroquia',
-      'fechaNacimiento', 'horaNacimiento', 'tomo', 'folio'
-    ],
-    'Comunión': [
-      'Nombre', 'FechaComunion', 'LugarComunion'
-    ],
-    'Confirmación': [
-      'Nombre', 'FechaConfirmacion', 'LugarConfirmacion'
-    ],
-    Matrimonio: [
-      'NombreContrayente', 'NombreContrayente2', 'FechaMatrimonio', 'LugarMatrimonio',
-      'tomo', 'folio'
-    ],
-  } as const;
+const PARENTESCOS: ParentescoAbuelo[] = [
+  'abuelo_paterno',
+  'abuela_paterna',
+  'abuelo_materno',
+  'abuela_materna',
+];
 
-  const validarSeccion = (seccion: any, campos: string[]): string[] => {
-    const faltantes: string[] = [];
-    for (const campo of campos) {
-      const valor = seccion[campo];
-      if (valor === undefined || valor === null || valor === '' || (typeof valor === 'number' && isNaN(valor))) {
-        faltantes.push(campo);
-      }
-    }
-    return faltantes;
-  };
-
-const LUGAR_MAX = 250;
-
-const get = (obj: any, keys: string[]): any => {
-  for (const key of keys) {
-    const v = obj?.[key];
-    if (v !== undefined && v !== null && v !== '') return v;
-  }
-  return '';
-};
-
-const descomponerFecha = (fecha: string) => {
-  const [annio, mes, dia] = (fecha || '').split('-');
-  return { dia: dia || '', mes: mes ? parseInt(mes) : NaN, annio: annio || '' };
-};
-
-const mesDesdePartes = (dia: any, mes: any, annio: any): string => {
-  if (dia && annio) {
-    const idx = MESES.findIndex((m) => m.toLowerCase() === String(mes || '').toLowerCase());
-    const mesNum = idx >= 0 ? idx + 1 : Number(mes) || NaN;
-    if (!isNaN(mesNum) && mesNum >= 1 && mesNum <= 12) {
-      return `${annio}-${String(mesNum).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-    }
-  }
-  return '';
-};
-
-const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Props) => {
-  const { showToast } = useToast();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
-const [secciones, setSecciones] = useState<Record<string, any>>({
-    Bautismo: {},
-    'Comunión': {},
-    'Confirmación': {},
-    'Matrimonio': {},
-  });
-  const [activeTab, setActiveTab] = useState(tipo);
-  const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState<Record<string, boolean>>({});
-  const isScrollingRef = useRef(false);
-
-  const getInputClass = (hasError: boolean) =>
-    cn(
-      "w-full rounded-md border px-3 py-2.5 text-sm transition-colors focus:outline-none",
-      hasError
-        ? "border-red-500 focus:border-red-600 bg-red-50"
-        : "border-gray-300 focus:border-blue-600",
-    );
-
-  const esRequerido = (campo: string) => CAMPOS_REQUERIDOS[tipo].includes(campo);
-
-  const LabelReq = ({ campo, children }: { campo: string; children: React.ReactNode }) => (
-    <Label>
-      {children}
-      {CAMPOS_REQUERIDOS[tipo].includes(campo) && <span className="text-red-500 ml-1" aria-hidden="true">*</span>}
-    </Label>
+const inputClass = (hasError = false) =>
+  cn(
+    'w-full rounded-md border px-3 py-2.5 text-sm transition-colors focus:outline-none',
+    hasError
+      ? 'border-red-500 bg-red-50 focus:border-red-600'
+      : 'border-gray-300 focus:border-blue-600',
   );
 
-  // Cargar datos al abrir modal, resetear al cerrar
+const formatearCedulaCR = (valor: string): string => {
+  const digitos = valor.replace(/\D/g, '');
+  const limpiados = digitos.startsWith('0') ? digitos.slice(1) : digitos.slice(0, 9);
+  if (limpiados.length <= 1) return limpiados;
+  if (limpiados.length <= 5) return `${limpiados[0]}-${limpiados.slice(1)}`;
+  return `${limpiados[0]}-${limpiados.slice(1, 5)}-${limpiados.slice(5)}`;
+};
+
+interface PersonaForm {
+  cedula: string;
+  nombre: string;
+  primerApellido: string;
+  segundoApellido: string;
+}
+
+const personaVacia = (): PersonaForm => ({
+  cedula: '',
+  nombre: '',
+  primerApellido: '',
+  segundoApellido: '',
+});
+
+const aPersonaForm = (p: PersonaDetalle | null | undefined): PersonaForm =>
+  p
+    ? {
+        cedula: p.cedula ?? '',
+        nombre: p.nombre,
+        primerApellido: p.primerApellido,
+        segundoApellido: p.segundoApellido ?? '',
+      }
+    : personaVacia();
+
+const aPersonaInput = (p: PersonaForm) => ({
+  cedula: p.cedula || undefined,
+  nombre: (p.nombre || '').trim(),
+  primerApellido: (p.primerApellido || '').trim(),
+  segundoApellido: (p.segundoApellido || '').trim() || undefined,
+});
+
+interface BautismoForm {
+  bautizado: PersonaForm;
+  padre: PersonaForm;
+  madre: PersonaForm;
+  padrino: PersonaForm;
+  madrina: PersonaForm;
+  abuelos: (PersonaForm & { parentesco: ParentescoAbuelo })[];
+  fechaNacimiento: string;
+  horaNacimiento: string;
+  lugarNacimiento: string;
+  libro: string;
+  tomo: string;
+  folio: string;
+  asiento: string;
+}
+
+const bautismoVacio = (): BautismoForm => ({
+  bautizado: personaVacia(),
+  padre: personaVacia(),
+  madre: personaVacia(),
+  padrino: personaVacia(),
+  madrina: personaVacia(),
+  abuelos: [],
+  fechaNacimiento: '',
+  horaNacimiento: '',
+  lugarNacimiento: '',
+  libro: '',
+  tomo: '',
+  folio: '',
+  asiento: '',
+});
+
+const bautismoDesdeDetalle = (detalle: DetalleBautismo): BautismoForm => ({
+  bautizado: aPersonaForm(detalle.bautizado),
+  padre: aPersonaForm(detalle.padre),
+  madre: aPersonaForm(detalle.madre),
+  padrino: aPersonaForm(detalle.padrino),
+  madrina: aPersonaForm(detalle.madrina),
+  abuelos: detalle.abuelos.map((ab) => ({
+    cedula: ab.cedula ?? '',
+    nombre: ab.nombre ?? '',
+    primerApellido: ab.primerApellido ?? '',
+    segundoApellido: ab.segundoApellido ?? '',
+    parentesco: ab.parentesco,
+  })),
+  fechaNacimiento: detalle.fechaNacimiento ?? '',
+  horaNacimiento: detalle.horaNacimiento ?? '',
+  lugarNacimiento: detalle.lugarNacimiento ?? '',
+  libro: detalle.libro ?? '',
+  tomo: detalle.tomo ?? '',
+  folio: detalle.folio ?? '',
+  asiento: detalle.asiento ?? '',
+});
+
+interface MatrimonioForm {
+  contrayente1: PersonaForm;
+  contrayente2: PersonaForm;
+  libro: string;
+  tomo: string;
+  folio: string;
+}
+
+const matrimonioVacio = (): MatrimonioForm => ({
+  contrayente1: personaVacia(),
+  contrayente2: personaVacia(),
+  libro: '',
+  tomo: '',
+  folio: '',
+});
+
+const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, onCreate }: Props) => {
+  const { showToast } = useToast();
+  const { data: parroquias } = useListarParroquias();
+  const { data: presbiteros } = useListarPresbiteros();
+  const ficha = useObtenerSacramentosPersona(cedula);
+  const detalleQuery = useObtenerSacramentoNuevo(sacramentoId);
+
+  const [activeTab, setActiveTab] = useState<TipoSacramento>('bautismo');
+  const [idParroquia, setIdParroquia] = useState('');
+  const [idPresbitero, setIdPresbitero] = useState('');
+  const [fechaSacramento, setFechaSacramento] = useState('');
+  const [observaciones, setObservaciones] = useState('');
+  const [bautismo, setBautismo] = useState<BautismoForm>(bautismoVacio());
+  const [persona, setPersona] = useState<PersonaForm>(personaVacia());
+  const [matrimonio, setMatrimonio] = useState<MatrimonioForm>(matrimonioVacio());
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
+
+  const personaSacramental = ficha.data;
+  const tieneBautismo = Boolean(personaSacramental?.bautismo);
+
+  const sacramentoDelTab: SacramentoDetalle | null | undefined =
+    activeTab === 'bautismo'
+      ? personaSacramental?.bautismo
+      : activeTab === 'comunion'
+        ? personaSacramental?.comunion
+        : activeTab === 'confirmacion'
+          ? personaSacramental?.confirmacion
+          : personaSacramental?.matrimonio;
+
+  const existeEnTab = Boolean(sacramentoDelTab);
+
+  // Inicializa el formulario según la ficha de la persona.
   useEffect(() => {
-    if (!isOpen) {
-      setSecciones({
-        Bautismo: {},
-        'Comunión': {},
-        'Confirmación': {},
-        'Matrimonio': {},
-      });
-      return;
+    if (!isOpen) return;
+    const personaBase = personaSacramental?.persona;
+
+    if (personaSacramental?.bautismo) {
+      setBautismo(bautismoDesdeDetalle(personaSacramental.bautismo.detalle as DetalleBautismo));
+    } else {
+      setBautismo({ ...bautismoVacio(), bautizado: aPersonaForm(personaBase) });
     }
-    if (!sacramento) return;
 
-    const s: any = {};
+    if (personaSacramental?.comunion) {
+      setPersona(aPersonaForm((personaSacramental.comunion.detalle as { persona: PersonaDetalle }).persona));
+    } else {
+      setPersona(aPersonaForm(personaBase));
+    }
 
-    s.Bautismo = {
-      id: get(sacramento, ['id']),
-      Nombre: get(sacramento, ['nombre', 'Nombre']),
-      PrimerApellido: get(sacramento, ['primerApellido', 'PrimerApellido']),
-      SegundoApellido: get(sacramento, ['segundoApellido', 'SegundoApellido']),
-      cedula: get(sacramento, ['cedula', 'Cedula']),
-      fechaBautismo: get(sacramento, ['fechaBautismo', 'FechaBautismo']),
-      annioBautismo: get(sacramento, ['annioBautismo', 'AnnioBautismo']),
-      nombreParroquia: get(sacramento, ['nombreParroquia', 'NombreParroquia']),
-      prebispero: get(sacramento, ['prebispero', 'Prebispero']),
-      fechaNacimiento: get(sacramento, ['fechaNacimiento', 'FechaNacimiento']),
-      horaNacimiento: get(sacramento, ['horaNacimiento', 'HoraNacimiento']),
-      nombreAbuelosPaternos: get(sacramento, ['nombreAbuelosPaternos', 'NombreAbuelosPaternos']),
-      nombreAbuelosMaternos: get(sacramento, ['nombreAbuelosMaternos', 'NombreAbuelosMaternos']),
-      tomo: get(sacramento, ['tomo', 'Tomo']),
-      folio: get(sacramento, ['folio', 'Folio']),
-    };
+    if (personaSacramental?.matrimonio) {
+      const detalle = personaSacramental.matrimonio.detalle as {
+        contrayente1: PersonaDetalle;
+        contrayente2: PersonaDetalle;
+        libro: string | null;
+        tomo: string | null;
+        folio: string | null;
+      };
+      setMatrimonio({
+        contrayente1: aPersonaForm(detalle.contrayente1),
+        contrayente2: aPersonaForm(detalle.contrayente2),
+        libro: detalle.libro ?? '',
+        tomo: detalle.tomo ?? '',
+        folio: detalle.folio ?? '',
+      });
+    } else {
+      setMatrimonio({ ...matrimonioVacio(), contrayente1: aPersonaForm(personaBase) });
+    }
+  }, [isOpen, personaSacramental]);
 
-    s['Comunión'] = {
-      id: get(sacramento, ['id']),
-      Nombre: get(sacramento, ['nombre', 'Nombre']),
-      FechaComunion: mesDesdePartes(
-        get(sacramento, ['diaComunion', 'DiaComunion']),
-        get(sacramento, ['mesComunion', 'MesComunion']),
-        get(sacramento, ['annioComunion', 'AnnioComunion']),
-      ),
-      LugarComunion: get(sacramento, ['lugarComunion', 'LugarComunion']),
-    };
+  // Al cargar el detalle del sacramento señalado, posiciona la pestaña y precarga los datos base.
+  useEffect(() => {
+    if (!isOpen || !detalleQuery.data) return;
+    const detalle = detalleQuery.data;
+    setActiveTab(detalle.tipo);
+    setIdParroquia(String(detalle.parroquia?.id ?? ''));
+    setIdPresbitero(detalle.presbitero ? String(detalle.presbitero.id) : '');
+    setFechaSacramento(detalle.fechaSacramento ?? '');
+    setObservaciones(detalle.observaciones ?? '');
+  }, [isOpen, detalleQuery.data]);
 
-    s['Confirmación'] = {
-      id: get(sacramento, ['id']),
-      Nombre: get(sacramento, ['nombre', 'Nombre']),
-      FechaConfirmacion: mesDesdePartes(
-        get(sacramento, ['diaConfirmacion', 'DiaConfirmacion']),
-        get(sacramento, ['mesConfirmacion', 'MesConfirmacion']),
-        get(sacramento, ['annioConfirmacion', 'AnnioConfirmacion']),
-      ),
-      LugarConfirmacion: get(sacramento, ['lugarConfirmacion', 'LugarConfirmacion']),
-    };
+  // Al cambiar de pestaña, precarga los datos base de ese sacramento si existe.
+  useEffect(() => {
+    if (!isOpen || !existeEnTab) return;
+    const detalle = sacramentoDelTab!;
+    setIdParroquia(String(detalle.parroquia?.id ?? ''));
+    setIdPresbitero(detalle.presbitero ? String(detalle.presbitero.id) : '');
+    setFechaSacramento(detalle.fechaSacramento ?? '');
+    setObservaciones(detalle.observaciones ?? '');
+    setErrors({});
+  }, [isOpen, activeTab, existeEnTab]);
 
-    s['Matrimonio'] = {
-      id: get(sacramento, ['id']),
-      NombreContrayente: get(sacramento, ['nombreContrayente', 'NombreContrayente']),
-      NombreContrayente2: get(sacramento, ['nombreContrayente2', 'NombreContrayente2']),
-      FechaMatrimonio: mesDesdePartes(
-        get(sacramento, ['diaMatrimonio', 'DiaMatrimonio']),
-        get(sacramento, ['mesMatrimonio', 'MesMatrimonio']),
-        get(sacramento, ['annioMatrimonio', 'AnnioMatrimonio']),
-      ),
-      LugarMatrimonio: get(sacramento, ['lugarMatrimonio', 'LugarMatrimonio']),
-      tomo: get(sacramento, ['tomo', 'Tomo']),
-      folio: get(sacramento, ['folio', 'Folio']),
-    };
-
-    setSecciones(s);
-    setActiveTab(tipo);
-  }, [isOpen, sacramento, tipo]);
-
-  // ESC para cerrar
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+      if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Scroll spy para pestaña activa
-  useEffect(() => {
-    if (!isOpen || !containerRef.current) return;
-    const container = containerRef.current;
-    const handleScroll = () => {
-      if (isScrollingRef.current) return;
-      const sections = tiposSacramento.map(t => sectionRefs.current[t]).filter(Boolean) as HTMLElement[];
-      let current = '';
-      let minDistance = Infinity;
-      for (const section of sections) {
-        const rect = section.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        const distance = Math.abs(rect.top - containerRect.top);
-        if (distance < minDistance) {
-          minDistance = distance;
-          current = tiposSacramento.find(t => sectionRefs.current[t] === section) || '';
-        }
-      }
-      if (current) setActiveTab(current);
-    };
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
-  const soloLetras = (valor: string) => valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
-
-  const soloDigitos = (valor: string) => valor.replace(/\D/g, '');
-
-  const validarCedulaCR = (valor: string) => {
-    const digitos = soloDigitos(valor);
-    if (digitos.length === 0) return '';
-    if (digitos[0] === '0') return digitos.slice(1);
-    return digitos.slice(0, 9);
-  };
-
-  const formatearCedulaCR = (digitos: string) => {
-    if (digitos.length <= 1) return digitos;
-    if (digitos.length <= 5) return `${digitos[0]}-${digitos.slice(1)}`;
-    return `${digitos[0]}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
-  };
-
-  const setField = (seccion: string, campo: string, valor: any) => {
-    let valorProcesado = valor;
-    const camposTexto = ['Nombre', 'PrimerApellido', 'SegundoApellido', 'NombreParroquia', 'Prebispero', 'LugarComunion', 'LugarConfirmacion', 'LugarMatrimonio', 'NombreContrayente', 'NombreContrayente2', 'nombreAbuelosPaternos', 'nombreAbuelosMaternos'];
-    const camposNumericos = ['Tomo', 'Folio', 'Asiento', 'AnnioBautismo', 'AnnioComunion', 'AnnioConfirmacion', 'AnnioMatrimonio', 'tomo', 'folio'];
-    if (camposTexto.includes(campo)) {
-      valorProcesado = soloLetras(String(valor));
-    } else if (campo === 'cedula') {
-      const digitos = validarCedulaCR(String(valor));
-      valorProcesado = formatearCedulaCR(digitos);
-    } else if (camposNumericos.includes(campo)) {
-      valorProcesado = soloDigitos(String(valor));
-    }
-    setSecciones((prev) => ({
+  const setCampoPersona = (
+    setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
+    campo: keyof PersonaForm,
+    valor: string,
+  ) => {
+    setter((prev) => ({
       ...prev,
-      [seccion]: { ...prev[seccion], [campo]: valorProcesado },
+      [campo]: campo === 'cedula' ? formatearCedulaCR(valor) : valor,
     }));
-    setErrors((prev) => ({ ...prev, [campo]: false }));
   };
 
-  const scrollA = (seccion: string) => {
-    const container = containerRef.current;
-    const seccionEl = sectionRefs.current[seccion];
-    if (container && seccionEl) {
-      isScrollingRef.current = true;
-      setActiveTab(seccion);
-      container.scrollTo({
-        top: seccionEl.offsetTop - container.offsetTop - 8,
-        behavior: 'smooth',
-      });
-      setTimeout(() => { isScrollingRef.current = false; }, 500);
-    }
+  const setCampoBautismo = (
+    campo: keyof BautismoForm,
+    valor: string,
+  ) => {
+    setBautismo((prev) => ({ ...prev, [campo]: valor }));
   };
 
-  const constSeccion = (seccion: string) => (
-    <div
-      ref={(el) => { sectionRefs.current[seccion] = el; }}
-      className="scroll-mt-2"
-    >
-      <h3 className="mb-3 border-b border-gray-200 pb-2 text-sm font-bold tracking-wide text-blue-700 uppercase">
-        {seccion.toUpperCase()}
-      </h3>
-    </div>
-  );
+  const setCampoMatrimonio = (
+    campo: keyof MatrimonioForm,
+    valor: string,
+  ) => {
+    setMatrimonio((prev) => ({ ...prev, [campo]: valor }));
+  };
 
-  const renderBautismo = () => (
-    <>
-      <div className="mb-5">
-        <LabelReq campo="Nombre">Nombre del bautizado</LabelReq>
-        <Input type="text" maxLength={80} value={secciones.Bautismo.Nombre || ''} className={getInputClass(errors['Nombre'])} onChange={(e) => setField('Bautismo', 'Nombre', e.target.value)} />
-      </div>
-      <div className="mb-0 flex flex-col gap-4 sm:flex-row">
-        <div className="mb-5 flex-1">
-          <LabelReq campo="PrimerApellido">Primer Apellido</LabelReq>
-          <Input type="text" maxLength={80} value={secciones.Bautismo.PrimerApellido || ''} className={getInputClass(errors['PrimerApellido'])} onChange={(e) => setField('Bautismo', 'PrimerApellido', e.target.value)} />
-        </div>
-        <div className="mb-5 flex-1">
-          <LabelReq campo="SegundoApellido">Segundo Apellido</LabelReq>
-          <Input type="text" maxLength={80} value={secciones.Bautismo.SegundoApellido || ''} className={getInputClass(errors['SegundoApellido'])} onChange={(e) => setField('Bautismo', 'SegundoApellido', e.target.value)} />
-        </div>
-      </div>
-      <div className="mb-5">
-        <LabelReq campo="cedula">Cédula</LabelReq>
-        <Input type="text" placeholder="0-0000-0000" maxLength={12} value={secciones.Bautismo.cedula || ''} className={getInputClass(errors['cedula'])} onChange={(e) => setField('Bautismo', 'cedula', e.target.value)} />
-      </div>
-      <div className="mb-5">
-          <LabelReq campo="fechaBautismo">Fecha de Bautismo</LabelReq>
-          <Input type="date" value={secciones.Bautismo.fechaBautismo || ''} className={getInputClass(errors['fechaBautismo'])} onChange={(e) => setField('Bautismo', 'fechaBautismo', e.target.value)} />
-        </div>
-        <div className="mb-5">
-        <LabelReq campo="nombreParroquia">Lugar de celebración sacramental</LabelReq>
-        <Input type="text" placeholder="Santuario San Blas de Nicoya" maxLength={LUGAR_MAX} value={secciones.Bautismo.nombreParroquia || ''} className={getInputClass(errors['nombreParroquia'])} onChange={(e) => setField('Bautismo', 'nombreParroquia', e.target.value)} />
-      </div>
-      <div className="mb-5">
-        <Label>Prebísptero</Label>
-        <Input type="text" maxLength={120} value={secciones.Bautismo.prebispero || ''} className={getInputClass(errors['prebispero'])} onChange={(e) => setField('Bautismo', 'prebispero', e.target.value)} />
-      </div>
-      <div className="mb-0 flex flex-col gap-4 sm:flex-row">
-        <div className="mb-5 flex-1">
-          <LabelReq campo="fechaNacimiento">Fecha de nacimiento</LabelReq>
-          <Input type="date" value={secciones.Bautismo.fechaNacimiento || ''} className={getInputClass(errors['fechaNacimiento'])} onChange={(e) => setField('Bautismo', 'fechaNacimiento', e.target.value)} />
-        </div>
-        <div className="mb-5 flex-1">
-          <LabelReq campo="horaNacimiento">Hora de nacimiento</LabelReq>
-          <Input type="time" value={secciones.Bautismo.horaNacimiento || ''} className={getInputClass(errors['horaNacimiento'])} onChange={(e) => setField('Bautismo', 'horaNacimiento', e.target.value)} />
-        </div>
-      </div>
-      <div className="mb-0 flex flex-col gap-4 sm:flex-row">
-        <div className="mb-5 flex-1">
-          <LabelReq campo="tomo">Tomo</LabelReq>
-          <Input type="number" value={secciones.Bautismo.tomo || ''} className={getInputClass(errors['tomo'])} onChange={(e) => setField('Bautismo', 'tomo', parseInt(e.target.value) || '')} />
-        </div>
-        <div className="mb-5 flex-1">
-          <LabelReq campo="folio">Folio</LabelReq>
-          <Input type="number" value={secciones.Bautismo.folio || ''} className={getInputClass(errors['folio'])} onChange={(e) => setField('Bautismo', 'folio', parseInt(e.target.value) || '')} />
-        </div>
-      </div>
-      <div className="mb-0 flex flex-col gap-4 sm:flex-row">
-        <div className="mb-5 flex-1">
-          <Label>Abuelos Paternos</Label>
-          <Input type="text" maxLength={200} value={secciones.Bautismo.nombreAbuelosPaternos || ''} className={getInputClass(errors['nombreAbuelosPaternos'])} onChange={(e) => setField('Bautismo', 'nombreAbuelosPaternos', e.target.value)} />
-        </div>
-        <div className="mb-5 flex-1">
-          <Label>Abuelos Maternos</Label>
-          <Input type="text" maxLength={200} value={secciones.Bautismo.nombreAbuelosMaternos || ''} className={getInputClass(errors['nombreAbuelosMaternos'])} onChange={(e) => setField('Bautismo', 'nombreAbuelosMaternos', e.target.value)} />
-        </div>
-      </div>
-    </>
-  );
+  const validar = (): boolean => {
+    const nuevos: Record<string, boolean> = {};
+    if (!idParroquia) nuevos.idParroquia = true;
+    if (!fechaSacramento) nuevos.fechaSacramento = true;
 
-  const renderComunion = () => (
-    <>
-      <div className="mb-5">
-        <Label>Fecha de Comunión</Label>
-        <Input type="date" value={secciones['Comunión'].FechaComunion || ''} className={getInputClass(errors['FechaComunion'])} onChange={(e) => setField('Comunión', 'FechaComunion', e.target.value)} />
-      </div>
-      <div className="mb-5">
-        <Label>Lugar de celebración</Label>
-        <Input type="text" placeholder="Capilla Curime" maxLength={LUGAR_MAX} value={secciones['Comunión'].LugarComunion || ''} className={getInputClass(errors['LugarComunion'])} onChange={(e) => setField('Comunión', 'LugarComunion', e.target.value)} />
-      </div>
-    </>
-  );
+    const personaOk = (p: PersonaForm, prefijo: string) => {
+      if (!p.nombre.trim()) nuevos[`${prefijo}Nombre`] = true;
+      if (!p.primerApellido.trim()) nuevos[`${prefijo}PrimerApellido`] = true;
+    };
 
-  const renderConfirmacion = () => (
-    <>
-      <div className="mb-5">
-        <Label>Fecha de Confirmación</Label>
-        <Input type="date" value={secciones['Confirmación'].FechaConfirmacion || ''} className={getInputClass(errors['FechaConfirmacion'])} onChange={(e) => setField('Confirmación', 'FechaConfirmacion', e.target.value)} />
-      </div>
-      <div className="mb-5">
-        <Label>Lugar de celebración</Label>
-        <Input type="text" placeholder="Catedral Metropolitana" maxLength={LUGAR_MAX} value={secciones['Confirmación'].LugarConfirmacion || ''} className={getInputClass(errors['LugarConfirmacion'])} onChange={(e) => setField('Confirmación', 'LugarConfirmacion', e.target.value)} />
-      </div>
-    </>
-  );
-
-  const renderMatrimonio = () => (
-    <>
-      <div className="mb-0 flex flex-col gap-4 sm:flex-row">
-        <div className="mb-5 flex-1">
-          <Label>Contrayente 1</Label>
-          <Input type="text" maxLength={120} value={secciones.Matrimonio.NombreContrayente || ''} className={getInputClass(errors['NombreContrayente'])} onChange={(e) => setField('Matrimonio', 'NombreContrayente', e.target.value)} />
-        </div>
-        <div className="mb-5 flex-1">
-          <Label>Contrayente 2</Label>
-          <Input type="text" maxLength={120} value={secciones.Matrimonio.NombreContrayente2 || ''} className={getInputClass(errors['NombreContrayente2'])} onChange={(e) => setField('Matrimonio', 'NombreContrayente2', e.target.value)} />
-        </div>
-      </div>
-      <div className="mb-5">
-        <Label>Fecha de Matrimonio</Label>
-        <Input type="date" value={secciones.Matrimonio.FechaMatrimonio || ''} className={getInputClass(errors['FechaMatrimonio'])} onChange={(e) => setField('Matrimonio', 'FechaMatrimonio', e.target.value)} />
-      </div>
-      <div className="mb-5">
-        <Label>Lugar de celebración</Label>
-        <Input type="text" placeholder="Iglesia Santa Ana" maxLength={LUGAR_MAX} value={secciones.Matrimonio.LugarMatrimonio || ''} className={getInputClass(errors['LugarMatrimonio'])} onChange={(e) => setField('Matrimonio', 'LugarMatrimonio', e.target.value)} />
-      </div>
-      <div className="mb-0 flex flex-col gap-4 sm:flex-row">
-        <div className="mb-5 flex-1">
-          <Label>Tomo</Label>
-          <Input type="number" value={secciones.Matrimonio.tomo || ''} className={getInputClass(errors['tomo'])} onChange={(e) => setField('Matrimonio', 'tomo', parseInt(e.target.value) || '')} />
-        </div>
-        <div className="mb-5 flex-1">
-          <Label>Folio</Label>
-          <Input type="number" value={secciones.Matrimonio.folio || ''} className={getInputClass(errors['folio'])} onChange={(e) => setField('Matrimonio', 'folio', parseInt(e.target.value) || '')} />
-        </div>
-      </div>
-    </>
-  );
-
-  const prepararSecciones = (): Record<string, any> => {
-    const resultado: Record<string, any> = {};
-
-    const bautismo = secciones.Bautismo;
-    const bautismoTieneDatos = bautismo.Nombre || bautismo.cedula || bautismo.fechaBautismo;
-    if (bautismoTieneDatos) {
-      const base = tipo === 'Bautismo' ? bautismo : {};
-      resultado.Bautismo = {
-        ...base,
-        ...normalizarCamposNombres(bautismo, [
-          'Nombre', 'PrimerApellido', 'SegundoApellido', 'nombreParroquia', 'prebispero',
-          'nombreAbuelosPaternos', 'nombreAbuelosMaternos',
-        ]),
-        id: bautismo.id,
-        cedula: bautismo.cedula,
-        fechaBautismo: bautismo.fechaBautismo,
-        annioBautismo: bautismo.annioBautismo,
-        fechaNacimiento: bautismo.fechaNacimiento,
-        horaNacimiento: bautismo.horaNacimiento,
-        tomo: bautismo.tomo,
-        folio: bautismo.folio,
-      };
+    if (activeTab === 'bautismo') personaOk(bautismo.bautizado, 'bautizado');
+    if (activeTab === 'comunion' || activeTab === 'confirmacion') personaOk(persona, 'persona');
+    if (activeTab === 'matrimonio') {
+      personaOk(matrimonio.contrayente1, 'contrayente1');
+      personaOk(matrimonio.contrayente2, 'contrayente2');
     }
 
-    const comunion = secciones['Comunión'];
-    const comunionTieneDatos = comunion.FechaComunion || comunion.LugarComunion;
-    if (comunicacionTieneDatos) {
-      const base = tipo === 'Comunión' ? comunion : {};
-      const { dia, mes, annio } = descomponerFecha(comunion.FechaComunion);
-      resultado['Comunión'] = {
-        ...base,
-        ...normalizarCamposNombres(comunion, ['LugarComunion']),
-        id: comunion.id,
-        Nombre: comunion.Nombre,
-        DiaComunion: dia,
-        MesComunion: !isNaN(mes) ? MESES[mes - 1] : '',
-        AnnioComunion: annio || undefined,
+    setErrors(nuevos);
+    return Object.keys(nuevos).length === 0;
+  };
+
+  const construirBase = (): Pick<CrearSacramentoInput, 'idParroquia' | 'idPresbitero' | 'fechaSacramento' | 'observaciones'> => ({
+    idParroquia: Number(idParroquia),
+    idPresbitero: idPresbitero ? Number(idPresbitero) : undefined,
+    fechaSacramento,
+    observaciones: observaciones.trim() || undefined,
+  });
+
+  const construirSeccion = () => {
+    if (activeTab === 'bautismo') {
+      return {
+        bautismo: {
+          bautizado: aPersonaInput(bautismo.bautizado),
+          padre: bautismo.padre?.nombre?.trim() ? aPersonaInput(bautismo.padre) : undefined,
+          madre: bautismo.madre?.nombre?.trim() ? aPersonaInput(bautismo.madre) : undefined,
+          padrino: bautismo.padrino?.nombre?.trim() ? aPersonaInput(bautismo.padrino) : undefined,
+          madrina: bautismo.madrina?.nombre?.trim() ? aPersonaInput(bautismo.madrina) : undefined,
+          abuelos: bautismo.abuelos.length
+            ? bautismo.abuelos.map((ab) => ({ ...aPersonaInput(ab), parentesco: ab.parentesco }))
+            : undefined,
+          fechaNacimiento: bautismo.fechaNacimiento || undefined,
+          horaNacimiento: bautismo.horaNacimiento || undefined,
+          lugarNacimiento: (bautismo.lugarNacimiento || '').trim() || undefined,
+          libro: (bautismo.libro || '').trim() || undefined,
+          tomo: (bautismo.tomo || '').trim() || undefined,
+          folio: (bautismo.folio || '').trim() || undefined,
+          asiento: (bautismo.asiento || '').trim() || undefined,
+        },
       };
     }
-
-    const confirmacion = secciones['Confirmación'];
-    const confirmacionTieneDatos = confirmacion.FechaConfirmacion || confirmacion.LugarConfirmacion;
-    if (confirmacionTieneDatos) {
-      const base = tipo === 'Confirmación' ? confirmacion : {};
-      const { dia, mes, annio } = descomponerFecha(confirmacion.FechaConfirmacion);
-      resultado['Confirmación'] = {
-        ...base,
-        ...normalizarCamposNombres(confirmacion, ['LugarConfirmacion']),
-        id: confirmacion.id,
-        Nombre: confirmacion.Nombre,
-        DiaConfirmacion: dia,
-        MesConfirmacion: !isNaN(mes) ? MESES[mes - 1] : '',
-        AnnioConfirmacion: annio || undefined,
-      };
-    }
-
-    const matrimonio = secciones.Matrimonio;
-    const matrimonioTieneDatos = matrimonio.NombreContrayente || matrimonio.FechaMatrimonio || matrimonio.LugarMatrimonio;
-    if (matrimonioTieneDatos) {
-      const base = tipo === 'Matrimonio' ? matrimonio : {};
-      const { dia, mes, annio } = descomponerFecha(matrimonio.FechaMatrimonio);
-      resultado.Matrimonio = {
-        ...base,
-        ...normalizarCamposNombres(matrimonio, ['NombreContrayente', 'NombreContrayente2', 'LugarMatrimonio']),
-        id: matrimonio.id,
-        NombreContrayente: matrimonio.NombreContrayente,
-        NombreContrayente2: matrimonio.NombreContrayente2,
-        DiaMatrimonio: dia,
-        MesMatrimonio: !isNaN(mes) ? MESES[mes - 1] : '',
-        AnnioMatrimonio: annio || undefined,
-        tomo: matrimonio.tomo,
-        folio: matrimonio.folio,
-      };
-    }
-
-    return resultado;
+    if (activeTab === 'comunion') return { comunion: { persona: aPersonaInput(persona) } };
+    if (activeTab === 'confirmacion') return { confirmacion: { persona: aPersonaInput(persona) } };
+    return {
+      matrimonio: {
+        contrayente1: aPersonaInput(matrimonio.contrayente1),
+        contrayente2: aPersonaInput(matrimonio.contrayente2),
+        libro: (matrimonio.libro || '').trim() || undefined,
+        tomo: (matrimonio.tomo || '').trim() || undefined,
+        folio: (matrimonio.folio || '').trim() || undefined,
+      },
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (saving) return;
 
-    // Validar cédula en Bautismo si tiene datos
-    const bautismo = secciones.Bautismo;
-    if (bautismo.Nombre || bautismo.cedula || bautismo.fechaBautismo) {
-      if (bautismo.cedula && !/^[1-9]-\d{4}-\d{4}$/.test(String(bautismo.cedula || ''))) {
-        setErrors((prev) => ({ ...prev, cedula: true }));
-        return;
-      }
-    }
-
-    // Validar campos requeridos del tipo que se está editando
-    const camposRequeridos = CAMPOS_REQUERIDOS[tipo];
-    const seccionActual = secciones[tipo];
-    const nuevosErrores: Record<string, boolean> = {};
-    
-    for (const campo of camposRequeridos) {
-      const valor = seccionActual[campo];
-      if (valor === undefined || valor === null || valor === '' || (typeof valor === 'number' && isNaN(valor))) {
-        nuevosErrores[campo] = true;
-      }
-    }
-    
-    if (Object.keys(nuevosErrores).length > 0) {
-      setErrors(nuevosErrores);
+    if (!existeEnTab && activeTab !== 'bautismo' && !tieneBautismo) {
+      showToast('Debe registrar primero el Bautismo antes de los demás sacramentos.', 'error');
       return;
     }
 
-    const datos = prepararSecciones();
-    if (Object.keys(datos).length === 0) {
-      return;
-    }
+    if (!validar()) return;
+
     setSaving(true);
     try {
-      await onSave(datos, tipo);
+      const seccion = construirSeccion();
+      if (existeEnTab && sacramentoDelTab) {
+        await onUpdate(sacramentoDelTab.id, { ...construirBase(), ...seccion });
+        showToast('Acta sacramental actualizada correctamente', 'success');
+      } else {
+        await onCreate({ tipo: activeTab, ...construirBase(), ...seccion });
+        showToast('Acta sacramental registrada correctamente', 'success');
+      }
       onClose();
-    } catch {
-      showToast('No se pudieron guardar los cambios. Intente de nuevo.', 'error');
+    } catch (err: any) {
+      const mensaje =
+        err?.response?.data?.mensaje ?? err?.message ?? 'No se pudo guardar el acta.';
+      showToast(String(mensaje), 'error');
     } finally {
       setSaving(false);
     }
   };
 
+  const renderPersonaCampos = (
+    titulo: string,
+    persona: PersonaForm,
+    setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
+    prefijo: string,
+  ) => (
+    <div className="mb-5">
+      <Label>{titulo}</Label>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Input type="text" placeholder="Nombre" maxLength={100} className={inputClass(errors[`${prefijo}Nombre`])} value={persona.nombre} onChange={(e) => setCampoPersona(setter, 'nombre', e.target.value)} />
+        <Input type="text" placeholder="Primer apellido" maxLength={100} className={inputClass(errors[`${prefijo}PrimerApellido`])} value={persona.primerApellido} onChange={(e) => setCampoPersona(setter, 'primerApellido', e.target.value)} />
+        <Input type="text" placeholder="Segundo apellido" maxLength={100} value={persona.segundoApellido} onChange={(e) => setCampoPersona(setter, 'segundoApellido', e.target.value)} />
+        <Input type="text" placeholder="Cédula (0-0000-0000)" maxLength={12} value={persona.cedula} onChange={(e) => setCampoPersona(setter, 'cedula', e.target.value)} />
+      </div>
+    </div>
+  );
+
+  const renderBautismo = () => (
+    <>
+      {renderPersonaCampos('Datos del bautizado', bautismo.bautizado, (updater) => setBautismo((prev) => ({ ...prev, bautizado: updater(prev.bautizado) })), 'bautizado')}
+      {renderPersonaCampos('Padre (opcional)', bautismo.padre, (updater) => setBautismo((prev) => ({ ...prev, padre: updater(prev.padre) })), 'padre')}
+      {renderPersonaCampos('Madre (opcional)', bautismo.madre, (updater) => setBautismo((prev) => ({ ...prev, madre: updater(prev.madre) })), 'madre')}
+      {renderPersonaCampos('Padrino (opcional)', bautismo.padrino, (updater) => setBautismo((prev) => ({ ...prev, padrino: updater(prev.padrino) })), 'padrino')}
+      {renderPersonaCampos('Madrina (opcional)', bautismo.madrina, (updater) => setBautismo((prev) => ({ ...prev, madrina: updater(prev.madrina) })), 'madrina')}
+
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <Label>Fecha de nacimiento</Label>
+          <Input type="date" value={bautismo.fechaNacimiento} onChange={(e) => setCampoBautismo('fechaNacimiento', e.target.value)} />
+        </div>
+        <div>
+          <Label>Hora de nacimiento</Label>
+          <Input type="time" value={bautismo.horaNacimiento} onChange={(e) => setCampoBautismo('horaNacimiento', e.target.value)} />
+        </div>
+        <div>
+          <Label>Lugar de nacimiento</Label>
+          <Input type="text" value={bautismo.lugarNacimiento} onChange={(e) => setCampoBautismo('lugarNacimiento', e.target.value)} />
+        </div>
+        <div>
+          <Label>Libro</Label>
+          <Input type="text" value={bautismo.libro} onChange={(e) => setCampoBautismo('libro', e.target.value)} />
+        </div>
+        <div>
+          <Label>Tomo</Label>
+          <Input type="text" value={bautismo.tomo} onChange={(e) => setCampoBautismo('tomo', e.target.value)} />
+        </div>
+        <div>
+          <Label>Folio</Label>
+          <Input type="text" value={bautismo.folio} onChange={(e) => setCampoBautismo('folio', e.target.value)} />
+        </div>
+        <div>
+          <Label>Asiento</Label>
+          <Input type="text" value={bautismo.asiento} onChange={(e) => setCampoBautismo('asiento', e.target.value)} />
+        </div>
+      </div>
+    </>
+  );
+
+  const renderMatrimonio = () => (
+    <>
+      {renderPersonaCampos('Contrayente 1', matrimonio.contrayente1, (updater) => setMatrimonio((prev) => ({ ...prev, contrayente1: updater(prev.contrayente1) })), 'contrayente1')}
+      {renderPersonaCampos('Contrayente 2', matrimonio.contrayente2, (updater) => setMatrimonio((prev) => ({ ...prev, contrayente2: updater(prev.contrayente2) })), 'contrayente2')}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <Label>Libro</Label>
+          <Input type="text" value={matrimonio.libro} onChange={(e) => setCampoMatrimonio('libro', e.target.value)} />
+        </div>
+        <div>
+          <Label>Tomo</Label>
+          <Input type="text" value={matrimonio.tomo} onChange={(e) => setCampoMatrimonio('tomo', e.target.value)} />
+        </div>
+        <div>
+          <Label>Folio</Label>
+          <Input type="text" value={matrimonio.folio} onChange={(e) => setCampoMatrimonio('folio', e.target.value)} />
+        </div>
+      </div>
+    </>
+  );
+
+  const cargandoFicha = ficha.isPending || detalleQuery.isPending;
+
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="flex max-h-[90vh] w-[90%] max-w-[800px] flex-col overflow-hidden rounded-xl bg-white" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-gray-200 bg-surface-muted px-6 py-5">
-          <h2 className="m-0 text-lg text-slate-800">EDITAR ACTA SACRAMENTAL</h2>
-          <button type="button" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100" onClick={onClose}>×</button>
+      <div
+        className="flex max-h-[90vh] w-[90%] max-w-[820px] flex-col overflow-hidden rounded-xl bg-white"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-surface-muted px-6 py-5">
+          <div>
+            <h2 className="m-0 text-lg text-slate-800">EDITAR ACTA SACRAMENTAL</h2>
+            <p className="m-0 mt-0.5 text-sm text-slate-500">
+              {personaSacramental?.persona
+                ? [personaSacramental.persona.nombre, personaSacramental.persona.primerApellido].filter(Boolean).join(' ') +
+                  (personaSacramental.persona.cedula ? ` · ${personaSacramental.persona.cedula}` : '')
+                : ''}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100"
+            onClick={onClose}
+          >
+            ×
+          </button>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto border-b border-gray-200 px-6">
-          {tiposSacramento.map((tipoTab) => (
+        <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-gray-200 px-6">
+          {TIPOS.map((t) => (
             <button
-              key={tipoTab}
+              key={t}
               type="button"
               className={cn(
-                "shrink-0 cursor-pointer border-0 bg-transparent px-5 py-3 text-sm font-medium text-gray-500 transition-colors hover:text-blue-600",
-                activeTab === tipoTab && "border-b-2 border-blue-600 text-blue-600",
+                'shrink-0 cursor-pointer border-0 bg-transparent px-5 py-3 text-sm font-medium text-gray-500 transition-colors hover:text-blue-600',
+                activeTab === t && 'border-b-2 border-blue-600 text-blue-600',
               )}
-              onClick={() => {
-                setActiveTab(tipoTab);
-                scrollA(tipoTab);
-              }}
+              onClick={() => setActiveTab(t)}
             >
-              {tipoTab.toUpperCase()}
+              {TIPO_SACRAMENTO_LABEL[t].toUpperCase()}
             </button>
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div ref={containerRef} className="max-h-[60vh] space-y-8 overflow-y-auto p-6">
-            <div>
-              {constSeccion('Bautismo')}
-              {renderBautismo()}
-            </div>
-            <div>
-              {constSeccion('Comunión')}
-              {renderComunion()}
-            </div>
-            <div>
-              {constSeccion('Confirmación')}
-              {renderConfirmacion()}
-            </div>
-            <div>
-              {constSeccion('Matrimonio')}
-              {renderMatrimonio()}
-            </div>
+        {cargandoFicha ? (
+          <div className="flex min-h-0 flex-1 items-center justify-center gap-2 py-12 text-sm text-text-secondary">
+            <Loader2 size={20} className="animate-spin" /> Cargando ficha...
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <Label>Parroquia *</Label>
+                  <select
+                    value={idParroquia}
+                    onChange={(e) => setIdParroquia(e.target.value)}
+                    className={inputClass(errors.idParroquia)}
+                  >
+                    <option value="">Seleccione...</option>
+                    {(parroquias ?? []).map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nombre} {p.canton ? `(${p.canton})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Presbítero</Label>
+                  <select
+                    value={idPresbitero}
+                    onChange={(e) => setIdPresbitero(e.target.value)}
+                    className={inputClass()}
+                  >
+                    <option value="">Seleccione...</option>
+                    {(presbiteros ?? []).map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nombre} {p.primerApellido}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Fecha de celebración *</Label>
+                  <Input
+                    type="date"
+                    className={inputClass(errors.fechaSacramento)}
+                    value={fechaSacramento}
+                    onChange={(e) => setFechaSacramento(e.target.value)}
+                  />
+                </div>
+              </div>
 
-          <div className="flex justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4">
-            <Button type="submit" variant="primary" disabled={saving}>
-              {saving ? "GUARDANDO..." : "GUARDAR CAMBIOS"}
-            </Button>
-            <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
-              CANCELAR
-            </Button>
-          </div>
-        </form>
+              {activeTab === 'bautismo' && renderBautismo()}
+              {(activeTab === 'comunion' || activeTab === 'confirmacion') &&
+                renderPersonaCampos(
+                  `Datos de la persona (${TIPO_SACRAMENTO_LABEL[activeTab]})`,
+                  persona,
+                  setPersona,
+                  'persona',
+                )}
+              {activeTab === 'matrimonio' && renderMatrimonio()}
+
+              <div>
+                <Label>Observaciones</Label>
+                <Input type="text" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="flex shrink-0 justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4">
+              <Button type="submit" variant="primary" disabled={saving}>
+                {saving
+                  ? 'GUARDANDO...'
+                  : existeEnTab
+                    ? 'GUARDAR CAMBIOS'
+                    : `REGISTRAR ${TIPO_SACRAMENTO_LABEL[activeTab].toUpperCase()}`}
+              </Button>
+              <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
+                CANCELAR
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
