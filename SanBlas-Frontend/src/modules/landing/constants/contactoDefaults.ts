@@ -3,11 +3,14 @@ export const CONTACTO_DEFAULT = {
   title: "Contáctenos",
   intro:
     "Estamos a su disposición para consultas pastorales, trámites parroquiales e información sobre nuestras actividades.",
-  telefono: "+506 0000-0000",
+  telefono: "+506 2685-3540",
   correo: "parroquiasanblas@gmail.com",
   ubicacion: "Nicoya, Guanacaste, Costa Rica",
   horariosAtencion: [
-    "Lunes a Viernes: 8:00 a.m. a 12:00 m.d. y 1:30 p.m. a 5:00 p.m.",
+    "Lunes: 8:00 a.m. a 12:00 m.d.",
+    "Martes: 8:00 a.m. a 12:00 m.d. y 2:00 p.m. a 5:00 p.m.",
+    "Miércoles: Cerrado",
+    "Jueves a Viernes: 8:00 a.m. a 12:00 m.d. y 2:00 p.m. a 5:00 p.m.",
     "Sábados: 8:00 a.m. a 12:00 m.d.",
   ],
   mapaUrl:

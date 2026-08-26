@@ -381,7 +381,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validate()) return;
+    for (let step = 1; step <= 8; step++) {
+      if (!validateStep(step)) {
+        setCurrentStep(step);
+        return;
+      }
+    }
 
     setShowSubmitConfirmation(true);
   };
@@ -408,7 +413,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Sección 1
+              Paso 1
             </span>
           </div>
 
@@ -504,7 +509,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Sección 2
+              Paso 2
             </span>
           </div>
 
@@ -613,7 +618,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Sección 3
+              Paso 3
             </span>
           </div>
 
@@ -721,7 +726,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Sección 4
+              Paso 4
             </span>
           </div>
 
@@ -864,7 +869,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Sección 5
+              Paso 5
             </span>
           </div>
 
@@ -1030,7 +1035,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Sección 6
+              Paso 6
             </span>
           </div>
 
@@ -1106,7 +1111,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Sección 7
+              Paso 7
             </span>
           </div>
 
@@ -1281,7 +1286,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Sección 7
+              Paso 8
             </span>
           </div>
 
@@ -1337,7 +1342,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           />
         </div>
         <div
-          className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8"
+          className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8"
           role="tablist"
           aria-label="Ir a un paso del formulario"
         >
@@ -1367,36 +1372,37 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             );
           })}
         </div>
-        <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-between">
+      </div>
+
+      <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full sm:w-auto"
+          onClick={handlePrevious}
+          disabled={currentStep === 1 || loading}
+        >
+          Anterior
+        </Button>
+        {currentStep < stepTitles.length ? (
           <Button
             type="button"
-            variant="secondary"
+            variant="royal"
             className="w-full sm:w-auto"
-            onClick={handlePrevious}
-            disabled={currentStep === 1 || loading}
+            onClick={handleNext}
           >
-            Anterior
+            Siguiente
           </Button>
-          {currentStep < stepTitles.length ? (
-            <Button
-              type="button"
-              variant="royal"
-              className="w-full sm:w-auto"
-              onClick={handleNext}
-            >
-              Siguiente
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              variant="royal"
-              className="w-full uppercase tracking-widest shadow-[0_14px_28px_rgba(0,51,102,0.18)] hover:-translate-y-0.5 hover:bg-royal-gold hover:text-royal-blue hover:shadow-[0_16px_30px_rgba(212,175,55,0.25)] sm:w-auto"
-              disabled={loading}
-            >
-              {loading ? "Enviando inscripción..." : "Enviar inscripción"}
-            </Button>
-          )}
-        </div>
+        ) : (
+          <Button
+            type="submit"
+            variant="royal"
+            className="w-full uppercase tracking-widest shadow-[0_14px_28px_rgba(0,51,102,0.18)] hover:-translate-y-0.5 hover:bg-royal-gold hover:text-royal-blue hover:shadow-[0_16px_30px_rgba(212,175,55,0.25)] sm:w-auto"
+            disabled={loading}
+          >
+            {loading ? "Enviando inscripción..." : "Enviar inscripción"}
+          </Button>
+        )}
       </div>
 
       {showSubmitConfirmation && (
