@@ -13,6 +13,7 @@ export const fetchCreateConfirma = async (confirma: RegistroConfirmacion): Promi
 
 export const fetchUpdateConfirma = async (ConfirmaActualizado: RegistroConfirmacion): Promise<RegistroConfirmacion> => {
   const response = await apiClient.put(`/Confirmacion/${ConfirmaActualizado.id}`, ConfirmaActualizado);
+  if (response.status === 204) return ConfirmaActualizado;
   return response.data;
 };
 

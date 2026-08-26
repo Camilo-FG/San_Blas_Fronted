@@ -23,10 +23,34 @@ interface Props {
 
 const tiposSacramento = ['Bautismo', 'Comunión', 'Confirmación', 'Matrimonio'];
 
-const MESES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
+const CAMPOS_REQUERIDOS = {
+    Bautismo: [
+      'Nombre', 'PrimerApellido', 'SegundoApellido', 'cedula',
+      'fechaBautismo', 'annioBautismo', 'nombreParroquia',
+      'fechaNacimiento', 'horaNacimiento', 'tomo', 'folio'
+    ],
+    'Comunión': [
+      'Nombre', 'FechaComunion', 'LugarComunion'
+    ],
+    'Confirmación': [
+      'Nombre', 'FechaConfirmacion', 'LugarConfirmacion'
+    ],
+    Matrimonio: [
+      'NombreContrayente', 'NombreContrayente2', 'FechaMatrimonio', 'LugarMatrimonio',
+      'tomo', 'folio'
+    ],
+  } as const;
+
+  const validarSeccion = (seccion: any, campos: string[]): string[] => {
+    const faltantes: string[] = [];
+    for (const campo of campos) {
+      const valor = seccion[campo];
+      if (valor === undefined || valor === null || valor === '' || (typeof valor === 'number' && isNaN(valor))) {
+        faltantes.push(campo);
+      }
+    }
+    return faltantes;
+  };
 
 const LUGAR_MAX = 250;
 
@@ -58,7 +82,7 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
   const { showToast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [secciones, setSecciones] = useState<Record<string, any>>({
+const [secciones, setSecciones] = useState<Record<string, any>>({
     Bautismo: {},
     'Comunión': {},
     'Confirmación': {},
@@ -66,44 +90,39 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
   });
   const [activeTab, setActiveTab] = useState(tipo);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
   const isScrollingRef = useRef(false);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  const getInputClass = (hasError: boolean) =>
+    cn(
+      "w-full rounded-md border px-3 py-2.5 text-sm transition-colors focus:outline-none",
+      hasError
+        ? "border-red-500 focus:border-red-600 bg-red-50"
+        : "border-gray-300 focus:border-blue-600",
+    );
 
-  useEffect(() => {
-    if (!isOpen || !containerRef.current) return;
-    const container = containerRef.current;
-    const handleScroll = () => {
-      if (isScrollingRef.current) return;
-      const sections = tiposSacramento.map(t => sectionRefs.current[t]).filter(Boolean) as HTMLElement[];
-      let current = '';
-      let minDistance = Infinity;
-      for (const section of sections) {
-        const rect = section.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        const distance = Math.abs(rect.top - containerRect.top);
-        if (distance < minDistance) {
-          minDistance = distance;
-          current = tiposSacramento.find(t => sectionRefs.current[t] === section) || '';
-        }
-      }
-      if (current) setActiveTab(current);
-    };
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [isOpen]);
+  const esRequerido = (campo: string) => CAMPOS_REQUERIDOS[tipo].includes(campo);
 
+  const LabelReq = ({ campo, children }: { campo: string; children: React.ReactNode }) => (
+    <Label>
+      {children}
+      {CAMPOS_REQUERIDOS[tipo].includes(campo) && <span className="text-red-500 ml-1" aria-hidden="true">*</span>}
+    </Label>
+  );
+
+  // Cargar datos al abrir modal, resetear al cerrar
   useEffect(() => {
+    if (!isOpen) {
+      setSecciones({
+        Bautismo: {},
+        'Comunión': {},
+        'Confirmación': {},
+        'Matrimonio': {},
+      });
+      return;
+    }
     if (!sacramento) return;
+
     const s: any = {};
 
     s.Bautismo = {
@@ -161,7 +180,44 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
     };
 
     setSecciones(s);
-  }, [sacramento]);
+    setActiveTab(tipo);
+  }, [isOpen, sacramento, tipo]);
+
+  // ESC para cerrar
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // Scroll spy para pestaña activa
+  useEffect(() => {
+    if (!isOpen || !containerRef.current) return;
+    const container = containerRef.current;
+    const handleScroll = () => {
+      if (isScrollingRef.current) return;
+      const sections = tiposSacramento.map(t => sectionRefs.current[t]).filter(Boolean) as HTMLElement[];
+      let current = '';
+      let minDistance = Infinity;
+      for (const section of sections) {
+        const rect = section.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const distance = Math.abs(rect.top - containerRect.top);
+        if (distance < minDistance) {
+          minDistance = distance;
+          current = tiposSacramento.find(t => sectionRefs.current[t] === section) || '';
+        }
+      }
+      if (current) setActiveTab(current);
+    };
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -198,6 +254,7 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
       ...prev,
       [seccion]: { ...prev[seccion], [campo]: valorProcesado },
     }));
+    setErrors((prev) => ({ ...prev, [campo]: false }));
   };
 
   const scrollA = (seccion: string) => {
@@ -228,69 +285,63 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
   const renderBautismo = () => (
     <>
       <div className="mb-5">
-        <Label>Nombre del bautizado</Label>
-        <Input type="text" maxLength={80} value={secciones.Bautismo.Nombre || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'Nombre', e.target.value)} />
+        <LabelReq campo="Nombre">Nombre del bautizado</LabelReq>
+        <Input type="text" maxLength={80} value={secciones.Bautismo.Nombre || ''} className={getInputClass(errors['Nombre'])} onChange={(e) => setField('Bautismo', 'Nombre', e.target.value)} />
       </div>
       <div className="mb-0 flex flex-col gap-4 sm:flex-row">
         <div className="mb-5 flex-1">
-          <Label>Primer Apellido</Label>
-          <Input type="text" maxLength={80} value={secciones.Bautismo.PrimerApellido || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'PrimerApellido', e.target.value)} />
+          <LabelReq campo="PrimerApellido">Primer Apellido</LabelReq>
+          <Input type="text" maxLength={80} value={secciones.Bautismo.PrimerApellido || ''} className={getInputClass(errors['PrimerApellido'])} onChange={(e) => setField('Bautismo', 'PrimerApellido', e.target.value)} />
         </div>
         <div className="mb-5 flex-1">
-          <Label>Segundo Apellido</Label>
-          <Input type="text" maxLength={80} value={secciones.Bautismo.SegundoApellido || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'SegundoApellido', e.target.value)} />
+          <LabelReq campo="SegundoApellido">Segundo Apellido</LabelReq>
+          <Input type="text" maxLength={80} value={secciones.Bautismo.SegundoApellido || ''} className={getInputClass(errors['SegundoApellido'])} onChange={(e) => setField('Bautismo', 'SegundoApellido', e.target.value)} />
         </div>
       </div>
       <div className="mb-5">
-        <Label>Cédula</Label>
-        <Input type="text" placeholder="0-0000-0000" maxLength={12} value={secciones.Bautismo.cedula || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'cedula', e.target.value)} />
-      </div>
-      <div className="mb-0 flex flex-col gap-4 sm:flex-row">
-        <div className="mb-5 flex-1">
-          <Label>Fecha de Bautismo</Label>
-          <Input type="date" value={secciones.Bautismo.fechaBautismo || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'fechaBautismo', e.target.value)} />
-        </div>
-        <div className="mb-5 flex-1">
-          <Label>Año de Bautismo</Label>
-          <Input type="number" value={secciones.Bautismo.annioBautismo || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'annioBautismo', parseInt(e.target.value) || '')} />
-        </div>
+        <LabelReq campo="cedula">Cédula</LabelReq>
+        <Input type="text" placeholder="0-0000-0000" maxLength={12} value={secciones.Bautismo.cedula || ''} className={getInputClass(errors['cedula'])} onChange={(e) => setField('Bautismo', 'cedula', e.target.value)} />
       </div>
       <div className="mb-5">
-        <Label>Lugar de celebración sacramental</Label>
-        <Input type="text" placeholder="Santuario San Blas de Nicoya" maxLength={LUGAR_MAX} value={secciones.Bautismo.nombreParroquia || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'nombreParroquia', e.target.value)} />
+          <LabelReq campo="fechaBautismo">Fecha de Bautismo</LabelReq>
+          <Input type="date" value={secciones.Bautismo.fechaBautismo || ''} className={getInputClass(errors['fechaBautismo'])} onChange={(e) => setField('Bautismo', 'fechaBautismo', e.target.value)} />
+        </div>
+        <div className="mb-5">
+        <LabelReq campo="nombreParroquia">Lugar de celebración sacramental</LabelReq>
+        <Input type="text" placeholder="Santuario San Blas de Nicoya" maxLength={LUGAR_MAX} value={secciones.Bautismo.nombreParroquia || ''} className={getInputClass(errors['nombreParroquia'])} onChange={(e) => setField('Bautismo', 'nombreParroquia', e.target.value)} />
       </div>
       <div className="mb-5">
         <Label>Prebísptero</Label>
-        <Input type="text" maxLength={120} value={secciones.Bautismo.prebispero || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'prebispero', e.target.value)} />
+        <Input type="text" maxLength={120} value={secciones.Bautismo.prebispero || ''} className={getInputClass(errors['prebispero'])} onChange={(e) => setField('Bautismo', 'prebispero', e.target.value)} />
       </div>
       <div className="mb-0 flex flex-col gap-4 sm:flex-row">
         <div className="mb-5 flex-1">
-          <Label>Fecha de nacimiento</Label>
-          <Input type="date" value={secciones.Bautismo.fechaNacimiento || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'fechaNacimiento', e.target.value)} />
+          <LabelReq campo="fechaNacimiento">Fecha de nacimiento</LabelReq>
+          <Input type="date" value={secciones.Bautismo.fechaNacimiento || ''} className={getInputClass(errors['fechaNacimiento'])} onChange={(e) => setField('Bautismo', 'fechaNacimiento', e.target.value)} />
         </div>
         <div className="mb-5 flex-1">
-          <Label>Hora de nacimiento</Label>
-          <Input type="time" value={secciones.Bautismo.horaNacimiento || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'horaNacimiento', e.target.value)} />
+          <LabelReq campo="horaNacimiento">Hora de nacimiento</LabelReq>
+          <Input type="time" value={secciones.Bautismo.horaNacimiento || ''} className={getInputClass(errors['horaNacimiento'])} onChange={(e) => setField('Bautismo', 'horaNacimiento', e.target.value)} />
         </div>
       </div>
       <div className="mb-0 flex flex-col gap-4 sm:flex-row">
         <div className="mb-5 flex-1">
-          <Label>Tomo</Label>
-          <Input type="number" value={secciones.Bautismo.tomo || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'tomo', parseInt(e.target.value) || '')} />
+          <LabelReq campo="tomo">Tomo</LabelReq>
+          <Input type="number" value={secciones.Bautismo.tomo || ''} className={getInputClass(errors['tomo'])} onChange={(e) => setField('Bautismo', 'tomo', parseInt(e.target.value) || '')} />
         </div>
         <div className="mb-5 flex-1">
-          <Label>Folio</Label>
-          <Input type="number" value={secciones.Bautismo.folio || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'folio', parseInt(e.target.value) || '')} />
+          <LabelReq campo="folio">Folio</LabelReq>
+          <Input type="number" value={secciones.Bautismo.folio || ''} className={getInputClass(errors['folio'])} onChange={(e) => setField('Bautismo', 'folio', parseInt(e.target.value) || '')} />
         </div>
       </div>
       <div className="mb-0 flex flex-col gap-4 sm:flex-row">
         <div className="mb-5 flex-1">
           <Label>Abuelos Paternos</Label>
-          <Input type="text" maxLength={200} value={secciones.Bautismo.nombreAbuelosPaternos || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'nombreAbuelosPaternos', e.target.value)} />
+          <Input type="text" maxLength={200} value={secciones.Bautismo.nombreAbuelosPaternos || ''} className={getInputClass(errors['nombreAbuelosPaternos'])} onChange={(e) => setField('Bautismo', 'nombreAbuelosPaternos', e.target.value)} />
         </div>
         <div className="mb-5 flex-1">
           <Label>Abuelos Maternos</Label>
-          <Input type="text" maxLength={200} value={secciones.Bautismo.nombreAbuelosMaternos || ''} className={modalInputClass} onChange={(e) => setField('Bautismo', 'nombreAbuelosMaternos', e.target.value)} />
+          <Input type="text" maxLength={200} value={secciones.Bautismo.nombreAbuelosMaternos || ''} className={getInputClass(errors['nombreAbuelosMaternos'])} onChange={(e) => setField('Bautismo', 'nombreAbuelosMaternos', e.target.value)} />
         </div>
       </div>
     </>
@@ -300,11 +351,11 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
     <>
       <div className="mb-5">
         <Label>Fecha de Comunión</Label>
-        <Input type="date" value={secciones['Comunión'].FechaComunion || ''} className={modalInputClass} onChange={(e) => setField('Comunión', 'FechaComunion', e.target.value)} />
+        <Input type="date" value={secciones['Comunión'].FechaComunion || ''} className={getInputClass(errors['FechaComunion'])} onChange={(e) => setField('Comunión', 'FechaComunion', e.target.value)} />
       </div>
       <div className="mb-5">
         <Label>Lugar de celebración</Label>
-        <Input type="text" placeholder="Capilla Curime" maxLength={LUGAR_MAX} value={secciones['Comunión'].LugarComunion || ''} className={modalInputClass} onChange={(e) => setField('Comunión', 'LugarComunion', e.target.value)} />
+        <Input type="text" placeholder="Capilla Curime" maxLength={LUGAR_MAX} value={secciones['Comunión'].LugarComunion || ''} className={getInputClass(errors['LugarComunion'])} onChange={(e) => setField('Comunión', 'LugarComunion', e.target.value)} />
       </div>
     </>
   );
@@ -313,11 +364,11 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
     <>
       <div className="mb-5">
         <Label>Fecha de Confirmación</Label>
-        <Input type="date" value={secciones['Confirmación'].FechaConfirmacion || ''} className={modalInputClass} onChange={(e) => setField('Confirmación', 'FechaConfirmacion', e.target.value)} />
+        <Input type="date" value={secciones['Confirmación'].FechaConfirmacion || ''} className={getInputClass(errors['FechaConfirmacion'])} onChange={(e) => setField('Confirmación', 'FechaConfirmacion', e.target.value)} />
       </div>
       <div className="mb-5">
         <Label>Lugar de celebración</Label>
-        <Input type="text" placeholder="Catedral Metropolitana" maxLength={LUGAR_MAX} value={secciones['Confirmación'].LugarConfirmacion || ''} className={modalInputClass} onChange={(e) => setField('Confirmación', 'LugarConfirmacion', e.target.value)} />
+        <Input type="text" placeholder="Catedral Metropolitana" maxLength={LUGAR_MAX} value={secciones['Confirmación'].LugarConfirmacion || ''} className={getInputClass(errors['LugarConfirmacion'])} onChange={(e) => setField('Confirmación', 'LugarConfirmacion', e.target.value)} />
       </div>
     </>
   );
@@ -327,29 +378,29 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
       <div className="mb-0 flex flex-col gap-4 sm:flex-row">
         <div className="mb-5 flex-1">
           <Label>Contrayente 1</Label>
-          <Input type="text" maxLength={120} value={secciones.Matrimonio.NombreContrayente || ''} className={modalInputClass} onChange={(e) => setField('Matrimonio', 'NombreContrayente', e.target.value)} />
+          <Input type="text" maxLength={120} value={secciones.Matrimonio.NombreContrayente || ''} className={getInputClass(errors['NombreContrayente'])} onChange={(e) => setField('Matrimonio', 'NombreContrayente', e.target.value)} />
         </div>
         <div className="mb-5 flex-1">
           <Label>Contrayente 2</Label>
-          <Input type="text" maxLength={120} value={secciones.Matrimonio.NombreContrayente2 || ''} className={modalInputClass} onChange={(e) => setField('Matrimonio', 'NombreContrayente2', e.target.value)} />
+          <Input type="text" maxLength={120} value={secciones.Matrimonio.NombreContrayente2 || ''} className={getInputClass(errors['NombreContrayente2'])} onChange={(e) => setField('Matrimonio', 'NombreContrayente2', e.target.value)} />
         </div>
       </div>
       <div className="mb-5">
         <Label>Fecha de Matrimonio</Label>
-        <Input type="date" value={secciones.Matrimonio.FechaMatrimonio || ''} className={modalInputClass} onChange={(e) => setField('Matrimonio', 'FechaMatrimonio', e.target.value)} />
+        <Input type="date" value={secciones.Matrimonio.FechaMatrimonio || ''} className={getInputClass(errors['FechaMatrimonio'])} onChange={(e) => setField('Matrimonio', 'FechaMatrimonio', e.target.value)} />
       </div>
       <div className="mb-5">
         <Label>Lugar de celebración</Label>
-        <Input type="text" placeholder="Iglesia Santa Ana" maxLength={LUGAR_MAX} value={secciones.Matrimonio.LugarMatrimonio || ''} className={modalInputClass} onChange={(e) => setField('Matrimonio', 'LugarMatrimonio', e.target.value)} />
+        <Input type="text" placeholder="Iglesia Santa Ana" maxLength={LUGAR_MAX} value={secciones.Matrimonio.LugarMatrimonio || ''} className={getInputClass(errors['LugarMatrimonio'])} onChange={(e) => setField('Matrimonio', 'LugarMatrimonio', e.target.value)} />
       </div>
       <div className="mb-0 flex flex-col gap-4 sm:flex-row">
         <div className="mb-5 flex-1">
           <Label>Tomo</Label>
-          <Input type="number" value={secciones.Matrimonio.tomo || ''} className={modalInputClass} onChange={(e) => setField('Matrimonio', 'tomo', parseInt(e.target.value) || '')} />
+          <Input type="number" value={secciones.Matrimonio.tomo || ''} className={getInputClass(errors['tomo'])} onChange={(e) => setField('Matrimonio', 'tomo', parseInt(e.target.value) || '')} />
         </div>
         <div className="mb-5 flex-1">
           <Label>Folio</Label>
-          <Input type="number" value={secciones.Matrimonio.folio || ''} className={modalInputClass} onChange={(e) => setField('Matrimonio', 'folio', parseInt(e.target.value) || '')} />
+          <Input type="number" value={secciones.Matrimonio.folio || ''} className={getInputClass(errors['folio'])} onChange={(e) => setField('Matrimonio', 'folio', parseInt(e.target.value) || '')} />
         </div>
       </div>
     </>
@@ -359,18 +410,36 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
     const resultado: Record<string, any> = {};
 
     const bautismo = secciones.Bautismo;
-    if (bautismo.Nombre || bautismo.cedula || bautismo.fechaBautismo) {
-      resultado.Bautismo = normalizarCamposNombres(bautismo, [
-        'Nombre', 'PrimerApellido', 'SegundoApellido', 'nombreParroquia', 'prebispero',
-        'nombreAbuelosPaternos', 'nombreAbuelosMaternos',
-      ]);
+    const bautismoTieneDatos = bautismo.Nombre || bautismo.cedula || bautismo.fechaBautismo;
+    if (bautismoTieneDatos) {
+      const base = tipo === 'Bautismo' ? bautismo : {};
+      resultado.Bautismo = {
+        ...base,
+        ...normalizarCamposNombres(bautismo, [
+          'Nombre', 'PrimerApellido', 'SegundoApellido', 'nombreParroquia', 'prebispero',
+          'nombreAbuelosPaternos', 'nombreAbuelosMaternos',
+        ]),
+        id: bautismo.id,
+        cedula: bautismo.cedula,
+        fechaBautismo: bautismo.fechaBautismo,
+        annioBautismo: bautismo.annioBautismo,
+        fechaNacimiento: bautismo.fechaNacimiento,
+        horaNacimiento: bautismo.horaNacimiento,
+        tomo: bautismo.tomo,
+        folio: bautismo.folio,
+      };
     }
 
     const comunion = secciones['Comunión'];
-    if (comunion.FechaComunion || comunion.LugarComunion) {
+    const comunionTieneDatos = comunion.FechaComunion || comunion.LugarComunion;
+    if (comunicacionTieneDatos) {
+      const base = tipo === 'Comunión' ? comunion : {};
       const { dia, mes, annio } = descomponerFecha(comunion.FechaComunion);
       resultado['Comunión'] = {
+        ...base,
         ...normalizarCamposNombres(comunion, ['LugarComunion']),
+        id: comunion.id,
+        Nombre: comunion.Nombre,
         DiaComunion: dia,
         MesComunion: !isNaN(mes) ? MESES[mes - 1] : '',
         AnnioComunion: annio || undefined,
@@ -378,10 +447,15 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
     }
 
     const confirmacion = secciones['Confirmación'];
-    if (confirmacion.FechaConfirmacion || confirmacion.LugarConfirmacion) {
+    const confirmacionTieneDatos = confirmacion.FechaConfirmacion || confirmacion.LugarConfirmacion;
+    if (confirmacionTieneDatos) {
+      const base = tipo === 'Confirmación' ? confirmacion : {};
       const { dia, mes, annio } = descomponerFecha(confirmacion.FechaConfirmacion);
       resultado['Confirmación'] = {
+        ...base,
         ...normalizarCamposNombres(confirmacion, ['LugarConfirmacion']),
+        id: confirmacion.id,
+        Nombre: confirmacion.Nombre,
         DiaConfirmacion: dia,
         MesConfirmacion: !isNaN(mes) ? MESES[mes - 1] : '',
         AnnioConfirmacion: annio || undefined,
@@ -389,13 +463,21 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
     }
 
     const matrimonio = secciones.Matrimonio;
-    if (matrimonio.NombreContrayente || matrimonio.FechaMatrimonio || matrimonio.LugarMatrimonio) {
+    const matrimonioTieneDatos = matrimonio.NombreContrayente || matrimonio.FechaMatrimonio || matrimonio.LugarMatrimonio;
+    if (matrimonioTieneDatos) {
+      const base = tipo === 'Matrimonio' ? matrimonio : {};
       const { dia, mes, annio } = descomponerFecha(matrimonio.FechaMatrimonio);
       resultado.Matrimonio = {
+        ...base,
         ...normalizarCamposNombres(matrimonio, ['NombreContrayente', 'NombreContrayente2', 'LugarMatrimonio']),
+        id: matrimonio.id,
+        NombreContrayente: matrimonio.NombreContrayente,
+        NombreContrayente2: matrimonio.NombreContrayente2,
         DiaMatrimonio: dia,
         MesMatrimonio: !isNaN(mes) ? MESES[mes - 1] : '',
         AnnioMatrimonio: annio || undefined,
+        tomo: matrimonio.tomo,
+        folio: matrimonio.folio,
       };
     }
 
@@ -410,14 +492,30 @@ const EditSacramentoModal = ({ isOpen, onClose, onSave, sacramento, tipo }: Prop
     const bautismo = secciones.Bautismo;
     if (bautismo.Nombre || bautismo.cedula || bautismo.fechaBautismo) {
       if (bautismo.cedula && !/^[1-9]-\d{4}-\d{4}$/.test(String(bautismo.cedula || ''))) {
-        showToast('Cédula inválida. Formato: 1-XXXX-XXXX (primer dígito 1-9)', 'error');
+        setErrors((prev) => ({ ...prev, cedula: true }));
         return;
       }
     }
 
+    // Validar campos requeridos del tipo que se está editando
+    const camposRequeridos = CAMPOS_REQUERIDOS[tipo];
+    const seccionActual = secciones[tipo];
+    const nuevosErrores: Record<string, boolean> = {};
+    
+    for (const campo of camposRequeridos) {
+      const valor = seccionActual[campo];
+      if (valor === undefined || valor === null || valor === '' || (typeof valor === 'number' && isNaN(valor))) {
+        nuevosErrores[campo] = true;
+      }
+    }
+    
+    if (Object.keys(nuevosErrores).length > 0) {
+      setErrors(nuevosErrores);
+      return;
+    }
+
     const datos = prepararSecciones();
     if (Object.keys(datos).length === 0) {
-      showToast('Complete al menos una sección para guardar.', 'error');
       return;
     }
     setSaving(true);
