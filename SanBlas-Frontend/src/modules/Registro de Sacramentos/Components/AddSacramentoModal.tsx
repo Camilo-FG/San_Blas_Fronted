@@ -1,465 +1,505 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, cn, Input, Label, useToast } from '../../../shared/ui';
+import { Loader2 } from 'lucide-react';
+import { useListarParroquias } from '../hooks/hooksNuevos/useListarParroquias';
+import { useListarPresbiteros } from '../hooks/hooksNuevos/useListarPresbiteros';
 import {
-  capitalizarNombres,
-  normalizarCamposNombres,
-} from '../Utils/normalizarNombres';
-
-const getInputClass = (hasError: boolean) =>
-  cn(
-    "w-full rounded-md border px-3 py-2.5 text-sm transition-colors focus:outline-none",
-    hasError
-      ? "border-red-500 focus:border-red-600 bg-red-50"
-      : "border-gray-300 focus:border-blue-600"
-  );
+  AbueloInput,
+  CrearSacramentoInput,
+  ParentescoAbuelo,
+  TipoSacramento,
+  TIPO_SACRAMENTO_LABEL,
+} from '../../../types/sacramentosNuevos';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: any, tipo: string) => Promise<void> | void;
+  onSave: (data: CrearSacramentoInput) => Promise<void>;
   tieneBautismo: boolean;
 }
 
-const tiposSacramento = ['Bautismo', 'Comunión', 'Confirmación', 'Matrimonio'];
+const TIPOS: TipoSacramento[] = ['bautismo', 'comunion', 'confirmacion', 'matrimonio'];
 
-const MESES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+const PARENTESCOS: ParentescoAbuelo[] = [
+  'abuelo_paterno',
+  'abuela_paterna',
+  'abuelo_materno',
+  'abuela_materna',
 ];
 
-const LUGAR_MAX = 250;
+const inputClass = (hasError = false) =>
+  cn(
+    'w-full rounded-md border px-3 py-2.5 text-sm transition-colors focus:outline-none',
+    hasError
+      ? 'border-red-500 bg-red-50 focus:border-red-600'
+      : 'border-gray-300 focus:border-blue-600',
+  );
 
-const descomponerFecha = (fecha: string) => {
-  const [annio, mes, dia] = fecha.split('-');
-  return { dia, mes: parseInt(mes), annio: parseInt(annio) };
+const formatearCedulaCR = (valor: string): string => {
+  const digitos = valor.replace(/\D/g, '');
+  const limpiados = digitos.startsWith('0') ? digitos.slice(1) : digitos.slice(0, 9);
+  if (limpiados.length <= 1) return limpiados;
+  if (limpiados.length <= 5) return `${limpiados[0]}-${limpiados.slice(1)}`;
+  return `${limpiados[0]}-${limpiados.slice(1, 5)}-${limpiados.slice(5)}`;
 };
+
+interface PersonaForm {
+  cedula: string;
+  nombre: string;
+  primerApellido: string;
+  segundoApellido: string;
+}
+
+const personaVacia = (): PersonaForm => ({
+  cedula: '',
+  nombre: '',
+  primerApellido: '',
+  segundoApellido: '',
+});
 
 const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) => {
   const { showToast } = useToast();
-  const [tipoActivo, setTipoActivo] = useState('Bautismo');
-  const [formData, setFormData] = useState<any>({});
-  const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const { data: parroquias, isPending: cargandoParroquias } = useListarParroquias();
+  const { data: presbiteros, isPending: cargandoPresbiteros } = useListarPresbiteros();
+
+  const [tipo, setTipo] = useState<TipoSacramento>('bautismo');
+  const [idParroquia, setIdParroquia] = useState('');
+  const [idPresbitero, setIdPresbitero] = useState('');
+  const [fechaSacramento, setFechaSacramento] = useState('');
+  const [observaciones, setObservaciones] = useState('');
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
+
+  const [bautizado, setBautizado] = useState<PersonaForm>(personaVacia);
+  const [padre, setPadre] = useState<PersonaForm>(personaVacia);
+  const [madre, setMadre] = useState<PersonaForm>(personaVacia);
+  const [padrino, setPadrino] = useState<PersonaForm>(personaVacia);
+  const [madrina, setMadrina] = useState<PersonaForm>(personaVacia);
+  const [abuelos, setAbuelos] = useState<(PersonaForm & { parentesco: ParentescoAbuelo })[]>([]);
+  const [persona, setPersona] = useState<PersonaForm>(personaVacia);
+  const [contrayente1, setContrayente1] = useState<PersonaForm>(personaVacia);
+  const [contrayente2, setContrayente2] = useState<PersonaForm>(personaVacia);
+  const [detalleBautismo, setDetalleBautismo] = useState({
+    fechaNacimiento: '',
+    horaNacimiento: '',
+    lugarNacimiento: '',
+    libro: '',
+    tomo: '',
+    folio: '',
+    asiento: '',
+  });
+  const [detalleMatrimonio, setDetalleMatrimonio] = useState({
+    libro: '',
+    tomo: '',
+    folio: '',
+  });
 
   useEffect(() => {
     if (!isOpen) {
-      setFormData({});
+      setTipo('bautismo');
+      setIdParroquia('');
+      setIdPresbitero('');
+      setFechaSacramento('');
+      setObservaciones('');
+      setBautizado(personaVacia());
+      setPadre(personaVacia());
+      setMadre(personaVacia());
+      setPadrino(personaVacia());
+      setMadrina(personaVacia());
+      setAbuelos([]);
+      setPersona(personaVacia());
+      setContrayente1(personaVacia());
+      setContrayente2(personaVacia());
+      setDetalleBautismo({ fechaNacimiento: '', horaNacimiento: '', lugarNacimiento: '', libro: '', tomo: '', folio: '', asiento: '' });
+      setDetalleMatrimonio({ libro: '', tomo: '', folio: '' });
       setErrors({});
-      return;
     }
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const soloLetras = (valor: string) => valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+  const personaBloqueada = !tieneBautismo && tipo !== 'bautismo';
 
-  const soloDigitos = (valor: string) => valor.replace(/\D/g, '');
-
-  const validarCedulaCR = (valor: string) => {
-    const digitos = soloDigitos(valor);
-    if (digitos.length === 0) return '';
-    if (digitos[0] === '0') return digitos.slice(1);
-    return digitos.slice(0, 9);
+  const setPersonaCampo = (
+    setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
+    campo: keyof PersonaForm,
+    valor: string,
+  ) => {
+    setter((prev) => ({
+      ...prev,
+      [campo]: campo === 'cedula' ? formatearCedulaCR(valor) : valor,
+    }));
   };
 
-  const formatearCedulaCR = (digitos: string) => {
-    if (digitos.length <= 1) return digitos;
-    if (digitos.length <= 5) return `${digitos[0]}-${digitos.slice(1)}`;
-    return `${digitos[0]}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
+  const setAbueloCampo = (idx: number, campo: keyof PersonaForm, valor: string) => {
+    setAbuelos((prev) =>
+      prev.map((ab, i) =>
+        i === idx ? { ...ab, [campo]: campo === 'cedula' ? formatearCedulaCR(valor) : valor } : ab,
+      ),
+    );
   };
 
-  const setField = (campo: string, valor: any) => {
-    let valorProcesado = valor;
-    if (['Nombre', 'PrimerApellido', 'SegundoApellido', 'NombreParroquia', 'Prebispero', 'LugarComunion', 'LugarConfirmacion', 'LugarMatrimonio', 'NombreAbueloPaterno1', 'Apellido1AbueloPaterno1', 'Apellido2AbueloPaterno1', 'NombreAbueloPaterno2', 'Apellido1AbueloPaterno2', 'Apellido2AbueloPaterno2', 'NombreAbueloMaterno1', 'Apellido1AbueloMaterno1', 'Apellido2AbueloMaterno1', 'NombreAbueloMaterno2', 'Apellido1AbueloMaterno2', 'Apellido2AbueloMaterno2', 'NombreContrayente1', 'Apellido1Contrayente1', 'Apellido2Contrayente1', 'NombreContrayente2', 'Apellido1Contrayente2', 'Apellido2Contrayente2'].includes(campo)) {
-      valorProcesado = soloLetras(String(valor));
-    } else if (campo === 'cedula') {
-      const digitos = validarCedulaCR(String(valor));
-      valorProcesado = formatearCedulaCR(digitos);
-    } else if (['Tomo', 'Folio', 'Asiento', 'AnnioBautismo', 'AnnioComunion', 'AnnioConfirmacion', 'AnnioMatrimonio', 'tomo', 'folio'].includes(campo)) {
-      valorProcesado = soloDigitos(String(valor));
+  const agregarAbuelo = () => {
+    const usados = abuelos.map((a) => a.parentesco);
+    const disponible = PARENTESCOS.find((p) => !usados.includes(p));
+    if (!disponible) {
+      showToast('Ya están registrados los 4 abuelos', 'error');
+      return;
     }
-    setFormData({ ...formData, [campo]: valorProcesado });
-    setErrors((prev) => ({ ...prev, [campo]: false }));
+    setAbuelos((prev) => [...prev, { ...personaVacia(), parentesco: disponible }]);
   };
 
-  const getCamposObligatorios = (): string[] => {
-    switch (tipoActivo) {
-      case 'Bautismo':
-        return ['Nombre', 'PrimerApellido', 'SegundoApellido', 'cedula', 'FechaBautismo', 'NombreParroquia', 'Tomo', 'Folio', 'Asiento'];
-      case 'Comunión':
-        return ['FechaComunion', 'LugarComunion'];
-      case 'Confirmación':
-        return ['FechaConfirmacion', 'LugarConfirmacion'];
-      case 'Matrimonio':
-        return ['NombreContrayente1', 'Apellido1Contrayente1', 'NombreContrayente2', 'Apellido1Contrayente2', 'FechaMatrimonio', 'LugarMatrimonio', 'Tomo', 'Folio'];
-      default:
-        return [];
+  const validar = (): boolean => {
+    const nuevos: Record<string, boolean> = {};
+    if (!idParroquia) nuevos.idParroquia = true;
+    if (!fechaSacramento) nuevos.fechaSacramento = true;
+
+    const personaOk = (p: PersonaForm, prefijo: string) => {
+      if (!p.nombre.trim()) nuevos[`${prefijo}Nombre`] = true;
+      if (!p.primerApellido.trim()) nuevos[`${prefijo}PrimerApellido`] = true;
+    };
+
+    if (tipo === 'bautismo') personaOk(bautizado, 'bautizado');
+    if (tipo === 'comunion' || tipo === 'confirmacion') personaOk(persona, 'persona');
+    if (tipo === 'matrimonio') {
+      personaOk(contrayente1, 'contrayente1');
+      personaOk(contrayente2, 'contrayente2');
     }
+
+    setErrors(nuevos);
+    return Object.keys(nuevos).length === 0;
   };
 
-  const esValido = (valor: any): boolean =>
-    valor !== undefined && valor !== null && String(valor).trim() !== '' && Number(valor) !== 0;
+  const personaInput = (p: PersonaForm) => ({
+    cedula: p.cedula || undefined,
+    nombre: p.nombre.trim(),
+    primerApellido: p.primerApellido.trim(),
+    segundoApellido: p.segundoApellido.trim() || undefined,
+  });
 
-  const prepararDatos = (datos: any): any => {
-    if (tipoActivo === 'Bautismo') {
-      const {
-        NombreAbueloPaterno1, Apellido1AbueloPaterno1, Apellido2AbueloPaterno1,
-        NombreAbueloPaterno2, Apellido1AbueloPaterno2, Apellido2AbueloPaterno2,
-        NombreAbueloMaterno1, Apellido1AbueloMaterno1, Apellido2AbueloMaterno1,
-        NombreAbueloMaterno2, Apellido1AbueloMaterno2, Apellido2AbueloMaterno2,
-        cedula, ...rest
-      } = datos;
-
-      const c = (v: any) => capitalizarNombres(v);
-      const nombrePaterno1 = [c(NombreAbueloPaterno1), c(Apellido1AbueloPaterno1), c(Apellido2AbueloPaterno1)].filter(Boolean).join(' ');
-      const nombrePaterno2 = [c(NombreAbueloPaterno2), c(Apellido1AbueloPaterno2), c(Apellido2AbueloPaterno2)].filter(Boolean).join(' ');
-      const nombreMaterno1 = [c(NombreAbueloMaterno1), c(Apellido1AbueloMaterno1), c(Apellido2AbueloMaterno1)].filter(Boolean).join(' ');
-      const nombreMaterno2 = [c(NombreAbueloMaterno2), c(Apellido1AbueloMaterno2), c(Apellido2AbueloMaterno2)].filter(Boolean).join(' ');
-
+  const construirDto = (): CrearSacramentoInput => {
+    const base = {
+      tipo,
+      idParroquia: Number(idParroquia),
+      idPresbitero: idPresbitero ? Number(idPresbitero) : undefined,
+      fechaSacramento,
+      observaciones: observaciones.trim() || undefined,
+    };
+    if (tipo === 'bautismo') {
       return {
-        ...normalizarCamposNombres(rest, ['Nombre', 'PrimerApellido', 'SegundoApellido', 'NombreParroquia', 'Prebispero']),
-        cedula: parseInt(String(cedula).replace(/\D/g, '')) || 0,
-        NombreAbuelosPaternos: [nombrePaterno1, nombrePaterno2].filter(Boolean).join(' y '),
-        NombreAbuelosMaternos: [nombreMaterno1, nombreMaterno2].filter(Boolean).join(' y '),
+        ...base,
+        bautismo: {
+          bautizado: personaInput(bautizado),
+          padre: padre.nombre.trim() ? personaInput(padre) : undefined,
+          madre: madre.nombre.trim() ? personaInput(madre) : undefined,
+          padrino: padrino.nombre.trim() ? personaInput(padrino) : undefined,
+          madrina: madrina.nombre.trim() ? personaInput(madrina) : undefined,
+          abuelos: abuelos.length
+            ? (abuelos.map((ab) => ({ ...personaInput(ab), parentesco: ab.parentesco })) as AbueloInput[])
+            : undefined,
+          fechaNacimiento: detalleBautismo.fechaNacimiento || undefined,
+          horaNacimiento: detalleBautismo.horaNacimiento || undefined,
+          lugarNacimiento: detalleBautismo.lugarNacimiento.trim() || undefined,
+          libro: detalleBautismo.libro.trim() || undefined,
+          tomo: detalleBautismo.tomo.trim() || undefined,
+          folio: detalleBautismo.folio.trim() || undefined,
+          asiento: detalleBautismo.asiento.trim() || undefined,
+        },
       };
     }
-    if (tipoActivo === 'Comunión') {
-      const { FechaComunion, ...rest } = datos;
-      const { dia, mes, annio } = descomponerFecha(FechaComunion);
-      return { ...normalizarCamposNombres(rest, ['Nombre', 'LugarComunion']), DiaComunion: dia, MesComunion: MESES[mes - 1], AnnioComunion: annio };
-    }
-    if (tipoActivo === 'Confirmación') {
-      const { FechaConfirmacion, ...rest } = datos;
-      const { dia, mes, annio } = descomponerFecha(FechaConfirmacion);
-      return { ...normalizarCamposNombres(rest, ['Nombre', 'LugarConfirmacion']), DiaConfirmacion: dia, MesConfirmacion: MESES[mes - 1], AnnioConfirmacion: annio };
-    }
-    if (tipoActivo === 'Matrimonio') {
-      const { FechaMatrimonio, NombreContrayente1, Apellido1Contrayente1, Apellido2Contrayente1, NombreContrayente2, Apellido1Contrayente2, Apellido2Contrayente2, ...rest } = datos;
-      const { dia, mes, annio } = descomponerFecha(FechaMatrimonio);
-      const c = (v: any) => capitalizarNombres(v);
-      return {
-        ...normalizarCamposNombres(rest, ['LugarMatrimonio']),
-        NombreContrayente: [c(NombreContrayente1), c(Apellido1Contrayente1), c(Apellido2Contrayente1)].filter(Boolean).join(' '),
-        NombreContrayente2: [c(NombreContrayente2), c(Apellido1Contrayente2), c(Apellido2Contrayente2)].filter(Boolean).join(' '),
-        DiaMatrimonio: dia,
-        MesMatrimonio: MESES[mes - 1],
-        AnnioMatrimonio: annio,
-      };
-    }
-    return normalizarCamposNombres(datos, ['Nombre']);
+    if (tipo === 'comunion') return { ...base, comunion: { persona: personaInput(persona) } };
+    if (tipo === 'confirmacion') return { ...base, confirmacion: { persona: personaInput(persona) } };
+    return {
+      ...base,
+      matrimonio: {
+        contrayente1: personaInput(contrayente1),
+        contrayente2: personaInput(contrayente2),
+        libro: detalleMatrimonio.libro.trim() || undefined,
+        tomo: detalleMatrimonio.tomo.trim() || undefined,
+        folio: detalleMatrimonio.folio.trim() || undefined,
+      },
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (saving) return;
-
-    const nuevosErrores: Record<string, boolean> = {};
-    getCamposObligatorios().forEach((campo) => {
-      if (!esValido(formData[campo])) nuevosErrores[campo] = true;
-    });
-
-    if (tipoActivo === 'Bautismo' && !/^[1-9]-\d{4}-\d{4}$/.test(String(formData.cedula || ''))) {
-      nuevosErrores.cedula = true;
-    }
-
-    if (
-      tipoActivo === 'Bautismo' &&
-      formData.fechaNacimiento &&
-      formData.FechaBautismo &&
-      formData.FechaBautismo <= formData.fechaNacimiento
-    ) {
-      nuevosErrores.FechaBautismo = true;
-    }
-
-    if (Object.keys(nuevosErrores).length > 0) {
-      setErrors(nuevosErrores);
+    if (personaBloqueada) {
+      showToast('Debe registrar primero el Bautismo antes de los demás sacramentos.', 'error');
       return;
     }
-
-    if (!tieneBautismo && tipoActivo !== 'Bautismo') {
-      showToast(
-        'Debe registrar primero el Bautismo antes de los demás sacramentos.',
-        'error',
-      );
-      return;
-    }
-
+    if (!validar()) return;
     setSaving(true);
     try {
-      await onSave(prepararDatos(formData), tipoActivo);
+      await onSave(construirDto());
       onClose();
-      setFormData({});
-      setErrors({});
+    } catch (err: any) {
+      const mensaje =
+        err?.response?.data?.mensaje ?? err?.message ?? 'No se pudo registrar el acta.';
+      showToast(String(mensaje), 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  const contadorLugar = (valor: any) => (
-    <div className="mt-1 text-right text-xs text-gray-400">
-      {String(valor || '').length}/{LUGAR_MAX}
+  const renderPersona = (
+    titulo: string,
+    persona: PersonaForm,
+    setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
+    prefijo: string,
+  ) => (
+    <div className="mb-5">
+      <Label>{titulo}</Label>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Input
+          type="text"
+          placeholder="Nombre"
+          maxLength={100}
+          className={inputClass(errors[`${prefijo}Nombre`])}
+          value={persona.nombre}
+          onChange={(e) => setPersonaCampo(setter, 'nombre', e.target.value)}
+        />
+        <Input
+          type="text"
+          placeholder="Primer apellido"
+          maxLength={100}
+          className={inputClass(errors[`${prefijo}PrimerApellido`])}
+          value={persona.primerApellido}
+          onChange={(e) => setPersonaCampo(setter, 'primerApellido', e.target.value)}
+        />
+        <Input
+          type="text"
+          placeholder="Segundo apellido"
+          maxLength={100}
+          value={persona.segundoApellido}
+          onChange={(e) => setPersonaCampo(setter, 'segundoApellido', e.target.value)}
+        />
+        <Input
+          type="text"
+          placeholder="Cédula (0-0000-0000)"
+          maxLength={12}
+          value={persona.cedula}
+          onChange={(e) => setPersonaCampo(setter, 'cedula', e.target.value)}
+        />
+      </div>
     </div>
   );
 
-  const renderForm = () => {
-    switch (tipoActivo) {
-      case 'Bautismo':
-        return (
-          <>
-            <div className="mb-5">
-              <Label>Nombre del bautizado</Label>
-              <Input type="text" maxLength={80} value={formData.Nombre || ''} className={getInputClass(errors['Nombre'])} onChange={(e) => setField('Nombre', e.target.value)} />
-            </div>
-            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
-              <div className="mb-5 flex-1">
-                <Label>Primer Apellido</Label>
-                <Input type="text" maxLength={80} value={formData.PrimerApellido || ''} className={getInputClass(errors['PrimerApellido'])} onChange={(e) => setField('PrimerApellido', e.target.value)} />
-              </div>
-              <div className="mb-5 flex-1">
-                <Label>Segundo Apellido</Label>
-                <Input type="text" maxLength={80} value={formData.SegundoApellido || ''} className={getInputClass(errors['SegundoApellido'])} onChange={(e) => setField('SegundoApellido', e.target.value)} />
-              </div>
-            </div>
-            <div className="mb-5">
-              <Label>Cédula</Label>
-              <Input type="text" placeholder="0-0000-0000" maxLength={12} value={formData.cedula || ''} className={getInputClass(errors['cedula'])} onChange={(e) => setField('cedula', e.target.value)} />
-            </div>
-            <div className="mb-5">
-              <Label>Fecha de celebración</Label>
-              <Input type="date" value={formData.FechaBautismo || ''} className={getInputClass(errors['FechaBautismo'])} onChange={(e) => {
-                const valor = e.target.value;
-                setFormData((prev) => ({ ...prev, FechaBautismo: valor, AnnioBautismo: valor ? parseInt(valor.slice(0, 4)) : undefined }));
-                setErrors((prev) => ({ ...prev, FechaBautismo: false }));
-              }} />
-            </div>
-            <div className="mb-5">
-              <Label>Lugar de celebración sacramental</Label>
-              <Input type="text" placeholder="Santuario San Blas de Nicoya" maxLength={LUGAR_MAX} value={formData.NombreParroquia || ''} className={getInputClass(errors['NombreParroquia'])} onChange={(e) => setField('NombreParroquia', e.target.value)} />
-              {contadorLugar(formData.NombreParroquia)}
-            </div>
-            <div className="mb-5">
-              <Label>Prebísptero</Label>
-              <Input type="text" maxLength={120} value={formData.Prebispero || ''} className={getInputClass(false)} onChange={(e) => setField('Prebispero', e.target.value)} />
-            </div>
-            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
-              <div className="mb-5 flex-1">
-                <Label>Fecha de nacimiento</Label>
-                <Input type="date" value={formData.fechaNacimiento || ''} className={getInputClass(false)} onChange={(e) => setField('fechaNacimiento', e.target.value)} />
-              </div>
-              <div className="mb-5 flex-1">
-                <Label>Hora de nacimiento</Label>
-                <Input type="time" value={formData.horaNacimiento || ''} className={getInputClass(false)} onChange={(e) => setField('horaNacimiento', e.target.value)} />
-              </div>
-            </div>
-            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
-              <div className="mb-5 flex-1">
-                <Label>Tomo</Label>
-                <Input type="number" value={formData.Tomo ?? ''} className={getInputClass(errors['Tomo'])} onChange={(e) => setField('Tomo', parseInt(e.target.value) || '')} />
-              </div>
-              <div className="mb-5 flex-1">
-                <Label>Folio</Label>
-                <Input type="number" value={formData.Folio ?? ''} className={getInputClass(errors['Folio'])} onChange={(e) => setField('Folio', parseInt(e.target.value) || '')} />
-              </div>
-              <div className="mb-5 flex-1">
-                <Label>Asiento</Label>
-                <Input type="number" value={formData.Asiento ?? ''} className={getInputClass(errors['Asiento'])} onChange={(e) => setField('Asiento', parseInt(e.target.value) || '')} />
-              </div>
-            </div>
-            <div className="mb-0">
-              <Label>Abuelos Paternos</Label>
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-4 sm:flex-row">
-                  <div className="flex-1">
-                    <Input type="text" placeholder="Nombre abuelo 1" maxLength={80} value={formData.NombreAbueloPaterno1 || ''} className={getInputClass(false)} onChange={(e) => setField('NombreAbueloPaterno1', e.target.value)} />
-                  </div>
-                  <div className="flex-1">
-                    <Input type="text" placeholder="Primer Apellido" maxLength={80} value={formData.Apellido1AbueloPaterno1 || ''} className={getInputClass(false)} onChange={(e) => setField('Apellido1AbueloPaterno1', e.target.value)} />
-                  </div>
-                  <div className="flex-1">
-                    <Input type="text" placeholder="Segundo Apellido" maxLength={80} value={formData.Apellido2AbueloPaterno1 || ''} className={getInputClass(false)} onChange={(e) => setField('Apellido2AbueloPaterno1', e.target.value)} />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-4 sm:flex-row">
-                  <div className="flex-1">
-                    <Input type="text" placeholder="Nombre abuelo 2" maxLength={80} value={formData.NombreAbueloPaterno2 || ''} className={getInputClass(false)} onChange={(e) => setField('NombreAbueloPaterno2', e.target.value)} />
-                  </div>
-                  <div className="flex-1">
-                    <Input type="text" placeholder="Primer Apellido" maxLength={80} value={formData.Apellido1AbueloPaterno2 || ''} className={getInputClass(false)} onChange={(e) => setField('Apellido1AbueloPaterno2', e.target.value)} />
-                  </div>
-                  <div className="flex-1">
-                    <Input type="text" placeholder="Segundo Apellido" maxLength={80} value={formData.Apellido2AbueloPaterno2 || ''} className={getInputClass(false)} onChange={(e) => setField('Apellido2AbueloPaterno2', e.target.value)} />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="mb-0 mt-5">
-              <Label>Abuelos Maternos</Label>
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-4 sm:flex-row">
-                  <div className="flex-1">
-                    <Input type="text" placeholder="Nombre abuelo 1" maxLength={80} value={formData.NombreAbueloMaterno1 || ''} className={getInputClass(false)} onChange={(e) => setField('NombreAbueloMaterno1', e.target.value)} />
-                  </div>
-                  <div className="flex-1">
-                    <Input type="text" placeholder="Primer Apellido" maxLength={80} value={formData.Apellido1AbueloMaterno1 || ''} className={getInputClass(false)} onChange={(e) => setField('Apellido1AbueloMaterno1', e.target.value)} />
-                  </div>
-                  <div className="flex-1">
-                    <Input type="text" placeholder="Segundo Apellido" maxLength={80} value={formData.Apellido2AbueloMaterno1 || ''} className={getInputClass(false)} onChange={(e) => setField('Apellido2AbueloMaterno1', e.target.value)} />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-4 sm:flex-row">
-                  <div className="flex-1">
-                    <Input type="text" placeholder="Nombre abuelo 2" maxLength={80} value={formData.NombreAbueloMaterno2 || ''} className={getInputClass(false)} onChange={(e) => setField('NombreAbueloMaterno2', e.target.value)} />
-                  </div>
-                  <div className="flex-1">
-                    <Input type="text" placeholder="Primer Apellido" maxLength={80} value={formData.Apellido1AbueloMaterno2 || ''} className={getInputClass(false)} onChange={(e) => setField('Apellido1AbueloMaterno2', e.target.value)} />
-                  </div>
-                  <div className="flex-1">
-                    <Input type="text" placeholder="Segundo Apellido" maxLength={80} value={formData.Apellido2AbueloMaterno2 || ''} className={getInputClass(false)} onChange={(e) => setField('Apellido2AbueloMaterno2', e.target.value)} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        );
+  const renderBautismo = () => (
+    <>
+      {renderPersona('Datos del bautizado', bautizado, setBautizado, 'bautizado')}
+      {renderPersona('Padre (opcional)', padre, setPadre, 'padre')}
+      {renderPersona('Madre (opcional)', madre, setMadre, 'madre')}
+      {renderPersona('Padrino (opcional)', padrino, setPadrino, 'padrino')}
+      {renderPersona('Madrina (opcional)', madrina, setMadrina, 'madrina')}
 
-      case 'Comunión':
-        return (
-          <>
-            <div className="mb-5">
-              <Label>Fecha de Comunión</Label>
-              <Input type="date" value={formData.FechaComunion || ''} className={getInputClass(errors['FechaComunion'])} onChange={(e) => setField('FechaComunion', e.target.value)} />
+      <div className="mb-5">
+        <Label>Abuelos (opcional)</Label>
+        <div className="space-y-3">
+          {abuelos.map((ab, idx) => (
+            <div key={idx} className="rounded-md border border-gray-200 p-3">
+              <select
+                value={ab.parentesco}
+                onChange={(e) =>
+                  setAbuelos((prev) =>
+                    prev.map((a, i) => (i === idx ? { ...a, parentesco: e.target.value as ParentescoAbuelo } : a)),
+                  )
+                }
+                className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
+                {PARENTESCOS.map((p) => (
+                  <option key={p} value={p} disabled={abuelos.some((a, i) => a.parentesco === p && i !== idx)}>
+                    {p.replaceAll('_', ' ')}
+                  </option>
+                ))}
+              </select>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <Input type="text" placeholder="Nombre" value={ab.nombre} onChange={(e) => setAbueloCampo(idx, 'nombre', e.target.value)} />
+                <Input type="text" placeholder="Primer apellido" value={ab.primerApellido} onChange={(e) => setAbueloCampo(idx, 'primerApellido', e.target.value)} />
+                <Input type="text" placeholder="Segundo apellido" value={ab.segundoApellido} onChange={(e) => setAbueloCampo(idx, 'segundoApellido', e.target.value)} />
+                <Input type="text" placeholder="Cédula" value={ab.cedula} onChange={(e) => setAbueloCampo(idx, 'cedula', e.target.value)} />
+              </div>
             </div>
-            <div className="mb-5">
-              <Label>Lugar de celebración</Label>
-              <Input type="text" placeholder="Capilla Curime" maxLength={LUGAR_MAX} value={formData.LugarComunion || ''} className={getInputClass(errors['LugarComunion'])} onChange={(e) => setField('LugarComunion', e.target.value)} />
-              {contadorLugar(formData.LugarComunion)}
-            </div>
-          </>
-        );
+          ))}
+        </div>
+        <Button type="button" variant="secondary" onClick={agregarAbuelo} className="mt-2">
+          + Agregar abuelo
+        </Button>
+      </div>
 
-      case 'Confirmación':
-        return (
-          <>
-            <div className="mb-5">
-              <Label>Fecha de Confirmación</Label>
-              <Input type="date" value={formData.FechaConfirmacion || ''} className={getInputClass(errors['FechaConfirmacion'])} onChange={(e) => setField('FechaConfirmacion', e.target.value)} />
-            </div>
-            <div className="mb-5">
-              <Label>Lugar de celebración</Label>
-              <Input type="text" placeholder="Catedral Metropolitana" maxLength={LUGAR_MAX} value={formData.LugarConfirmacion || ''} className={getInputClass(errors['LugarConfirmacion'])} onChange={(e) => setField('LugarConfirmacion', e.target.value)} />
-              {contadorLugar(formData.LugarConfirmacion)}
-            </div>
-          </>
-        );
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <Label>Fecha de nacimiento</Label>
+          <Input type="date" value={detalleBautismo.fechaNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, fechaNacimiento: e.target.value }))} />
+        </div>
+        <div>
+          <Label>Hora de nacimiento</Label>
+          <Input type="time" value={detalleBautismo.horaNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, horaNacimiento: e.target.value }))} />
+        </div>
+        <div>
+          <Label>Lugar de nacimiento</Label>
+          <Input type="text" value={detalleBautismo.lugarNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, lugarNacimiento: e.target.value }))} />
+        </div>
+      </div>
 
-      case 'Matrimonio':
-        return (
-          <>
-            <div className="mb-0">
-              <Label>Contrayente 1</Label>
-              <div className="flex flex-col gap-4 sm:flex-row">
-                <div className="flex-1">
-                  <Input type="text" placeholder="Nombre" maxLength={80} value={formData.NombreContrayente1 || ''} className={getInputClass(errors['NombreContrayente1'])} onChange={(e) => setField('NombreContrayente1', e.target.value)} />
-                </div>
-                <div className="flex-1">
-                  <Input type="text" placeholder="Primer Apellido" maxLength={80} value={formData.Apellido1Contrayente1 || ''} className={getInputClass(errors['Apellido1Contrayente1'])} onChange={(e) => setField('Apellido1Contrayente1', e.target.value)} />
-                </div>
-                <div className="flex-1">
-                  <Input type="text" placeholder="Segundo Apellido" maxLength={80} value={formData.Apellido2Contrayente1 || ''} className={getInputClass(false)} onChange={(e) => setField('Apellido2Contrayente1', e.target.value)} />
-                </div>
-              </div>
-            </div>
-            <div className="mb-0 mt-5">
-              <Label>Contrayente 2</Label>
-              <div className="flex flex-col gap-4 sm:flex-row">
-                <div className="flex-1">
-                  <Input type="text" placeholder="Nombre" maxLength={80} value={formData.NombreContrayente2 || ''} className={getInputClass(errors['NombreContrayente2'])} onChange={(e) => setField('NombreContrayente2', e.target.value)} />
-                </div>
-                <div className="flex-1">
-                  <Input type="text" placeholder="Primer Apellido" maxLength={80} value={formData.Apellido1Contrayente2 || ''} className={getInputClass(errors['Apellido1Contrayente2'])} onChange={(e) => setField('Apellido1Contrayente2', e.target.value)} />
-                </div>
-                <div className="flex-1">
-                  <Input type="text" placeholder="Segundo Apellido" maxLength={80} value={formData.Apellido2Contrayente2 || ''} className={getInputClass(false)} onChange={(e) => setField('Apellido2Contrayente2', e.target.value)} />
-                </div>
-              </div>
-            </div>
-            <div className="mb-5 mt-5">
-              <Label>Fecha de Matrimonio</Label>
-              <Input type="date" value={formData.FechaMatrimonio || ''} className={getInputClass(errors['FechaMatrimonio'])} onChange={(e) => setField('FechaMatrimonio', e.target.value)} />
-            </div>
-            <div className="mb-5">
-              <Label>Lugar de celebración</Label>
-              <Input type="text" placeholder="Iglesia Santa Ana" maxLength={LUGAR_MAX} value={formData.LugarMatrimonio || ''} className={getInputClass(errors['LugarMatrimonio'])} onChange={(e) => setField('LugarMatrimonio', e.target.value)} />
-              {contadorLugar(formData.LugarMatrimonio)}
-            </div>
-            <div className="mb-0 flex flex-col gap-4 sm:flex-row">
-              <div className="mb-5 flex-1">
-                <Label>Tomo</Label>
-                <Input type="number" value={formData.Tomo ?? ''} className={getInputClass(errors['Tomo'])} onChange={(e) => setField('Tomo', parseInt(e.target.value) || '')} />
-              </div>
-              <div className="mb-5 flex-1">
-                <Label>Folio</Label>
-                <Input type="number" value={formData.Folio ?? ''} className={getInputClass(errors['Folio'])} onChange={(e) => setField('Folio', parseInt(e.target.value) || '')} />
-              </div>
-            </div>
-          </>
-        );
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <Label>Libro</Label>
+          <Input type="text" value={detalleBautismo.libro} onChange={(e) => setDetalleBautismo((p) => ({ ...p, libro: e.target.value }))} />
+        </div>
+        <div>
+          <Label>Tomo</Label>
+          <Input type="text" value={detalleBautismo.tomo} onChange={(e) => setDetalleBautismo((p) => ({ ...p, tomo: e.target.value }))} />
+        </div>
+        <div>
+          <Label>Folio</Label>
+          <Input type="text" value={detalleBautismo.folio} onChange={(e) => setDetalleBautismo((p) => ({ ...p, folio: e.target.value }))} />
+        </div>
+        <div>
+          <Label>Asiento</Label>
+          <Input type="text" value={detalleBautismo.asiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, asiento: e.target.value }))} />
+        </div>
+      </div>
+    </>
+  );
 
-      default:
-        return null;
-    }
-  };
+  const renderPersonaDetalle = () => (
+    <>{renderPersona(`Datos de la persona (${TIPO_SACRAMENTO_LABEL[tipo]})`, persona, setPersona, 'persona')}</>
+  );
+
+  const renderMatrimonio = () => (
+    <>
+      {renderPersona('Contrayente 1', contrayente1, setContrayente1, 'contrayente1')}
+      {renderPersona('Contrayente 2', contrayente2, setContrayente2, 'contrayente2')}
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <Label>Libro</Label>
+          <Input type="text" value={detalleMatrimonio.libro} onChange={(e) => setDetalleMatrimonio((p) => ({ ...p, libro: e.target.value }))} />
+        </div>
+        <div>
+          <Label>Tomo</Label>
+          <Input type="text" value={detalleMatrimonio.tomo} onChange={(e) => setDetalleMatrimonio((p) => ({ ...p, tomo: e.target.value }))} />
+        </div>
+        <div>
+          <Label>Folio</Label>
+          <Input type="text" value={detalleMatrimonio.folio} onChange={(e) => setDetalleMatrimonio((p) => ({ ...p, folio: e.target.value }))} />
+        </div>
+      </div>
+    </>
+  );
+
+  const catalogoCargando = cargandoParroquias || cargandoPresbiteros;
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="flex max-h-[90vh] w-[90%] max-w-[800px] flex-col overflow-hidden rounded-xl bg-white" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex max-h-[90vh] w-[90%] max-w-[800px] flex-col overflow-hidden rounded-xl bg-white"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between border-b border-gray-200 bg-surface-muted px-6 py-5">
           <h2 className="m-0 text-lg text-slate-800">INSCRIPCIÓN SACRAMENTAL</h2>
-          <button type="button" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100" onClick={onClose}>×</button>
+          <button
+            type="button"
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100"
+            onClick={onClose}
+          >
+            ×
+          </button>
         </div>
 
         <div className="flex gap-2 border-b border-gray-200 px-6">
-          {tiposSacramento.map((tipo) => {
-            const bloqueado = !tieneBautismo && tipo !== 'Bautismo';
+          {TIPOS.map((t) => {
+            const bloqueado = !tieneBautismo && t !== 'bautismo';
             return (
               <button
-                key={tipo}
+                key={t}
                 type="button"
                 disabled={bloqueado}
                 title={bloqueado ? 'Registre primero el Bautismo' : undefined}
                 className={cn(
-                  "px-5 py-3 text-sm font-medium transition-colors",
+                  'px-5 py-3 text-sm font-medium transition-colors',
                   bloqueado
-                    ? "cursor-not-allowed border-0 bg-transparent text-gray-300"
-                    : "cursor-pointer border-0 bg-transparent text-gray-500 hover:text-blue-600",
-                  tipoActivo === tipo &&
-                    !bloqueado &&
-                    "border-b-2 border-blue-600 text-blue-600",
+                    ? 'cursor-not-allowed border-0 bg-transparent text-gray-300'
+                    : 'cursor-pointer border-0 bg-transparent text-gray-500 hover:text-blue-600',
+                  tipo === t && !bloqueado && 'border-b-2 border-blue-600 text-blue-600',
                 )}
-                onClick={() => setTipoActivo(tipo)}
+                onClick={() => setTipo(t)}
               >
-                {tipo.toUpperCase()}
+                {TIPO_SACRAMENTO_LABEL[t].toUpperCase()}
               </button>
             );
           })}
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-          <div className="max-h-[60vh] overflow-y-auto p-6">
-            {renderForm()}
+          <div className="max-h-[60vh] space-y-4 overflow-y-auto p-6">
+            {catalogoCargando ? (
+              <div className="flex items-center gap-2 py-6 text-sm text-text-secondary">
+                <Loader2 size={18} className="animate-spin" /> Cargando catálogos...
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div>
+                    <Label>Parroquia *</Label>
+                    <select
+                      value={idParroquia}
+                      onChange={(e) => setIdParroquia(e.target.value)}
+                      className={inputClass(errors.idParroquia)}
+                    >
+                      <option value="">Seleccione...</option>
+                      {(parroquias ?? []).map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre} {p.canton ? `(${p.canton})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Presbítero</Label>
+                    <select
+                      value={idPresbitero}
+                      onChange={(e) => setIdPresbitero(e.target.value)}
+                      className={inputClass()}
+                    >
+                      <option value="">Seleccione...</option>
+                      {(presbiteros ?? []).map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre} {p.primerApellido}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Fecha de celebración *</Label>
+                    <Input
+                      type="date"
+                      className={inputClass(errors.fechaSacramento)}
+                      value={fechaSacramento}
+                      onChange={(e) => setFechaSacramento(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {tipo === 'bautismo' && renderBautismo()}
+                {(tipo === 'comunion' || tipo === 'confirmacion') && renderPersonaDetalle()}
+                {tipo === 'matrimonio' && renderMatrimonio()}
+
+                <div>
+                  <Label>Observaciones</Label>
+                  <Input
+                    type="text"
+                    value={observaciones}
+                    onChange={(e) => setObservaciones(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4">
-            <Button type="submit" variant="primary" disabled={saving}>
-              {saving ? "GUARDANDO..." : "INSCRIBIR ACTA"}
+            <Button type="submit" variant="primary" disabled={saving || catalogoCargando}>
+              {saving ? 'GUARDANDO...' : 'INSCRIBIR ACTA'}
             </Button>
             <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
               CANCELAR
