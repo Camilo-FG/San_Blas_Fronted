@@ -10,7 +10,7 @@ const CatequesisInfoSection = () => (
     aria-labelledby="catequesis-info-title"
   >
     <header className="mb-6 border-b border-royal-gold/35 pb-5">
-      <p className="mb-2 text-xs font-black tracking-widest text-royal-gold-muted uppercase">
+      <p className="mb-2 font-heading text-[clamp(24px,3vw,30px)] leading-tight font-extrabold text-royal-gold-muted uppercase">
         Información para familias
       </p>
       <h1
@@ -19,10 +19,10 @@ const CatequesisInfoSection = () => (
       >
         {CATEQUESIS_INTRO.titulo}
       </h1>
-      <p className="mt-3.5 text-[15px] leading-[1.75] text-gray-600 sm:text-[15px]">
+      <p className="mt-3.5 text-base leading-[1.75] text-gray-600">
         {CATEQUESIS_INTRO.descripcion}
       </p>
-      <p className="mt-3 rounded-[14px] border border-royal-gold/40 bg-royal-gold/10 p-3.5 text-sm leading-[1.75] text-gray-600 sm:text-sm">
+      <p className="mt-3 rounded-[14px] border border-royal-gold/40 bg-royal-gold/10 p-3.5 text-[15px] leading-[1.75] text-gray-600">
         {CATEQUESIS_INTRO.notaCenacat}
       </p>
     </header>
@@ -38,10 +38,10 @@ const CatequesisInfoSection = () => (
               key={item.nivel}
               className="rounded-[14px] border border-border border-l-4 border-l-royal-gold bg-surface-muted px-4 py-3.5"
             >
-              <strong className="mb-1.5 block text-sm leading-snug text-royal-blue">
-                {item.nivel}: “{item.titulo}”
+              <strong className="mb-1.5 block text-[15px] leading-snug text-royal-blue">
+                {item.nivel}: "{item.titulo}"
               </strong>
-              <span className="block text-sm leading-[1.65] text-gray-600">
+              <span className="block text-[15px] leading-[1.65] text-gray-600">
                 {item.descripcion}
               </span>
             </li>
@@ -59,10 +59,10 @@ const CatequesisInfoSection = () => (
               key={item.nivel}
               className="rounded-[14px] border border-border border-l-4 border-l-royal-gold bg-surface-muted px-4 py-3.5"
             >
-              <strong className="mb-1.5 block text-sm leading-snug text-royal-blue">
-                {item.nivel}: “{item.titulo}”
+              <strong className="mb-1.5 block text-[15px] leading-snug text-royal-blue">
+                {item.nivel}: "{item.titulo}"
               </strong>
-              <span className="block text-sm leading-[1.65] text-gray-600">
+              <span className="block text-[15px] leading-[1.65] text-gray-600">
                 {item.descripcion}
               </span>
             </li>

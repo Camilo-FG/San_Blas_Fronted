@@ -1,52 +1,99 @@
 import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
+import { useObtenerSacramentosPersona } from '../hooks/hooksNuevos/useObtenerSacramentosPersona';
+import {
+  DetalleBautismo,
+  PersonaDetalle,
+  PersonaSacramental,
+  TIPO_SACRAMENTO_LABEL,
+} from '../../../types/sacramentosNuevos';
 
-interface DetailsDrawerProps {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
-  sacramento: any;
-  tipo: string;
+  cedula: string | null;
 }
 
-const formatearHora = (hora: any): string => {
-  if (!hora) return '';
-  if (typeof hora === 'string') return hora;
-  const horas = String(hora.hours ?? hora.Hours ?? hora.hour ?? '00').padStart(2, '0');
-  const minutos = String(hora.minutes ?? hora.Minutes ?? hora.minute ?? '00').padStart(2, '0');
-  return `${horas}:${minutos}`;
+const nombreCompleto = (persona: PersonaDetalle | null | undefined): string => {
+  if (!persona) return '';
+  return [persona.nombre, persona.primerApellido, persona.segundoApellido]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
 };
 
-const value = (sacramento: any, keys: string[]): string => {
-  for (const key of keys) {
-    const v = sacramento?.[key];
-    if (v !== undefined && v !== null && v !== '') return String(v);
-  }
-  return '';
+const nombrePresbitero = (
+  p: { nombre: string; primerApellido: string; segundoApellido: string | null } | null,
+): string => {
+  if (!p) return '';
+  return [p.nombre, p.primerApellido, p.segundoApellido].filter(Boolean).join(' ').trim();
 };
 
-const DetailsDrawer = ({ isOpen, onClose, sacramento, tipo }: DetailsDrawerProps) => {
-  if (!isOpen) return null;
+// Línea punteada para un dato vacío dentro del texto del acta (estilo original).
+const Line = ({ children }: { children?: React.ReactNode }) => (
+  <span className="mx-1 inline-block min-w-[3rem] border-b border-slate-400 text-slate-900">
+    {children}
+  </span>
+);
+
+const Fila = ({ label, valor }: { label: string; valor?: React.ReactNode }) => (
+  <div className="flex items-baseline">
+    <span className="mr-1 text-slate-500">{label}</span>
+    <Line>{valor ?? ''}</Line>
+  </div>
+);
+
+const renderBautismo = (detalle: DetalleBautismo) => (
+  <>
+    <Fila label="Bautizado:" valor={nombreCompleto(detalle.bautizado)} />
+    <Fila label="Padre:" valor={nombreCompleto(detalle.padre)} />
+    <Fila label="Madre:" valor={nombreCompleto(detalle.madre)} />
+    <Fila label="Padrino:" valor={nombreCompleto(detalle.padrino)} />
+    <Fila label="Madrina:" valor={nombreCompleto(detalle.madrina)} />
+    <Fila label="Declarante:" valor={nombreCompleto(detalle.declarante)} />
+    <Fila label="Fecha de nacimiento:" valor={detalle.fechaNacimiento} />
+    <Fila label="Hora de nacimiento:" valor={detalle.horaNacimiento} />
+    <Fila label="Lugar de nacimiento:" valor={detalle.lugarNacimiento} />
+    <Fila label="Reconocimiento:" valor={detalle.reconocimientoLegal} />
+    <Fila
+      label="Libro:"
+      valor={`${detalle.libro ?? ''}  Tomo: ${detalle.tomo ?? ''}  Folio: ${detalle.folio ?? ''}  Asiento: ${detalle.asiento ?? ''}`}
+    />
+    <Fila label="Firma párroco:" valor={detalle.firmaParroco} />
+    {detalle.abuelos.length > 0 && (
+      <div className="mt-2">
+        <span className="mr-1 text-slate-500">Abuelos:</span>
+        <div className="ml-4 flex flex-col gap-0.5">
+          {detalle.abuelos.map((abuelo) => (
+            <div key={`${abuelo.id}-${abuelo.parentesco}`} className="flex items-baseline">
+              <span className="mr-1 text-slate-400">
+                {abuelo.parentesco.replaceAll('_', ' ')}:
+              </span>
+              <Line>{nombreCompleto(abuelo)}</Line>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </>
+);
+
+const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
+  const { data, isPending, error } = useObtenerSacramentosPersona(cedula);
 
   useEffect(() => {
+    if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+      if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [isOpen, onClose]);
 
-  const nombre = value(sacramento, ['Nombre', 'nombre']);
-  const primerApellido = value(sacramento, ['PrimerApellido', 'primerApellido']);
-  const segundoApellido = value(sacramento, ['SegundoApellido', 'segundoApellido']);
-  const cedula = value(sacramento, ['cedula', 'Cedula']);
+  if (!isOpen) return null;
 
-  // Línea punteada para un dato vacío dentro del texto del acta.
-  const Line = ({ children }: { children?: React.ReactNode }) => (
-    <span className="mx-1 inline-block min-w-[3rem] border-b border-slate-400 text-slate-900">
-      {children}
-    </span>
-  );
+  const sacramental: PersonaSacramental | undefined = data;
+  const persona = sacramental?.persona;
 
   return (
     <>
@@ -59,12 +106,12 @@ const DetailsDrawer = ({ isOpen, onClose, sacramento, tipo }: DetailsDrawerProps
         className="fixed top-0 right-0 bottom-0 left-0 z-[1301] flex h-full w-full max-w-full flex-col bg-slate-100 sm:left-auto sm:w-[min(560px,100vw)]"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="drawer-sacramento-title"
+        aria-label="Detalle del sacramento"
       >
         {/* Encabezado */}
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border-strong bg-white px-5 py-4 shadow-sm">
           <div>
-            <h2 id="drawer-sacramento-title" className="m-0 text-[1.1rem] font-bold leading-snug break-words text-royal-blue">
+            <h2 className="m-0 text-[1.1rem] font-bold leading-snug break-words text-royal-blue">
               Detalle del sacramento
             </h2>
             <p className="m-0 mt-0.5 text-[0.82rem] text-slate-500">Acta de vida sacramental</p>
@@ -81,160 +128,194 @@ const DetailsDrawer = ({ isOpen, onClose, sacramento, tipo }: DetailsDrawerProps
 
         {/* Cuerpo: el acta en papel */}
         <div className="flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4">
-          {sacramento ? (
+          {isPending && (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+              <Loader2 size={28} className="animate-spin text-text-muted" />
+              <p className="m-0 text-sm text-text-secondary">Cargando detalles...</p>
+            </div>
+          )}
+
+          {!isPending && error && (
+            <p className="px-4 py-8 text-center text-slate-500">
+              No se encontró una persona con esa cédula o no se pudo cargar la ficha.
+            </p>
+          )}
+
+          {!isPending && !error && sacramental && (
             <div className="mx-auto max-w-[520px] bg-white shadow-[0_1px_6px_rgba(15,23,42,0.12)] ring-1 ring-slate-200">
               <div className="px-5 py-5 font-serif text-[0.9rem] leading-relaxed text-slate-800">
                 {/* Datos personales */}
                 <div className="mb-4 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-3">
                   <div className="flex items-baseline">
                     <span className="mr-1 text-slate-500">Nombre</span>
-                    <Line>{nombre}</Line>
+                    <Line>{persona?.nombre ?? ''}</Line>
                   </div>
                   <div className="flex items-baseline">
                     <span className="mr-1 text-slate-500">Primer Apellido</span>
-                    <Line>{primerApellido}</Line>
+                    <Line>{persona?.primerApellido ?? ''}</Line>
                   </div>
                   <div className="flex items-baseline">
                     <span className="mr-1 text-slate-500">Segundo Apellido</span>
-                    <Line>{segundoApellido}</Line>
+                    <Line>{persona?.segundoApellido ?? ''}</Line>
+                  </div>
+                  <div className="flex items-baseline">
+                    <span className="mr-1 text-slate-500">Cédula</span>
+                    <Line>{persona?.cedula ?? ''}</Line>
                   </div>
                 </div>
 
                 {/* Bautismo */}
-                <div className={`mb-4 rounded-sm border-2 px-4 py-3 ${tipo === 'Bautismo' ? 'border-slate-400' : 'border-slate-200'}`}>
-                  <h4 className={`mb-3 text-center text-[0.95rem] font-bold tracking-wide uppercase ${tipo === 'Bautismo' ? 'text-slate-800' : 'text-slate-400'}`}>
-                    Bautismo
+                <div
+                  className={`mb-4 rounded-sm border-2 px-4 py-3 ${
+                    sacramental.bautismo ? 'border-slate-400' : 'border-slate-200'
+                  }`}
+                >
+                  <h4
+                    className={`mb-3 text-center text-[0.95rem] font-bold tracking-wide uppercase ${
+                      sacramental.bautismo ? 'text-slate-800' : 'text-slate-400'
+                    }`}
+                  >
+                    {TIPO_SACRAMENTO_LABEL.bautismo}
                   </h4>
                   <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Fecha de Bautismo:</span>
-                      <Line>{value(sacramento, ['FechaBautismo', 'fechaBautismo'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Año:</span>
-                      <Line>{value(sacramento, ['AnnioBautismo', 'annioBautismo'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Fecha de nacimiento:</span>
-                      <Line>{value(sacramento, ['fechaNacimiento', 'FechaNacimiento'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Hora de nacimiento:</span>
-                      <Line>{formatearHora(sacramento?.horaNacimiento || sacramento?.HoraNacimiento)}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Parroquia:</span>
-                      <Line>{value(sacramento, ['NombreParroquia', 'nombreParroquia'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Presbítero:</span>
-                      <Line>{value(sacramento, ['Prebispero', 'prebispero'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Cédula:</span>
-                      <Line>{cedula}</Line>
-                    </div>
+                    {sacramental.bautismo ? (
+                      renderBautismo(sacramental.bautismo.detalle as DetalleBautismo)
+                    ) : (
+                      <>
+                        <Fila label="Bautizado:" />
+                        <Fila label="Padre:" />
+                        <Fila label="Madre:" />
+                        <Fila label="Padrino:" />
+                        <Fila label="Madrina:" />
+                        <Fila label="Fecha:" />
+                      </>
+                    )}
                   </div>
-                  <div className="mt-3 space-y-2">
-                    <div>
-                      <span className="mr-1 text-slate-500">Abuelos Paternos:</span>
-                      <Line>{value(sacramento, ['NombreAbuelosPaternos', 'nombreAbuelosPaternos'])}</Line>
+                  {sacramental.bautismo && (
+                    <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+                      <Fila label="Parroquia:" valor={sacramental.bautismo.parroquia.nombre} />
+                      <Fila label="Presbítero:" valor={nombrePresbitero(sacramental.bautismo.presbitero)} />
+                      <Fila label="Fecha:" valor={sacramental.bautismo.fechaSacramento} />
                     </div>
-                    <div>
-                      <span className="mr-1 text-slate-500">Abuelos Maternos:</span>
-                      <Line>{value(sacramento, ['NombreAbuelosMaternos', 'nombreAbuelosMaternos'])}</Line>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Primera Comunión */}
-                <div className={`mb-4 rounded-sm border-2 px-4 py-3 ${tipo === 'Comunión' ? 'border-slate-400' : 'border-slate-200'}`}>
-                  <h4 className={`mb-3 text-center text-[0.95rem] font-bold tracking-wide uppercase ${tipo === 'Comunión' ? 'text-slate-800' : 'text-slate-400'}`}>
-                    Primera Comunión
+                <div
+                  className={`mb-4 rounded-sm border-2 px-4 py-3 ${
+                    sacramental.comunion ? 'border-slate-400' : 'border-slate-200'
+                  }`}
+                >
+                  <h4
+                    className={`mb-3 text-center text-[0.95rem] font-bold tracking-wide uppercase ${
+                      sacramental.comunion ? 'text-slate-800' : 'text-slate-400'
+                    }`}
+                  >
+                    {TIPO_SACRAMENTO_LABEL.comunion}
                   </h4>
                   <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Día:</span>
-                      <Line>{value(sacramento, ['DiaComunion', 'diaComunion'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Mes:</span>
-                      <Line>{value(sacramento, ['MesComunion', 'mesComunion'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Año:</span>
-                      <Line>{value(sacramento, ['AnnioComunion', 'annioComunion'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Lugar:</span>
-                      <Line>{value(sacramento, ['LugarComunion', 'lugarComunion'])}</Line>
-                    </div>
+                    <Fila
+                      label="Persona:"
+                      valor={
+                        sacramental.comunion
+                          ? nombreCompleto((sacramental.comunion.detalle as { persona: PersonaDetalle }).persona)
+                          : ''
+                      }
+                    />
+                    <Fila
+                      label="Parroquia:"
+                      valor={sacramental.comunion?.parroquia.nombre}
+                    />
+                    <Fila
+                      label="Presbítero:"
+                      valor={nombrePresbitero(sacramental.comunion?.presbitero ?? null)}
+                    />
+                    <Fila label="Fecha:" valor={sacramental.comunion?.fechaSacramento} />
                   </div>
                 </div>
 
                 {/* Confirmación */}
-                <div className={`mb-4 rounded-sm border-2 px-4 py-3 ${tipo === 'Confirmación' ? 'border-slate-400' : 'border-slate-200'}`}>
-                  <h4 className={`mb-3 text-center text-[0.95rem] font-bold tracking-wide uppercase ${tipo === 'Confirmación' ? 'text-slate-800' : 'text-slate-400'}`}>
-                    Confirmación
+                <div
+                  className={`mb-4 rounded-sm border-2 px-4 py-3 ${
+                    sacramental.confirmacion ? 'border-slate-400' : 'border-slate-200'
+                  }`}
+                >
+                  <h4
+                    className={`mb-3 text-center text-[0.95rem] font-bold tracking-wide uppercase ${
+                      sacramental.confirmacion ? 'text-slate-800' : 'text-slate-400'
+                    }`}
+                  >
+                    {TIPO_SACRAMENTO_LABEL.confirmacion}
                   </h4>
                   <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Día:</span>
-                      <Line>{value(sacramento, ['DiaConfirmacion', 'diaConfirmacion'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Mes:</span>
-                      <Line>{value(sacramento, ['MesConfirmacion', 'mesConfirmacion'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Año:</span>
-                      <Line>{value(sacramento, ['AnnioConfirmacion', 'annioConfirmacion'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Lugar:</span>
-                      <Line>{value(sacramento, ['LugarConfirmacion', 'lugarConfirmacion'])}</Line>
-                    </div>
+                    <Fila
+                      label="Persona:"
+                      valor={
+                        sacramental.confirmacion
+                          ? nombreCompleto((sacramental.confirmacion.detalle as { persona: PersonaDetalle }).persona)
+                          : ''
+                      }
+                    />
+                    <Fila
+                      label="Parroquia:"
+                      valor={sacramental.confirmacion?.parroquia.nombre}
+                    />
+                    <Fila
+                      label="Presbítero:"
+                      valor={nombrePresbitero(sacramental.confirmacion?.presbitero ?? null)}
+                    />
+                    <Fila label="Fecha:" valor={sacramental.confirmacion?.fechaSacramento} />
                   </div>
                 </div>
 
                 {/* Matrimonio */}
-                <div className={`mb-4 rounded-sm border-2 px-4 py-3 ${tipo === 'Matrimonio' ? 'border-slate-400' : 'border-slate-200'}`}>
-                  <h4 className={`mb-3 text-center text-[0.95rem] font-bold tracking-wide uppercase ${tipo === 'Matrimonio' ? 'text-slate-800' : 'text-slate-400'}`}>
-                    Matrimonio
+                <div
+                  className={`mb-4 rounded-sm border-2 px-4 py-3 ${
+                    sacramental.matrimonio ? 'border-slate-400' : 'border-slate-200'
+                  }`}
+                >
+                  <h4
+                    className={`mb-3 text-center text-[0.95rem] font-bold tracking-wide uppercase ${
+                      sacramental.matrimonio ? 'text-slate-800' : 'text-slate-400'
+                    }`}
+                  >
+                    {TIPO_SACRAMENTO_LABEL.matrimonio}
                   </h4>
                   <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Contrayente 1:</span>
-                      <Line>{value(sacramento, ['NombreContrayente', 'nombreContrayente'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Contrayente 2:</span>
-                      <Line>{value(sacramento, ['NombreContrayente2', 'nombreContrayente2'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Día:</span>
-                      <Line>{value(sacramento, ['DiaMatrimonio', 'diaMatrimonio'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Mes:</span>
-                      <Line>{value(sacramento, ['MesMatrimonio', 'mesMatrimonio'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Año:</span>
-                      <Line>{value(sacramento, ['AnnioMatrimonio', 'annioMatrimonio'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Lugar:</span>
-                      <Line>{value(sacramento, ['LugarMatrimonio', 'lugarMatrimonio'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Tomo:</span>
-                      <Line>{value(sacramento, ['Tomo', 'tomo'])}</Line>
-                    </div>
-                    <div className="flex items-baseline">
-                      <span className="mr-1 text-slate-500">Folio:</span>
-                      <Line>{value(sacramento, ['Folio', 'folio'])}</Line>
-                    </div>
+                    <Fila
+                      label="Contrayente 1:"
+                      valor={
+                        sacramental.matrimonio
+                          ? nombreCompleto((sacramental.matrimonio.detalle as { contrayente1: PersonaDetalle }).contrayente1)
+                          : ''
+                      }
+                    />
+                    <Fila
+                      label="Contrayente 2:"
+                      valor={
+                        sacramental.matrimonio
+                          ? nombreCompleto((sacramental.matrimonio.detalle as { contrayente2: PersonaDetalle }).contrayente2)
+                          : ''
+                      }
+                    />
+                    <Fila
+                      label="Libro:"
+                      valor={(sacramental.matrimonio?.detalle as { libro: string | null } | undefined)?.libro}
+                    />
+                    <Fila
+                      label="Tomo:"
+                      valor={(sacramental.matrimonio?.detalle as { tomo: string | null } | undefined)?.tomo}
+                    />
+                    <Fila
+                      label="Folio:"
+                      valor={(sacramental.matrimonio?.detalle as { folio: string | null } | undefined)?.folio}
+                    />
+                    <Fila label="Parroquia:" valor={sacramental.matrimonio?.parroquia.nombre} />
+                    <Fila
+                      label="Presbítero:"
+                      valor={nombrePresbitero(sacramental.matrimonio?.presbitero ?? null)}
+                    />
+                    <Fila label="Fecha:" valor={sacramental.matrimonio?.fechaSacramento} />
                   </div>
                 </div>
 
@@ -244,15 +325,15 @@ const DetailsDrawer = ({ isOpen, onClose, sacramento, tipo }: DetailsDrawerProps
                     Observaciones
                   </h4>
                   <div className="space-y-2">
-                    <div className="h-5 border-b border-slate-300" />
+                    <div className="h-5 border-b border-slate-300">
+                      <Line>{sacramental.bautismo?.observaciones ?? ''}</Line>
+                    </div>
                     <div className="h-5 border-b border-slate-300" />
                     <div className="h-5 border-b border-slate-300" />
                   </div>
                 </div>
               </div>
             </div>
-          ) : (
-            <p className="px-4 py-8 text-center text-slate-500">Cargando detalles...</p>
           )}
         </div>
       </div>

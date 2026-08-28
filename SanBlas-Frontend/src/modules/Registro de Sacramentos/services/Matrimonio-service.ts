@@ -13,6 +13,7 @@ export const fetchCreateMatrimonio = async (matrimonio: RegistroMatrimonio): Pro
 
 export const fetchUpdateMatrimonio = async (MatrimonioActualizado: RegistroMatrimonio): Promise<RegistroMatrimonio> => {
   const response = await apiClient.put(`/Matrimonio/${MatrimonioActualizado.id}`, MatrimonioActualizado);
+  if (response.status === 204) return MatrimonioActualizado;
   return response.data;
 };
 
