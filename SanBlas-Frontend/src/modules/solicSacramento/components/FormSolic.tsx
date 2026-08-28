@@ -485,6 +485,7 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: Juan"
                       value={field.state.value}
+                      disabled={verificandoCedula}
                       onChange={(e) =>
                         field.handleChange(
                           soloLetras(e.target.value).slice(0, 20),
@@ -530,6 +531,7 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: Pérez"
                       value={field.state.value}
+                      disabled={verificandoCedula}
                       onChange={(e) =>
                         field.handleChange(
                           soloLetras(e.target.value).slice(0, 20),
@@ -575,6 +577,7 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: González"
                       value={field.state.value}
+                      disabled={verificandoCedula}
                       onChange={(e) =>
                         field.handleChange(
                           soloLetras(e.target.value).slice(0, 20),
