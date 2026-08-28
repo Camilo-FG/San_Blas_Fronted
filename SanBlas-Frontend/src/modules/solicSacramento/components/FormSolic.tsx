@@ -82,6 +82,7 @@ const FormSolic = () => {
   const [verificandoCedula, setVerificandoCedula] = useState(false);
   const [cedulaValida, setCedulaValida] = useState(false);
   const [datosCedulaValidada, setDatosCedulaValidada] = useState<DatosCedula | null>(null);
+  const [intentoEnvio, setIntentoEnvio] = useState(false);
   const cedulaValidadaRef = useRef<string | null>(null);
   const exitoRef = useRef<HTMLDivElement | null>(null);
 
@@ -250,6 +251,7 @@ const FormSolic = () => {
   const manejarEnvio = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    setIntentoEnvio(true);
     await form.handleSubmit();
     const campoInvalido = obtenerPrimerCampoInvalido();
     if (campoInvalido) {
@@ -288,6 +290,7 @@ const FormSolic = () => {
     setVerificandoCedula(false);
     setCedulaValida(false);
     setDatosCedulaValidada(null);
+    setIntentoEnvio(false);
     cedulaValidadaRef.current = null;
     resetCaptcha();
     setEnviado(false);
@@ -438,7 +441,7 @@ const FormSolic = () => {
                       )}
                     </div>
                   </div>
-                    {field.state.meta.errors[0] && (
+                    {intentoEnvio && field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
                       </span>
@@ -487,7 +490,7 @@ const FormSolic = () => {
                       className={fieldClass}
                     />
                     <div className="flex w-full items-start justify-between gap-2">
-                      {field.state.meta.errors[0] && (
+                      {intentoEnvio && field.state.meta.errors[0] && (
                         <span className="text-[0.84rem] font-semibold text-red-500">
                           ⚠ {field.state.meta.errors[0]}
                         </span>
@@ -532,7 +535,7 @@ const FormSolic = () => {
                       className={fieldClass}
                     />
                     <div className="flex w-full items-start justify-between gap-2">
-                      {field.state.meta.errors[0] && (
+                      {intentoEnvio && field.state.meta.errors[0] && (
                         <span className="text-[0.84rem] font-semibold text-red-500">
                           ⚠ {field.state.meta.errors[0]}
                         </span>
@@ -577,7 +580,7 @@ const FormSolic = () => {
                       className={fieldClass}
                     />
                     <div className="flex w-full items-start justify-between gap-2">
-                      {field.state.meta.errors[0] && (
+                      {intentoEnvio && field.state.meta.errors[0] && (
                         <span className="text-[0.84rem] font-semibold text-red-500">
                           ⚠ {field.state.meta.errors[0]}
                         </span>
@@ -623,7 +626,7 @@ const FormSolic = () => {
                       className={fieldClass}
                     />
                     <div className="flex w-full items-start justify-between gap-2">
-                      {field.state.meta.errors[0] && (
+                      {intentoEnvio && field.state.meta.errors[0] && (
                         <span className="text-[0.84rem] font-semibold text-red-500">
                           ⚠ {field.state.meta.errors[0]}
                         </span>
@@ -666,7 +669,7 @@ const FormSolic = () => {
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
-                    {field.state.meta.errors[0] && (
+                    {intentoEnvio && field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
                       </span>
@@ -705,12 +708,12 @@ const FormSolic = () => {
                       onBlur={field.handleBlur}
                     />
                     <div className="flex w-full items-start justify-between gap-2">
-                      {(errorMotivoBackend || field.state.meta.errors[0]) && (
+                      {(errorMotivoBackend || (intentoEnvio && field.state.meta.errors[0])) && (
                         <span className="text-[0.84rem] font-semibold text-red-500">
                           {errorMotivoBackend && (
                             <span role="alert">⚠ {errorMotivoBackend}</span>
                           )}
-                          {field.state.meta.errors[0] && (
+                          {intentoEnvio && field.state.meta.errors[0] && (
                             <span>⚠ {field.state.meta.errors[0]}</span>
                           )}
                         </span>
