@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useRef, ReactNode } from "react";
 import { X, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
 import { cn } from "./cn";
 
@@ -20,14 +20,16 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const idCounter = useState(0)[0];
+  const idCounter = useRef(0);
 
   const showToast = useCallback((message: string, type: ToastType) => {
-    const id = Date.now();
+    idCounter.current += 1;
+    const id = idCounter.current;
     setToasts((prev) => [...prev, { id, message, type }]);
+    // Las notificaciones desaparecen automáticamente después de 4 segundos
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 5000);
+    }, 4000);
   }, []);
 
   const dismissToast = useCallback((id: number) => {
@@ -53,21 +55,21 @@ export function useToast() {
 function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
   const icons = {
     success: <CheckCircle size={20} className="text-success" />,
-    error: <AlertCircle size={20} className="text-danger" />,
+    error: <X size={20} className="text-white" />,
     warning: <AlertTriangle size={20} className="text-warning" />,
     info: <AlertCircle size={20} className="text-info" />,
   };
 
   const bgClasses = {
     success: "bg-success-bg border-success",
-    error: "bg-danger-bg border-danger",
+    error: "bg-red-600 border-red-700",
     warning: "bg-warning-bg border-warning",
     info: "bg-info-bg border-info",
   };
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-[1400] flex flex-col gap-2 pointer-events-none"
+      className="fixed top-4 right-4 z-[1400] flex flex-col gap-2 pointer-events-none"
       role="region"
       aria-live="polite"
       aria-label="Notificaciones"
@@ -84,11 +86,23 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">{icons[toast.type]}</div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-text">{toast.message}</p>
+              <p
+                className={cn(
+                  "text-sm font-medium",
+                  toast.type === "error" ? "text-white" : "text-text",
+                )}
+              >
+                {toast.message}
+              </p>
             </div>
             <button
               type="button"
-              className="flex-shrink-0 text-text-muted hover:text-text transition-colors"
+              className={cn(
+                "flex-shrink-0 transition-colors",
+                toast.type === "error"
+                  ? "text-white/80 hover:text-white"
+                  : "text-text-muted hover:text-text",
+              )}
               onClick={() => onDismiss(toast.id)}
               aria-label="Cerrar notificación"
             >
