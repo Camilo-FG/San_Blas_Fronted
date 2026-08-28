@@ -252,7 +252,7 @@ const FormSolic = () => {
     e.preventDefault();
     e.stopPropagation();
     setIntentoEnvio(true);
-    await form.handleSubmit();
+
     const campoInvalido = obtenerPrimerCampoInvalido();
     if (campoInvalido) {
       const elemento = document.getElementById(
@@ -263,9 +263,11 @@ const FormSolic = () => {
       return;
     }
 
-    // Check if cedula was already validated
+    // Check if cedula was already validated before submitting
     if (!cedulaValida) {
-      setErrorCedula("La cédula no ha sido validada. Complete la cédula y espere la validación.");
+      if (!errorCedula) {
+        setErrorCedula("La cédula no ha sido validada. Complete la cédula y espere la validación.");
+      }
       const cedulaInput = document.getElementById(
         "Cedula",
       ) as HTMLInputElement | null;
@@ -279,6 +281,8 @@ const FormSolic = () => {
         .getElementById("captcha-container")
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
+
+    await form.handleSubmit();
   };
 
   const handleHacerOtraSolicitud = () => {
