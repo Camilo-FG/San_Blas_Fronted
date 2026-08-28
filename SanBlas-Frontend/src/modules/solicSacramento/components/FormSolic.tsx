@@ -486,14 +486,16 @@ const FormSolic = () => {
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
-                    <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/20
-                    </span>
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
+                    <div className="flex w-full items-start justify-between gap-2">
+                      {field.state.meta.errors[0] && (
+                        <span className="text-[0.84rem] font-semibold text-red-500">
+                          ⚠ {field.state.meta.errors[0]}
+                        </span>
+                      )}
+                      <span className="ml-auto shrink-0 text-right text-[0.78rem] font-medium text-text-secondary">
+                        {field.state.value.length}/20
                       </span>
-                    )}
+                    </div>
                   </>
                 )}
               </form.Field>
@@ -529,14 +531,16 @@ const FormSolic = () => {
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
-                    <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/20
-                    </span>
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
+                    <div className="flex w-full items-start justify-between gap-2">
+                      {field.state.meta.errors[0] && (
+                        <span className="text-[0.84rem] font-semibold text-red-500">
+                          ⚠ {field.state.meta.errors[0]}
+                        </span>
+                      )}
+                      <span className="ml-auto shrink-0 text-right text-[0.78rem] font-medium text-text-secondary">
+                        {field.state.value.length}/20
                       </span>
-                    )}
+                    </div>
                   </>
                 )}
               </form.Field>
@@ -572,14 +576,16 @@ const FormSolic = () => {
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
-                    <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/20
-                    </span>
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
+                    <div className="flex w-full items-start justify-between gap-2">
+                      {field.state.meta.errors[0] && (
+                        <span className="text-[0.84rem] font-semibold text-red-500">
+                          ⚠ {field.state.meta.errors[0]}
+                        </span>
+                      )}
+                      <span className="ml-auto shrink-0 text-right text-[0.78rem] font-medium text-text-secondary">
+                        {field.state.value.length}/20
                       </span>
-                    )}
+                    </div>
                   </>
                 )}
               </form.Field>
@@ -616,14 +622,16 @@ const FormSolic = () => {
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
-                    <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/35
-                    </span>
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
+                    <div className="flex w-full items-start justify-between gap-2">
+                      {field.state.meta.errors[0] && (
+                        <span className="text-[0.84rem] font-semibold text-red-500">
+                          ⚠ {field.state.meta.errors[0]}
+                        </span>
+                      )}
+                      <span className="ml-auto shrink-0 text-right text-[0.78rem] font-medium text-text-secondary">
+                        {field.state.value.length}/35
                       </span>
-                    )}
+                    </div>
                   </>
                 )}
               </form.Field>
@@ -696,22 +704,21 @@ const FormSolic = () => {
                       }}
                       onBlur={field.handleBlur}
                     />
-                    <span className="text-right text-[0.78rem] font-medium text-text-secondary">
-                      {field.state.value.length}/250
-                    </span>
-                    {errorMotivoBackend && (
-                      <span
-                        role="alert"
-                        className="text-[0.84rem] font-semibold text-red-500"
-                      >
-                        ⚠ {errorMotivoBackend}
+                    <div className="flex w-full items-start justify-between gap-2">
+                      {(errorMotivoBackend || field.state.meta.errors[0]) && (
+                        <span className="text-[0.84rem] font-semibold text-red-500">
+                          {errorMotivoBackend && (
+                            <span role="alert">⚠ {errorMotivoBackend}</span>
+                          )}
+                          {field.state.meta.errors[0] && (
+                            <span>⚠ {field.state.meta.errors[0]}</span>
+                          )}
+                        </span>
+                      )}
+                      <span className="ml-auto shrink-0 text-right text-[0.78rem] font-medium text-text-secondary">
+                        {field.state.value.length}/250
                       </span>
-                    )}
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
-                      </span>
-                    )}
+                    </div>
                   </>
                 )}
               </form.Field>
