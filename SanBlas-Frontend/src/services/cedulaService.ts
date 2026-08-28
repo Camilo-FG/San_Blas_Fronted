@@ -11,6 +11,16 @@ export interface DatosCedula {
   segundoApellido: string;
 }
 
+const capitalizarNombre = (valor: string): string =>
+  valor
+    .split(" ")
+    .filter(Boolean)
+    .map(
+      (palabra) =>
+        palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase(),
+    )
+    .join(" ");
+
 const parsearNombre = (valor: string): DatosCedula | null => {
   const parts = valor.trim().split(" ");
 
@@ -20,9 +30,11 @@ const parsearNombre = (valor: string): DatosCedula | null => {
     const surnames = parts.slice(parts.length >= 3 ? 2 : 1).join(" ");
 
     return {
-      nombre: `${firstName} ${middleName}`.trim(),
-      primerApellido: surnames.split(" ")[0] ?? "",
-      segundoApellido: surnames.split(" ").slice(1).join(" ") ?? "",
+      nombre: capitalizarNombre(`${firstName} ${middleName}`.trim()),
+      primerApellido: capitalizarNombre(surnames.split(" ")[0] ?? ""),
+      segundoApellido: capitalizarNombre(
+        surnames.split(" ").slice(1).join(" "),
+      ),
     };
   }
 
