@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
-import ReCAPTCHA from "react-google-recaptcha";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
+import { RecaptchaWidget } from "../../../shared/components/RecaptchaWidget";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 import { ApiError } from "../../../services/apiClient";
 import { obtenerDatosCedula, type DatosCedula } from "../../../services/cedulaService";
@@ -85,6 +85,10 @@ const FormSolic = () => {
   const [intentoEnvio, setIntentoEnvio] = useState(false);
   const cedulaValidadaRef = useRef<string | null>(null);
   const exitoRef = useRef<HTMLDivElement | null>(null);
+
+  const RECAPTCHA_KEY =
+    import.meta.env.VITE_RECAPTCHA_SITE_KEY ??
+    "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
 
   useEffect(() => {
     if (enviado) {
@@ -736,19 +740,21 @@ const FormSolic = () => {
 
             <div
               id="captcha-container"
-              className="col-span-1 flex flex-col items-center overflow-x-auto rounded-xl border border-border bg-surface-muted p-4 sm:col-span-2"
+              className="col-span-1 flex flex-col items-center rounded-xl border border-border bg-surface-muted p-4 sm:col-span-2"
             >
-              <ReCAPTCHA
-                ref={captchaRef}
-                sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
-                onChange={(token: string | null) => {
-                  handleCaptchaChange(token);
-                  if (token) {
-                    setCaptchaError(null);
-                  }
-                }}
-                onExpired={handleCaptchaExpired}
-              />
+              <div className="flex w-full max-w-[304px] justify-center overflow-visible">
+                <RecaptchaWidget
+                  sitekey={RECAPTCHA_KEY}
+                  captchaRef={captchaRef}
+                  onChange={(token: string | null) => {
+                    handleCaptchaChange(token);
+                    if (token) {
+                      setCaptchaError(null);
+                    }
+                  }}
+                  onExpired={handleCaptchaExpired}
+                />
+              </div>
               {captchaError && (
                 <span className="mt-2 block text-[0.84rem] font-semibold text-red-500">
                   ⚠ {captchaError}
