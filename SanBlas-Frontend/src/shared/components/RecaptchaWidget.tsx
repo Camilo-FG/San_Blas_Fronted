@@ -42,16 +42,33 @@ const cargarScriptReCaptcha = (): Promise<void> => {
       resolve();
     };
 
-    const script = document.createElement("script");
-    script.src = `https://www.google.com/recaptcha/api.js?onload=${callbackName}&render=explicit`;
-    script.async = true;
-    script.defer = true;
-    script.onerror = () => {
-      delete (window as unknown as Record<string, unknown>)[callbackName];
-      scriptPromise = null;
-      resolve();
+    const fuentes = [
+      "https://recaptcha.net/recaptcha/api.js?onload=" + callbackName + "&render=explicit",
+      "https://www.google.com/recaptcha/api.js?onload=" + callbackName + "&render=explicit",
+    ];
+
+    let indice = 0;
+    const cargarFuente = () => {
+      if (indice >= fuentes.length) {
+        delete (window as unknown as Record<string, unknown>)[callbackName];
+        scriptPromise = null;
+        resolve();
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = fuentes[indice];
+      indice += 1;
+      script.async = true;
+      script.defer = true;
+      script.onerror = () => {
+        script.remove();
+        cargarFuente();
+      };
+      document.head.appendChild(script);
     };
-    document.head.appendChild(script);
+
+    cargarFuente();
   });
 
   return scriptPromise;

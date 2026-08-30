@@ -1054,13 +1054,6 @@ const TableSacramentos = () => {
               </p>
               <div className="flex justify-end gap-2 pt-2">
                 <Button
-                  variant="secondary"
-                  onClick={handleCancelApprove}
-                  disabled={aprobarSolicitud.isPending}
-                >
-                  Cancelar
-                </Button>
-                <Button
                   variant="royal"
                   onClick={handleApproveConfirm}
                   disabled={aprobarSolicitud.isPending}
@@ -1076,6 +1069,13 @@ const TableSacramentos = () => {
                   ) : (
                     "Confirmar"
                   )}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={handleCancelApprove}
+                  disabled={aprobarSolicitud.isPending}
+                >
+                  Cancelar
                 </Button>
               </div>
               {errorAprobacion && (
