@@ -442,9 +442,13 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
       }
       onClose();
     } catch (err: any) {
-      const mensaje =
-        err?.response?.data?.mensaje ?? err?.message ?? 'No se pudo guardar el acta.';
-      showToast(String(mensaje), 'error');
+      if (err?.response?.status === 409) {
+        showToast('Este expediente ya tiene registrado ese tipo de sacramento.', 'error');
+      } else {
+        const mensaje =
+          err?.response?.data?.mensaje ?? err?.message ?? 'No se pudo guardar el acta.';
+        showToast(String(mensaje), 'error');
+      }
     } finally {
       setSaving(false);
     }
