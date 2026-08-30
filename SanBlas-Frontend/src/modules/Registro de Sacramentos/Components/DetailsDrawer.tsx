@@ -92,6 +92,7 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
   const persona = sacramental?.persona;
 
   return (
+
     <AnimatePresence>
       {isOpen && (
         <>
@@ -110,6 +111,14 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'tween', duration: 0.3, ease: 'easeOut' }}
+    <>
+      <div
+        className="fixed inset-0 z-[1300] bg-slate-900/60 backdrop-blur-[2px]"
+        onClick={onClose}
+        role="presentation"
+      />
+      <div
+        className="fixed top-0 right-0 bottom-0 left-0 z-[1301] flex h-full w-full max-w-full flex-col bg-slate-100 sm:left-auto sm:w-[min(700px,100vw)]"
         role="dialog"
         aria-modal="true"
         aria-label="Detalle del sacramento"
@@ -337,6 +346,7 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                       {sacramental.bautismo?.observaciones?.trim() || '\u00A0'}
                     </p>
                   </div>
+                  <Fila label="Observaciones:" valor={sacramental.bautismo?.observaciones ?? ''} />
                 </div>
               </div>
             </div>
