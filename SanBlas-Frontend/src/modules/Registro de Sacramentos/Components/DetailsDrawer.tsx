@@ -62,10 +62,10 @@ const renderBautismo = (detalle: DetalleBautismo) => (
     <Fila label="Fecha de nacimiento:" valor={detalle.fechaNacimiento} />
     <Fila label="Hora de nacimiento:" valor={detalle.horaNacimiento} />
     <Fila label="Lugar de nacimiento:" valor={detalle.lugarNacimiento} />
-    <Fila
-      label="Libro:"
-      valor={`${detalle.libro ?? ''}  Tomo: ${detalle.tomo ?? ''}  Folio: ${detalle.folio ?? ''}  Asiento: ${detalle.asiento ?? ''}`}
-    />
+    <Fila label="Libro:" valor={detalle.libro} />
+    <Fila label="Tomo:" valor={detalle.tomo} />
+    <Fila label="Folio:" valor={detalle.folio} />
+    <Fila label="Asiento:" valor={detalle.asiento} />
     {detalle.abuelos.length > 0 &&
       detalle.abuelos.map((abuelo) => {
         const titulo = abuelo.parentesco
