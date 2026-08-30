@@ -992,10 +992,13 @@ const TableSacramentos = () => {
         >
             <div className="flex min-h-44 flex-col">
               <h2
-                className="m-0 mt-1 pr-12 text-lg leading-tight font-semibold tracking-tight text-[#16243c]"
+                className="m-0 mt-1 pb-2 text-lg leading-tight font-semibold tracking-tight text-[#16243c]"
                 style={{ fontFamily: "'Geist', sans-serif" }}
               >
-                Aprobar solicitud sacramental
+                <span className="underline decoration-[#dcb55a] decoration-[3px] underline-offset-8">
+                  Aprobar solicitud sac
+                </span>
+                ramental
               </h2>
               <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
                 <p className="text-sm leading-relaxed text-text-secondary">
