@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { X } from "lucide-react";
+import FocusTrap from "focus-trap-react";
 import { cn } from "./cn";
 
 type ModalProps = {
@@ -47,6 +48,17 @@ export function Modal({
     </div>
   );
 
+  const focoAtrapado = (
+    <FocusTrap
+      focusTrapOptions={{
+        clickOutsideDeactivates: false,
+        escapeDeactivates: false,
+      }}
+    >
+      {contenido}
+    </FocusTrap>
+  );
+
   if (sinFondo) {
     return (
       <>
@@ -55,7 +67,7 @@ export function Modal({
           onClick={onClose}
           role="presentation"
         />
-        {contenido}
+        {focoAtrapado}
       </>
     );
   }
@@ -66,7 +78,7 @@ export function Modal({
       onClick={onClose}
       role="presentation"
     >
-      {contenido}
+      {focoAtrapado}
     </div>
   );
 }
