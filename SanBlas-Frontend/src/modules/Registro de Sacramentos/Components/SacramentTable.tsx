@@ -11,7 +11,7 @@ import {
   AdminTableRow,
   cn,
 } from '../../../shared/ui';
-import { SacramentoListaItem, TIPO_SACRAMENTO_LABEL } from '../../../types/sacramentosNuevos';
+import { SacramentoListaItem } from '../../../types/sacramentosNuevos';
 
 interface Props {
   sacramentos: SacramentoListaItem[];
@@ -116,7 +116,6 @@ const SacramentTable = ({
               <AdminTableRow>
                 <AdminTableHeaderCell>Nombre del fiel</AdminTableHeaderCell>
                 <AdminTableHeaderCell>Cédula</AdminTableHeaderCell>
-                <AdminTableHeaderCell>Sacramento</AdminTableHeaderCell>
                 <AdminTableHeaderCell>Fecha</AdminTableHeaderCell>
                 <AdminTableHeaderCell>Lugar</AdminTableHeaderCell>
                 <AdminTableHeaderCell>Acciones</AdminTableHeaderCell>
@@ -134,9 +133,6 @@ const SacramentTable = ({
                   </AdminTableCell>
                   <AdminTableCell>
                     <span className="tabular-nums text-text-secondary">{formatearCedula(s.cedula)}</span>
-                  </AdminTableCell>
-                  <AdminTableCell>
-                    <span className="text-text-secondary">{TIPO_SACRAMENTO_LABEL[s.tipo]}</span>
                   </AdminTableCell>
                   <AdminTableCell>
                     <span className="tabular-nums text-text-secondary">
