@@ -298,9 +298,13 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       await onSave(construirDto());
       onClose();
     } catch (err: any) {
-      const mensaje =
-        err?.response?.data?.mensaje ?? err?.message ?? 'No se pudo registrar el acta.';
-      showToast(String(mensaje), 'error');
+      if (err?.response?.status === 409) {
+        showToast('Este expediente ya tiene registrado ese tipo de sacramento.', 'error');
+      } else {
+        const mensaje =
+          err?.response?.data?.mensaje ?? err?.message ?? 'No se pudo registrar el acta.';
+        showToast(String(mensaje), 'error');
+      }
     } finally {
       setSaving(false);
     }
