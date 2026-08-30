@@ -991,9 +991,12 @@ const TableSacramentos = () => {
           sinFondo
         >
             <div className="flex min-h-52 flex-col">
-              <h3 className="m-0 pr-12 text-lg font-extrabold text-royal-blue">
+              <h2
+                className="m-0 mt-1 pr-12 text-lg leading-tight font-semibold tracking-tight text-[#16243c]"
+                style={{ fontFamily: "'Geist', sans-serif" }}
+              >
                 Aprobar solicitud sacramental
-              </h3>
+              </h2>
               <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
                 <p className="text-sm leading-relaxed text-text-secondary">
                   ¿Estás seguro/a que quieres aprobar esta solicitud de
