@@ -171,7 +171,6 @@ const TableSacramentos = () => {
   const [solicitudARechazar, setSolicitudARechazar] =
     useState<FormSacramento | null>(null);
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
-  const [errorAprobacion, setErrorAprobacion] = useState<string | null>(null);
   const [solicitudAAprobar, setSolicitudAAprobar] =
     useState<FormSacramento | null>(null);
   const [estadoMenuAbierto, setEstadoMenuAbierto] = useState(false);
@@ -469,7 +468,6 @@ const TableSacramentos = () => {
 
   const handleApproveConfirm = () => {
     if (!solicitudAAprobar) return;
-    setErrorAprobacion(null);
     aprobarSolicitud.mutate(
       { id: solicitudAAprobar.id },
       {
@@ -482,11 +480,10 @@ const TableSacramentos = () => {
         onError: (err: unknown) => {
           // El modal permanece abierto, el botón "Confirmar" se reactiva solo
           // (isPending vuelve a false) y el estado de la tabla no cambia
-          const mensaje =
-            err instanceof Error && err.message
-              ? err.message
-              : "No se pudo aprobar la solicitud, intentá de nuevo";
-          setErrorAprobacion(mensaje);
+const mensaje =
+              err instanceof Error && err.message
+                ? err.message
+                : "No hay conexión a Internet, inténtalo más tarde.";
           showToast(mensaje, "error");
         },
       },
@@ -495,7 +492,6 @@ const TableSacramentos = () => {
 
   const handleCancelApprove = () => {
     const restoredSolicitud = solicitudAAprobar;
-    setErrorAprobacion(null);
     setIsApproveModalOpen(false);
     setSolicitudAAprobar(null);
     setSolicitudSeleccionada(restoredSolicitud);
@@ -1074,14 +1070,6 @@ const TableSacramentos = () => {
                   Cancelar
                 </Button>
               </div>
-              {errorAprobacion && (
-                <p
-                  role="alert"
-                  className="m-0 mt-2 text-xs font-semibold text-red-600"
-                >
-                  ⚠ {errorAprobacion}
-                </p>
-              )}
             </div>
         </Modal>
       )}
