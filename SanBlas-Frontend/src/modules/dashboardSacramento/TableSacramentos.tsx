@@ -1002,14 +1002,6 @@ const TableSacramentos = () => {
               </div>
               <div className="flex shrink-0 justify-end gap-2">
                 <Button
-                  variant="secondary"
-                  className="rounded-md"
-                  onClick={handleCancelApprove}
-                  disabled={aprobarSolicitud.isPending}
-                >
-                  Cancelar
-                </Button>
-                <Button
                   variant="royal"
                   className="rounded-md"
                   onClick={handleApproveConfirm}
@@ -1026,6 +1018,14 @@ const TableSacramentos = () => {
                   ) : (
                     "Aprobar"
                   )}
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="rounded-md"
+                  onClick={handleCancelApprove}
+                  disabled={aprobarSolicitud.isPending}
+                >
+                  Cancelar
                 </Button>
               </div>
               {errorAprobacion && (
