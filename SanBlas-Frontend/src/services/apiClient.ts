@@ -65,6 +65,16 @@ export class ApiError extends Error {
   }
 }
 
+const MENSAJE_FALTA_CONEXION =
+  "No hay conexión a Internet, inténtalo más tarde.";
+
+const esMensajeFaltaConexion = (mensaje: string | undefined | null): boolean =>
+  !!mensaje &&
+  /conexi[oó]n/i.test(mensaje) &&
+  /(servicio de datos|no disponible|no hay conexi[oó]n|sin conexi[oó]n a internet|internet)/i.test(
+    mensaje,
+  );
+
 const mensajePorEstado = (status: number): string => {
   switch (status) {
     case 400:
@@ -132,7 +142,9 @@ export const handleApiError = (error: unknown): never => {
       : data?.title);
 
   throw new ApiError(
-    mensajeBackend ?? mensajePorEstado(status),
+    esMensajeFaltaConexion(mensajeBackend)
+      ? MENSAJE_FALTA_CONEXION
+      : (mensajeBackend ?? mensajePorEstado(status)),
     status,
     erroresBackend,
   );
