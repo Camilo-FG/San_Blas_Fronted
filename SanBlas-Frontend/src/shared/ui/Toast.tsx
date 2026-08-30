@@ -69,7 +69,7 @@ function AnilloProgreso({
   const colorProgreso = sobreOscuro ? "stroke-white" : "stroke-[#aa7323]";
   return (
     <svg
-      className="absolute inset-0 -rotate-90"
+      className="pointer-events-none absolute inset-0 -rotate-90"
       viewBox="0 0 30 30"
       aria-hidden="true"
     >
@@ -148,27 +148,25 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
                   {toast.message}
                 </p>
               </div>
-              <div className="relative inline-flex size-7 shrink-0 items-center justify-center">
+              <button
+                type="button"
+                className={cn(
+                  "relative inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors",
+                  toast.type === "error"
+                    ? "text-white/80 hover:text-white"
+                    : "text-text-muted hover:text-text",
+                )}
+                onClick={() => onDismiss(toast.id)}
+                aria-label="Cerrar notificación"
+              >
                 {(toast.type === "success" || toast.type === "error") && (
                   <AnilloProgreso
                     duracionMs={toast.duration}
                     sobreOscuro={toast.type === "error"}
                   />
                 )}
-                <button
-                  type="button"
-                  className={cn(
-                    "z-10 flex size-6 cursor-pointer items-center justify-center rounded-full transition-colors",
-                    toast.type === "error"
-                      ? "text-white/80 hover:text-white"
-                      : "text-text-muted hover:text-text",
-                  )}
-                  onClick={() => onDismiss(toast.id)}
-                  aria-label="Cerrar notificación"
-                >
-                  <X size={15} />
-                </button>
-              </div>
+                <X size={15} className="pointer-events-none" />
+              </button>
             </div>
           </motion.div>
         ))}

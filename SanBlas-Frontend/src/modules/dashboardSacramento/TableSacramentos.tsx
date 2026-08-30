@@ -760,6 +760,7 @@ const mensaje =
             focusTrapOptions={{
               clickOutsideDeactivates: false,
               escapeDeactivates: false,
+              allowOutsideClick: () => true,
             }}
           >
             <div
