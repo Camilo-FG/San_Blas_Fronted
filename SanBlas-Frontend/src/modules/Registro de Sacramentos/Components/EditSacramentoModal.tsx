@@ -408,10 +408,8 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
       const seccion = construirSeccion();
       if (existeEnTab && sacramentoDelTab) {
         await onUpdate(sacramentoDelTab.id, { ...construirBase(), ...seccion });
-        showToast('Acta sacramental actualizada correctamente', 'success');
       } else {
         await onCreate({ tipo: activeTab, ...construirBase(), ...seccion });
-        showToast('Acta sacramental registrada correctamente', 'success');
       }
       onClose();
     } catch (err: any) {
