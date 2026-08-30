@@ -34,7 +34,7 @@ export function Modal({
       <button
         type="button"
         className={cn(
-          "absolute top-4 right-4 inline-flex size-10 cursor-pointer items-center justify-center transition-colors focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none",
+          "absolute top-4 right-4 inline-flex size-10 cursor-pointer items-center justify-center transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none",
           sinFondo
             ? "rounded-[6px] bg-white text-black hover:bg-slate-100"
             : "rounded-xl border border-border-strong bg-surface-muted text-slate-600 hover:bg-slate-100",
