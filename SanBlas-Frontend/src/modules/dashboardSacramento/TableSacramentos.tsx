@@ -990,7 +990,7 @@ const TableSacramentos = () => {
           title="Confirmar aprobación"
           sinFondo
         >
-            <div className="flex min-h-52 flex-col">
+            <div className="flex min-h-44 flex-col">
               <h2
                 className="m-0 mt-1 pr-12 text-lg leading-tight font-semibold tracking-tight text-[#16243c]"
                 style={{ fontFamily: "'Geist', sans-serif" }}
