@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { X } from "lucide-react";
 import FocusTrap from "focus-trap-react";
+import { motion } from "framer-motion";
 import { cn } from "./cn";
 
 type ModalProps = {
@@ -62,8 +63,11 @@ export function Modal({
   if (sinFondo) {
     return (
       <>
-        <div
+        <motion.div
           className="fixed inset-0 z-[1350] backdrop-blur-[6px]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
           onClick={onClose}
           role="presentation"
         />
