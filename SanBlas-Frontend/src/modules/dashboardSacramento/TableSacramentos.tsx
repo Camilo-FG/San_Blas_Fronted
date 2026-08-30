@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { motion } from "framer-motion";
 import {
   ChevronDown,
   ChevronLeft,
@@ -64,6 +65,44 @@ const EtiquetaSeccion = ({ children }: { children: ReactNode }) => (
     {children}
   </span>
 );
+
+const LineaDoradaTitulo = () => {
+  const refContenedor = useRef<HTMLDivElement>(null);
+  const refTexto = useRef<HTMLSpanElement>(null);
+  const [medidas, setMedidas] = useState({ ancho: 0, top: 0 });
+
+  useLayoutEffect(() => {
+    const contenedor = refContenedor.current;
+    const span = refTexto.current;
+    if (!contenedor || !span) return;
+    const estilos = window.getComputedStyle(span);
+    const fontSize = parseFloat(estilos.fontSize);
+    const lineaBase = span.offsetTop + span.offsetHeight - fontSize * 0.24;
+    setMedidas({ ancho: span.offsetWidth, top: lineaBase + 8 });
+  }, []);
+
+  return (
+    <div ref={refContenedor} className="relative w-fit">
+      <h2
+        className="m-0 mt-1 pb-2 text-lg leading-tight font-semibold tracking-tight text-[#16243c]"
+        style={{ fontFamily: "'Geist', sans-serif" }}
+      >
+        <span ref={refTexto}>Aprobar solicitud sac</span>
+        ramental
+      </h2>
+      {medidas.ancho > 0 && (
+        <motion.div
+          className="absolute left-0 h-[3px] origin-left rounded-full bg-[#dcb55a]"
+          style={{ top: medidas.top, width: medidas.ancho }}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.6, ease: [0.45, 0, 0.35, 1] }}
+          aria-hidden="true"
+        />
+      )}
+    </div>
+  );
+};
 
 const ESTADO_MODAL_STYLES = {
   Pendiente: {
@@ -991,15 +1030,7 @@ const TableSacramentos = () => {
           sinFondo
         >
             <div className="flex min-h-44 flex-col">
-              <h2
-                className="m-0 mt-1 pb-2 text-lg leading-tight font-semibold tracking-tight text-[#16243c]"
-                style={{ fontFamily: "'Geist', sans-serif" }}
-              >
-                <span className="underline decoration-[#dcb55a] decoration-[3px] underline-offset-8">
-                  Aprobar solicitud sac
-                </span>
-                ramental
-              </h2>
+              <LineaDoradaTitulo />
               <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
                 <p className="text-sm leading-relaxed text-text-secondary">
                   ¿Estás seguro/a que quieres aprobar esta solicitud de
