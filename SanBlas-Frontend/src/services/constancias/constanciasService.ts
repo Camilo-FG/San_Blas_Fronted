@@ -1,5 +1,9 @@
 import type { FormSacramento } from "../../types/formSacramento";
 import { ApiError, apiClient, handleApiError } from "../apiClient";
+import {
+  clasificarErrorAprobacion,
+  MENSAJES_APROBACION,
+} from "./aprobacionErrors";
 import type {
   EstadoSolicitudBackend,
   FormSacraBackend,
@@ -115,6 +119,25 @@ export const actualizarEstadoSacramento = async (
     );
     return mapBackendToFormSacramento(data);
   } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const aprobarSolicitudSacramento = async (
+  id: number,
+): Promise<FormSacramento> => {
+  try {
+    const { data } = await apiClient.patch<FormSacraBackend>(
+      `${BASE}/cambiar-estado/${id}`,
+      { nuevoEstado: "Aprobado" },
+      // Cancela automáticamente si el servidor no responde en 5 segundos
+      { timeout: 5000 },
+    );
+    return mapBackendToFormSacramento(data);
+  } catch (error) {
+    if (clasificarErrorAprobacion(error) === "timeout") {
+      throw new ApiError(MENSAJES_APROBACION.timeout, 0);
+    }
     handleApiError(error);
   }
 };
