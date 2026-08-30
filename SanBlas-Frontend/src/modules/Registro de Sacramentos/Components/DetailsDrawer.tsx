@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useObtenerSacramentosPersona } from '../hooks/hooksNuevos/useObtenerSacramentosPersona';
 import {
@@ -29,10 +30,18 @@ const nombrePresbitero = (
   return [p.nombre, p.primerApellido, p.segundoApellido].filter(Boolean).join(' ').trim();
 };
 
+const nombreActa = (s: PersonaSacramental): string => {
+  if (s.bautismo) return 'Acta de Bautismo';
+  if (s.comunion) return 'Acta de Comunión';
+  if (s.confirmacion) return 'Acta de Confirmación';
+  if (s.matrimonio) return 'Acta de Matrimonio';
+  return 'Acta de vida sacramental';
+};
+
 // Línea punteada para un dato vacío dentro del texto del acta (estilo original).
 const Line = ({ children }: { children?: React.ReactNode }) => (
-  <span className="mx-1 inline-block min-w-[3rem] border-b border-slate-400 text-slate-900">
-    {children}
+  <span className="inline-flex min-w-0 min-w-0 flex-1 items-baseline border-b border-slate-400 px-1 text-slate-900">
+    <span className="min-w-0 break-words">{children}</span>
   </span>
 );
 
@@ -50,31 +59,20 @@ const renderBautismo = (detalle: DetalleBautismo) => (
     <Fila label="Madre:" valor={nombreCompleto(detalle.madre)} />
     <Fila label="Padrino:" valor={nombreCompleto(detalle.padrino)} />
     <Fila label="Madrina:" valor={nombreCompleto(detalle.madrina)} />
-    <Fila label="Declarante:" valor={nombreCompleto(detalle.declarante)} />
     <Fila label="Fecha de nacimiento:" valor={detalle.fechaNacimiento} />
     <Fila label="Hora de nacimiento:" valor={detalle.horaNacimiento} />
     <Fila label="Lugar de nacimiento:" valor={detalle.lugarNacimiento} />
-    <Fila label="Reconocimiento:" valor={detalle.reconocimientoLegal} />
-    <Fila
-      label="Libro:"
-      valor={`${detalle.libro ?? ''}  Tomo: ${detalle.tomo ?? ''}  Folio: ${detalle.folio ?? ''}  Asiento: ${detalle.asiento ?? ''}`}
-    />
-    <Fila label="Firma párroco:" valor={detalle.firmaParroco} />
-    {detalle.abuelos.length > 0 && (
-      <div className="mt-2">
-        <span className="mr-1 text-slate-500">Abuelos:</span>
-        <div className="ml-4 flex flex-col gap-0.5">
-          {detalle.abuelos.map((abuelo) => (
-            <div key={`${abuelo.id}-${abuelo.parentesco}`} className="flex items-baseline">
-              <span className="mr-1 text-slate-400">
-                {abuelo.parentesco.replaceAll('_', ' ')}:
-              </span>
-              <Line>{nombreCompleto(abuelo)}</Line>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
+    <Fila label="Libro:" valor={detalle.libro} />
+    <Fila label="Tomo:" valor={detalle.tomo} />
+    <Fila label="Folio:" valor={detalle.folio} />
+    <Fila label="Asiento:" valor={detalle.asiento} />
+    {detalle.abuelos.length > 0 &&
+      detalle.abuelos.map((abuelo) => {
+        const titulo = abuelo.parentesco
+          .replaceAll('_', ' ')
+          .replace(/(^\w|\s\w)/g, (m) => m.toUpperCase());
+        return <Fila key={`${abuelo.id}-${abuelo.parentesco}`} label={`${titulo}:`} valor={nombreCompleto(abuelo)} />;
+      })}
   </>
 );
 
@@ -90,20 +88,29 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   const sacramental: PersonaSacramental | undefined = data;
   const persona = sacramental?.persona;
 
   return (
-    <>
-      <div
-        className="fixed inset-0 z-[1300] bg-slate-900/60 backdrop-blur-[2px]"
-        onClick={onClose}
-        role="presentation"
-      />
-      <div
-        className="fixed top-0 right-0 bottom-0 left-0 z-[1301] flex h-full w-full max-w-full flex-col bg-slate-100 sm:left-auto sm:w-[min(560px,100vw)]"
+
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            className="fixed inset-0 z-[1300] bg-slate-900/60 backdrop-blur-[2px]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={onClose}
+            role="presentation"
+          />
+          <motion.div
+        className="fixed top-0 right-0 bottom-0 left-0 z-[1301] flex h-full w-full max-w-full flex-col bg-white shadow-[-8px_0_24px_rgba(15,23,42,0.15)] sm:left-auto sm:w-[min(700px,100vw)]"
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'tween', duration: 0.3, ease: 'easeOut' }}
         role="dialog"
         aria-modal="true"
         aria-label="Detalle del sacramento"
@@ -114,7 +121,9 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
             <h2 className="m-0 text-[1.1rem] font-bold leading-snug break-words text-royal-blue">
               Detalle del sacramento
             </h2>
-            <p className="m-0 mt-0.5 text-[0.82rem] text-slate-500">Acta de vida sacramental</p>
+            <p className="m-0 mt-0.5 text-[0.82rem] text-slate-500">
+              {sacramental ? nombreActa(sacramental) : 'Acta de vida sacramental'}
+            </p>
           </div>
           <button
             type="button"
@@ -142,24 +151,24 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
           )}
 
           {!isPending && !error && sacramental && (
-            <div className="mx-auto max-w-[520px] bg-white shadow-[0_1px_6px_rgba(15,23,42,0.12)] ring-1 ring-slate-200">
+            <div className="mx-auto max-w-[640px] bg-white shadow-[0_1px_6px_rgba(15,23,42,0.12)] ring-1 ring-slate-200">
               <div className="px-5 py-5 font-serif text-[0.9rem] leading-relaxed text-slate-800">
                 {/* Datos personales */}
-                <div className="mb-4 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-3">
-                  <div className="flex items-baseline">
-                    <span className="mr-1 text-slate-500">Nombre</span>
+                <div className="mb-4 grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-2">
+                  <div className="flex min-w-0 items-baseline">
+                    <span className="mr-1 shrink-0 text-slate-500">Nombre</span>
                     <Line>{persona?.nombre ?? ''}</Line>
                   </div>
-                  <div className="flex items-baseline">
-                    <span className="mr-1 text-slate-500">Primer Apellido</span>
+                  <div className="flex min-w-0 items-baseline">
+                    <span className="mr-1 shrink-0 text-slate-500">Primer Apellido</span>
                     <Line>{persona?.primerApellido ?? ''}</Line>
                   </div>
-                  <div className="flex items-baseline">
-                    <span className="mr-1 text-slate-500">Segundo Apellido</span>
+                  <div className="flex min-w-0 items-baseline">
+                    <span className="mr-1 shrink-0 text-slate-500">Segundo Apellido</span>
                     <Line>{persona?.segundoApellido ?? ''}</Line>
                   </div>
-                  <div className="flex items-baseline">
-                    <span className="mr-1 text-slate-500">Cédula</span>
+                  <div className="flex min-w-0 items-baseline">
+                    <span className="mr-1 shrink-0 text-slate-500">Cédula</span>
                     <Line>{persona?.cedula ?? ''}</Line>
                   </div>
                 </div>
@@ -324,20 +333,21 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                   <h4 className="mb-2 text-center text-[0.95rem] font-bold tracking-wide uppercase text-slate-500">
                     Observaciones
                   </h4>
-                  <div className="space-y-2">
-                    <div className="h-5 border-b border-slate-300">
-                      <Line>{sacramental.bautismo?.observaciones ?? ''}</Line>
-                    </div>
-                    <div className="h-5 border-b border-slate-300" />
-                    <div className="h-5 border-b border-slate-300" />
+                  <div className="min-h-[9.5rem] overflow-hidden rounded-sm bg-white px-1 pt-1 [background-image:repeating-linear-gradient(to_bottom,transparent,transparent_1.9rem,#cbd5e1_1.9rem,#cbd5e1_1.95rem)]">
+                    <p className="m-0 whitespace-pre-wrap break-words text-slate-900 [line-height:1.9rem] [overflow-wrap:anywhere]">
+                      {sacramental.bautismo?.observaciones?.trim() || '\u00A0'}
+                    </p>
                   </div>
+                  <Fila label="Observaciones:" valor={sacramental.bautismo?.observaciones ?? ''} />
                 </div>
               </div>
             </div>
           )}
         </div>
-      </div>
-    </>
+        </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
 

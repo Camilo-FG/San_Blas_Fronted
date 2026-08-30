@@ -295,9 +295,38 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
     setMatrimonio((prev) => ({ ...prev, [campo]: numerico ? soloNumeros(valor) : valor }));
   };
 
+  const setAbueloBautismoCampo = (idx: number, campo: keyof PersonaForm, valor: string) => {
+    setBautismo((prev) => ({
+      ...prev,
+      abuelos: prev.abuelos.map((ab, i) =>
+        i === idx
+          ? {
+              ...ab,
+              [campo]:
+                campo === 'cedula' ? formatearCedulaCR(cedulaDigitosValidos(valor)) : soloLetras(valor),
+            }
+          : ab,
+      ),
+    }));
+  };
+
+  const agregarAbueloBautismo = () => {
+    const usados = bautismo.abuelos.map((a) => a.parentesco);
+    const disponible = PARENTESCOS.find((p) => !usados.includes(p));
+    if (!disponible) {
+      showToast('Ya están registrados los 4 abuelos', 'error');
+      return;
+    }
+    setBautismo((prev) => ({
+      ...prev,
+      abuelos: [...prev.abuelos, { ...personaVacia(), parentesco: disponible }],
+    }));
+  };
+
   const validar = (): boolean => {
     const nuevos: Record<string, boolean> = {};
     if (!idParroquia) nuevos.idParroquia = true;
+    if (!idPresbitero) nuevos.idPresbitero = true;
     if (!fechaSacramento) nuevos.fechaSacramento = true;
 
     const personaOk = (p: PersonaForm, prefijo: string) => {
@@ -413,9 +442,13 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
       }
       onClose();
     } catch (err: any) {
-      const mensaje =
-        err?.response?.data?.mensaje ?? err?.message ?? 'No se pudo guardar el acta.';
-      showToast(String(mensaje), 'error');
+      if (err?.response?.status === 409) {
+        showToast('Este expediente ya tiene registrado ese tipo de sacramento.', 'error');
+      } else {
+        const mensaje =
+          err?.response?.data?.mensaje ?? err?.message ?? 'No se pudo guardar el acta.';
+        showToast(String(mensaje), 'error');
+      }
     } finally {
       setSaving(false);
     }
@@ -431,9 +464,9 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
       <Label>{titulo}</Label>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Input type="text" placeholder="Cédula (0-0000-0000)" maxLength={12} className={inputClass(errors[`${prefijo}Cedula`])} value={persona.cedula} onChange={(e) => setCampoPersona(setter, 'cedula', e.target.value)} />
-        <Input type="text" placeholder="Nombre" maxLength={50} className={inputClass(errors[`${prefijo}Nombre`])} value={persona.nombre} onChange={(e) => setCampoPersona(setter, 'nombre', e.target.value)} />
-        <Input type="text" placeholder="Primer apellido" maxLength={50} className={inputClass(errors[`${prefijo}PrimerApellido`])} value={persona.primerApellido} onChange={(e) => setCampoPersona(setter, 'primerApellido', e.target.value)} />
-        <Input type="text" placeholder="Segundo apellido" maxLength={50} className={inputClass(errors[`${prefijo}SegundoApellido`])} value={persona.segundoApellido} onChange={(e) => setCampoPersona(setter, 'segundoApellido', e.target.value)} />
+        <Input type="text" placeholder="Nombre" maxLength={30} className={inputClass(errors[`${prefijo}Nombre`])} value={persona.nombre} onChange={(e) => setCampoPersona(setter, 'nombre', e.target.value)} />
+        <Input type="text" placeholder="Primer apellido" maxLength={30} className={inputClass(errors[`${prefijo}PrimerApellido`])} value={persona.primerApellido} onChange={(e) => setCampoPersona(setter, 'primerApellido', e.target.value)} />
+        <Input type="text" placeholder="Segundo apellido" maxLength={30} className={inputClass(errors[`${prefijo}SegundoApellido`])} value={persona.segundoApellido} onChange={(e) => setCampoPersona(setter, 'segundoApellido', e.target.value)} />
       </div>
     </div>
   );
@@ -446,34 +479,75 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
       {renderPersonaCampos('Padrino (opcional)', bautismo.padrino, (updater) => setBautismo((prev) => ({ ...prev, padrino: updater(prev.padrino) })), 'padrino')}
       {renderPersonaCampos('Madrina (opcional)', bautismo.madrina, (updater) => setBautismo((prev) => ({ ...prev, madrina: updater(prev.madrina) })), 'madrina')}
 
+      <div className="mb-5">
+        <Label>Abuelos (opcional)</Label>
+        <div className="space-y-3">
+          {bautismo.abuelos.map((ab, idx) => (
+            <div key={idx} className="rounded-md border border-gray-200 p-3">
+              <select
+                value={ab.parentesco}
+                onChange={(e) =>
+                  setBautismo((prev) => ({
+                    ...prev,
+                    abuelos: prev.abuelos.map((a, i) =>
+                      i === idx ? { ...a, parentesco: e.target.value as ParentescoAbuelo } : a,
+                    ),
+                  }))
+                }
+                className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
+                {PARENTESCOS.map((p) => (
+                  <option
+                    key={p}
+                    value={p}
+                    disabled={bautismo.abuelos.some((a, i) => a.parentesco === p && i !== idx)}
+                  >
+                    {p.replaceAll('_', ' ')}
+                  </option>
+                ))}
+              </select>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} onChange={(e) => setAbueloBautismoCampo(idx, 'cedula', e.target.value)} />
+                <Input type="text" placeholder="Nombre" maxLength={30} value={ab.nombre} onChange={(e) => setAbueloBautismoCampo(idx, 'nombre', e.target.value)} />
+                <Input type="text" placeholder="Primer apellido" maxLength={30} value={ab.primerApellido} onChange={(e) => setAbueloBautismoCampo(idx, 'primerApellido', e.target.value)} />
+                <Input type="text" placeholder="Segundo apellido" maxLength={30} value={ab.segundoApellido} onChange={(e) => setAbueloBautismoCampo(idx, 'segundoApellido', e.target.value)} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <Button type="button" variant="secondary" onClick={agregarAbueloBautismo} className="mt-2">
+          + Agregar abuelo
+        </Button>
+      </div>
+
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
-          <Label>Fecha de nacimiento *</Label>
+          <Label required>Fecha de nacimiento</Label>
           <Input type="date" className={inputClass(errors.fechaNacimiento)} max={fechaSacramento || undefined} value={bautismo.fechaNacimiento} onChange={(e) => setCampoBautismo('fechaNacimiento', e.target.value)} />
         </div>
         <div>
-          <Label>Hora de nacimiento *</Label>
+          <Label required>Hora de nacimiento</Label>
           <Input type="time" className={inputClass(errors.horaNacimiento)} value={bautismo.horaNacimiento} onChange={(e) => setCampoBautismo('horaNacimiento', e.target.value)} />
         </div>
         <div>
-          <Label>Lugar de nacimiento *</Label>
-          <Input type="text" maxLength={100} className={inputClass(errors.lugarNacimiento)} value={bautismo.lugarNacimiento} onChange={(e) => setCampoBautismo('lugarNacimiento', e.target.value)} />
+          <Label required>Lugar de nacimiento</Label>
+          <Input type="text" maxLength={60} className={inputClass(errors.lugarNacimiento)} value={bautismo.lugarNacimiento} onChange={(e) => setCampoBautismo('lugarNacimiento', e.target.value)} />
         </div>
         <div>
-          <Label>Libro *</Label>
-          <Input type="text" maxLength={20} className={inputClass(errors.libro)} value={bautismo.libro} onChange={(e) => setCampoBautismo('libro', e.target.value)} />
+          <Label required>Libro</Label>
+          <Input type="text" maxLength={6} className={inputClass(errors.libro)} value={bautismo.libro} onChange={(e) => setCampoBautismo('libro', e.target.value)} />
         </div>
         <div>
-          <Label>Tomo *</Label>
-          <Input type="text" maxLength={20} className={inputClass(errors.tomo)} value={bautismo.tomo} onChange={(e) => setCampoBautismo('tomo', e.target.value)} />
+          <Label required>Tomo</Label>
+          <Input type="text" maxLength={6} className={inputClass(errors.tomo)} value={bautismo.tomo} onChange={(e) => setCampoBautismo('tomo', e.target.value)} />
         </div>
         <div>
-          <Label>Folio *</Label>
-          <Input type="text" maxLength={20} className={inputClass(errors.folio)} value={bautismo.folio} onChange={(e) => setCampoBautismo('folio', e.target.value)} />
+          <Label required>Folio</Label>
+          <Input type="text" maxLength={6} className={inputClass(errors.folio)} value={bautismo.folio} onChange={(e) => setCampoBautismo('folio', e.target.value)} />
         </div>
         <div>
-          <Label>Asiento *</Label>
-          <Input type="text" maxLength={20} className={inputClass(errors.asiento)} value={bautismo.asiento} onChange={(e) => setCampoBautismo('asiento', e.target.value)} />
+          <Label required>Asiento</Label>
+          <Input type="text" maxLength={6} className={inputClass(errors.asiento)} value={bautismo.asiento} onChange={(e) => setCampoBautismo('asiento', e.target.value)} />
         </div>
       </div>
     </>
@@ -485,16 +559,16 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
       {renderPersonaCampos('Contrayente 2', matrimonio.contrayente2, (updater) => setMatrimonio((prev) => ({ ...prev, contrayente2: updater(prev.contrayente2) })), 'contrayente2')}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
-          <Label>Libro *</Label>
-          <Input type="text" maxLength={20} className={inputClass(errors.libro)} value={matrimonio.libro} onChange={(e) => setCampoMatrimonio('libro', e.target.value)} />
+          <Label required>Libro</Label>
+          <Input type="text" maxLength={6} className={inputClass(errors.libro)} value={matrimonio.libro} onChange={(e) => setCampoMatrimonio('libro', e.target.value)} />
         </div>
         <div>
-          <Label>Tomo *</Label>
-          <Input type="text" maxLength={20} className={inputClass(errors.tomo)} value={matrimonio.tomo} onChange={(e) => setCampoMatrimonio('tomo', e.target.value)} />
+          <Label required>Tomo</Label>
+          <Input type="text" maxLength={6} className={inputClass(errors.tomo)} value={matrimonio.tomo} onChange={(e) => setCampoMatrimonio('tomo', e.target.value)} />
         </div>
         <div>
-          <Label>Folio *</Label>
-          <Input type="text" maxLength={20} className={inputClass(errors.folio)} value={matrimonio.folio} onChange={(e) => setCampoMatrimonio('folio', e.target.value)} />
+          <Label required>Folio</Label>
+          <Input type="text" maxLength={6} className={inputClass(errors.folio)} value={matrimonio.folio} onChange={(e) => setCampoMatrimonio('folio', e.target.value)} />
         </div>
       </div>
     </>
@@ -552,7 +626,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>
-                  <Label>Parroquia *</Label>
+                  <Label required>Parroquia</Label>
                   <select
                     value={idParroquia}
                     onChange={(e) => setIdParroquia(e.target.value)}
@@ -567,11 +641,11 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
                   </select>
                 </div>
                 <div>
-                  <Label>Presbítero</Label>
+                  <Label required>Presbítero</Label>
                   <select
                     value={idPresbitero}
                     onChange={(e) => setIdPresbitero(e.target.value)}
-                    className={inputClass()}
+                    className={inputClass(errors.idPresbitero)}
                   >
                     <option value="">Seleccione...</option>
                     {(presbiteros ?? []).map((p) => (
@@ -582,7 +656,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
                   </select>
                 </div>
                 <div>
-                  <Label>Fecha de celebración *</Label>
+                  <Label required>Fecha de celebración</Label>
                   <Input
                     type="date"
                     className={inputClass(errors.fechaSacramento)}
@@ -604,7 +678,10 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
 
               <div>
                 <Label>Observaciones</Label>
-                <Input type="text" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
+                <Input type="text" maxLength={500} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
+                <p className="m-0 mt-1 text-right text-xs text-slate-400">
+                  {observaciones.length}/500 caracteres
+                </p>
               </div>
             </div>
 

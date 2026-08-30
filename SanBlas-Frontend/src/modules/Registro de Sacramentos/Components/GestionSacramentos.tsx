@@ -127,6 +127,7 @@ const GestionSacramentos = () => {
         <AdminSearch
           type="text"
           placeholder="Nombre o apellidos"
+          maxLength={30}
           value={nombreInput}
           onChange={(e) => setNombreInput(handleSolonLetrasNombre(e.target.value))}
           className="min-w-[200px] flex-1"
