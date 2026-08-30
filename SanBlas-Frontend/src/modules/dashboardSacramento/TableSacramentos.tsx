@@ -320,7 +320,7 @@ const TableSacramentos = () => {
         motivoRechazo: motivo,
         detalleRechazo: rejectionReasonText.trim() || undefined,
       });
-      showToast("Solicitud rechazada correctamente", "success");
+      showToast("Solicitud rechazada correctamente", "error");
       handleCloseRejectModal();
     } catch (err) {
       const mensaje =

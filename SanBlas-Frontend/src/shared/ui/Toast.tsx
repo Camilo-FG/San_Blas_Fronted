@@ -58,7 +58,15 @@ export function useToast() {
   return context;
 }
 
-function AnilloProgreso({ duracionMs }: { duracionMs: number }) {
+function AnilloProgreso({
+  duracionMs,
+  sobreOscuro = false,
+}: {
+  duracionMs: number;
+  sobreOscuro?: boolean;
+}) {
+  const colorPista = sobreOscuro ? "stroke-white/25" : "stroke-[#16243c]/10";
+  const colorProgreso = sobreOscuro ? "stroke-white" : "stroke-[#aa7323]";
   return (
     <svg
       className="absolute inset-0 -rotate-90"
@@ -71,7 +79,7 @@ function AnilloProgreso({ duracionMs }: { duracionMs: number }) {
         r={RADIO_ANILLO}
         fill="none"
         strokeWidth="2.5"
-        className="stroke-[#16243c]/10"
+        className={colorPista}
       />
       <motion.circle
         cx="15"
@@ -81,7 +89,7 @@ function AnilloProgreso({ duracionMs }: { duracionMs: number }) {
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeDasharray={CIRCUNFERENCIA_ANILLO}
-        className="stroke-[#aa7323]"
+        className={colorProgreso}
         initial={{ strokeDashoffset: 0 }}
         animate={{ strokeDashoffset: CIRCUNFERENCIA_ANILLO }}
         transition={{ duration: duracionMs / 1000, ease: "linear" }}
@@ -127,7 +135,7 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
             transition={{ duration: 0.35, ease: "easeOut" }}
           >
             <div className="flex items-center gap-3">
-              {toast.type !== "success" && (
+              {toast.type !== "success" && toast.type !== "error" && (
                 <div className="flex-shrink-0 mt-0.5">{icons[toast.type]}</div>
               )}
               <div className="min-w-0 flex-1">
@@ -141,8 +149,11 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
                 </p>
               </div>
               <div className="relative inline-flex size-7 shrink-0 items-center justify-center">
-                {toast.type === "success" && (
-                  <AnilloProgreso duracionMs={toast.duration} />
+                {(toast.type === "success" || toast.type === "error") && (
+                  <AnilloProgreso
+                    duracionMs={toast.duration}
+                    sobreOscuro={toast.type === "error"}
+                  />
                 )}
                 <button
                   type="button"
