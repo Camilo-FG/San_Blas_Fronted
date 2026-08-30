@@ -173,6 +173,7 @@ const TableSacramentos = () => {
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
   const [solicitudAAprobar, setSolicitudAAprobar] =
     useState<FormSacramento | null>(null);
+  const { toasts, showToast } = useToast();
   const [estadoMenuAbierto, setEstadoMenuAbierto] = useState(false);
   const estadoMenuRef = useRef<HTMLDivElement>(null);
   const modalBackdropRef = useRef<HTMLDivElement>(null);
@@ -203,7 +204,14 @@ const TableSacramentos = () => {
     if (!solicitudSeleccionada) return;
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSolicitudSeleccionada(null);
+      if (
+        event.key === "Escape" &&
+        !isApproveModalOpen &&
+        !isRejectModalOpen &&
+        toasts.length === 0
+      ) {
+        setSolicitudSeleccionada(null);
+      }
     };
 
     const main = document.querySelector("main");
@@ -228,7 +236,7 @@ const TableSacramentos = () => {
       document.body.style.overflow = prevBodyOverflow;
       if (main) main.style.overflow = prevMainOverflow;
     };
-  }, [solicitudSeleccionada]);
+  }, [solicitudSeleccionada, isApproveModalOpen, isRejectModalOpen, toasts.length]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
@@ -255,7 +263,6 @@ const TableSacramentos = () => {
   const rechazarSolicitud = useRechazarSolicitudSacramento();
   const isUpdatingEstado = updateEstado.isPending;
   const isSubmitting = rechazarSolicitud.isPending;
-  const { showToast } = useToast();
 
   const rows: FormSacramento[] = data?.data ?? [];
   const totalItems = data?.total ?? 0;
@@ -496,6 +503,28 @@ const mensaje =
     setSolicitudAAprobar(null);
     setSolicitudSeleccionada(restoredSolicitud);
   };
+
+  useEffect(() => {
+    if (!isApproveModalOpen && !isRejectModalOpen) return;
+
+    const handleEscapeModal = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || toasts.length > 0) return;
+      if (isApproveModalOpen) {
+        handleCancelApprove();
+      } else if (isRejectModalOpen) {
+        handleCloseRejectModal();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscapeModal);
+    return () => document.removeEventListener("keydown", handleEscapeModal);
+  }, [
+    isApproveModalOpen,
+    isRejectModalOpen,
+    toasts.length,
+    handleCancelApprove,
+    handleCloseRejectModal,
+  ]);
 
   const estadoActualSolicitud = solicitudSeleccionada?.Estado ?? "Pendiente";
   const esEstadoPermanente =
