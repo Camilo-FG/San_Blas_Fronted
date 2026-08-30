@@ -299,27 +299,6 @@ const TableSacramentos = () => {
     setRejectionReasonText(value);
   };
 
-  const confirmarAprobacion = () => {
-    if (!solicitudAAprobar?.id) return;
-
-    updateEstado.mutate(
-      { id: solicitudAAprobar.id, nuevoEstado: "Aprobado" },
-      {
-        onSuccess: () => {
-          setSolicitudAprobar(null);
-          showToast("Solicitud aprobada correctamente", "success");
-        },
-        onError: (err: unknown) => {
-          const mensaje =
-            err instanceof ApiError
-              ? err.message
-              : "No se pudo aprobar la solicitud.";
-          showToast(mensaje, "error");
-        },
-      },
-    );
-  };
-
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -417,7 +396,6 @@ const TableSacramentos = () => {
     if (nextEstado === "Aprobado") {
       const solicitud = rows.find((r) => String(r.id) === String(id));
       if (solicitud) {
-        setSolicitudSeleccionada(null);
         setIsApproveModalOpen(true);
         setSolicitudAAprobar(solicitud);
       }
@@ -908,7 +886,6 @@ const TableSacramentos = () => {
                                         "Rechazado",
                                       );
                                     } else {
-                                      setSolicitudSeleccionada(null);
                                       setSolicitudAAprobar(
                                         solicitudSeleccionada,
                                       );
@@ -939,41 +916,6 @@ const TableSacramentos = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {solicitudAAprobar && (
-        <Modal
-          onClose={() => setSolicitudAprobar(null)}
-          title="Aprobar solicitud"
-        >
-          <div className="flex flex-col gap-5 pr-8">
-            <div>
-              <h3 className="m-0 text-lg font-extrabold text-royal-blue">
-                ¿Desea aprobar la solicitud?
-              </h3>
-              <p className="mt-2 mb-0 text-sm leading-relaxed text-text-secondary">
-                La solicitud de {nombreCompleto(solicitudAAprobar)} cambiará a
-                estado aprobado.
-              </p>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => setSolicitudAprobar(null)}
-                disabled={isUpdatingEstado}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="royal"
-                onClick={confirmarAprobacion}
-                disabled={isUpdatingEstado}
-              >
-                {isUpdatingEstado ? "Aprobando..." : "Aprobar solicitud"}
-              </Button>
-            </div>
-          </div>
-        </Modal>
       )}
 
       {isRejectModalOpen && (
@@ -1046,15 +988,30 @@ const TableSacramentos = () => {
         <Modal
           onClose={handleCancelApprove}
           title="Confirmar aprobación"
+          sinFondo
         >
-            <div className="flex flex-col gap-4">
-              <p className="text-sm leading-relaxed text-text-secondary">
-                ¿Está seguro/a de realizar este cambio? La acción no es
-                reversible.
-              </p>
-              <div className="flex justify-end gap-2 pt-2">
+            <div className="flex min-h-52 flex-col">
+              <h3 className="m-0 pr-12 text-lg font-extrabold text-royal-blue">
+                Aprobar solicitud sacramental
+              </h3>
+              <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
+                <p className="text-sm leading-relaxed text-text-secondary">
+                  ¿Estás seguro/a que quieres aprobar esta solicitud de
+                  sacramento? Una vez aprobada su estado no podrá ser cambiado.
+                </p>
+              </div>
+              <div className="flex shrink-0 justify-end gap-2">
+                <Button
+                  variant="secondary"
+                  className="rounded-md"
+                  onClick={handleCancelApprove}
+                  disabled={aprobarSolicitud.isPending}
+                >
+                  Cancelar
+                </Button>
                 <Button
                   variant="royal"
+                  className="rounded-md"
                   onClick={handleApproveConfirm}
                   disabled={aprobarSolicitud.isPending}
                 >
@@ -1064,24 +1021,17 @@ const TableSacramentos = () => {
                         size={16}
                         className="animate-spin"
                       />
-                      Confirmando...
+                      Aprobando...
                     </>
                   ) : (
-                    "Confirmar"
+                    "Aprobar"
                   )}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={handleCancelApprove}
-                  disabled={aprobarSolicitud.isPending}
-                >
-                  Cancelar
                 </Button>
               </div>
               {errorAprobacion && (
                 <p
                   role="alert"
-                  className="m-0 text-xs font-semibold text-red-600"
+                  className="m-0 mt-2 text-xs font-semibold text-red-600"
                 >
                   ⚠ {errorAprobacion}
                 </p>
