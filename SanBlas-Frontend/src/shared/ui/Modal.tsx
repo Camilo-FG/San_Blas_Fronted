@@ -64,7 +64,7 @@ export function Modal({
     return (
       <>
         <motion.div
-          className="fixed inset-0 z-[1350] backdrop-blur-[6px]"
+          className="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
