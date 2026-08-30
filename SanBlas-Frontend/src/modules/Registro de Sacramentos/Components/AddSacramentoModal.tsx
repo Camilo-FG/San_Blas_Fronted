@@ -559,6 +559,9 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
                     value={observaciones}
                     onChange={(e) => setObservaciones(e.target.value)}
                   />
+                  <p className="m-0 mt-1 text-right text-xs text-slate-400">
+                    {observaciones.length}/500 caracteres
+                  </p>
                 </div>
               </>
             )}

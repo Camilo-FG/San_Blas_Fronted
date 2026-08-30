@@ -20,7 +20,7 @@ export function Modal({
   sinFondo,
 }: ModalProps) {
   const clasesContenido = sinFondo
-    ? "fixed top-1/2 left-1/2 z-[1400] max-h-[90vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-border bg-surface p-6 shadow-xl"
+    ? "fixed top-1/2 left-1/2 z-[1400] max-h-[90vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-border bg-surface p-6 shadow-[0_22px_55px_rgba(6,15,32,0.45)]"
     : "relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-xl";
 
   const contenido = (
@@ -34,7 +34,7 @@ export function Modal({
       <button
         type="button"
         className={cn(
-          "absolute top-4 right-4 inline-flex size-10 cursor-pointer items-center justify-center transition-colors focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none",
+          "absolute top-4 right-4 inline-flex size-10 cursor-pointer items-center justify-center transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none",
           sinFondo
             ? "rounded-[6px] bg-white text-black hover:bg-slate-100"
             : "rounded-xl border border-border-strong bg-surface-muted text-slate-600 hover:bg-slate-100",

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { motion } from "framer-motion";
 import {
   ChevronDown,
   ChevronLeft,
@@ -64,6 +65,44 @@ const EtiquetaSeccion = ({ children }: { children: ReactNode }) => (
     {children}
   </span>
 );
+
+const LineaDoradaTitulo = () => {
+  const refContenedor = useRef<HTMLDivElement>(null);
+  const refTexto = useRef<HTMLSpanElement>(null);
+  const [medidas, setMedidas] = useState({ ancho: 0, top: 0 });
+
+  useLayoutEffect(() => {
+    const contenedor = refContenedor.current;
+    const span = refTexto.current;
+    if (!contenedor || !span) return;
+    const estilos = window.getComputedStyle(span);
+    const fontSize = parseFloat(estilos.fontSize);
+    const lineaBase = span.offsetTop + span.offsetHeight - fontSize * 0.24;
+    setMedidas({ ancho: span.offsetWidth, top: lineaBase + 8 });
+  }, []);
+
+  return (
+    <div ref={refContenedor} className="relative w-fit">
+      <h2
+        className="m-0 mt-1 pb-2 text-lg leading-tight font-semibold tracking-tight text-[#16243c]"
+        style={{ fontFamily: "'Geist', sans-serif" }}
+      >
+        <span ref={refTexto}>Aprobar solicitud sac</span>
+        ramental
+      </h2>
+      {medidas.ancho > 0 && (
+        <motion.div
+          className="absolute left-0 h-[3px] origin-left rounded-full bg-[#dcb55a]"
+          style={{ top: medidas.top, width: medidas.ancho }}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.6, ease: [0.45, 0, 0.35, 1] }}
+          aria-hidden="true"
+        />
+      )}
+    </div>
+  );
+};
 
 const ESTADO_MODAL_STYLES = {
   Pendiente: {
@@ -990,13 +1029,8 @@ const TableSacramentos = () => {
           title="Confirmar aprobación"
           sinFondo
         >
-            <div className="flex min-h-52 flex-col">
-              <h2
-                className="m-0 mt-1 pr-12 text-lg leading-tight font-semibold tracking-tight text-[#16243c]"
-                style={{ fontFamily: "'Geist', sans-serif" }}
-              >
-                Aprobar solicitud sacramental
-              </h2>
+            <div className="flex min-h-44 flex-col">
+              <LineaDoradaTitulo />
               <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
                 <p className="text-sm leading-relaxed text-text-secondary">
                   ¿Estás seguro/a que quieres aprobar esta solicitud de
@@ -1006,7 +1040,7 @@ const TableSacramentos = () => {
               <div className="flex shrink-0 justify-end gap-2">
                 <Button
                   variant="royal"
-                  className="rounded-md"
+                  className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! hover:text-[#dcb55a]"
                   onClick={handleApproveConfirm}
                   disabled={aprobarSolicitud.isPending}
                 >
@@ -1024,7 +1058,7 @@ const TableSacramentos = () => {
                 </Button>
                 <Button
                   variant="secondary"
-                  className="rounded-md"
+                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
                   onClick={handleCancelApprove}
                   disabled={aprobarSolicitud.isPending}
                 >

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useObtenerSacramentosPersona } from '../hooks/hooksNuevos/useObtenerSacramentosPersona';
 import {
@@ -27,6 +28,14 @@ const nombrePresbitero = (
 ): string => {
   if (!p) return '';
   return [p.nombre, p.primerApellido, p.segundoApellido].filter(Boolean).join(' ').trim();
+};
+
+const nombreActa = (s: PersonaSacramental): string => {
+  if (s.bautismo) return 'Acta de Bautismo';
+  if (s.comunion) return 'Acta de Comunión';
+  if (s.confirmacion) return 'Acta de Confirmación';
+  if (s.matrimonio) return 'Acta de Matrimonio';
+  return 'Acta de vida sacramental';
 };
 
 // Línea punteada para un dato vacío dentro del texto del acta (estilo original).
@@ -79,12 +88,29 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   const sacramental: PersonaSacramental | undefined = data;
   const persona = sacramental?.persona;
 
   return (
+
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            className="fixed inset-0 z-[1300] bg-slate-900/60 backdrop-blur-[2px]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={onClose}
+            role="presentation"
+          />
+          <motion.div
+        className="fixed top-0 right-0 bottom-0 left-0 z-[1301] flex h-full w-full max-w-full flex-col bg-white shadow-[-8px_0_24px_rgba(15,23,42,0.15)] sm:left-auto sm:w-[min(700px,100vw)]"
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'tween', duration: 0.3, ease: 'easeOut' }}
     <>
       <div
         className="fixed inset-0 z-[1300] bg-slate-900/60 backdrop-blur-[2px]"
@@ -103,7 +129,9 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
             <h2 className="m-0 text-[1.1rem] font-bold leading-snug break-words text-royal-blue">
               Detalle del sacramento
             </h2>
-            <p className="m-0 mt-0.5 text-[0.82rem] text-slate-500">Acta de vida sacramental</p>
+            <p className="m-0 mt-0.5 text-[0.82rem] text-slate-500">
+              {sacramental ? nombreActa(sacramental) : 'Acta de vida sacramental'}
+            </p>
           </div>
           <button
             type="button"
@@ -313,14 +341,21 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                   <h4 className="mb-2 text-center text-[0.95rem] font-bold tracking-wide uppercase text-slate-500">
                     Observaciones
                   </h4>
+                  <div className="min-h-[9.5rem] overflow-hidden rounded-sm bg-white px-1 pt-1 [background-image:repeating-linear-gradient(to_bottom,transparent,transparent_1.9rem,#cbd5e1_1.9rem,#cbd5e1_1.95rem)]">
+                    <p className="m-0 whitespace-pre-wrap break-words text-slate-900 [line-height:1.9rem] [overflow-wrap:anywhere]">
+                      {sacramental.bautismo?.observaciones?.trim() || '\u00A0'}
+                    </p>
+                  </div>
                   <Fila label="Observaciones:" valor={sacramental.bautismo?.observaciones ?? ''} />
                 </div>
               </div>
             </div>
           )}
         </div>
-      </div>
-    </>
+        </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
 
