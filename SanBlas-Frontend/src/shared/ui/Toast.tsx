@@ -99,7 +99,7 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
   };
 
   const bgClasses = {
-    success: "bg-success-bg border-success",
+    success: "bg-emerald-100 border-success",
     error: "bg-red-600 border-red-700",
     warning: "bg-warning-bg border-warning",
     info: "bg-info-bg border-info",
