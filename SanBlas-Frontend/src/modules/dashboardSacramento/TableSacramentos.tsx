@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
+import FocusTrap from "focus-trap-react";
 import {
   ChevronDown,
   ChevronLeft,
@@ -758,8 +759,14 @@ const TableSacramentos = () => {
           role="presentation"
           onClick={() => setSolicitudSeleccionada(null)}
         >
-          <div
-            className="flex w-full flex-col rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
+          <FocusTrap
+            focusTrapOptions={{
+              clickOutsideDeactivates: false,
+              escapeDeactivates: false,
+            }}
+          >
+            <div
+              className="flex w-full flex-col rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
             style={{ fontFamily: "'Geist', sans-serif" }}
             role="dialog"
             aria-modal="true"
@@ -782,7 +789,7 @@ const TableSacramentos = () => {
                 type="button"
                 onClick={() => setSolicitudSeleccionada(null)}
                 aria-label="Cerrar detalle"
-                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#aa7323]"
+                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
               >
                 <X size={16} />
               </button>
@@ -875,7 +882,7 @@ const TableSacramentos = () => {
                         aria-haspopup="listbox"
                         aria-expanded={estadoMenuAbierto}
                         onClick={() => setEstadoMenuAbierto((prev) => !prev)}
-                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-200 hover:border-[#aa7323]/60 hover:bg-[#f1f5fa] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-200 hover:border-[#aa7323]/60 hover:bg-[#f1f5fa] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
                       >
                         <span>
                           {solicitudSeleccionada.Estado ?? "Pendiente"}
@@ -932,7 +939,7 @@ const TableSacramentos = () => {
                                     }
                                     setEstadoMenuAbierto(false);
                                   }}
-                                  className={`flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm font-medium transition-colors duration-200 ${
+                                  className={`flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
                                     activo
                                       ? "bg-[#aa7323]/10 text-[#16243c]"
                                       : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
@@ -954,6 +961,7 @@ const TableSacramentos = () => {
               </div>
             </div>
           </div>
+          </FocusTrap>
         </div>
       )}
 
