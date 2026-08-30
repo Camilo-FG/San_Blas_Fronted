@@ -781,10 +781,17 @@ const mensaje =
       {solicitudSeleccionada && (
         <div
           ref={modalBackdropRef}
-          className="fixed inset-0 z-[1300] flex items-end justify-center bg-[#060f20]/70 md:items-center md:p-4"
+          className="fixed inset-0 z-[1300] flex items-end justify-center md:items-center md:p-4"
           role="presentation"
           onClick={() => setSolicitudSeleccionada(null)}
         >
+          <motion.div
+            className="absolute inset-0 bg-[#060f20]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.7 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            aria-hidden="true"
+          />
           <FocusTrap
             focusTrapOptions={{
               clickOutsideDeactivates: false,
@@ -793,7 +800,7 @@ const mensaje =
             }}
           >
             <div
-              className="flex w-full flex-col rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
+              className="relative z-10 flex w-full flex-col rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
             style={{ fontFamily: "'Geist', sans-serif" }}
             role="dialog"
             aria-modal="true"
