@@ -9,7 +9,12 @@ interface Toast {
   id: number;
   message: string;
   type: ToastType;
+  duration: number;
 }
+
+const TOAST_DURATION_MS = 6000;
+const RADIO_ANILLO = 12;
+const CIRCUNFERENCIA_ANILLO = 2 * Math.PI * RADIO_ANILLO;
 
 interface ToastContextValue {
   toasts: Toast[];
@@ -26,11 +31,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const showToast = useCallback((message: string, type: ToastType) => {
     idCounter.current += 1;
     const id = idCounter.current;
-    setToasts((prev) => [...prev, { id, message, type }]);
+    setToasts((prev) => [...prev, { id, message, type, duration: TOAST_DURATION_MS }]);
     // Las notificaciones desaparecen automáticamente después de 6 segundos
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 6000);
+    }, TOAST_DURATION_MS);
   }, []);
 
   const dismissToast = useCallback((id: number) => {
@@ -51,6 +56,38 @@ export function useToast() {
     throw new Error("useToast must be used within a ToastProvider");
   }
   return context;
+}
+
+function AnilloProgreso({ duracionMs }: { duracionMs: number }) {
+  return (
+    <svg
+      className="absolute inset-0 -rotate-90"
+      viewBox="0 0 30 30"
+      aria-hidden="true"
+    >
+      <circle
+        cx="15"
+        cy="15"
+        r={RADIO_ANILLO}
+        fill="none"
+        strokeWidth="2.5"
+        className="stroke-[#16243c]/10"
+      />
+      <motion.circle
+        cx="15"
+        cy="15"
+        r={RADIO_ANILLO}
+        fill="none"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeDasharray={CIRCUNFERENCIA_ANILLO}
+        className="stroke-[#aa7323]"
+        initial={{ strokeDashoffset: 0 }}
+        animate={{ strokeDashoffset: CIRCUNFERENCIA_ANILLO }}
+        transition={{ duration: duracionMs / 1000, ease: "linear" }}
+      />
+    </svg>
+  );
 }
 
 function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
@@ -89,9 +126,11 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
             exit={{ opacity: 0, x: 110 }}
             transition={{ duration: 0.35, ease: "easeOut" }}
           >
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-0.5">{icons[toast.type]}</div>
-              <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3">
+              {toast.type !== "success" && (
+                <div className="flex-shrink-0 mt-0.5">{icons[toast.type]}</div>
+              )}
+              <div className="min-w-0 flex-1">
                 <p
                   className={cn(
                     "text-sm font-medium",
@@ -101,19 +140,24 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
                   {toast.message}
                 </p>
               </div>
-              <button
-                type="button"
-                className={cn(
-                  "flex-shrink-0 transition-colors",
-                  toast.type === "error"
-                    ? "text-white/80 hover:text-white"
-                    : "text-text-muted hover:text-text",
+              <div className="relative inline-flex size-7 shrink-0 items-center justify-center">
+                {toast.type === "success" && (
+                  <AnilloProgreso duracionMs={toast.duration} />
                 )}
-                onClick={() => onDismiss(toast.id)}
-                aria-label="Cerrar notificación"
-              >
-                <X size={18} />
-              </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "z-10 flex size-6 cursor-pointer items-center justify-center rounded-full transition-colors",
+                    toast.type === "error"
+                      ? "text-white/80 hover:text-white"
+                      : "text-text-muted hover:text-text",
+                  )}
+                  onClick={() => onDismiss(toast.id)}
+                  aria-label="Cerrar notificación"
+                >
+                  <X size={15} />
+                </button>
+              </div>
             </div>
           </motion.div>
         ))}
