@@ -133,19 +133,35 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   // Orden estricto de la cadena: bautismo -> comunion -> confirmacion -> matrimonio.
   const ORDEN: TipoSacramento[] = ['bautismo', 'comunion', 'confirmacion', 'matrimonio'];
 
-  // true si el sacramento tiene sus campos requeridos completos.
+  // true si el sacramento tiene sus campos requeridos completos (coincide con los `*` del formulario).
   const completo = (t: TipoSacramento): boolean => {
-    const base = idParroquia !== '' && fechaSacramento !== '';
+    const base = idParroquia !== '' && idPresbitero !== '' && fechaSacramento !== '';
     if (t === 'bautismo')
-      return base && bautizado.nombre.trim() !== '' && bautizado.primerApellido.trim() !== '';
+      return (
+        base &&
+        bautizado.nombre.trim() !== '' &&
+        bautizado.primerApellido.trim() !== '' &&
+        detalleBautismo.fechaNacimiento !== '' &&
+        detalleBautismo.horaNacimiento !== '' &&
+        detalleBautismo.lugarNacimiento.trim() !== '' &&
+        detalleBautismo.libro.trim() !== '' &&
+        detalleBautismo.tomo.trim() !== '' &&
+        detalleBautismo.folio.trim() !== '' &&
+        detalleBautismo.asiento.trim() !== ''
+      );
     if (t === 'comunion' || t === 'confirmacion')
-      return base && persona.nombre.trim() !== '' && persona.primerApellido.trim() !== '';
+      return (
+        base && persona.nombre.trim() !== '' && persona.primerApellido.trim() !== ''
+      );
     return (
       base &&
       contrayente1.nombre.trim() !== '' &&
       contrayente1.primerApellido.trim() !== '' &&
       contrayente2.nombre.trim() !== '' &&
-      contrayente2.primerApellido.trim() !== ''
+      contrayente2.primerApellido.trim() !== '' &&
+      detalleMatrimonio.libro.trim() !== '' &&
+      detalleMatrimonio.tomo.trim() !== '' &&
+      detalleMatrimonio.folio.trim() !== ''
     );
   };
 
@@ -154,6 +170,16 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     const idx = ORDEN.indexOf(t);
     if (idx === 0) return true;
     return completo(ORDEN[idx - 1]) && habilitado(ORDEN[idx - 1]);
+  };
+
+  // Al avanzar de pestaña, reutiliza la persona ya registrada en el sacramento anterior
+  // (por lógica es la misma persona). Se copia una sola vez y luego el usuario puede editarla.
+  const cambiarTab = (nuevo: TipoSacramento) => {
+    if (nuevo === tipo) return;
+    if (tipo === 'bautismo' && nuevo === 'comunion') setPersona((prev) => ({ ...bautizado, ...prev }));
+    if (tipo === 'confirmacion' && nuevo === 'matrimonio')
+      setContrayente1((prev) => ({ ...persona, ...prev }));
+    setTipo(nuevo);
   };
 
   const setPersonaCampo = (
@@ -181,6 +207,12 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       ),
     );
   };
+
+  const setDetalleBautismoCampo = (campo: 'libro' | 'tomo' | 'folio' | 'asiento', valor: string) =>
+    setDetalleBautismo((p) => ({ ...p, [campo]: soloNumeros(valor) }));
+
+  const setDetalleMatrimonioCampo = (campo: 'libro' | 'tomo' | 'folio', valor: string) =>
+    setDetalleMatrimonio((p) => ({ ...p, [campo]: soloNumeros(valor) }));
 
   const agregarAbuelo = () => {
     const usados = abuelos.map((a) => a.parentesco);
@@ -415,19 +447,19 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
           <Label required>Libro</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.libro)} value={detalleBautismo.libro} onChange={(e) => setDetalleBautismo((p) => ({ ...p, libro: e.target.value }))} />
+          <Input type="text" maxLength={6} className={inputClass(errors.libro)} value={detalleBautismo.libro} onChange={(e) => setDetalleBautismoCampo('libro', e.target.value)} />
         </div>
         <div>
           <Label required>Tomo</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.tomo)} value={detalleBautismo.tomo} onChange={(e) => setDetalleBautismo((p) => ({ ...p, tomo: e.target.value }))} />
+          <Input type="text" maxLength={6} className={inputClass(errors.tomo)} value={detalleBautismo.tomo} onChange={(e) => setDetalleBautismoCampo('tomo', e.target.value)} />
         </div>
         <div>
           <Label required>Folio</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.folio)} value={detalleBautismo.folio} onChange={(e) => setDetalleBautismo((p) => ({ ...p, folio: e.target.value }))} />
+          <Input type="text" maxLength={6} className={inputClass(errors.folio)} value={detalleBautismo.folio} onChange={(e) => setDetalleBautismoCampo('folio', e.target.value)} />
         </div>
         <div>
           <Label required>Asiento</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.asiento)} value={detalleBautismo.asiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, asiento: e.target.value }))} />
+          <Input type="text" maxLength={6} className={inputClass(errors.asiento)} value={detalleBautismo.asiento} onChange={(e) => setDetalleBautismoCampo('asiento', e.target.value)} />
         </div>
       </div>
     </>
@@ -444,15 +476,15 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
           <Label required>Libro</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.libro)} value={detalleMatrimonio.libro} onChange={(e) => setDetalleMatrimonio((p) => ({ ...p, libro: e.target.value }))} />
+          <Input type="text" maxLength={6} className={inputClass(errors.libro)} value={detalleMatrimonio.libro} onChange={(e) => setDetalleMatrimonioCampo('libro', e.target.value)} />
         </div>
         <div>
           <Label required>Tomo</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.tomo)} value={detalleMatrimonio.tomo} onChange={(e) => setDetalleMatrimonio((p) => ({ ...p, tomo: e.target.value }))} />
+          <Input type="text" maxLength={6} className={inputClass(errors.tomo)} value={detalleMatrimonio.tomo} onChange={(e) => setDetalleMatrimonioCampo('tomo', e.target.value)} />
         </div>
         <div>
           <Label required>Folio</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.folio)} value={detalleMatrimonio.folio} onChange={(e) => setDetalleMatrimonio((p) => ({ ...p, folio: e.target.value }))} />
+          <Input type="text" maxLength={6} className={inputClass(errors.folio)} value={detalleMatrimonio.folio} onChange={(e) => setDetalleMatrimonioCampo('folio', e.target.value)} />
         </div>
       </div>
     </>
@@ -493,7 +525,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
                     : 'cursor-pointer border-0 bg-transparent text-gray-500 hover:text-blue-600',
                   tipo === t && disponible && 'border-b-2 border-blue-600 text-blue-600',
                 )}
-                onClick={() => setTipo(t)}
+                onClick={() => cambiarTab(t)}
               >
                 {TIPO_SACRAMENTO_LABEL[t].toUpperCase()}
               </button>
