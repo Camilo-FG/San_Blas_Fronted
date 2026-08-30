@@ -1,5 +1,5 @@
 export const NOMBRE_MIN = 2;
-export const NOMBRE_MAX = 50;
+export const NOMBRE_MAX = 30;
 export const CEDULA_DIGITOS = 9;
 
 // ---- Filtros de entrada (aplicar en onChange) ----
