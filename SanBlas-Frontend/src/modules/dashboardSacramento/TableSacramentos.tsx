@@ -476,6 +476,7 @@ const TableSacramentos = () => {
         onSuccess: () => {
           setIsApproveModalOpen(false);
           setSolicitudAAprobar(null);
+          setSolicitudSeleccionada(null);
           showToast("Solicitud aprobada correctamente", "success");
         },
         onError: (err: unknown) => {
