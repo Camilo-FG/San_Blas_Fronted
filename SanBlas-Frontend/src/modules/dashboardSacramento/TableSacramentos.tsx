@@ -1006,7 +1006,7 @@ const TableSacramentos = () => {
               <div className="flex shrink-0 justify-end gap-2">
                 <Button
                   variant="royal"
-                  className="rounded-md"
+                  className="rounded-lg!"
                   onClick={handleApproveConfirm}
                   disabled={aprobarSolicitud.isPending}
                 >
@@ -1024,7 +1024,7 @@ const TableSacramentos = () => {
                 </Button>
                 <Button
                   variant="secondary"
-                  className="rounded-md"
+                  className="rounded-lg! border-0! hover:bg-slate-300!"
                   onClick={handleCancelApprove}
                   disabled={aprobarSolicitud.isPending}
                 >
