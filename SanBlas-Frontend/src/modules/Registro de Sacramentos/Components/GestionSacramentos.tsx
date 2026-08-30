@@ -59,16 +59,8 @@ const GestionSacramentos = () => {
     return `${digitos[0]}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
   };
 
-  const handleBuscar = () => {
-    setFiltros({ nombre: nombreInput.trim(), cedula: cedulaInput.replace(/\D/g, '') });
-    setPage(1);
-  };
-
-  const handleLimpiar = () => {
-    setNombreInput('');
-    setCedulaInput('');
-    setFiltros({ nombre: '', cedula: '' });
-    setPage(1);
+  const handleSolonLetrasNombre = (valor: string) => {
+    return valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
   };
 
   const handleViewDetails = (sacramento: { cedula: string | null }) => {
@@ -124,13 +116,7 @@ const GestionSacramentos = () => {
         </h2>
       </div>
 
-      <form
-        className="mb-6 flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-4 shadow-sm"
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleBuscar();
-        }}
-      >
+      <div className="mb-6 flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-4 shadow-sm">
         <AdminSearch
           type="text"
           placeholder="Cédula (0-0000-0000)"
@@ -142,15 +128,9 @@ const GestionSacramentos = () => {
           type="text"
           placeholder="Nombre o apellidos"
           value={nombreInput}
-          onChange={(e) => setNombreInput(e.target.value)}
+          onChange={(e) => setNombreInput(handleSolonLetrasNombre(e.target.value))}
           className="min-w-[200px] flex-1"
         />
-        <Button type="submit" variant="royal" className="shrink-0">
-          Buscar
-        </Button>
-        <Button type="button" onClick={handleLimpiar} variant="royal" className="shrink-0">
-          Limpiar
-        </Button>
         <Button
           type="button"
           onClick={() => setAddModalOpen(true)}
@@ -159,7 +139,7 @@ const GestionSacramentos = () => {
         >
           + Agregar
         </Button>
-      </form>
+      </div>
 
       {query.isPending && (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
