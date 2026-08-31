@@ -67,7 +67,13 @@ const EtiquetaSeccion = ({ children }: { children: ReactNode }) => (
   </span>
 );
 
-const LineaDoradaTitulo = () => {
+const LineaDoradaTitulo = ({
+  parteSubrayada,
+  resto = "",
+}: {
+  parteSubrayada: string;
+  resto?: string;
+}) => {
   const refContenedor = useRef<HTMLDivElement>(null);
   const refTexto = useRef<HTMLSpanElement>(null);
   const [medidas, setMedidas] = useState({ ancho: 0, top: 0 });
@@ -80,7 +86,7 @@ const LineaDoradaTitulo = () => {
     const fontSize = parseFloat(estilos.fontSize);
     const lineaBase = span.offsetTop + span.offsetHeight - fontSize * 0.24;
     setMedidas({ ancho: span.offsetWidth, top: lineaBase + 8 });
-  }, []);
+  }, [parteSubrayada]);
 
   return (
     <div ref={refContenedor} className="relative w-fit">
@@ -88,8 +94,8 @@ const LineaDoradaTitulo = () => {
         className="m-0 mt-1 pb-2 text-lg leading-tight font-semibold tracking-tight text-[#16243c]"
         style={{ fontFamily: "'Geist', sans-serif" }}
       >
-        <span ref={refTexto}>Aprobar solicitud sac</span>
-        ramental
+        <span ref={refTexto}>{parteSubrayada}</span>
+        {resto}
       </h2>
       {medidas.ancho > 0 && (
         <motion.div
@@ -1015,10 +1021,13 @@ const mensaje =
         <Modal
           onClose={handleCloseRejectModal}
           title="Rechazar solicitud"
+          sinFondo
         >
-          <div className="flex flex-col gap-4">
+          <div className="flex min-h-44 flex-col gap-4">
+            <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
             <p className="text-sm text-text-secondary">
-              Seleccione o escriba el motivo de rechazo para esta solicitud:
+              Seleccione el motivo de rechazo en la lista o bien, especifique el
+              motivo en el campo de texto.
             </p>
             <Select
               value={rejectionReasonSelect}
@@ -1045,14 +1054,8 @@ const mensaje =
             />
             <div className="flex justify-end gap-2 pt-2">
               <Button
-                variant="secondary"
-                onClick={handleCloseRejectModal}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="danger"
+                variant="royal"
+                className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
                 onClick={handleRejectSubmit}
                 disabled={
                   (!rejectionReasonSelect.trim() &&
@@ -1069,8 +1072,16 @@ const mensaje =
                     Rechazando...
                   </>
                 ) : (
-                  "Confirmar rechazo"
+                  "Continuar"
                 )}
+              </Button>
+              <Button
+                variant="secondary"
+                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                onClick={handleCloseRejectModal}
+                disabled={isSubmitting}
+              >
+                Cancelar
               </Button>
             </div>
           </div>
@@ -1084,7 +1095,7 @@ const mensaje =
           sinFondo
         >
             <div className="flex min-h-44 flex-col">
-              <LineaDoradaTitulo />
+              <LineaDoradaTitulo parteSubrayada="Aprobar solicitud sac" resto="ramental" />
               <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
                 <p className="text-sm leading-relaxed text-text-secondary">
                   ¿Estás seguro/a que quieres aprobar esta solicitud de
@@ -1094,7 +1105,7 @@ const mensaje =
               <div className="flex shrink-0 justify-end gap-2">
                 <Button
                   variant="royal"
-                  className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! hover:text-[#dcb55a]"
+className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
                   onClick={handleApproveConfirm}
                   disabled={aprobarSolicitud.isPending}
                 >
