@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import FocusTrap from "focus-trap-react";
 import {
   ChevronDown,
@@ -184,6 +184,8 @@ const TableSacramentos = () => {
     useState<FormSacramento | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
+  const [motivoMenuAbierto, setMotivoMenuAbierto] = useState(false);
+  const motivoMenuRef = useRef<HTMLDivElement>(null);
   const [rejectionReasonText, setRejectionReasonText] = useState("");
   const [solicitudARechazar, setSolicitudARechazar] =
     useState<FormSacramento | null>(null);
@@ -211,6 +213,12 @@ const TableSacramentos = () => {
         !filtroEstadoMenuRef.current.contains(event.target as Node)
       ) {
         setFiltroEstadoMenuAbierto(false);
+      }
+      if (
+        motivoMenuRef.current &&
+        !motivoMenuRef.current.contains(event.target as Node)
+      ) {
+        setMotivoMenuAbierto(false);
       }
     };
     document.addEventListener("mousedown", handleClickFuera);
@@ -1039,29 +1047,59 @@ const mensaje =
               Seleccione el motivo de rechazo en la lista o bien, especifique el
               motivo en el campo de texto.
             </p>
-            <div className="relative">
-              <select
-                value={rejectionReasonSelect}
-                onChange={(e) => handleReasonSelectChange(e.target.value)}
-                defaultValue=""
-                className="min-h-11 w-full cursor-pointer appearance-none rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 pr-12 text-sm text-slate-900 transition-colors focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200"
+            <div className="relative" ref={motivoMenuRef}>
+              <button
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={motivoMenuAbierto}
+                onClick={() => setMotivoMenuAbierto((prev) => !prev)}
+                className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 ${
+                  motivoMenuAbierto
+                    ? "border-blue-400 bg-surface"
+                    : "border-border-strong"
+                }`}
               >
-                <option value="" hidden disabled>
-                  Seleccione un motivo
-                </option>
-                {rejectionReasons.map((reason) => (
-                  <option
-                    key={reason}
-                    value={reason}
+                <span className={rejectionReasonSelect ? "" : "text-slate-400"}>
+                  {rejectionReasonSelect || "Seleccione un motivo"}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`shrink-0 text-slate-900 transition-transform duration-200 ${
+                    motivoMenuAbierto ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              <AnimatePresence>
+                {motivoMenuAbierto && (
+                  <motion.ul
+                    role="listbox"
+                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                    className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
                   >
-                    {reason}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={16}
-                className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-slate-900"
-              />
+                    {rejectionReasons.map((reason) => (
+                      <li key={reason} role="option" aria-selected={rejectionReasonSelect === reason}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRejectionReasonSelect(reason);
+                            setMotivoMenuAbierto(false);
+                          }}
+                          className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out ${
+                            rejectionReasonSelect === reason
+                              ? "bg-[#aa7323]/10 text-[#16243c]"
+                              : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                          }`}
+                        >
+                          {reason}
+                        </button>
+                      </li>
+                    ))}
+                  </motion.ul>
+                )}
+              </AnimatePresence>
             </div>
 <Textarea
                 value={rejectionReasonText}
