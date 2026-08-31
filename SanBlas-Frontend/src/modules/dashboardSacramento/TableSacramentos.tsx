@@ -317,11 +317,8 @@ const TableSacramentos = () => {
   );
 
   const rejectionReasons = [
-    "Documentación incompleta",
-    "Falta fe de bautismo",
     "Comprobante de pago inválido",
     "Datos incorrectos",
-    "No cumple requisitos",
     "Otro",
   ];
 
@@ -1049,7 +1046,9 @@ const mensaje =
                 defaultValue=""
                 className="min-h-11 w-full cursor-pointer appearance-none rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 pr-12 text-sm text-slate-900 transition-colors focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200"
               >
-                <option value="">Seleccione un motivo</option>
+                <option value="" hidden disabled>
+                  Seleccione un motivo
+                </option>
                 {rejectionReasons.map((reason) => (
                   <option
                     key={reason}
