@@ -1042,22 +1042,28 @@ const mensaje =
               Seleccione el motivo de rechazo en la lista o bien, especifique el
               motivo en el campo de texto.
             </p>
-            <Select
-              value={rejectionReasonSelect}
-              onChange={(e) => handleReasonSelectChange(e.target.value)}
-              className="w-full"
-              defaultValue=""
-            >
-              <option value="">-- Seleccione un motivo --</option>
-              {rejectionReasons.map((reason) => (
-                <option
-                  key={reason}
-                  value={reason}
-                >
-                  {reason}
-                </option>
-              ))}
-            </Select>
+            <div className="relative">
+              <select
+                value={rejectionReasonSelect}
+                onChange={(e) => handleReasonSelectChange(e.target.value)}
+                defaultValue=""
+                className="min-h-11 w-full cursor-pointer appearance-none rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 pr-12 text-sm text-slate-900 transition-colors focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200"
+              >
+                <option value="">Seleccione un motivo</option>
+                {rejectionReasons.map((reason) => (
+                  <option
+                    key={reason}
+                    value={reason}
+                  >
+                    {reason}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={16}
+                className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-slate-900"
+              />
+            </div>
 <Textarea
                 value={rejectionReasonText}
                 onChange={(e) => handleReasonTextChange(e.target.value)}
