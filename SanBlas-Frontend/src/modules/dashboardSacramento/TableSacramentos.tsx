@@ -134,6 +134,11 @@ const formatearCedula = (valor: string) => {
   return `${digitos.slice(0, 1)}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
 };
 
+const REGEX_MOTIVO_VALIDO =
+  /^[a-zA-Z\u00C0-\u024F\d\s.,;:!?¡¿()'"\-–—]*$/;
+const tieneCaracteresInvalidos = (texto: string) =>
+  texto.length > 0 && !REGEX_MOTIVO_VALIDO.test(texto);
+
 const formatearTelefono = (valor: string) => {
   const digitos = soloDigitos(String(valor ?? "")).slice(0, 8);
   if (digitos.length <= 4) return digitos;
@@ -327,11 +332,16 @@ const TableSacramentos = () => {
     setIsRejectModalOpen(true);
   };
 
-  const handleCloseRejectModal = () => {
+  const handleCloseRejectModal = (opciones?: { volverAlDetalle?: boolean }) => {
+    const { volverAlDetalle = true } = opciones ?? {};
+    const solicitud = solicitudARechazar;
     setIsRejectModalOpen(false);
     setRejectionReasonSelect("");
     setRejectionReasonText("");
     setSolicitudARechazar(null);
+    if (volverAlDetalle && solicitud) {
+      setSolicitudSeleccionada(solicitud);
+    }
   };
 
   const handleRejectSubmit = async () => {
@@ -345,7 +355,7 @@ const TableSacramentos = () => {
         detalleRechazo: rejectionReasonText.trim() || undefined,
       });
       showToast("Solicitud rechazada correctamente", "error");
-      handleCloseRejectModal();
+      handleCloseRejectModal({ volverAlDetalle: false });
     } catch (err) {
       const mensaje =
         err instanceof ApiError
@@ -796,6 +806,16 @@ const mensaje =
         </>
       )}
 
+      {(solicitudSeleccionada || isRejectModalOpen) && (
+        <motion.div
+          className="fixed inset-0 z-[1300] bg-[#060f20]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.7 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          aria-hidden="true"
+        />
+      )}
+
       {solicitudSeleccionada && (
         <div
           ref={modalBackdropRef}
@@ -803,13 +823,6 @@ const mensaje =
           role="presentation"
           onClick={() => setSolicitudSeleccionada(null)}
         >
-          <motion.div
-            className="absolute inset-0 bg-[#060f20]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.7 }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            aria-hidden="true"
-          />
           <FocusTrap
             focusTrapOptions={{
               clickOutsideDeactivates: false,
@@ -1045,13 +1058,30 @@ const mensaje =
                 </option>
               ))}
             </Select>
-            <Textarea
-              value={rejectionReasonText}
-              onChange={(e) => handleReasonTextChange(e.target.value)}
-              placeholder="O escriba un motivo personalizado..."
-              rows={3}
-              className="min-h-20"
-            />
+<Textarea
+                value={rejectionReasonText}
+                onChange={(e) => handleReasonTextChange(e.target.value)}
+                placeholder="Detalle un motivo personalizado (opcional)"
+                rows={3}
+                maxLength={150}
+                className="min-h-20"
+              />
+              <div className="-mt-2 flex items-baseline justify-between gap-2">
+                {tieneCaracteresInvalidos(rejectionReasonText) && (
+                  <p className="m-0 text-xs font-semibold text-red-600">
+                    Los caracteres especiales no están permitidos
+                  </p>
+                )}
+                <p
+                  className={`m-0 ml-auto text-xs ${
+                    rejectionReasonText.length >= 150
+                      ? "font-semibold text-red-600"
+                      : "text-text-muted"
+                  }`}
+                >
+                  {rejectionReasonText.length}/150
+                </p>
+              </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button
                 variant="royal"
@@ -1060,6 +1090,7 @@ const mensaje =
                 disabled={
                   (!rejectionReasonSelect.trim() &&
                     !rejectionReasonText.trim()) ||
+                  tieneCaracteresInvalidos(rejectionReasonText) ||
                   isSubmitting
                 }
               >
