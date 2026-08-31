@@ -1106,10 +1106,16 @@ const mensaje =
           sinFondo
           overlayClassName={
             isConfirmRejectOpen
-              ? "fixed inset-0 z-[1350] bg-transparent backdrop-blur-[6px]"
-              : undefined
+              ? "fixed inset-0 z-[1350] backdrop-blur-[6px]"
+              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
           }
         >
+          <motion.div
+            key={isConfirmRejectOpen ? "confirmar" : "formulario"}
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          >
           {isConfirmRejectOpen ? (
             <div className="flex min-h-44 flex-col">
               <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
@@ -1265,6 +1271,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
               </div>
             </div>
           )}
+          </motion.div>
         </Modal>
       )}
 
