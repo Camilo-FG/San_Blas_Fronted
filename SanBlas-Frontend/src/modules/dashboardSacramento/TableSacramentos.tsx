@@ -835,7 +835,7 @@ const mensaje =
                 type="button"
                 onClick={() => setSolicitudSeleccionada(null)}
                 aria-label="Cerrar detalle"
-                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
               >
                 <X size={16} />
               </button>
