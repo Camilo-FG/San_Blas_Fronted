@@ -1237,7 +1237,7 @@ const mensaje =
               <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
                 <p className="text-sm leading-relaxed text-text-secondary">
                   ¿Estás seguro/a que quieres rechazar esta solicitud de
-                  sacramento? Una vez rechazada su estado no podrá ser cambiado.
+                  sacramento? Una vez rechazada, su estado no podrá ser cambiado.
                 </p>
               </div>
               <div className="flex shrink-0 justify-end gap-2">
