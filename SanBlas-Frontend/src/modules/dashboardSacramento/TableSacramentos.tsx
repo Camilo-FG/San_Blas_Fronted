@@ -156,6 +156,12 @@ const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   return "warning";
 };
 
+const ORDEN_ESTADO: Record<string, number> = {
+  Pendiente: 0,
+  Aprobado: 1,
+  Rechazado: 2,
+};
+
 const TableSacramentos = () => {
   const navigate = useNavigate();
   const [filtroNombre, setFiltroNombre] = useState("");
@@ -289,7 +295,13 @@ const TableSacramentos = () => {
           const matchEstado = !filtroEstado || row.Estado === filtroEstado;
           return matchNombre && matchCedula && matchEstado;
         })
-        .sort((a, b) => toFechaTime(b.Fecha) - toFechaTime(a.Fecha)),
+        .sort((a, b) => {
+          const diffEstado =
+            (ORDEN_ESTADO[a.Estado ?? "Pendiente"] ?? 0) -
+            (ORDEN_ESTADO[b.Estado ?? "Pendiente"] ?? 0);
+          if (diffEstado !== 0) return diffEstado;
+          return toFechaTime(b.Fecha) - toFechaTime(a.Fecha);
+        }),
     [rows, filtroNombre, filtroCedula, filtroEstado],
   );
 
