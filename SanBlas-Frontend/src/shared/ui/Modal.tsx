@@ -54,6 +54,7 @@ export function Modal({
       focusTrapOptions={{
         clickOutsideDeactivates: false,
         escapeDeactivates: false,
+        allowOutsideClick: () => true,
       }}
     >
       {contenido}

@@ -10,6 +10,7 @@ export const useGetSolicitudes = (filters?: SolicitudesSacramentosFilters) => {
     queryKey: ["solicitudes", filters],
     queryFn: () => obtenerSolicitudesSacramentos(filters),
     placeholderData: (previousData) => previousData,
+    refetchInterval: 5_000,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     retry: (failureCount, error) => {

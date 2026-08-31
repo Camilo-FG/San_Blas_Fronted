@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import FocusTrap from "focus-trap-react";
 import {
   ChevronDown,
   ChevronLeft,
@@ -66,7 +67,13 @@ const EtiquetaSeccion = ({ children }: { children: ReactNode }) => (
   </span>
 );
 
-const LineaDoradaTitulo = () => {
+const LineaDoradaTitulo = ({
+  parteSubrayada,
+  resto = "",
+}: {
+  parteSubrayada: string;
+  resto?: string;
+}) => {
   const refContenedor = useRef<HTMLDivElement>(null);
   const refTexto = useRef<HTMLSpanElement>(null);
   const [medidas, setMedidas] = useState({ ancho: 0, top: 0 });
@@ -79,7 +86,7 @@ const LineaDoradaTitulo = () => {
     const fontSize = parseFloat(estilos.fontSize);
     const lineaBase = span.offsetTop + span.offsetHeight - fontSize * 0.24;
     setMedidas({ ancho: span.offsetWidth, top: lineaBase + 8 });
-  }, []);
+  }, [parteSubrayada]);
 
   return (
     <div ref={refContenedor} className="relative w-fit">
@@ -87,8 +94,8 @@ const LineaDoradaTitulo = () => {
         className="m-0 mt-1 pb-2 text-lg leading-tight font-semibold tracking-tight text-[#16243c]"
         style={{ fontFamily: "'Geist', sans-serif" }}
       >
-        <span ref={refTexto}>Aprobar solicitud sac</span>
-        ramental
+        <span ref={refTexto}>{parteSubrayada}</span>
+        {resto}
       </h2>
       {medidas.ancho > 0 && (
         <motion.div
@@ -127,6 +134,11 @@ const formatearCedula = (valor: string) => {
   return `${digitos.slice(0, 1)}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
 };
 
+const REGEX_MOTIVO_VALIDO =
+  /^[a-zA-Z\u00C0-\u024F\d\s.,;:!?¡¿()'"\-–—]*$/;
+const tieneCaracteresInvalidos = (texto: string) =>
+  texto.length > 0 && !REGEX_MOTIVO_VALIDO.test(texto);
+
 const formatearTelefono = (valor: string) => {
   const digitos = soloDigitos(String(valor ?? "")).slice(0, 8);
   if (digitos.length <= 4) return digitos;
@@ -155,6 +167,12 @@ const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   return "warning";
 };
 
+const ORDEN_ESTADO: Record<string, number> = {
+  Pendiente: 0,
+  Aprobado: 1,
+  Rechazado: 2,
+};
+
 const TableSacramentos = () => {
   const navigate = useNavigate();
   const [filtroNombre, setFiltroNombre] = useState("");
@@ -165,14 +183,32 @@ const TableSacramentos = () => {
   const [solicitudSeleccionada, setSolicitudSeleccionada] =
     useState<FormSacramento | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isConfirmRejectOpen, setIsConfirmRejectOpen] = useState(false);
   const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
+  const [motivoMenuAbierto, setMotivoMenuAbierto] = useState(false);
+  const [rechazoEnBlur, setRechazoEnBlur] = useState(false);
+  const [aprobacionEnBlur, setAprobacionEnBlur] = useState(false);
+  const [solicitudPendienteRechazo, setSolicitudPendienteRechazo] =
+    useState<FormSacramento | null>(null);
+  const motivoMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!motivoMenuAbierto) return;
+    const handleEscapeMotivo = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMotivoMenuAbierto(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscapeMotivo);
+    return () => document.removeEventListener("keydown", handleEscapeMotivo);
+  }, [motivoMenuAbierto]);
   const [rejectionReasonText, setRejectionReasonText] = useState("");
   const [solicitudARechazar, setSolicitudARechazar] =
     useState<FormSacramento | null>(null);
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
-  const [errorAprobacion, setErrorAprobacion] = useState<string | null>(null);
   const [solicitudAAprobar, setSolicitudAAprobar] =
     useState<FormSacramento | null>(null);
+  const { toasts, showToast } = useToast();
   const [estadoMenuAbierto, setEstadoMenuAbierto] = useState(false);
   const estadoMenuRef = useRef<HTMLDivElement>(null);
   const modalBackdropRef = useRef<HTMLDivElement>(null);
@@ -194,6 +230,12 @@ const TableSacramentos = () => {
       ) {
         setFiltroEstadoMenuAbierto(false);
       }
+      if (
+        motivoMenuRef.current &&
+        !motivoMenuRef.current.contains(event.target as Node)
+      ) {
+        setMotivoMenuAbierto(false);
+      }
     };
     document.addEventListener("mousedown", handleClickFuera);
     return () => document.removeEventListener("mousedown", handleClickFuera);
@@ -203,7 +245,17 @@ const TableSacramentos = () => {
     if (!solicitudSeleccionada) return;
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSolicitudSeleccionada(null);
+      if (
+        event.key === "Escape" &&
+        !isApproveModalOpen &&
+        !isRejectModalOpen &&
+        !isConfirmRejectOpen &&
+        !rechazoEnBlur &&
+        !aprobacionEnBlur &&
+        toasts.length === 0
+      ) {
+        setSolicitudSeleccionada(null);
+      }
     };
 
     const main = document.querySelector("main");
@@ -228,7 +280,7 @@ const TableSacramentos = () => {
       document.body.style.overflow = prevBodyOverflow;
       if (main) main.style.overflow = prevMainOverflow;
     };
-  }, [solicitudSeleccionada]);
+  }, [solicitudSeleccionada, isApproveModalOpen, isRejectModalOpen, isConfirmRejectOpen, rechazoEnBlur, aprobacionEnBlur, toasts.length]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
@@ -255,7 +307,6 @@ const TableSacramentos = () => {
   const rechazarSolicitud = useRechazarSolicitudSacramento();
   const isUpdatingEstado = updateEstado.isPending;
   const isSubmitting = rechazarSolicitud.isPending;
-  const { showToast } = useToast();
 
   const rows: FormSacramento[] = data?.data ?? [];
   const totalItems = data?.total ?? 0;
@@ -282,31 +333,50 @@ const TableSacramentos = () => {
           const matchEstado = !filtroEstado || row.Estado === filtroEstado;
           return matchNombre && matchCedula && matchEstado;
         })
-        .sort((a, b) => toFechaTime(b.Fecha) - toFechaTime(a.Fecha)),
+        .sort((a, b) => {
+          const diffEstado =
+            (ORDEN_ESTADO[a.Estado ?? "Pendiente"] ?? 0) -
+            (ORDEN_ESTADO[b.Estado ?? "Pendiente"] ?? 0);
+          if (diffEstado !== 0) return diffEstado;
+          return toFechaTime(b.Fecha) - toFechaTime(a.Fecha);
+        }),
     [rows, filtroNombre, filtroCedula, filtroEstado],
   );
 
   const rejectionReasons = [
-    "Documentación incompleta",
-    "Falta fe de bautismo",
     "Comprobante de pago inválido",
     "Datos incorrectos",
-    "No cumple requisitos",
     "Otro",
   ];
 
   const handleOpenRejectModal = (solicitud: FormSacramento) => {
+    setRechazoEnBlur(false);
+    setIsConfirmRejectOpen(false);
     setSolicitudARechazar(solicitud);
     setRejectionReasonSelect("");
     setRejectionReasonText("");
     setIsRejectModalOpen(true);
   };
 
-  const handleCloseRejectModal = () => {
+  const handleCloseRejectModal = (opciones?: { volverAlDetalle?: boolean }) => {
+    const { volverAlDetalle = true } = opciones ?? {};
+    const solicitud = solicitudARechazar;
     setIsRejectModalOpen(false);
     setRejectionReasonSelect("");
     setRejectionReasonText("");
     setSolicitudARechazar(null);
+    if (volverAlDetalle && solicitud) {
+      setRechazoEnBlur(true);
+      setSolicitudSeleccionada(solicitud);
+    }
+  };
+
+  const handleOpenConfirmReject = () => {
+    const motivo =
+      rejectionReasonSelect.trim() || rejectionReasonText.trim();
+    if (!motivo || tieneCaracteresInvalidos(rejectionReasonText)) return;
+    setIsRejectModalOpen(false);
+    setIsConfirmRejectOpen(true);
   };
 
   const handleRejectSubmit = async () => {
@@ -319,8 +389,9 @@ const TableSacramentos = () => {
         motivoRechazo: motivo,
         detalleRechazo: rejectionReasonText.trim() || undefined,
       });
-      showToast("Solicitud rechazada correctamente", "success");
-      handleCloseRejectModal();
+      showToast("Solicitud rechazada correctamente", "error");
+      setIsConfirmRejectOpen(false);
+      handleCloseRejectModal({ volverAlDetalle: false });
     } catch (err) {
       const mensaje =
         err instanceof ApiError
@@ -328,6 +399,12 @@ const TableSacramentos = () => {
           : "No se pudo rechazar la solicitud.";
       showToast(mensaje, "error");
     }
+  };
+
+  const handleCancelConfirmReject = () => {
+    setIsConfirmRejectOpen(false);
+    setRechazoEnBlur(true);
+    setSolicitudSeleccionada(solicitudARechazar);
   };
 
   const handleReasonSelectChange = (value: string) => {
@@ -435,6 +512,7 @@ const TableSacramentos = () => {
     if (nextEstado === "Aprobado") {
       const solicitud = rows.find((r) => String(r.id) === String(id));
       if (solicitud) {
+        setAprobacionEnBlur(false);
         setIsApproveModalOpen(true);
         setSolicitudAAprobar(solicitud);
       }
@@ -468,23 +546,22 @@ const TableSacramentos = () => {
 
   const handleApproveConfirm = () => {
     if (!solicitudAAprobar) return;
-    setErrorAprobacion(null);
     aprobarSolicitud.mutate(
       { id: solicitudAAprobar.id },
       {
         onSuccess: () => {
           setIsApproveModalOpen(false);
           setSolicitudAAprobar(null);
+          setSolicitudSeleccionada(null);
           showToast("Solicitud aprobada correctamente", "success");
         },
         onError: (err: unknown) => {
           // El modal permanece abierto, el botón "Confirmar" se reactiva solo
           // (isPending vuelve a false) y el estado de la tabla no cambia
-          const mensaje =
-            err instanceof Error && err.message
-              ? err.message
-              : "No se pudo aprobar la solicitud, intentá de nuevo";
-          setErrorAprobacion(mensaje);
+const mensaje =
+              err instanceof Error && err.message
+                ? err.message
+                : "No hay conexión a Internet, inténtalo más tarde.";
           showToast(mensaje, "error");
         },
       },
@@ -493,11 +570,38 @@ const TableSacramentos = () => {
 
   const handleCancelApprove = () => {
     const restoredSolicitud = solicitudAAprobar;
-    setErrorAprobacion(null);
     setIsApproveModalOpen(false);
     setSolicitudAAprobar(null);
+    setAprobacionEnBlur(true);
     setSolicitudSeleccionada(restoredSolicitud);
   };
+
+  useEffect(() => {
+    if (!isApproveModalOpen && !isRejectModalOpen && !isConfirmRejectOpen)
+      return;
+
+    const handleEscapeModal = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || toasts.length > 0) return;
+      if (isApproveModalOpen) {
+        handleCancelApprove();
+      } else if (isRejectModalOpen) {
+        handleCloseRejectModal();
+      } else if (isConfirmRejectOpen) {
+        handleCancelConfirmReject();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscapeModal);
+    return () => document.removeEventListener("keydown", handleEscapeModal);
+  }, [
+    isApproveModalOpen,
+    isRejectModalOpen,
+    isConfirmRejectOpen,
+    toasts.length,
+    handleCancelApprove,
+    handleCloseRejectModal,
+    handleCancelConfirmReject,
+  ]);
 
   const estadoActualSolicitud = solicitudSeleccionada?.Estado ?? "Pendiente";
   const esEstadoPermanente =
@@ -751,15 +855,54 @@ const TableSacramentos = () => {
         </>
       )}
 
+      {(solicitudSeleccionada || isRejectModalOpen) && (
+        <motion.div
+          className="fixed inset-0 z-[1300] bg-[#060f20]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.7 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          aria-hidden="true"
+        />
+      )}
+
+      {rechazoEnBlur && (
+        <motion.div
+          className="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          onAnimationComplete={() => setRechazoEnBlur(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {aprobacionEnBlur && (
+        <motion.div
+          className="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          onAnimationComplete={() => setAprobacionEnBlur(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {solicitudSeleccionada && (
         <div
           ref={modalBackdropRef}
-          className="fixed inset-0 z-[1300] flex items-end justify-center bg-[#060f20]/70 md:items-center md:p-4"
+          className="fixed inset-0 z-[1300] flex items-end justify-center md:items-center md:p-4"
           role="presentation"
           onClick={() => setSolicitudSeleccionada(null)}
         >
-          <div
-            className="flex w-full flex-col rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
+          <FocusTrap
+            focusTrapOptions={{
+              clickOutsideDeactivates: false,
+              escapeDeactivates: false,
+              allowOutsideClick: () => true,
+            }}
+          >
+            <div
+              className="relative z-10 flex w-full flex-col rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
             style={{ fontFamily: "'Geist', sans-serif" }}
             role="dialog"
             aria-modal="true"
@@ -782,7 +925,7 @@ const TableSacramentos = () => {
                 type="button"
                 onClick={() => setSolicitudSeleccionada(null)}
                 aria-label="Cerrar detalle"
-                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#aa7323]"
+                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
               >
                 <X size={16} />
               </button>
@@ -875,7 +1018,7 @@ const TableSacramentos = () => {
                         aria-haspopup="listbox"
                         aria-expanded={estadoMenuAbierto}
                         onClick={() => setEstadoMenuAbierto((prev) => !prev)}
-                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-200 hover:border-[#aa7323]/60 hover:bg-[#f1f5fa] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
                       >
                         <span>
                           {solicitudSeleccionada.Estado ?? "Pendiente"}
@@ -928,11 +1071,12 @@ const TableSacramentos = () => {
                                       setSolicitudAAprobar(
                                         solicitudSeleccionada,
                                       );
+                                      setAprobacionEnBlur(false);
                                       setIsApproveModalOpen(true);
                                     }
                                     setEstadoMenuAbierto(false);
                                   }}
-                                  className={`flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm font-medium transition-colors duration-200 ${
+                                  className={`flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
                                     activo
                                       ? "bg-[#aa7323]/10 text-[#16243c]"
                                       : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
@@ -954,6 +1098,7 @@ const TableSacramentos = () => {
               </div>
             </div>
           </div>
+          </FocusTrap>
         </div>
       )}
 
@@ -961,65 +1106,169 @@ const TableSacramentos = () => {
         <Modal
           onClose={handleCloseRejectModal}
           title="Rechazar solicitud"
+          sinFondo
         >
-          <div className="flex flex-col gap-4">
+          <div className="flex min-h-44 flex-col gap-4">
+            <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
             <p className="text-sm text-text-secondary">
-              Seleccione o escriba el motivo de rechazo para esta solicitud:
+              Seleccione el motivo de rechazo en la lista o bien, especifique el
+              motivo en el campo de texto.
             </p>
-            <Select
-              value={rejectionReasonSelect}
-              onChange={(e) => handleReasonSelectChange(e.target.value)}
-              className="w-full"
-              defaultValue=""
-            >
-              <option value="">-- Seleccione un motivo --</option>
-              {rejectionReasons.map((reason) => (
-                <option
-                  key={reason}
-                  value={reason}
+            <div className="relative" ref={motivoMenuRef}>
+              <button
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={motivoMenuAbierto}
+                onClick={() => setMotivoMenuAbierto((prev) => !prev)}
+                className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 ${
+                  motivoMenuAbierto
+                    ? "border-blue-400 bg-surface"
+                    : "border-border-strong"
+                }`}
+              >
+                <span className={rejectionReasonSelect ? "" : "text-slate-400"}>
+                  {rejectionReasonSelect || "Seleccione un motivo"}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`shrink-0 text-slate-900 transition-transform duration-200 ${
+                    motivoMenuAbierto ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              <AnimatePresence>
+                {motivoMenuAbierto && (
+                  <FocusTrap
+                    focusTrapOptions={{
+                      clickOutsideDeactivates: false,
+                      escapeDeactivates: false,
+                      allowOutsideClick: () => true,
+                    }}
+                  >
+                    <motion.ul
+                      role="listbox"
+                      initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                      transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                      className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                    >
+                      {rejectionReasons.map((reason) => (
+                        <li key={reason} role="option" aria-selected={rejectionReasonSelect === reason}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRejectionReasonSelect(reason);
+                              setMotivoMenuAbierto(false);
+                            }}
+                            className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
+                              rejectionReasonSelect === reason
+                                ? "bg-[#aa7323]/10 text-[#16243c]"
+                                : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                            }`}
+                          >
+                            {reason}
+                          </button>
+                        </li>
+                      ))}
+                    </motion.ul>
+                  </FocusTrap>
+                )}
+              </AnimatePresence>
+            </div>
+<Textarea
+                value={rejectionReasonText}
+                onChange={(e) => handleReasonTextChange(e.target.value)}
+                placeholder="Detalle un motivo personalizado (opcional)"
+                rows={3}
+                maxLength={150}
+                className="min-h-20"
+              />
+              <div className="-mt-2 flex items-baseline justify-between gap-2">
+                {tieneCaracteresInvalidos(rejectionReasonText) && (
+                  <p className="m-0 text-xs font-semibold text-red-600">
+                    Los caracteres especiales no están permitidos
+                  </p>
+                )}
+                <p
+                  className={`m-0 ml-auto text-xs ${
+                    rejectionReasonText.length >= 150
+                      ? "font-semibold text-red-600"
+                      : "text-text-muted"
+                  }`}
                 >
-                  {reason}
-                </option>
-              ))}
-            </Select>
-            <Textarea
-              value={rejectionReasonText}
-              onChange={(e) => handleReasonTextChange(e.target.value)}
-              placeholder="O escriba un motivo personalizado..."
-              rows={3}
-              className="min-h-20"
-            />
+                  {rejectionReasonText.length}/150
+                </p>
+              </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button
+                variant="royal"
+                className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                onClick={handleOpenConfirmReject}
+                disabled={
+                  (!rejectionReasonSelect.trim() &&
+                    !rejectionReasonText.trim()) ||
+                  tieneCaracteresInvalidos(rejectionReasonText)
+                }
+              >
+                Continuar
+              </Button>
+              <Button
                 variant="secondary"
+                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
                 onClick={handleCloseRejectModal}
                 disabled={isSubmitting}
               >
                 Cancelar
               </Button>
-              <Button
-                variant="danger"
-                onClick={handleRejectSubmit}
-                disabled={
-                  (!rejectionReasonSelect.trim() &&
-                    !rejectionReasonText.trim()) ||
-                  isSubmitting
-                }
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2
-                      size={16}
-                      className="animate-spin"
-                    />
-                    Rechazando...
-                  </>
-                ) : (
-                  "Confirmar rechazo"
-                )}
-              </Button>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {isConfirmRejectOpen && (
+        <Modal
+          onClose={handleCancelConfirmReject}
+          title="Confirmar rechazo"
+          sinFondo
+        >
+            <div className="flex min-h-44 flex-col">
+              <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
+              <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
+                <p className="text-sm leading-relaxed text-text-secondary">
+                  ¿Estás seguro/a que quieres rechazar esta solicitud de
+                  sacramento? Una vez rechazada, su estado no podrá ser cambiado.
+                </p>
+              </div>
+              <div className="flex shrink-0 justify-end gap-2">
+                <Button
+                  variant="royal"
+className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                  onClick={handleRejectSubmit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2
+                        size={16}
+                        className="animate-spin"
+                      />
+                      Rechazando...
+                    </>
+                  ) : (
+                    "Rechazar"
+                  )}
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                  onClick={handleCancelConfirmReject}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
         </Modal>
       )}
 
@@ -1030,7 +1279,7 @@ const TableSacramentos = () => {
           sinFondo
         >
             <div className="flex min-h-44 flex-col">
-              <LineaDoradaTitulo />
+              <LineaDoradaTitulo parteSubrayada="Aprobar solicitud sac" resto="ramental" />
               <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
                 <p className="text-sm leading-relaxed text-text-secondary">
                   ¿Estás seguro/a que quieres aprobar esta solicitud de
@@ -1040,7 +1289,7 @@ const TableSacramentos = () => {
               <div className="flex shrink-0 justify-end gap-2">
                 <Button
                   variant="royal"
-                  className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! hover:text-[#dcb55a]"
+className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
                   onClick={handleApproveConfirm}
                   disabled={aprobarSolicitud.isPending}
                 >
@@ -1065,14 +1314,6 @@ const TableSacramentos = () => {
                   Cancelar
                 </Button>
               </div>
-              {errorAprobacion && (
-                <p
-                  role="alert"
-                  className="m-0 mt-2 text-xs font-semibold text-red-600"
-                >
-                  ⚠ {errorAprobacion}
-                </p>
-              )}
             </div>
         </Modal>
       )}

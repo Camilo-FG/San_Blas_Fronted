@@ -1,7 +1,7 @@
 export const MENSAJES_APROBACION = {
-  servidor: "No se pudo aprobar la solicitud, intentá de nuevo",
+  servidor: "No hay conexión a Internet, inténtalo más tarde.",
   timeout: "El servidor tardó demasiado en responder, intentá de nuevo",
-  sinConexion: "Sin conexión a internet, verificá tu red e intentá de nuevo",
+  sinConexion: "No hay conexión a Internet, inténtalo más tarde.",
 } as const;
 
 export type TipoErrorAprobacion = "servidor" | "timeout";

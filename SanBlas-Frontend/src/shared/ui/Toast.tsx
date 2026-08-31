@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useCallback, useRef, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from "react";
 import { X, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "./cn";
 
 type ToastType = "success" | "error" | "warning" | "info";
@@ -8,7 +9,12 @@ interface Toast {
   id: number;
   message: string;
   type: ToastType;
+  duration: number;
 }
+
+const TOAST_DURATION_MS = 6000;
+const RADIO_ANILLO = 12;
+const CIRCUNFERENCIA_ANILLO = 2 * Math.PI * RADIO_ANILLO;
 
 interface ToastContextValue {
   toasts: Toast[];
@@ -25,15 +31,25 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const showToast = useCallback((message: string, type: ToastType) => {
     idCounter.current += 1;
     const id = idCounter.current;
-    setToasts((prev) => [...prev, { id, message, type }]);
-    // Las notificaciones desaparecen automáticamente después de 4 segundos
+    setToasts((prev) => [...prev, { id, message, type, duration: TOAST_DURATION_MS }]);
+    // Las notificaciones desaparecen automáticamente después de 6 segundos
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    }, TOAST_DURATION_MS);
   }, []);
 
   const dismissToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setToasts((prev) => (prev.length > 0 ? prev.slice(0, -1) : prev));
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   return (
@@ -52,6 +68,46 @@ export function useToast() {
   return context;
 }
 
+function AnilloProgreso({
+  duracionMs,
+  sobreOscuro = false,
+}: {
+  duracionMs: number;
+  sobreOscuro?: boolean;
+}) {
+  const colorPista = sobreOscuro ? "stroke-white/25" : "stroke-[#16243c]/10";
+  const colorProgreso = sobreOscuro ? "stroke-white" : "stroke-[#aa7323]";
+  return (
+    <svg
+      className="pointer-events-none absolute inset-0 -rotate-90"
+      viewBox="0 0 30 30"
+      aria-hidden="true"
+    >
+      <circle
+        cx="15"
+        cy="15"
+        r={RADIO_ANILLO}
+        fill="none"
+        strokeWidth="2.5"
+        className={colorPista}
+      />
+      <motion.circle
+        cx="15"
+        cy="15"
+        r={RADIO_ANILLO}
+        fill="none"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeDasharray={CIRCUNFERENCIA_ANILLO}
+        className={colorProgreso}
+        initial={{ strokeDashoffset: 0 }}
+        animate={{ strokeDashoffset: CIRCUNFERENCIA_ANILLO }}
+        transition={{ duration: duracionMs / 1000, ease: "linear" }}
+      />
+    </svg>
+  );
+}
+
 function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
   const icons = {
     success: <CheckCircle size={20} className="text-success" />,
@@ -61,7 +117,7 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
   };
 
   const bgClasses = {
-    success: "bg-success-bg border-success",
+    success: "bg-emerald-100 border-success",
     error: "bg-red-600 border-red-700",
     warning: "bg-warning-bg border-warning",
     info: "bg-info-bg border-info",
@@ -74,43 +130,57 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
       aria-live="polite"
       aria-label="Notificaciones"
     >
-      {toasts.map((toast) => (
-        <div
-          key={toast.id}
-          className={cn(
-            "pointer-events-auto min-w-[280px] max-w-[400px] rounded-xl border px-4 py-3 shadow-lg animate-in slide-in-from-right duration-300",
-            bgClasses[toast.type],
-          )}
-          role="alert"
-        >
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-0.5">{icons[toast.type]}</div>
-            <div className="flex-1 min-w-0">
-              <p
-                className={cn(
-                  "text-sm font-medium",
-                  toast.type === "error" ? "text-white" : "text-text",
-                )}
-              >
-                {toast.message}
-              </p>
-            </div>
-            <button
-              type="button"
-              className={cn(
-                "flex-shrink-0 transition-colors",
-                toast.type === "error"
-                  ? "text-white/80 hover:text-white"
-                  : "text-text-muted hover:text-text",
+      <AnimatePresence>
+        {toasts.map((toast) => (
+          <motion.div
+            key={toast.id}
+            className={cn(
+              "pointer-events-auto min-w-[280px] max-w-[400px] rounded-xl border px-4 py-3 shadow-lg",
+              bgClasses[toast.type],
+            )}
+            role="alert"
+            initial={{ opacity: 0, x: 90 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 110 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          >
+            <div className="flex items-center gap-3">
+              {toast.type !== "success" && toast.type !== "error" && (
+                <div className="flex-shrink-0 mt-0.5">{icons[toast.type]}</div>
               )}
-              onClick={() => onDismiss(toast.id)}
-              aria-label="Cerrar notificación"
-            >
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-      ))}
+              <div className="min-w-0 flex-1">
+                <p
+                  className={cn(
+                    "text-sm font-medium",
+                    toast.type === "error" ? "text-white" : "text-text",
+                  )}
+                >
+                  {toast.message}
+                </p>
+              </div>
+              <button
+                type="button"
+                className={cn(
+                  "relative inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors",
+                  toast.type === "error"
+                    ? "text-white/80 hover:text-white"
+                    : "text-text-muted hover:text-text",
+                )}
+                onClick={() => onDismiss(toast.id)}
+                aria-label="Cerrar notificación"
+              >
+                {(toast.type === "success" || toast.type === "error") && (
+                  <AnilloProgreso
+                    duracionMs={toast.duration}
+                    sobreOscuro={toast.type === "error"}
+                  />
+                )}
+                <X size={15} className="pointer-events-none" />
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
