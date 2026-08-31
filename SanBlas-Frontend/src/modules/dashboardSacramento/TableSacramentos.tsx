@@ -186,6 +186,17 @@ const TableSacramentos = () => {
   const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
   const [motivoMenuAbierto, setMotivoMenuAbierto] = useState(false);
   const motivoMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!motivoMenuAbierto) return;
+    const handleEscapeMotivo = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMotivoMenuAbierto(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscapeMotivo);
+    return () => document.removeEventListener("keydown", handleEscapeMotivo);
+  }, [motivoMenuAbierto]);
   const [rejectionReasonText, setRejectionReasonText] = useState("");
   const [solicitudARechazar, setSolicitudARechazar] =
     useState<FormSacramento | null>(null);
@@ -1071,33 +1082,41 @@ const mensaje =
               </button>
               <AnimatePresence>
                 {motivoMenuAbierto && (
-                  <motion.ul
-                    role="listbox"
-                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                    transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-                    className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                  <FocusTrap
+                    focusTrapOptions={{
+                      clickOutsideDeactivates: false,
+                      escapeDeactivates: false,
+                      allowOutsideClick: () => true,
+                    }}
                   >
-                    {rejectionReasons.map((reason) => (
-                      <li key={reason} role="option" aria-selected={rejectionReasonSelect === reason}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRejectionReasonSelect(reason);
-                            setMotivoMenuAbierto(false);
-                          }}
-                          className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out ${
-                            rejectionReasonSelect === reason
-                              ? "bg-[#aa7323]/10 text-[#16243c]"
-                              : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
-                          }`}
-                        >
-                          {reason}
-                        </button>
-                      </li>
-                    ))}
-                  </motion.ul>
+                    <motion.ul
+                      role="listbox"
+                      initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                      transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                      className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                    >
+                      {rejectionReasons.map((reason) => (
+                        <li key={reason} role="option" aria-selected={rejectionReasonSelect === reason}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRejectionReasonSelect(reason);
+                              setMotivoMenuAbierto(false);
+                            }}
+                            className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
+                              rejectionReasonSelect === reason
+                                ? "bg-[#aa7323]/10 text-[#16243c]"
+                                : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                            }`}
+                          >
+                            {reason}
+                          </button>
+                        </li>
+                      ))}
+                    </motion.ul>
+                  </FocusTrap>
                 )}
               </AnimatePresence>
             </div>
