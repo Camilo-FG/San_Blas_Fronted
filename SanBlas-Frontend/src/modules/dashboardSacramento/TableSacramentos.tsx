@@ -928,7 +928,7 @@ const mensaje =
                         aria-haspopup="listbox"
                         aria-expanded={estadoMenuAbierto}
                         onClick={() => setEstadoMenuAbierto((prev) => !prev)}
-                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-200 hover:border-[#aa7323]/60 hover:bg-[#f1f5fa] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
                       >
                         <span>
                           {solicitudSeleccionada.Estado ?? "Pendiente"}
