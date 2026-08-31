@@ -188,8 +188,6 @@ const TableSacramentos = () => {
   const [motivoMenuAbierto, setMotivoMenuAbierto] = useState(false);
   const [rechazoEnBlur, setRechazoEnBlur] = useState(false);
   const [aprobacionEnBlur, setAprobacionEnBlur] = useState(false);
-  const [solicitudPendienteRechazo, setSolicitudPendienteRechazo] =
-    useState<FormSacramento | null>(null);
   const motivoMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -375,7 +373,6 @@ const TableSacramentos = () => {
     const motivo =
       rejectionReasonSelect.trim() || rejectionReasonText.trim();
     if (!motivo || tieneCaracteresInvalidos(rejectionReasonText)) return;
-    setIsRejectModalOpen(false);
     setIsConfirmRejectOpen(true);
   };
 
@@ -391,6 +388,7 @@ const TableSacramentos = () => {
       });
       showToast("Solicitud rechazada correctamente", "error");
       setIsConfirmRejectOpen(false);
+      setIsRejectModalOpen(false);
       handleCloseRejectModal({ volverAlDetalle: false });
     } catch (err) {
       const mensaje =
@@ -403,10 +401,7 @@ const TableSacramentos = () => {
 
   const handleCancelConfirmReject = () => {
     setIsConfirmRejectOpen(false);
-    setRechazoEnBlur(true);
-    setSolicitudSeleccionada(solicitudARechazar);
   };
-
   const handleReasonSelectChange = (value: string) => {
     setRejectionReasonSelect(value);
   };
@@ -584,10 +579,10 @@ const mensaje =
       if (event.key !== "Escape" || toasts.length > 0) return;
       if (isApproveModalOpen) {
         handleCancelApprove();
-      } else if (isRejectModalOpen) {
-        handleCloseRejectModal();
       } else if (isConfirmRejectOpen) {
         handleCancelConfirmReject();
+      } else if (isRejectModalOpen) {
+        handleCloseRejectModal();
       }
     };
 
@@ -859,8 +854,8 @@ const mensaje =
         <motion.div
           className="fixed inset-0 z-[1300] bg-[#060f20]"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.7 }}
-          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          animate={{ opacity: isConfirmRejectOpen ? 0 : 0.7 }}
+          transition={{ duration: isConfirmRejectOpen ? 0.2 : 0.45, ease: [0.16, 1, 0.3, 1] }}
           aria-hidden="true"
         />
       )}
@@ -1104,134 +1099,18 @@ const mensaje =
 
       {isRejectModalOpen && (
         <Modal
-          onClose={handleCloseRejectModal}
-          title="Rechazar solicitud"
+          onClose={
+            isConfirmRejectOpen ? handleCancelConfirmReject : handleCloseRejectModal
+          }
+          title={isConfirmRejectOpen ? "Confirmar rechazo" : "Rechazar solicitud"}
           sinFondo
+          overlayClassName={
+            isConfirmRejectOpen
+              ? "fixed inset-0 z-[1350] bg-transparent backdrop-blur-[6px]"
+              : undefined
+          }
         >
-          <div className="flex min-h-44 flex-col gap-4">
-            <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
-            <p className="text-sm text-text-secondary">
-              Seleccione el motivo de rechazo en la lista o bien, especifique el
-              motivo en el campo de texto.
-            </p>
-            <div className="relative" ref={motivoMenuRef}>
-              <button
-                type="button"
-                aria-haspopup="listbox"
-                aria-expanded={motivoMenuAbierto}
-                onClick={() => setMotivoMenuAbierto((prev) => !prev)}
-                className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 ${
-                  motivoMenuAbierto
-                    ? "border-blue-400 bg-surface"
-                    : "border-border-strong"
-                }`}
-              >
-                <span className={rejectionReasonSelect ? "" : "text-slate-400"}>
-                  {rejectionReasonSelect || "Seleccione un motivo"}
-                </span>
-                <ChevronDown
-                  size={16}
-                  className={`shrink-0 text-slate-900 transition-transform duration-200 ${
-                    motivoMenuAbierto ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-              <AnimatePresence>
-                {motivoMenuAbierto && (
-                  <FocusTrap
-                    focusTrapOptions={{
-                      clickOutsideDeactivates: false,
-                      escapeDeactivates: false,
-                      allowOutsideClick: () => true,
-                    }}
-                  >
-                    <motion.ul
-                      role="listbox"
-                      initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                      transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-                      className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
-                    >
-                      {rejectionReasons.map((reason) => (
-                        <li key={reason} role="option" aria-selected={rejectionReasonSelect === reason}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setRejectionReasonSelect(reason);
-                              setMotivoMenuAbierto(false);
-                            }}
-                            className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
-                              rejectionReasonSelect === reason
-                                ? "bg-[#aa7323]/10 text-[#16243c]"
-                                : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
-                            }`}
-                          >
-                            {reason}
-                          </button>
-                        </li>
-                      ))}
-                    </motion.ul>
-                  </FocusTrap>
-                )}
-              </AnimatePresence>
-            </div>
-<Textarea
-                value={rejectionReasonText}
-                onChange={(e) => handleReasonTextChange(e.target.value)}
-                placeholder="Detalle un motivo personalizado (opcional)"
-                rows={3}
-                maxLength={150}
-                className="min-h-20"
-              />
-              <div className="-mt-2 flex items-baseline justify-between gap-2">
-                {tieneCaracteresInvalidos(rejectionReasonText) && (
-                  <p className="m-0 text-xs font-semibold text-red-600">
-                    Los caracteres especiales no están permitidos
-                  </p>
-                )}
-                <p
-                  className={`m-0 ml-auto text-xs ${
-                    rejectionReasonText.length >= 150
-                      ? "font-semibold text-red-600"
-                      : "text-text-muted"
-                  }`}
-                >
-                  {rejectionReasonText.length}/150
-                </p>
-              </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                variant="royal"
-                className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
-                onClick={handleOpenConfirmReject}
-                disabled={
-                  (!rejectionReasonSelect.trim() &&
-                    !rejectionReasonText.trim()) ||
-                  tieneCaracteresInvalidos(rejectionReasonText)
-                }
-              >
-                Continuar
-              </Button>
-              <Button
-                variant="secondary"
-                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
-                onClick={handleCloseRejectModal}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {isConfirmRejectOpen && (
-        <Modal
-          onClose={handleCancelConfirmReject}
-          title="Confirmar rechazo"
-          sinFondo
-        >
+          {isConfirmRejectOpen ? (
             <div className="flex min-h-44 flex-col">
               <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
               <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
@@ -1269,6 +1148,123 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                 </Button>
               </div>
             </div>
+          ) : (
+            <div className="flex min-h-44 flex-col gap-4">
+              <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
+              <p className="text-sm text-text-secondary">
+                Seleccione el motivo de rechazo en la lista o bien, especifique el
+                motivo en el campo de texto.
+              </p>
+              <div className="relative" ref={motivoMenuRef}>
+                <button
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={motivoMenuAbierto}
+                  onClick={() => setMotivoMenuAbierto((prev) => !prev)}
+                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 ${
+                    motivoMenuAbierto
+                      ? "border-blue-400 bg-surface"
+                      : "border-border-strong"
+                  }`}
+                >
+                  <span className={rejectionReasonSelect ? "" : "text-slate-400"}>
+                    {rejectionReasonSelect || "Seleccione un motivo"}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`shrink-0 text-slate-900 transition-transform duration-200 ${
+                      motivoMenuAbierto ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                <AnimatePresence>
+                  {motivoMenuAbierto && (
+                    <FocusTrap
+                      focusTrapOptions={{
+                        clickOutsideDeactivates: false,
+                        escapeDeactivates: false,
+                        allowOutsideClick: () => true,
+                      }}
+                    >
+                      <motion.ul
+                        role="listbox"
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                        className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                      >
+                        {rejectionReasons.map((reason) => (
+                          <li key={reason} role="option" aria-selected={rejectionReasonSelect === reason}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRejectionReasonSelect(reason);
+                                setMotivoMenuAbierto(false);
+                              }}
+                              className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
+                                rejectionReasonSelect === reason
+                                  ? "bg-[#aa7323]/10 text-[#16243c]"
+                                  : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                              }`}
+                            >
+                              {reason}
+                            </button>
+                          </li>
+                        ))}
+                      </motion.ul>
+                    </FocusTrap>
+                  )}
+                </AnimatePresence>
+              </div>
+<Textarea
+                  value={rejectionReasonText}
+                  onChange={(e) => handleReasonTextChange(e.target.value)}
+                  placeholder="Detalle un motivo personalizado (opcional)"
+                  rows={3}
+                  maxLength={150}
+                  className="min-h-20"
+                />
+                <div className="-mt-2 flex items-baseline justify-between gap-2">
+                  {tieneCaracteresInvalidos(rejectionReasonText) && (
+                    <p className="m-0 text-xs font-semibold text-red-600">
+                      Los caracteres especiales no están permitidos
+                    </p>
+                  )}
+                  <p
+                    className={`m-0 ml-auto text-xs ${
+                      rejectionReasonText.length >= 150
+                        ? "font-semibold text-red-600"
+                        : "text-text-muted"
+                    }`}
+                  >
+                    {rejectionReasonText.length}/150
+                  </p>
+                </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="royal"
+                  className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                  onClick={handleOpenConfirmReject}
+                  disabled={
+                    (!rejectionReasonSelect.trim() &&
+                      !rejectionReasonText.trim()) ||
+                    tieneCaracteresInvalidos(rejectionReasonText)
+                  }
+                >
+                  Continuar
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                  onClick={handleCloseRejectModal}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
         </Modal>
       )}
 
