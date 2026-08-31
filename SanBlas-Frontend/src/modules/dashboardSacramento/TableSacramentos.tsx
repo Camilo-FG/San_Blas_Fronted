@@ -850,15 +850,18 @@ const mensaje =
         </>
       )}
 
-      {(solicitudSeleccionada || isRejectModalOpen) && (
-        <motion.div
-          className="fixed inset-0 z-[1300] bg-[#060f20]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isConfirmRejectOpen ? 0 : 0.7 }}
-          transition={{ duration: isConfirmRejectOpen ? 0.2 : 0.45, ease: [0.16, 1, 0.3, 1] }}
-          aria-hidden="true"
-        />
-      )}
+      <AnimatePresence>
+        {(solicitudSeleccionada || isRejectModalOpen) && (
+          <motion.div
+            className="fixed inset-0 z-[1300] bg-[#060f20]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isConfirmRejectOpen ? 0 : 0.7 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
 
       {rechazoEnBlur && (
         <motion.div
