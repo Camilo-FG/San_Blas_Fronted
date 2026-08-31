@@ -185,6 +185,9 @@ const TableSacramentos = () => {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
   const [motivoMenuAbierto, setMotivoMenuAbierto] = useState(false);
+  const [rechazoEnBlur, setRechazoEnBlur] = useState(false);
+  const [solicitudPendienteRechazo, setSolicitudPendienteRechazo] =
+    useState<FormSacramento | null>(null);
   const motivoMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -244,6 +247,7 @@ const TableSacramentos = () => {
         event.key === "Escape" &&
         !isApproveModalOpen &&
         !isRejectModalOpen &&
+        !rechazoEnBlur &&
         toasts.length === 0
       ) {
         setSolicitudSeleccionada(null);
@@ -272,7 +276,7 @@ const TableSacramentos = () => {
       document.body.style.overflow = prevBodyOverflow;
       if (main) main.style.overflow = prevMainOverflow;
     };
-  }, [solicitudSeleccionada, isApproveModalOpen, isRejectModalOpen, toasts.length]);
+  }, [solicitudSeleccionada, isApproveModalOpen, isRejectModalOpen, rechazoEnBlur, toasts.length]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
@@ -342,6 +346,7 @@ const TableSacramentos = () => {
   ];
 
   const handleOpenRejectModal = (solicitud: FormSacramento) => {
+    setRechazoEnBlur(false);
     setSolicitudARechazar(solicitud);
     setRejectionReasonSelect("");
     setRejectionReasonText("");
@@ -356,6 +361,7 @@ const TableSacramentos = () => {
     setRejectionReasonText("");
     setSolicitudARechazar(null);
     if (volverAlDetalle && solicitud) {
+      setRechazoEnBlur(true);
       setSolicitudSeleccionada(solicitud);
     }
   };
@@ -828,6 +834,17 @@ const mensaje =
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.7 }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          aria-hidden="true"
+        />
+      )}
+
+      {rechazoEnBlur && (
+        <motion.div
+          className="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          onAnimationComplete={() => setRechazoEnBlur(false)}
           aria-hidden="true"
         />
       )}
