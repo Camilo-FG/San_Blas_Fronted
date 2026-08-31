@@ -183,6 +183,7 @@ const TableSacramentos = () => {
   const [solicitudSeleccionada, setSolicitudSeleccionada] =
     useState<FormSacramento | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isConfirmRejectOpen, setIsConfirmRejectOpen] = useState(false);
   const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
   const [motivoMenuAbierto, setMotivoMenuAbierto] = useState(false);
   const [rechazoEnBlur, setRechazoEnBlur] = useState(false);
@@ -248,6 +249,7 @@ const TableSacramentos = () => {
         event.key === "Escape" &&
         !isApproveModalOpen &&
         !isRejectModalOpen &&
+        !isConfirmRejectOpen &&
         !rechazoEnBlur &&
         !aprobacionEnBlur &&
         toasts.length === 0
@@ -278,7 +280,7 @@ const TableSacramentos = () => {
       document.body.style.overflow = prevBodyOverflow;
       if (main) main.style.overflow = prevMainOverflow;
     };
-  }, [solicitudSeleccionada, isApproveModalOpen, isRejectModalOpen, rechazoEnBlur, aprobacionEnBlur, toasts.length]);
+  }, [solicitudSeleccionada, isApproveModalOpen, isRejectModalOpen, isConfirmRejectOpen, rechazoEnBlur, aprobacionEnBlur, toasts.length]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
@@ -349,6 +351,7 @@ const TableSacramentos = () => {
 
   const handleOpenRejectModal = (solicitud: FormSacramento) => {
     setRechazoEnBlur(false);
+    setIsConfirmRejectOpen(false);
     setSolicitudARechazar(solicitud);
     setRejectionReasonSelect("");
     setRejectionReasonText("");
@@ -368,6 +371,14 @@ const TableSacramentos = () => {
     }
   };
 
+  const handleOpenConfirmReject = () => {
+    const motivo =
+      rejectionReasonSelect.trim() || rejectionReasonText.trim();
+    if (!motivo || tieneCaracteresInvalidos(rejectionReasonText)) return;
+    setIsRejectModalOpen(false);
+    setIsConfirmRejectOpen(true);
+  };
+
   const handleRejectSubmit = async () => {
     const motivo = rejectionReasonSelect.trim() || rejectionReasonText.trim();
     if (!solicitudARechazar || solicitudARechazar.id == null || !motivo) return;
@@ -379,6 +390,7 @@ const TableSacramentos = () => {
         detalleRechazo: rejectionReasonText.trim() || undefined,
       });
       showToast("Solicitud rechazada correctamente", "error");
+      setIsConfirmRejectOpen(false);
       handleCloseRejectModal({ volverAlDetalle: false });
     } catch (err) {
       const mensaje =
@@ -387,6 +399,12 @@ const TableSacramentos = () => {
           : "No se pudo rechazar la solicitud.";
       showToast(mensaje, "error");
     }
+  };
+
+  const handleCancelConfirmReject = () => {
+    setIsConfirmRejectOpen(false);
+    setRechazoEnBlur(true);
+    setSolicitudSeleccionada(solicitudARechazar);
   };
 
   const handleReasonSelectChange = (value: string) => {
@@ -559,7 +577,8 @@ const mensaje =
   };
 
   useEffect(() => {
-    if (!isApproveModalOpen && !isRejectModalOpen) return;
+    if (!isApproveModalOpen && !isRejectModalOpen && !isConfirmRejectOpen)
+      return;
 
     const handleEscapeModal = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || toasts.length > 0) return;
@@ -567,6 +586,8 @@ const mensaje =
         handleCancelApprove();
       } else if (isRejectModalOpen) {
         handleCloseRejectModal();
+      } else if (isConfirmRejectOpen) {
+        handleCancelConfirmReject();
       }
     };
 
@@ -575,9 +596,11 @@ const mensaje =
   }, [
     isApproveModalOpen,
     isRejectModalOpen,
+    isConfirmRejectOpen,
     toasts.length,
     handleCancelApprove,
     handleCloseRejectModal,
+    handleCancelConfirmReject,
   ]);
 
   const estadoActualSolicitud = solicitudSeleccionada?.Estado ?? "Pendiente";
@@ -1181,25 +1204,14 @@ const mensaje =
               <Button
                 variant="royal"
                 className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
-                onClick={handleRejectSubmit}
+                onClick={handleOpenConfirmReject}
                 disabled={
                   (!rejectionReasonSelect.trim() &&
                     !rejectionReasonText.trim()) ||
-                  tieneCaracteresInvalidos(rejectionReasonText) ||
-                  isSubmitting
+                  tieneCaracteresInvalidos(rejectionReasonText)
                 }
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2
-                      size={16}
-                      className="animate-spin"
-                    />
-                    Rechazando...
-                  </>
-                ) : (
-                  "Continuar"
-                )}
+                Continuar
               </Button>
               <Button
                 variant="secondary"
@@ -1211,6 +1223,52 @@ const mensaje =
               </Button>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {isConfirmRejectOpen && (
+        <Modal
+          onClose={handleCancelConfirmReject}
+          title="Confirmar rechazo"
+          sinFondo
+        >
+            <div className="flex min-h-44 flex-col">
+              <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
+              <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
+                <p className="text-sm leading-relaxed text-text-secondary">
+                  ¿Estás seguro/a que quieres rechazar esta solicitud de
+                  sacramento? Una vez rechazada su estado no podrá ser cambiado.
+                </p>
+              </div>
+              <div className="flex shrink-0 justify-end gap-2">
+                <Button
+                  variant="royal"
+className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                  onClick={handleRejectSubmit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2
+                        size={16}
+                        className="animate-spin"
+                      />
+                      Rechazando...
+                    </>
+                  ) : (
+                    "Rechazar"
+                  )}
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                  onClick={handleCancelConfirmReject}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
         </Modal>
       )}
 
