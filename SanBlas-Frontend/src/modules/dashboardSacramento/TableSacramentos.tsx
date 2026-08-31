@@ -186,6 +186,7 @@ const TableSacramentos = () => {
   const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
   const [motivoMenuAbierto, setMotivoMenuAbierto] = useState(false);
   const [rechazoEnBlur, setRechazoEnBlur] = useState(false);
+  const [aprobacionEnBlur, setAprobacionEnBlur] = useState(false);
   const [solicitudPendienteRechazo, setSolicitudPendienteRechazo] =
     useState<FormSacramento | null>(null);
   const motivoMenuRef = useRef<HTMLDivElement>(null);
@@ -248,6 +249,7 @@ const TableSacramentos = () => {
         !isApproveModalOpen &&
         !isRejectModalOpen &&
         !rechazoEnBlur &&
+        !aprobacionEnBlur &&
         toasts.length === 0
       ) {
         setSolicitudSeleccionada(null);
@@ -276,7 +278,7 @@ const TableSacramentos = () => {
       document.body.style.overflow = prevBodyOverflow;
       if (main) main.style.overflow = prevMainOverflow;
     };
-  }, [solicitudSeleccionada, isApproveModalOpen, isRejectModalOpen, rechazoEnBlur, toasts.length]);
+  }, [solicitudSeleccionada, isApproveModalOpen, isRejectModalOpen, rechazoEnBlur, aprobacionEnBlur, toasts.length]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
@@ -492,6 +494,7 @@ const TableSacramentos = () => {
     if (nextEstado === "Aprobado") {
       const solicitud = rows.find((r) => String(r.id) === String(id));
       if (solicitud) {
+        setAprobacionEnBlur(false);
         setIsApproveModalOpen(true);
         setSolicitudAAprobar(solicitud);
       }
@@ -551,6 +554,7 @@ const mensaje =
     const restoredSolicitud = solicitudAAprobar;
     setIsApproveModalOpen(false);
     setSolicitudAAprobar(null);
+    setAprobacionEnBlur(true);
     setSolicitudSeleccionada(restoredSolicitud);
   };
 
@@ -849,6 +853,17 @@ const mensaje =
         />
       )}
 
+      {aprobacionEnBlur && (
+        <motion.div
+          className="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          onAnimationComplete={() => setAprobacionEnBlur(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {solicitudSeleccionada && (
         <div
           ref={modalBackdropRef}
@@ -1033,6 +1048,7 @@ const mensaje =
                                       setSolicitudAAprobar(
                                         solicitudSeleccionada,
                                       );
+                                      setAprobacionEnBlur(false);
                                       setIsApproveModalOpen(true);
                                     }
                                     setEstadoMenuAbierto(false);
