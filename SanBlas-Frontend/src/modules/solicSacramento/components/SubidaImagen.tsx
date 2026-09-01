@@ -1,5 +1,5 @@
 import { useRef, useState, type DragEvent } from "react";
-import { ImagePlus, Upload, X } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { Label } from "../../../shared/ui";
 
 export interface ArchivoImagen {
@@ -14,19 +14,21 @@ interface SubidaImagenProps {
   maxSizeMB?: number;
 }
 
-const TIPOS_PERMITIDOS = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const TIPOS_PERMITIDOS = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+];
 
-const formatearTamano = (bytes: number) => {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-};
+const MAX_DEFAULT_MB = 5;
 
 export const SubidaImagen = ({
   value,
   onChange,
   required,
-  maxSizeMB = 5,
+  maxSizeMB = MAX_DEFAULT_MB,
 }: SubidaImagenProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [arrastrando, setArrastrando] = useState(false);
@@ -36,10 +38,10 @@ export const SubidaImagen = ({
 
   const validarArchivo = (file: File): string | null => {
     if (!TIPOS_PERMITIDOS.includes(file.type)) {
-      return "Formato no permitido. Usá JPG, PNG, WEBP o GIF.";
+      return "Formato no permitido";
     }
     if (file.size > maxBytes) {
-      return `El archivo supera el tamaño máximo de ${maxSizeMB} MB.`;
+      return `El archivo excede ${maxSizeMB}MB`;
     }
     return null;
   };
@@ -53,7 +55,6 @@ export const SubidaImagen = ({
     }
     setError(null);
     const url = URL.createObjectURL(file);
-    if (value?.preview) URL.revokeObjectURL(value.preview);
     onChange({ file, preview: url });
   };
 
@@ -88,77 +89,74 @@ export const SubidaImagen = ({
         }}
       />
 
-      {!value ? (
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => inputRef.current?.click()}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              inputRef.current?.click();
-            }
-          }}
-          onDragOver={(event) => {
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            setArrastrando(true);
-          }}
-          onDragLeave={() => setArrastrando(false)}
-          onDrop={handleDrop}
-          className={`flex min-h-40 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-[1.5px] border-dashed px-4 py-6 text-center transition-colors duration-150 ease-out focus:border-royal-gold focus:shadow-[0_0_0_4px_rgba(212,175,55,0.14)] focus:outline-none ${
-            arrastrando
-              ? "border-royal-gold bg-royal-gold/5"
-              : "border-slate-300 bg-[#fdfdfd] hover:border-royal-gold/60 hover:bg-royal-gold/5"
-          }`}
-        >
-          <div className="flex size-12 items-center justify-center rounded-full bg-royal-blue/10 text-royal-blue">
-            <ImagePlus size={24} />
-          </div>
-          <div className="space-y-0.5">
-            <p className="m-0 text-sm font-semibold text-slate-800">
-              Arrastrá una imagen o{" "}
-              <span className="text-royal-blue underline">hacé clic</span>
-            </p>
-            <p className="m-0 text-xs text-text-secondary">
-              JPG, PNG, WEBP o GIF · máx. {maxSizeMB} MB
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="flex w-full items-center gap-4 rounded-xl border-[1.5px] border-slate-300 bg-[#fdfdfd] p-3">
-          <img
-            src={value.preview}
-            alt="Vista previa del comprobante"
-            className="size-20 shrink-0 rounded-lg border border-slate-200 object-cover"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="m-0 truncate text-sm font-semibold text-slate-800">
+            inputRef.current?.click();
+          }
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setArrastrando(true);
+        }}
+        onDragLeave={() => setArrastrando(false)}
+        onDrop={handleDrop}
+        className={`relative flex min-h-44 w-full cursor-pointer flex-col items-center justify-center gap-2.5 rounded-2xl border-[2px] border-dashed px-4 py-8 text-center transition-colors duration-150 ease-out focus:border-royal-blue focus:shadow-[0_0_0_4px_rgba(28,78,156,0.14)] focus:outline-none ${
+          arrastrando
+            ? "border-royal-blue bg-royal-blue/5"
+            : "border-slate-300 bg-[#fdfdfd] hover:border-royal-blue/70 hover:bg-royal-blue/5"
+        }`}
+      >
+        {value ? (
+          <>
+            <img
+              src={value.preview}
+              alt="Vista previa del comprobante"
+              className="max-h-32 w-auto max-w-full rounded-lg border border-slate-200 object-contain"
+            />
+            <span className="max-w-full truncate text-sm font-medium text-slate-700">
               {value.file.name}
-            </p>
-            <p className="m-0 text-xs text-text-secondary">
-              {formatearTamano(value.file.size)} · Archivo listo
-            </p>
-            <div className="mt-2 inline-flex items-center gap-2">
+            </span>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                limpiar();
+              }}
+              aria-label="Eliminar imagen"
+              className="absolute right-2 top-2 flex size-7 cursor-pointer items-center justify-center rounded-full bg-slate-900/70 text-white transition-colors duration-150 ease-out hover:bg-red-600"
+            >
+              <X size={15} />
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="flex size-11 items-center justify-center rounded-full bg-royal-blue/10 text-royal-blue">
+              <Upload size={22} />
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <p className="m-0 text-sm font-medium text-slate-700">
+                Arrastra y suelta archivos aqui
+              </p>
+              <p className="m-0 text-xs text-text-secondary">o</p>
               <button
                 type="button"
-                onClick={() => inputRef.current?.click()}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors duration-150 ease-out hover:bg-slate-100"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  inputRef.current?.click();
+                }}
+                className="cursor-pointer rounded-md border-2 border-solid border-royal-blue px-4 py-1.5 font-[Arial,Helvetica,sans-serif] text-[0.8rem] font-bold text-royal-blue transition-colors duration-200 ease-out hover:border-royal-blue hover:bg-royal-blue hover:text-white"
               >
-                <Upload size={14} />
-                Cambiar
-              </button>
-              <button
-                type="button"
-                onClick={limpiar}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-red-600 transition-colors duration-150 ease-out hover:bg-red-50"
-              >
-                <X size={14} />
-                Quitar
+                Browse Files
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
 
       {error && (
         <span role="alert" className="text-[0.84rem] font-semibold text-red-500">
