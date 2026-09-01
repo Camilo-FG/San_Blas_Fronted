@@ -10,4 +10,6 @@ export type FormSacramento = {
   Motivo: string;
   Estado?: string;
   Fecha?: string;
+  comprobanteUrl?: string;
+  archivoImagen?: File | null;
 };

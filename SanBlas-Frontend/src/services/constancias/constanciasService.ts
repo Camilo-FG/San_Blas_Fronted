@@ -101,6 +101,18 @@ export const crearSolicitudSacramento = async (
 ): Promise<FormSacramento> => {
   try {
     const payload = mapFormToBackendRequest(solicitud);
+
+    if (solicitud.archivoImagen) {
+      const formData = new FormData();
+      formData.append("Payload", JSON.stringify(payload));
+      formData.append("archivo", solicitud.archivoImagen);
+      const { data } = await apiClient.post<FormSacraBackend>(
+        `${BASE}/con-imagen`,
+        formData,
+      );
+      return mapBackendToFormSacramento(data);
+    }
+
     const { data } = await apiClient.post<FormSacraBackend>(BASE, payload);
     return mapBackendToFormSacramento(data);
   } catch (error) {

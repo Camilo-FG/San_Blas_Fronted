@@ -3,15 +3,18 @@ export type EstadoSolicitudBackend = "Pendiente" | "Aprobado" | "Rechazado";
 
 export interface FormSacraBackend {
   id: number;
-  Nombre: string;
+  PrimerNombre: string;
+  SegundoNombre?: string | null;
   PrimerApellido: string;
   SegundoApellido: string;
   Cedula: number;
   Correo: string;
   Telefono: number;
-  TipoSacramento: string;
   Motivo: string;
   Estado?: string | null;
+  comprobanteUrl?: string | null;
+  Nombre?: string;
+  TipoSacramento?: string;
 }
 
 export interface SolicitudesSacramentosResponseBackend {
@@ -20,12 +23,12 @@ export interface SolicitudesSacramentosResponseBackend {
 }
 
 export interface CrearConstanciaBackendRequest {
-  Nombre: string;
+  PrimerNombre: string;
+  SegundoNombre?: string;
   PrimerApellido: string;
   SegundoApellido: string;
   Cedula: number;
   Correo: string;
   Telefono: number;
-  TipoSacramento: string;
   Motivo: string;
 }
