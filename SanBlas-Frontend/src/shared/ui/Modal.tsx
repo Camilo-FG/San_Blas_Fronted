@@ -10,6 +10,7 @@ type ModalProps = {
   className?: string;
   title?: string;
   sinFondo?: boolean;
+  overlayClassName?: string;
 };
 
 export function Modal({
@@ -18,6 +19,7 @@ export function Modal({
   className,
   title,
   sinFondo,
+  overlayClassName,
 }: ModalProps) {
   const clasesContenido = sinFondo
     ? "fixed top-1/2 left-1/2 z-[1400] max-h-[90vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-border bg-surface p-6 shadow-[0_22px_55px_rgba(6,15,32,0.45)]"
@@ -65,7 +67,10 @@ export function Modal({
     return (
       <>
         <motion.div
-          className="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+          className={
+            overlayClassName ??
+            "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+          }
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, ease: "easeOut" }}

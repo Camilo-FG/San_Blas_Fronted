@@ -6,6 +6,7 @@ import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 import { ApiError } from "../../../services/apiClient";
 import { obtenerDatosCedula, type DatosCedula } from "../../../services/cedulaService";
 import { Button, Input, Label, Textarea } from "../../../shared/ui";
+import { SubidaImagen, type ArchivoImagen } from "./SubidaImagen";
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
 
@@ -83,6 +84,7 @@ const FormSolic = () => {
   const [cedulaValida, setCedulaValida] = useState(false);
   const [datosCedulaValidada, setDatosCedulaValidada] = useState<DatosCedula | null>(null);
   const [intentoEnvio, setIntentoEnvio] = useState(false);
+  const [archivoImagen, setArchivoImagen] = useState<ArchivoImagen | null>(null);
   const cedulaValidadaRef = useRef<string | null>(null);
   const exitoRef = useRef<HTMLDivElement | null>(null);
 
@@ -123,8 +125,12 @@ const FormSolic = () => {
 
       try {
         setErrorEnvio(null);
-        await mutateAsync(value);
+        await mutateAsync({
+          ...value,
+          archivoImagen: archivoImagen?.file ?? null,
+        });
         form.reset();
+        setArchivoImagen(null);
         setCaptchaError(null);
         setErrorCedula(null);
         setErrorMotivoBackend(null);
@@ -737,6 +743,12 @@ const FormSolic = () => {
                 )}
               </form.Field>
             </div>
+
+            <SubidaImagen
+              value={archivoImagen}
+              onChange={setArchivoImagen}
+              required
+            />
 
             <div
               id="captcha-container"
