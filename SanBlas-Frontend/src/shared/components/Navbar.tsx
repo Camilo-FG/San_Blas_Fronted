@@ -159,39 +159,30 @@ function Navbar() {
 
             {serviciosAbierto && (
               <div
-                className="absolute left-0 top-[calc(100%+12px)] z-[999] min-w-[250px] rounded-[14px] bg-surface p-2 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+                className="absolute left-0 top-[calc(100%+12px)] z-[999] min-w-[250px] rounded-[14px] bg-surface p-2 shadow-[0_16px_35px_rgba(0,0,0,0.18)] max-[1100px]:left-auto max-[1100px]:right-0"
                 onMouseEnter={abrirServicios}
                 onMouseLeave={cerrarServiciosConDelay}
               >
-                <div className="group relative">
-                  <Link
-                    to={Rutas.FormsolicitudesCatequesis}
-                    hash="informacion"
-                    className={cn(
-                      submenuLinkClass,
-                      "flex items-center justify-between",
-                    )}
-                    onClick={cerrarMenu}
-                  >
+                <div className="rounded-[10px] px-3.5 py-2.5">
+                  <p className="mb-1 text-sm font-semibold text-text">
                     Matrícula a Catequesis
-                    <span className="text-xs text-text-muted">▸</span>
-                  </Link>
-                  <div className="invisible absolute top-0 left-[calc(100%+8px)] z-10 min-w-[245px] rounded-[14px] bg-surface p-2 opacity-0 shadow-[0_16px_35px_rgba(0,0,0,0.18)] transition-[opacity,visibility] group-hover:visible group-hover:opacity-100">
+                  </p>
+                  <div className="flex flex-col border-l border-border pl-2">
                     <Link
                       to={Rutas.FormsolicitudesCatequesis}
                       hash="informacion"
-                      className={submenuLinkClass}
+                      className="block rounded-lg px-2.5 py-2 text-[13px] font-semibold text-text-muted no-underline transition-colors hover:bg-gray-100 hover:text-royal-gold-muted"
                       onClick={cerrarMenu}
                     >
-                      Información sobre catequesis
+                      Información
                     </Link>
                     <Link
                       to={Rutas.FormsolicitudesCatequesis}
                       hash="matricula"
-                      className={submenuLinkClass}
+                      className="block rounded-lg px-2.5 py-2 text-[13px] font-semibold text-text-muted no-underline transition-colors hover:bg-gray-100 hover:text-royal-gold-muted"
                       onClick={cerrarMenu}
                     >
-                      Formulario de inscripción
+                      Formulario
                     </Link>
                   </div>
                 </div>
