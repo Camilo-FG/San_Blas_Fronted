@@ -150,6 +150,25 @@ const formatearCedula = (valor: string) => {
   return `${digitos.slice(0, 1)}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
 };
 
+const CEDULAS_EXTRANJERAS_KEY = "sanblas_cedulas_extranjeras";
+const cargarCedulasExtranjeras = (): Record<string, string> => {
+  try {
+    const crudo = localStorage.getItem(CEDULAS_EXTRANJERAS_KEY);
+    return crudo ? JSON.parse(crudo) : {};
+  } catch {
+    return {};
+  }
+};
+const cedulaExtranjeraCompleta = (truncado: string): string | null => {
+  const mapa = cargarCedulasExtranjeras();
+  return mapa[soloDigitos(truncado).slice(0, 9)] ?? null;
+};
+const formatearCedulaMostrada = (valor: string) => {
+  const completa = cedulaExtranjeraCompleta(valor);
+  if (completa) return completa;
+  return formatearCedula(valor);
+};
+
 const REGEX_MOTIVO_VALIDO =
   /^[a-zA-Z\u00C0-\u024F\d\s.,;:!?¡¿()'"\-–—]*$/;
 const tieneCaracteresInvalidos = (texto: string) =>
@@ -657,7 +676,7 @@ const TableSacramentos = () => {
         header: () => "Cédula",
         cell: (info) => (
           <span className="tabular-nums text-text-secondary">
-            {formatearCedula(String(info.getValue() ?? ""))}
+            {formatearCedulaMostrada(String(info.getValue() ?? ""))}
           </span>
         ),
       }),
@@ -1168,7 +1187,7 @@ const mensaje =
                   {
                     icon: <IdCard size={12} />,
                     label: "Cédula",
-                    value: formatearCedula(String(row.Cedula ?? "")) || "—",
+                    value: formatearCedulaMostrada(String(row.Cedula ?? "")) || "—",
                   },
                   {
                     icon: <Phone size={12} />,

@@ -76,6 +76,27 @@ const validarMotivo = (valor: string) => requerido(valor, "Campo obligatorio.");
 const fieldClass =
   "min-h-11 w-full rounded-xl border-[1.5px] border-slate-300 bg-[#fdfdfd] px-3.5 py-3 text-[0.96rem] text-slate-800 transition-[border-color,box-shadow,transform] focus:border-royal-gold focus:shadow-[0_0_0_4px_rgba(212,175,55,0.14)] focus:outline-none max-sm:min-h-11 max-sm:text-base max-sm:focus:translate-y-0";
 
+const CEDULAS_EXTRANJERAS_KEY = "sanblas_cedulas_extranjeras";
+
+const cargarCedulasExtranjeras = (): Record<string, string> => {
+  try {
+    const crudo = localStorage.getItem(CEDULAS_EXTRANJERAS_KEY);
+    return crudo ? JSON.parse(crudo) : {};
+  } catch {
+    return {};
+  }
+};
+
+const guardarCedulaExtranjera = (truncado: string, completa: string) => {
+  const mapa = cargarCedulasExtranjeras();
+  mapa[truncado] = completa;
+  try {
+    localStorage.setItem(CEDULAS_EXTRANJERAS_KEY, JSON.stringify(mapa));
+  } catch {
+    /* noop */
+  }
+};
+
 const FormSolic = () => {
   const { mutateAsync, isPending } = useCreateSolicSacramento();
   const navigate = useNavigate();
@@ -140,6 +161,12 @@ const FormSolic = () => {
           ...value,
           archivoImagen: archivoImagen?.file ?? null,
         });
+        if (tipoCedula === "extranjera") {
+          guardarCedulaExtranjera(
+            soloDigitos(value.Cedula).slice(0, 9),
+            soloDigitos(value.Cedula),
+          );
+        }
         form.reset();
         setArchivoImagen(null);
         setCaptchaError(null);
