@@ -5,7 +5,7 @@ import { RecaptchaWidget } from "../../../shared/components/RecaptchaWidget";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 import { ApiError } from "../../../services/apiClient";
 import { obtenerDatosCedula, type DatosCedula } from "../../../services/cedulaService";
-import { Button, Input, Label, Textarea } from "../../../shared/ui";
+import { Button, Input, Label, Modal, Textarea } from "../../../shared/ui";
 import { SubidaImagen, type ArchivoImagen } from "./SubidaImagen";
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
@@ -74,6 +74,7 @@ const fieldClass =
 const FormSolic = () => {
   const { mutateAsync, isPending } = useCreateSolicSacramento();
   const [enviado, setEnviado] = useState(false);
+  const [confirmacionAbierta, setConfirmacionAbierta] = useState(true);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const [errorCedula, setErrorCedula] = useState<string | null>(null);
@@ -85,6 +86,7 @@ const FormSolic = () => {
   const [datosCedulaValidada, setDatosCedulaValidada] = useState<DatosCedula | null>(null);
   const [intentoEnvio, setIntentoEnvio] = useState(false);
   const [archivoImagen, setArchivoImagen] = useState<ArchivoImagen | null>(null);
+  const [errorComprobante, setErrorComprobante] = useState<string | null>(null);
   const cedulaValidadaRef = useRef<string | null>(null);
   const exitoRef = useRef<HTMLDivElement | null>(null);
 
@@ -292,6 +294,16 @@ const FormSolic = () => {
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
+    if (!archivoImagen) {
+      setErrorComprobante(
+        "Debe adjuntar el comprobante de pago para continuar.",
+      );
+      document
+        .getElementById("imagen-comprobante")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     await form.handleSubmit();
   };
 
@@ -311,7 +323,102 @@ const FormSolic = () => {
   };
 
   return (
-    <div className="mx-auto box-border min-w-0 w-full max-w-[760px] overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:rounded-[22px] sm:p-8">
+    <>
+      {confirmacionAbierta && (
+        <Modal
+          sinFondo
+          title="Requisitos para la solicitud"
+          onClose={() => setConfirmacionAbierta(false)}
+          className="max-w-lg"
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              <p className="m-0 text-xs font-black tracking-[2px] text-royal-gold uppercase">
+                Requisitos
+              </p>
+              <h3
+                className="m-0 mt-1 text-[1.45rem] font-extrabold text-royal-blue"
+                style={{ fontFamily: "'Geist', sans-serif" }}
+              >
+                Requisitos para la solicitud
+              </h3>
+              <p className="m-0 mt-2 text-sm leading-relaxed text-gray-600">
+                Antes de completar el formulario, es necesario cumplir con los
+                siguientes requisitos:
+              </p>
+            </div>
+
+            <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+              <li className="flex items-start gap-3 rounded-xl border border-border bg-surface-muted p-3.5">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-royal-blue/10 text-royal-blue">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 2v20" />
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                </span>
+                <div className="min-w-0">
+                  <p className="m-0 text-sm font-bold text-royal-blue">
+                    Realizar el pago de ₡1000
+                  </p>
+                  <p className="m-0 mt-0.5 text-[0.84rem] leading-relaxed text-gray-600">
+                    El costo de la solicitud es de 1000 colones (mil colones).
+                  </p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-3 rounded-xl border border-border bg-surface-muted p-3.5">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-royal-blue/10 text-royal-blue">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                    <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                  </svg>
+                </span>
+                <div className="min-w-0">
+                  <p className="m-0 text-sm font-bold text-royal-blue">
+                    Subir el comprobante de pago
+                  </p>
+                  <p className="m-0 mt-0.5 text-[0.84rem] leading-relaxed text-gray-600">
+                    Adjunta el comprobante de pago en el campo habilitado dentro
+                    del formulario.
+                  </p>
+                </div>
+              </li>
+            </ul>
+
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:justify-end">
+              <Button
+                variant="royal"
+                onClick={() => setConfirmacionAbierta(false)}
+                className="min-h-11 px-5"
+              >
+                Entendido, continuar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      <div className="mx-auto box-border min-w-0 w-full max-w-[760px] overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:rounded-[22px] sm:p-8">
       {enviado ? (
         <div
           ref={exitoRef}
@@ -745,9 +852,14 @@ const FormSolic = () => {
             </div>
 
             <SubidaImagen
+              id="imagen-comprobante"
               value={archivoImagen}
-              onChange={setArchivoImagen}
+              onChange={(archivo) => {
+                setArchivoImagen(archivo);
+                if (archivo) setErrorComprobante(null);
+              }}
               required
+              errorExterno={errorComprobante}
             />
 
             <div
@@ -795,6 +907,7 @@ const FormSolic = () => {
         </>
       )}
     </div>
+    </>
   );
 };
 
