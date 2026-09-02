@@ -73,4 +73,5 @@ export const mapBackendToFormSacramento = (
 Motivo: solicitud.Motivo,
   Estado: solicitud.Estado ?? "pendiente",
   Fecha: solicitud.FechaSolicitud,
+  comprobanteUrl: solicitud.comprobanteUrl ?? undefined,
 });
