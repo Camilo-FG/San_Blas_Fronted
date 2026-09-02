@@ -51,6 +51,28 @@ const inputClass = (hasError = false) =>
       : 'border-gray-300 focus:border-blue-600',
   );
 
+// Mensajes de validación mostrados bajo cada campo, igual que en la solicitud de sacramentos.
+const MENSAJES: Record<string, string> = {
+  idParroquia: 'Seleccione la parroquia.',
+  idPresbitero: 'Seleccione el presbítero.',
+  fechaSacramento: 'Seleccione la fecha de celebración.',
+  bautizadoNombre: 'El nombre del bautizado es obligatorio.',
+  bautizadoPrimerApellido: 'El primer apellido del bautizado es obligatorio.',
+  contrayente2Nombre: 'El nombre del cónyuge es obligatorio.',
+  contrayente2PrimerApellido: 'El primer apellido del cónyuge es obligatorio.',
+  fechaNacimiento: 'Seleccione la fecha de nacimiento.',
+  horaNacimiento: 'Seleccione la hora de nacimiento.',
+  lugarNacimiento: 'El lugar de nacimiento es obligatorio.',
+  libro: 'El libro es obligatorio.',
+  folio: 'El folio es obligatorio.',
+  asiento: 'El asiento es obligatorio.',
+};
+
+const ErrorMsg = ({ errors, clave }: { errors: Record<string, string>; clave: string }) =>
+  errors[clave] ? (
+    <span className="mt-1 block text-xs font-semibold text-red-500">⚠ {errors[clave]}</span>
+  ) : null;
+
 const formatearCedulaCR = (valor: string): string => {
   const digitos = valor.replace(/\D/g, '');
   const limpiados = digitos.startsWith('0') ? digitos.slice(1) : digitos.slice(0, 9);
@@ -101,7 +123,6 @@ interface BautismoForm {
   horaNacimiento: string;
   lugarNacimiento: string;
   libro: string;
-  tomo: string;
   folio: string;
   asiento: string;
 }
@@ -117,7 +138,6 @@ const bautismoVacio = (): BautismoForm => ({
   horaNacimiento: '',
   lugarNacimiento: '',
   libro: '',
-  tomo: '',
   folio: '',
   asiento: '',
 });
@@ -139,7 +159,6 @@ const bautismoDesdeDetalle = (detalle: DetalleBautismo): BautismoForm => ({
   horaNacimiento: detalle.horaNacimiento ?? '',
   lugarNacimiento: detalle.lugarNacimiento ?? '',
   libro: detalle.libro ?? '',
-  tomo: detalle.tomo ?? '',
   folio: detalle.folio ?? '',
   asiento: detalle.asiento ?? '',
 });
@@ -148,7 +167,6 @@ interface MatrimonioForm {
   contrayente1: PersonaForm;
   contrayente2: PersonaForm;
   libro: string;
-  tomo: string;
   folio: string;
 }
 
@@ -156,7 +174,6 @@ const matrimonioVacio = (): MatrimonioForm => ({
   contrayente1: personaVacia(),
   contrayente2: personaVacia(),
   libro: '',
-  tomo: '',
   folio: '',
 });
 
@@ -176,7 +193,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
   const [persona, setPersona] = useState<PersonaForm>(personaVacia());
   const [matrimonio, setMatrimonio] = useState<MatrimonioForm>(matrimonioVacio());
   const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, isOpen);
@@ -184,53 +201,95 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
   const personaSacramental = ficha.data;
   const tieneBautismo = Boolean(personaSacramental?.bautismo);
 
+  // El sacramento que se está editando es el que se clickeó (detalleQuery.data).
+  // La ficha por cédula solo sirve para los otros tabs y para prellenar la persona.
   const sacramentoDelTab: SacramentoDetalle | null | undefined =
     activeTab === 'bautismo'
-      ? personaSacramental?.bautismo
+      ? (detalleQuery.data?.tipo === 'bautismo'
+          ? detalleQuery.data
+          : personaSacramental?.bautismo)
       : activeTab === 'comunion'
-        ? personaSacramental?.comunion
+        ? (detalleQuery.data?.tipo === 'comunion'
+            ? detalleQuery.data
+            : personaSacramental?.comunion)
         : activeTab === 'confirmacion'
-          ? personaSacramental?.confirmacion
-          : personaSacramental?.matrimonio;
+          ? (detalleQuery.data?.tipo === 'confirmacion'
+              ? detalleQuery.data
+              : personaSacramental?.confirmacion)
+          : (detalleQuery.data?.tipo === 'matrimonio'
+              ? detalleQuery.data
+              : personaSacramental?.matrimonio);
 
   const existeEnTab = Boolean(sacramentoDelTab);
 
-  // Inicializa el formulario según la ficha de la persona.
+  // Proceso lineal: para agregar un sacramento deben existir los anteriores
+  // (bautismo -> comunión -> confirmación -> matrimonio). El que se está
+  // editando (detalleQuery.data) siempre queda habilitado.
+  const habilitado = (t: TipoSacramento): boolean => {
+    if (detalleQuery.data?.tipo === t) return true;
+    if (t === 'bautismo') return true;
+    if (t === 'comunion') return Boolean(personaSacramental?.bautismo);
+    if (t === 'confirmacion')
+      return Boolean(personaSacramental?.bautismo && personaSacramental?.comunion);
+    return Boolean(
+      personaSacramental?.bautismo &&
+        personaSacramental?.comunion &&
+        personaSacramental?.confirmacion,
+    );
+  };
+
+  // Inicializa el formulario según la ficha de la persona (o el detalle si no hay cédula).
   useEffect(() => {
     if (!isOpen) return;
     const personaBase = personaSacramental?.persona;
+    const detalle = detalleQuery.data;
 
-    if (personaSacramental?.bautismo) {
+    if (detalle?.tipo === 'bautismo' && !personaSacramental?.bautismo) {
+      setBautismo(bautismoDesdeDetalle(detalle.detalle as DetalleBautismo));
+    } else if (personaSacramental?.bautismo) {
       setBautismo(bautismoDesdeDetalle(personaSacramental.bautismo.detalle as DetalleBautismo));
     } else {
       setBautismo({ ...bautismoVacio(), bautizado: aPersonaForm(personaBase) });
     }
 
-    if (personaSacramental?.comunion) {
+    if (detalle?.tipo === 'comunion' && !personaSacramental?.comunion) {
+      setPersona(aPersonaForm((detalle.detalle as { persona: PersonaDetalle }).persona));
+    } else if (personaSacramental?.comunion) {
       setPersona(aPersonaForm((personaSacramental.comunion.detalle as { persona: PersonaDetalle }).persona));
     } else {
       setPersona(aPersonaForm(personaBase));
     }
 
-    if (personaSacramental?.matrimonio) {
-      const detalle = personaSacramental.matrimonio.detalle as {
+    if (detalle?.tipo === 'matrimonio' && !personaSacramental?.matrimonio) {
+      const detalleMatrimonio = detalle.detalle as {
         contrayente1: PersonaDetalle;
         contrayente2: PersonaDetalle;
         libro: string | null;
-        tomo: string | null;
         folio: string | null;
       };
       setMatrimonio({
-        contrayente1: aPersonaForm(detalle.contrayente1),
-        contrayente2: aPersonaForm(detalle.contrayente2),
-        libro: detalle.libro ?? '',
-        tomo: detalle.tomo ?? '',
-        folio: detalle.folio ?? '',
+        contrayente1: aPersonaForm(detalleMatrimonio.contrayente1),
+        contrayente2: aPersonaForm(detalleMatrimonio.contrayente2),
+        libro: detalleMatrimonio.libro ?? '',
+        folio: detalleMatrimonio.folio ?? '',
+      });
+    } else if (personaSacramental?.matrimonio) {
+      const detalleMatrimonio = personaSacramental.matrimonio.detalle as {
+        contrayente1: PersonaDetalle;
+        contrayente2: PersonaDetalle;
+        libro: string | null;
+        folio: string | null;
+      };
+      setMatrimonio({
+        contrayente1: aPersonaForm(detalleMatrimonio.contrayente1),
+        contrayente2: aPersonaForm(detalleMatrimonio.contrayente2),
+        libro: detalleMatrimonio.libro ?? '',
+        folio: detalleMatrimonio.folio ?? '',
       });
     } else {
       setMatrimonio({ ...matrimonioVacio(), contrayente1: aPersonaForm(personaBase) });
     }
-  }, [isOpen, personaSacramental]);
+  }, [isOpen, personaSacramental, detalleQuery.data]);
 
   // Al cargar el detalle del sacramento señalado, posiciona la pestaña y precarga los datos base.
   useEffect(() => {
@@ -283,7 +342,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
     campo: keyof BautismoForm,
     valor: string,
   ) => {
-    const numerico = ['libro', 'tomo', 'folio', 'asiento'].includes(campo);
+    const numerico = ['libro', 'folio', 'asiento'].includes(campo);
     setBautismo((prev) => ({ ...prev, [campo]: numerico ? soloNumeros(valor) : valor }));
   };
 
@@ -291,7 +350,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
     campo: keyof MatrimonioForm,
     valor: string,
   ) => {
-    const numerico = ['libro', 'tomo', 'folio'].includes(campo);
+    const numerico = ['libro', 'folio'].includes(campo);
     setMatrimonio((prev) => ({ ...prev, [campo]: numerico ? soloNumeros(valor) : valor }));
   };
 
@@ -324,56 +383,60 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
   };
 
   const validar = (): boolean => {
-    const nuevos: Record<string, boolean> = {};
-    if (!idParroquia) nuevos.idParroquia = true;
-    if (!idPresbitero) nuevos.idPresbitero = true;
-    if (!fechaSacramento) nuevos.fechaSacramento = true;
+    const nuevos: Record<string, string> = {};
+    if (!idParroquia) nuevos.idParroquia = MENSAJES.idParroquia;
+    if (!idPresbitero) nuevos.idPresbitero = MENSAJES.idPresbitero;
+    if (!fechaSacramento) nuevos.fechaSacramento = MENSAJES.fechaSacramento;
 
     const personaOk = (p: PersonaForm, prefijo: string) => {
-      if (!p.nombre.trim()) nuevos[`${prefijo}Nombre`] = true;
-      else if (!textoEnRango(p.nombre)) nuevos[`${prefijo}Nombre`] = true;
-      if (!p.primerApellido.trim()) nuevos[`${prefijo}PrimerApellido`] = true;
-      else if (!textoEnRango(p.primerApellido)) nuevos[`${prefijo}PrimerApellido`] = true;
+      if (!p.nombre.trim()) nuevos[`${prefijo}Nombre`] = MENSAJES[`${prefijo}Nombre`];
+      else if (!textoEnRango(p.nombre))
+        nuevos[`${prefijo}Nombre`] = 'El nombre debe tener entre 2 y 30 caracteres.';
+      if (!p.primerApellido.trim())
+        nuevos[`${prefijo}PrimerApellido`] = MENSAJES[`${prefijo}PrimerApellido`];
+      else if (!textoEnRango(p.primerApellido))
+        nuevos[`${prefijo}PrimerApellido`] = 'El primer apellido debe tener entre 2 y 30 caracteres.';
       if (p.segundoApellido.trim() && !textoEnRango(p.segundoApellido))
-        nuevos[`${prefijo}SegundoApellido`] = true;
-      if (p.cedula.trim() && !cedulaValida(p.cedula)) nuevos[`${prefijo}Cedula`] = true;
+        nuevos[`${prefijo}SegundoApellido`] = 'El segundo apellido debe tener entre 2 y 30 caracteres.';
+      if (p.cedula.trim() && !cedulaValida(p.cedula))
+        nuevos[`${prefijo}Cedula`] = 'La cédula no es válida.';
     };
 
-    const numericosOk = (libro: string, tomo: string, folio: string, asiento?: string) => {
-      if (libro.trim() && !numeroValido(libro)) nuevos.libro = true;
-      if (tomo.trim() && !numeroValido(tomo)) nuevos.tomo = true;
-      if (folio.trim() && !numeroValido(folio)) nuevos.folio = true;
-      if (asiento && asiento.trim() && !numeroValido(asiento)) nuevos.asiento = true;
+    const numericosOk = (libro: string, folio: string, asiento?: string) => {
+      if (libro.trim() && !numeroValido(libro)) nuevos.libro = 'El libro debe ser un número válido.';
+      if (folio.trim() && !numeroValido(folio)) nuevos.folio = 'El folio debe ser un número válido.';
+      if (asiento && asiento.trim() && !numeroValido(asiento))
+        nuevos.asiento = 'El asiento debe ser un número válido.';
     };
 
     if (activeTab === 'bautismo') {
       personaOk(bautismo.bautizado, 'bautizado');
-      if (!bautismo.libro.trim()) nuevos.libro = true;
-      if (!bautismo.tomo.trim()) nuevos.tomo = true;
-      if (!bautismo.folio.trim()) nuevos.folio = true;
-      if (!bautismo.asiento.trim()) nuevos.asiento = true;
-      numericosOk(bautismo.libro, bautismo.tomo, bautismo.folio, bautismo.asiento);
-      if (!bautismo.fechaNacimiento) nuevos.fechaNacimiento = true;
-      if (!bautismo.horaNacimiento) nuevos.horaNacimiento = true;
-      if (!bautismo.lugarNacimiento.trim()) nuevos.lugarNacimiento = true;
+      if (!bautismo.libro.trim()) nuevos.libro = MENSAJES.libro;
+      if (!bautismo.folio.trim()) nuevos.folio = MENSAJES.folio;
+      if (!bautismo.asiento.trim()) nuevos.asiento = MENSAJES.asiento;
+      numericosOk(bautismo.libro, bautismo.folio, bautismo.asiento);
+      if (!bautismo.fechaNacimiento) nuevos.fechaNacimiento = MENSAJES.fechaNacimiento;
+      if (!bautismo.horaNacimiento) nuevos.horaNacimiento = MENSAJES.horaNacimiento;
+      if (!bautismo.lugarNacimiento.trim())
+        nuevos.lugarNacimiento = MENSAJES.lugarNacimiento;
       if (
         bautismo.fechaNacimiento &&
         fechaSacramento &&
         bautismo.fechaNacimiento > fechaSacramento
       ) {
-        nuevos.fechaNacimiento = true;
-        nuevos.fechaSacramento = true;
+        nuevos.fechaNacimiento =
+          'La fecha de nacimiento no puede ser posterior a la fecha de celebración.';
+        nuevos.fechaSacramento =
+          'La fecha de celebración no puede ser anterior a la fecha de nacimiento.';
       }
     }
-    if (activeTab === 'comunion' || activeTab === 'confirmacion') personaOk(persona, 'persona');
     if (activeTab === 'matrimonio') {
-      personaOk(matrimonio.contrayente1, 'contrayente1');
       personaOk(matrimonio.contrayente2, 'contrayente2');
-      if (!matrimonio.libro.trim()) nuevos.libro = true;
-      if (!matrimonio.tomo.trim()) nuevos.tomo = true;
-      if (!matrimonio.folio.trim()) nuevos.folio = true;
-      numericosOk(matrimonio.libro, matrimonio.tomo, matrimonio.folio);
+      if (!matrimonio.libro.trim()) nuevos.libro = MENSAJES.libro;
+      if (!matrimonio.folio.trim()) nuevos.folio = MENSAJES.folio;
+      numericosOk(matrimonio.libro, matrimonio.folio);
     }
+    // Comunión/confirmación no llevan datos de persona: usan la del bautismo.
 
     setErrors(nuevos);
     return Object.keys(nuevos).length === 0;
@@ -383,7 +446,8 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
     idParroquia: Number(idParroquia),
     idPresbitero: idPresbitero ? Number(idPresbitero) : undefined,
     fechaSacramento,
-    observaciones: observaciones.trim() || undefined,
+    // Las observaciones solo se registran en el bautismo; los demás sacramentos van únicamente con lugar y fecha.
+    ...(activeTab === 'bautismo' ? { observaciones: observaciones.trim() || undefined } : {}),
   });
 
   const construirSeccion = () => {
@@ -402,7 +466,6 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
           horaNacimiento: bautismo.horaNacimiento || undefined,
           lugarNacimiento: (bautismo.lugarNacimiento || '').trim() || undefined,
           libro: (bautismo.libro || '').trim() || undefined,
-          tomo: (bautismo.tomo || '').trim() || undefined,
           folio: (bautismo.folio || '').trim() || undefined,
           asiento: (bautismo.asiento || '').trim() || undefined,
         },
@@ -415,7 +478,6 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
         contrayente1: aPersonaInput(matrimonio.contrayente1),
         contrayente2: aPersonaInput(matrimonio.contrayente2),
         libro: (matrimonio.libro || '').trim() || undefined,
-        tomo: (matrimonio.tomo || '').trim() || undefined,
         folio: (matrimonio.folio || '').trim() || undefined,
       },
     };
@@ -424,6 +486,11 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (saving) return;
+
+    if (!habilitado(activeTab)) {
+      showToast('Complete el sacramento anterior para poder registrar este.', 'error');
+      return;
+    }
 
     if (!existeEnTab && activeTab !== 'bautismo' && !tieneBautismo) {
       showToast('Debe registrar primero el Bautismo antes de los demás sacramentos.', 'error');
@@ -443,7 +510,11 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
       onClose();
     } catch (err: any) {
       if (err?.response?.status === 409) {
-        showToast('Este expediente ya tiene registrado ese tipo de sacramento.', 'error');
+        // Muestra el mensaje del backend (ej: cédula de un bautizado ya registrado).
+        const mensaje =
+          err?.response?.data?.mensaje ??
+          'Este expediente ya tiene registrado ese tipo de sacramento.';
+        showToast(String(mensaje), 'error');
       } else {
         const mensaje =
           err?.response?.data?.mensaje ?? err?.message ?? 'No se pudo guardar el acta.';
@@ -463,10 +534,22 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
     <div className="mb-5">
       <Label>{titulo}</Label>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Input type="text" placeholder="Cédula (0-0000-0000)" maxLength={12} className={inputClass(errors[`${prefijo}Cedula`])} value={persona.cedula} onChange={(e) => setCampoPersona(setter, 'cedula', e.target.value)} />
-        <Input type="text" placeholder="Nombre" maxLength={30} className={inputClass(errors[`${prefijo}Nombre`])} value={persona.nombre} onChange={(e) => setCampoPersona(setter, 'nombre', e.target.value)} />
-        <Input type="text" placeholder="Primer apellido" maxLength={30} className={inputClass(errors[`${prefijo}PrimerApellido`])} value={persona.primerApellido} onChange={(e) => setCampoPersona(setter, 'primerApellido', e.target.value)} />
-        <Input type="text" placeholder="Segundo apellido" maxLength={30} className={inputClass(errors[`${prefijo}SegundoApellido`])} value={persona.segundoApellido} onChange={(e) => setCampoPersona(setter, 'segundoApellido', e.target.value)} />
+        <div>
+          <Input type="text" placeholder="Cédula (0-0000-0000)" maxLength={12} className={inputClass(Boolean(errors[`${prefijo}Cedula`]))} value={persona.cedula} onChange={(e) => setCampoPersona(setter, 'cedula', e.target.value)} />
+          <ErrorMsg errors={errors} clave={`${prefijo}Cedula`} />
+        </div>
+        <div>
+          <Input type="text" placeholder="Nombre" maxLength={30} className={inputClass(Boolean(errors[`${prefijo}Nombre`]))} value={persona.nombre} onChange={(e) => setCampoPersona(setter, 'nombre', e.target.value)} />
+          <ErrorMsg errors={errors} clave={`${prefijo}Nombre`} />
+        </div>
+        <div>
+          <Input type="text" placeholder="Primer apellido" maxLength={30} className={inputClass(Boolean(errors[`${prefijo}PrimerApellido`]))} value={persona.primerApellido} onChange={(e) => setCampoPersona(setter, 'primerApellido', e.target.value)} />
+          <ErrorMsg errors={errors} clave={`${prefijo}PrimerApellido`} />
+        </div>
+        <div>
+          <Input type="text" placeholder="Segundo apellido" maxLength={30} className={inputClass(Boolean(errors[`${prefijo}SegundoApellido`]))} value={persona.segundoApellido} onChange={(e) => setCampoPersona(setter, 'segundoApellido', e.target.value)} />
+          <ErrorMsg errors={errors} clave={`${prefijo}SegundoApellido`} />
+        </div>
       </div>
     </div>
   );
@@ -523,31 +606,33 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
           <Label required>Fecha de nacimiento</Label>
-          <Input type="date" className={inputClass(errors.fechaNacimiento)} max={fechaSacramento || undefined} value={bautismo.fechaNacimiento} onChange={(e) => setCampoBautismo('fechaNacimiento', e.target.value)} />
+          <Input type="date" className={inputClass(Boolean(errors.fechaNacimiento))} max={fechaSacramento || undefined} value={bautismo.fechaNacimiento} onChange={(e) => setCampoBautismo('fechaNacimiento', e.target.value)} />
+          <ErrorMsg errors={errors} clave="fechaNacimiento" />
         </div>
         <div>
           <Label required>Hora de nacimiento</Label>
-          <Input type="time" className={inputClass(errors.horaNacimiento)} value={bautismo.horaNacimiento} onChange={(e) => setCampoBautismo('horaNacimiento', e.target.value)} />
+          <Input type="time" className={inputClass(Boolean(errors.horaNacimiento))} value={bautismo.horaNacimiento} onChange={(e) => setCampoBautismo('horaNacimiento', e.target.value)} />
+          <ErrorMsg errors={errors} clave="horaNacimiento" />
         </div>
         <div>
           <Label required>Lugar de nacimiento</Label>
-          <Input type="text" maxLength={60} className={inputClass(errors.lugarNacimiento)} value={bautismo.lugarNacimiento} onChange={(e) => setCampoBautismo('lugarNacimiento', e.target.value)} />
+          <Input type="text" maxLength={60} className={inputClass(Boolean(errors.lugarNacimiento))} value={bautismo.lugarNacimiento} onChange={(e) => setCampoBautismo('lugarNacimiento', e.target.value)} />
+          <ErrorMsg errors={errors} clave="lugarNacimiento" />
         </div>
         <div>
           <Label required>Libro</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.libro)} value={bautismo.libro} onChange={(e) => setCampoBautismo('libro', e.target.value)} />
-        </div>
-        <div>
-          <Label required>Tomo</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.tomo)} value={bautismo.tomo} onChange={(e) => setCampoBautismo('tomo', e.target.value)} />
+          <Input type="text" maxLength={6} className={inputClass(Boolean(errors.libro))} value={bautismo.libro} onChange={(e) => setCampoBautismo('libro', e.target.value)} />
+          <ErrorMsg errors={errors} clave="libro" />
         </div>
         <div>
           <Label required>Folio</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.folio)} value={bautismo.folio} onChange={(e) => setCampoBautismo('folio', e.target.value)} />
+          <Input type="text" maxLength={6} className={inputClass(Boolean(errors.folio))} value={bautismo.folio} onChange={(e) => setCampoBautismo('folio', e.target.value)} />
+          <ErrorMsg errors={errors} clave="folio" />
         </div>
         <div>
           <Label required>Asiento</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.asiento)} value={bautismo.asiento} onChange={(e) => setCampoBautismo('asiento', e.target.value)} />
+          <Input type="text" maxLength={6} className={inputClass(Boolean(errors.asiento))} value={bautismo.asiento} onChange={(e) => setCampoBautismo('asiento', e.target.value)} />
+          <ErrorMsg errors={errors} clave="asiento" />
         </div>
       </div>
     </>
@@ -555,20 +640,20 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
 
   const renderMatrimonio = () => (
     <>
-      {renderPersonaCampos('Contrayente 1', matrimonio.contrayente1, (updater) => setMatrimonio((prev) => ({ ...prev, contrayente1: updater(prev.contrayente1) })), 'contrayente1')}
-      {renderPersonaCampos('Contrayente 2', matrimonio.contrayente2, (updater) => setMatrimonio((prev) => ({ ...prev, contrayente2: updater(prev.contrayente2) })), 'contrayente2')}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <p className="mb-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+        El primer contrayente es la persona inscrita en el Bautismo; solo ingrese el cónyuge.
+      </p>
+      {renderPersonaCampos('Cónyuge', matrimonio.contrayente2, (updater) => setMatrimonio((prev) => ({ ...prev, contrayente2: updater(prev.contrayente2) })), 'contrayente2')}
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label required>Libro</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.libro)} value={matrimonio.libro} onChange={(e) => setCampoMatrimonio('libro', e.target.value)} />
-        </div>
-        <div>
-          <Label required>Tomo</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.tomo)} value={matrimonio.tomo} onChange={(e) => setCampoMatrimonio('tomo', e.target.value)} />
+          <Input type="text" maxLength={6} className={inputClass(Boolean(errors.libro))} value={matrimonio.libro} onChange={(e) => setCampoMatrimonio('libro', e.target.value)} />
+          <ErrorMsg errors={errors} clave="libro" />
         </div>
         <div>
           <Label required>Folio</Label>
-          <Input type="text" maxLength={6} className={inputClass(errors.folio)} value={matrimonio.folio} onChange={(e) => setCampoMatrimonio('folio', e.target.value)} />
+          <Input type="text" maxLength={6} className={inputClass(Boolean(errors.folio))} value={matrimonio.folio} onChange={(e) => setCampoMatrimonio('folio', e.target.value)} />
+          <ErrorMsg errors={errors} clave="folio" />
         </div>
       </div>
     </>
@@ -602,19 +687,36 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
         </div>
 
         <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-gray-200 px-6">
-          {TIPOS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={cn(
-                'shrink-0 cursor-pointer border-0 bg-transparent px-5 py-3 text-sm font-medium text-gray-500 transition-colors hover:text-blue-600',
-                activeTab === t && 'border-b-2 border-blue-600 text-blue-600',
-              )}
-              onClick={() => setActiveTab(t)}
-            >
-              {TIPO_SACRAMENTO_LABEL[t].toUpperCase()}
-            </button>
-          ))}
+          {TIPOS.map((t) => {
+            const disponible = habilitado(t);
+            return (
+              <button
+                key={t}
+                type="button"
+                disabled={!disponible}
+                title={
+                  disponible
+                    ? undefined
+                    : 'Complete el sacramento anterior para desbloquear este'
+                }
+                className={cn(
+                  'shrink-0 border-0 bg-transparent px-5 py-3 text-sm font-medium transition-colors',
+                  !disponible
+                    ? 'cursor-not-allowed text-gray-300'
+                    : 'cursor-pointer text-gray-500 hover:text-blue-600',
+                  activeTab === t &&
+                    disponible &&
+                    'border-b-2 border-blue-600 text-blue-600',
+                )}
+                onClick={() => {
+                  setActiveTab(t);
+                  setErrors({});
+                }}
+              >
+                {TIPO_SACRAMENTO_LABEL[t].toUpperCase()}
+              </button>
+            );
+          })}
         </div>
 
         {cargandoFicha ? (
@@ -630,7 +732,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
                   <select
                     value={idParroquia}
                     onChange={(e) => setIdParroquia(e.target.value)}
-                    className={inputClass(errors.idParroquia)}
+                    className={inputClass(Boolean(errors.idParroquia))}
                   >
                     <option value="">Seleccione...</option>
                     {(parroquias ?? []).map((p) => (
@@ -639,13 +741,14 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
                       </option>
                     ))}
                   </select>
+                  <ErrorMsg errors={errors} clave="idParroquia" />
                 </div>
                 <div>
                   <Label required>Presbítero</Label>
                   <select
                     value={idPresbitero}
                     onChange={(e) => setIdPresbitero(e.target.value)}
-                    className={inputClass(errors.idPresbitero)}
+                    className={inputClass(Boolean(errors.idPresbitero))}
                   >
                     <option value="">Seleccione...</option>
                     {(presbiteros ?? []).map((p) => (
@@ -654,35 +757,32 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
                       </option>
                     ))}
                   </select>
+                  <ErrorMsg errors={errors} clave="idPresbitero" />
                 </div>
                 <div>
                   <Label required>Fecha de celebración</Label>
                   <Input
                     type="date"
-                    className={inputClass(errors.fechaSacramento)}
+                    className={inputClass(Boolean(errors.fechaSacramento))}
                     value={fechaSacramento}
                     onChange={(e) => setFechaSacramento(e.target.value)}
                   />
+                  <ErrorMsg errors={errors} clave="fechaSacramento" />
                 </div>
               </div>
 
               {activeTab === 'bautismo' && renderBautismo()}
-              {(activeTab === 'comunion' || activeTab === 'confirmacion') &&
-                renderPersonaCampos(
-                  `Datos de la persona (${TIPO_SACRAMENTO_LABEL[activeTab]})`,
-                  persona,
-                  setPersona,
-                  'persona',
-                )}
               {activeTab === 'matrimonio' && renderMatrimonio()}
 
-              <div>
-                <Label>Observaciones</Label>
-                <Input type="text" maxLength={500} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
-                <p className="m-0 mt-1 text-right text-xs text-slate-400">
-                  {observaciones.length}/500 caracteres
-                </p>
-              </div>
+              {activeTab === 'bautismo' && (
+                <div>
+                  <Label>Observaciones</Label>
+                  <Input type="text" maxLength={500} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
+                  <p className="m-0 mt-1 text-right text-xs text-slate-400">
+                    {observaciones.length}/500 caracteres
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex shrink-0 justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4">
