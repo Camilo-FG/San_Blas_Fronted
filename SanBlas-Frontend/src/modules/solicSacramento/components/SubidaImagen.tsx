@@ -12,6 +12,8 @@ interface SubidaImagenProps {
   onChange: (archivo: ArchivoImagen | null) => void;
   required?: boolean;
   maxSizeMB?: number;
+  id?: string;
+  errorExterno?: string | null;
 }
 
 const TIPOS_PERMITIDOS = [
@@ -29,6 +31,8 @@ export const SubidaImagen = ({
   onChange,
   required,
   maxSizeMB = MAX_DEFAULT_MB,
+  id,
+  errorExterno,
 }: SubidaImagenProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [arrastrando, setArrastrando] = useState(false);
@@ -72,7 +76,10 @@ export const SubidaImagen = ({
   };
 
   return (
-    <div className="col-span-1 flex w-full min-w-0 flex-col gap-2 sm:col-span-2">
+    <div
+      id={id}
+      className="col-span-1 flex w-full min-w-0 flex-col gap-2 sm:col-span-2"
+    >
       {required && (
         <Label className="text-sm font-bold text-royal-blue" required>
           Comprobante de pago
@@ -161,6 +168,11 @@ export const SubidaImagen = ({
       {error && (
         <span role="alert" className="text-[0.84rem] font-semibold text-red-500">
           ⚠ {error}
+        </span>
+      )}
+      {errorExterno && (
+        <span role="alert" className="text-[0.84rem] font-semibold text-red-500">
+          ⚠ {errorExterno}
         </span>
       )}
     </div>

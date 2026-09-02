@@ -1,4 +1,12 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FocusTrap from "focus-trap-react";
 import {
@@ -13,6 +21,8 @@ import {
   Loader2,
   Mail,
   X,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import type { FormSacramento } from "../../types/formSacramento";
 import {
@@ -124,6 +134,10 @@ const ESTADO_MODAL_STYLES = {
     dot: "bg-red-600",
     pill: "border-red-600/25 bg-red-600/10 text-red-700",
   },
+  Archivado: {
+    dot: "bg-slate-500",
+    pill: "border-slate-400/30 bg-slate-100 text-slate-600",
+  },
 } as const;
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
@@ -160,10 +174,21 @@ const toFechaTime = (fecha?: string) => {
   return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
 };
 
+const formatFechaHora = (fecha?: string | null) => {
+  if (!fecha) return "—";
+  const date = new Date(fecha);
+  if (Number.isNaN(date.getTime())) return "—";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   const normalized = (estado ?? "Pendiente").toLowerCase();
   if (normalized === "aprobado") return "success";
   if (normalized === "rechazado") return "danger";
+  if (normalized === "archivado") return "neutral";
   return "warning";
 };
 
@@ -171,7 +196,41 @@ const ORDEN_ESTADO: Record<string, number> = {
   Pendiente: 0,
   Aprobado: 1,
   Rechazado: 2,
+  Archivado: 3,
 };
+
+const STORAGE_KEY_ARCHIVADAS = "sanblas_sacramentos_archivadas";
+
+const cargarArchivadasLocal = (): FormSacramento[] => {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY_ARCHIVADAS);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as FormSacramento[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const guardarArchivadasLocal = (archivadas: FormSacramento[]) => {
+  try {
+    window.localStorage.setItem(
+      STORAGE_KEY_ARCHIVADAS,
+      JSON.stringify(archivadas),
+    );
+  } catch {
+    // Almacenamiento no disponible; se mantiene el estado en memoria
+  }
+};
+
+const esArchivadaLocal = (
+  archivadasLocal: FormSacramento[],
+  solicitud: FormSacramento,
+) =>
+  solicitud.Estado === "Archivado" ||
+  archivadasLocal.some(
+    (local) => String(local.id) === String(solicitud.id),
+  );
 
 const TableSacramentos = () => {
   const navigate = useNavigate();
@@ -180,6 +239,12 @@ const TableSacramentos = () => {
   const [filtroEstado, setFiltroEstado] = useState<
     "Pendiente" | "Aprobado" | "Rechazado" | ""
   >("");
+  const [vista, setVista] = useState<"solicitudes" | "archivados">(
+    "solicitudes",
+  );
+  const [archivadasLocal, setArchivadasLocal] = useState<FormSacramento[]>(
+    cargarArchivadasLocal,
+  );
   const [solicitudSeleccionada, setSolicitudSeleccionada] =
     useState<FormSacramento | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
@@ -297,6 +362,9 @@ const TableSacramentos = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [filtersChanged]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vista]);
   const { isAdmin } = useAuth();
   const { data, error, isPending, isFetching, refetch } =
     useGetSolicitudes(filters);
@@ -309,8 +377,6 @@ const TableSacramentos = () => {
   const rows: FormSacramento[] = data?.data ?? [];
   const totalItems = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-  const canPreviousPage = currentPage > 1;
-  const canNextPage = currentPage < totalPages;
   const isInitialLoading = isPending && rows.length === 0;
   const isFiltering = isFetching && !isInitialLoading;
 
@@ -410,6 +476,82 @@ const TableSacramentos = () => {
     setRejectionReasonText(value);
   };
 
+  const handleArchivar = useCallback(
+    (solicitud: FormSacramento) => {
+      if (solicitud.id == null) return;
+      setArchivadasLocal((prev) => {
+        if (esArchivadaLocal(prev, solicitud)) return prev;
+        const next = [solicitud, ...prev];
+        guardarArchivadasLocal(next);
+        return next;
+      });
+      showToast("Solicitud archivada correctamente", "success");
+      setSolicitudSeleccionada(null);
+      setVista("archivados");
+    },
+    [showToast],
+  );
+
+  const handleRestaurar = useCallback(
+    (solicitud: FormSacramento) => {
+      setArchivadasLocal((prev) => {
+        const next = prev.filter(
+          (local) => String(local.id) !== String(solicitud.id),
+        );
+        guardarArchivadasLocal(next);
+        return next;
+      });
+      showToast("Solicitud restaurada", "success");
+    },
+    [showToast],
+  );
+
+  const filasVista = useMemo(() => {
+    if (vista === "archivados") {
+      const archivadas = [
+        ...archivadasLocal,
+        ...rows.filter(
+          (row) =>
+            row.Estado === "Archivado" &&
+            !esArchivadaLocal(archivadasLocal, row),
+        ),
+      ];
+      return archivadas
+        .filter((row) => {
+          const matchNombre =
+            !filtroNombre.trim() ||
+            normalizeText(nombreCompleto(row)).includes(
+              normalizeText(filtroNombre),
+            );
+          const matchCedula =
+            !filtroCedula.trim() ||
+            normalizeText(String(row.Cedula)).includes(
+              normalizeText(filtroCedula),
+            );
+          return matchNombre && matchCedula;
+        })
+        .sort((a, b) => toFechaTime(b.Fecha) - toFechaTime(a.Fecha));
+    }
+    return filteredRows.filter(
+      (row) => !esArchivadaLocal(archivadasLocal, row),
+    );
+  }, [
+    archivadasLocal,
+    rows,
+    filteredRows,
+    vista,
+    filtroNombre,
+    filtroCedula,
+  ]);
+
+  const totalVista = vista === "archivados" ? filasVista.length : totalItems;
+  const totalPagesVista =
+    vista === "archivados"
+      ? Math.max(1, Math.ceil(filasVista.length / PAGE_SIZE))
+      : totalPages;
+  const canPreviousPageVista = currentPage > 1;
+  const canNextPageVista = currentPage < totalPagesVista;
+
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -432,7 +574,9 @@ const TableSacramentos = () => {
       columnHelper.accessor("Fecha", {
         header: () => "Fecha",
         cell: (info) => (
-          <span className="text-text-secondary">{info.getValue() || "—"}</span>
+          <span className="text-text-secondary">
+            {formatFechaHora(info.getValue())}
+          </span>
         ),
       }),
       columnHelper.display({
@@ -455,27 +599,62 @@ const TableSacramentos = () => {
       }),
       columnHelper.display({
         id: "motivo",
-        header: () => "Motivo",
-        cell: (info) => (
-          <button
-            type="button"
-            onClick={() => setSolicitudSeleccionada(info.row.original)}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-lg border-0 bg-transparent px-2 py-1.5 text-[0.7rem] font-bold tracking-wider text-info uppercase transition-colors hover:bg-info-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-          >
-            <Eye
-              size={13}
-              strokeWidth={1.5}
-            />
-            Ver motivo
-          </button>
-        ),
+        header: () => "Acciones",
+        cell: (info) => {
+          const esArchivada = esArchivadaLocal(
+            archivadasLocal,
+            info.row.original,
+          );
+          return (
+            <span className="inline-flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => setSolicitudSeleccionada(info.row.original)}
+                aria-label="Ver solicitud"
+                className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+              >
+                <Eye
+                  size={17}
+                  strokeWidth={1.5}
+                />
+              </button>
+              {esArchivada ? (
+                <button
+                  type="button"
+                  onClick={() => handleRestaurar(info.row.original)}
+                  aria-label="Restaurar solicitud"
+                  title="Restaurar solicitud"
+                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                >
+                  <ArchiveRestore
+                    size={17}
+                    strokeWidth={1.5}
+                  />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleArchivar(info.row.original)}
+                  aria-label="Archivar solicitud"
+                  title="Archivar solicitud"
+                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                >
+                  <Archive
+                    size={17}
+                    strokeWidth={1.5}
+                  />
+                </button>
+              )}
+            </span>
+          );
+        },
       }),
     ],
-    [],
+    [archivadasLocal, handleArchivar, handleRestaurar],
   );
 
   const table = useReactTable({
-    data: filteredRows,
+    data: filasVista,
     columns,
     autoResetPageIndex: true,
     getCoreRowModel: getCoreRowModel(),
@@ -601,7 +780,8 @@ const mensaje =
   const estadoActualSolicitud = solicitudSeleccionada?.Estado ?? "Pendiente";
   const esEstadoPermanente =
     estadoActualSolicitud === "Aprobado" ||
-    estadoActualSolicitud === "Rechazado";
+    estadoActualSolicitud === "Rechazado" ||
+    estadoActualSolicitud === "Archivado";
 
   const renderEstadoBadge = (estado?: string) => {
     const currentEstado = estado ?? "Pendiente";
@@ -633,6 +813,42 @@ const mensaje =
     <AdminModule className="p-2">
       <AdminToolbar>
         <div className="flex flex-wrap items-center gap-2">
+          <div
+            className="flex items-center gap-0.5 rounded-lg border border-border-strong bg-surface p-0.5"
+            role="group"
+            aria-label="Cambiar vista de solicitudes"
+          >
+            <button
+              type="button"
+              onClick={() => setVista("solicitudes")}
+              aria-pressed={vista === "solicitudes"}
+              className={cn(
+                "cursor-pointer rounded-md px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                vista === "solicitudes"
+                  ? "bg-royal-blue text-white"
+                  : "text-text-muted hover:bg-surface-muted hover:text-text",
+              )}
+            >
+              Solicitudes
+            </button>
+            <button
+              type="button"
+              onClick={() => setVista("archivados")}
+              aria-pressed={vista === "archivados"}
+              className={cn(
+                "inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                vista === "archivados"
+                  ? "bg-royal-blue text-white"
+                  : "text-text-muted hover:bg-surface-muted hover:text-text",
+              )}
+            >
+              <ArchiveRestore
+                size={14}
+                strokeWidth={2}
+              />
+              Archivadas
+            </button>
+          </div>
           <Button
             type="button"
             variant="secondary"
@@ -748,15 +964,17 @@ const mensaje =
         </p>
       )}
 
-      {!isInitialLoading && filteredRows.length === 0 && (
+      {!isInitialLoading && filasVista.length === 0 && (
         <p className="py-6 text-center text-sm text-text-muted">
-          {filtroNombre.trim() || filtroCedula.trim() || filtroEstado
-            ? "No se encontraron solicitudes con los filtros seleccionados."
-            : "Actualmente no existen solicitudes registradas."}
+          {vista === "archivados"
+            ? "Actualmente no existen solicitudes archivadas."
+            : filtroNombre.trim() || filtroCedula.trim() || filtroEstado
+              ? "No se encontraron solicitudes con los filtros seleccionados."
+              : "Actualmente no existen solicitudes registradas."}
         </p>
       )}
 
-      {!isInitialLoading && filteredRows.length > 0 && (
+      {!isInitialLoading && filasVista.length > 0 && (
         <>
           <div className="hidden md:block">
             <AdminTablePanel>
@@ -795,7 +1013,11 @@ const mensaje =
                             originalRow.Estado ?? "Pendiente";
                           return (
                             <AdminTableCell key={cell.id}>
-                              {renderEstadoBadge(currentEstado)}
+                              {renderEstadoBadge(
+                                vista === "archivados"
+                                  ? "Archivado"
+                                  : currentEstado,
+                              )}
                             </AdminTableCell>
                           );
                         }
@@ -823,7 +1045,9 @@ const mensaje =
                 accent="#1d4ed8"
                 code={`SOL-${row.id}`}
                 title={nombreCompleto(row)}
-                badges={renderEstadoBadge(row.Estado)}
+                badges={renderEstadoBadge(
+                  vista === "archivados" ? "Archivado" : row.Estado,
+                )}
                 meta={[
                   {
                     icon: <IdCard size={12} />,
@@ -843,6 +1067,23 @@ const mensaje =
                     variant: "primary",
                     onClick: () => setSolicitudSeleccionada(row),
                   },
+                  ...(esArchivadaLocal(archivadasLocal, row)
+                    ? [
+                        {
+                          label: "Restaurar",
+                          icon: <ArchiveRestore size={15} />,
+                          variant: "ghost" as const,
+                          onClick: () => handleRestaurar(row),
+                        },
+                      ]
+                    : [
+                        {
+                          label: "Archivar",
+                          icon: <Archive size={15} />,
+                          variant: "ghost" as const,
+                          onClick: () => handleArchivar(row),
+                        },
+                      ]),
                 ]}
               />
             ))}
@@ -982,30 +1223,28 @@ const mensaje =
                 </p>
               </section>
 
-              <div className="grid gap-4 rounded-[12px] border border-[#aa7323]/25 bg-[#aa7323]/[0.07] p-4 md:grid-cols-2">
-                <div className="flex flex-col gap-3">
-                  <EtiquetaSeccion>Estado actual</EtiquetaSeccion>
-                  <span
-                    className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${
-                      ESTADO_MODAL_STYLES[
-                        solicitudSeleccionada.Estado ?? "Pendiente"
-                      ].pill
-                    }`}
+              <div className="grid items-stretch gap-4 md:grid-cols-2">
+              <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
+                <EtiquetaSeccion>Comprobante de pago</EtiquetaSeccion>
+                {solicitudSeleccionada.comprobanteUrl ? (
+                  <a
+                    href={solicitudSeleccionada.comprobanteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#aa7323]/30 px-4 py-2 text-sm font-semibold text-[#aa7323] transition-colors duration-100 ease-out hover:bg-[#aa7323]/10 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
                   >
-                    <span
-                      className={`size-1.5 rounded-full ${
-                        ESTADO_MODAL_STYLES[
-                          solicitudSeleccionada.Estado ?? "Pendiente"
-                        ].dot
-                      }`}
-                    />
-                    {solicitudSeleccionada.Estado ?? "Pendiente"}
-                  </span>
-                </div>
+                    Abrir imagen del comprobante
+                  </a>
+                ) : (
+                  <p className="m-0 text-sm text-[#16243c]/70">
+                    No se adjuntó ningún comprobante.
+                  </p>
+                )}
+              </section>
 
-                {isAdmin && (
-                  <div className="flex flex-col gap-3">
-                    <EtiquetaSeccion>Cambiar estado</EtiquetaSeccion>
+              {isAdmin && (
+              <div className="flex flex-col gap-3 rounded-[12px] border border-[#aa7323]/25 bg-[#aa7323]/[0.07] p-4">
+                  <EtiquetaSeccion>Cambiar estado</EtiquetaSeccion>
                     <div
                       className="relative"
                       ref={estadoMenuRef}
@@ -1091,7 +1330,7 @@ const mensaje =
                         </ul>
                       )}
                     </div>
-                  </div>
+              </div>
                 )}
               </div>
             </div>
@@ -1327,13 +1566,13 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
       {!isInitialLoading && table.getRowModel().rows.length > 0 && (
         <AdminTableFooter>
           <span className="text-sm text-text-muted">
-            <strong className="text-text">{totalItems}</strong> registros
+            <strong className="text-text">{totalVista}</strong> registros
           </span>
           <AdminPagination>
             <AdminPaginationButton
               type="button"
               onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              disabled={!canPreviousPage}
+              disabled={!canPreviousPageVista}
               aria-label="Página anterior"
             >
               <ChevronLeft
@@ -1343,14 +1582,16 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
             </AdminPaginationButton>
             <span className="text-sm text-text-muted">
               <strong className="text-text">{currentPage}</strong> de{" "}
-              <strong className="text-text">{totalPages}</strong>
+              <strong className="text-text">{totalPagesVista}</strong>
             </span>
             <AdminPaginationButton
               type="button"
               onClick={() =>
-                setCurrentPage((page) => Math.min(totalPages, page + 1))
+                setCurrentPage((page) =>
+                  Math.min(totalPagesVista, page + 1),
+                )
               }
-              disabled={!canNextPage}
+              disabled={!canNextPageVista}
               aria-label="Página siguiente"
             >
               <ChevronRight

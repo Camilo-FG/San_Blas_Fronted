@@ -22,23 +22,23 @@ const capitalizarNombre = (valor: string): string =>
     .join(" ");
 
 const parsearNombre = (valor: string): DatosCedula | null => {
-  const parts = valor.trim().split(" ");
+  const parts = valor.trim().split(" ").filter(Boolean);
 
-  if (parts.length >= 2) {
-    const firstName = parts[0];
-    const middleName = parts.length >= 3 ? parts[1] : "";
-    const surnames = parts.slice(parts.length >= 3 ? 2 : 1).join(" ");
+  if (parts.length < 2) return null;
 
-    return {
-      nombre: capitalizarNombre(`${firstName} ${middleName}`.trim()),
-      primerApellido: capitalizarNombre(surnames.split(" ")[0] ?? ""),
-      segundoApellido: capitalizarNombre(
-        surnames.split(" ").slice(1).join(" "),
-      ),
-    };
-  }
+  const cantidadApellidos = parts.length >= 3 ? 2 : 1;
+  const indexSurnames = parts.length - cantidadApellidos;
 
-  return null;
+  const givenNames = parts.slice(0, indexSurnames).join(" ");
+  const surnames = parts.slice(indexSurnames).join(" ");
+
+  return {
+    nombre: capitalizarNombre(givenNames),
+    primerApellido: capitalizarNombre(surnames.split(" ")[0] ?? ""),
+    segundoApellido: capitalizarNombre(
+      surnames.split(" ").slice(1).join(" "),
+    ),
+  };
 };
 
 export const obtenerDatosCedula = async (cedula: string): Promise<DatosCedula | null> => {
