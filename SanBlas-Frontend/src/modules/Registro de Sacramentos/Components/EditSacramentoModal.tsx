@@ -25,6 +25,7 @@ import {
   textoEnRango,
 } from '../../../shared/utils/formValidation';
 import { opcionesLugarCelebracion } from '../constants/filialesCelebracion';
+import { obtenerDatosCedula } from '../../../services/cedulaService';
 
 interface Props {
   isOpen: boolean;
@@ -43,6 +44,10 @@ const PARENTESCOS: ParentescoAbuelo[] = [
   'abuelo_materno',
   'abuela_materna',
 ];
+
+// Cache en memoria de las cédulas ya consultadas para evitar re-llamar a la API
+// (Hacienda vía GoMeta) cada vez que se pierde el foco en el mismo campo.
+const cacheCedulas = new Map<string, Awaited<ReturnType<typeof obtenerDatosCedula>>>();
 
 const inputClass = (hasError = false) =>
   cn(
@@ -370,6 +375,57 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
     }));
   };
 
+  // Al completar la cédula, consulta la API de cédulas (Hacienda vía GoMeta) y
+  // autocompleta nombre y apellidos solo si esos campos están vacíos.
+  // Usa un cache en memoria para no re-llamar a la API por la misma cédula.
+  const autocompletarPorCedula = async (
+    setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
+    cedula: string,
+    persona: PersonaForm,
+  ) => {
+    const digitos = cedulaDigitosValidos(cedula);
+    if (digitos.length !== 9) return;
+    if (persona.nombre.trim() && persona.primerApellido.trim()) return;
+    if (cacheCedulas.has(cedula)) return;
+    const datos = await obtenerDatosCedula(cedula);
+    cacheCedulas.set(cedula, datos ?? null);
+    if (!datos) return;
+    setter((prev) => ({
+      ...prev,
+      nombre: prev.nombre.trim() ? prev.nombre : datos.nombre,
+      primerApellido: prev.primerApellido.trim()
+        ? prev.primerApellido
+        : datos.primerApellido,
+      segundoApellido: prev.segundoApellido.trim()
+        ? prev.segundoApellido
+        : datos.segundoApellido,
+    }));
+  };
+
+  // Autocompleta nombre y apellidos de un abuelo a partir de su cédula (usa cache).
+  const autocompletarAbueloPorCedula = async (idx: number, abuelo: PersonaForm & { parentesco: ParentescoAbuelo }) => {
+    const digitos = cedulaDigitosValidos(abuelo.cedula);
+    if (digitos.length !== 9) return;
+    if (abuelo.nombre.trim() && abuelo.primerApellido.trim()) return;
+    if (cacheCedulas.has(abuelo.cedula)) return;
+    const datos = await obtenerDatosCedula(abuelo.cedula);
+    cacheCedulas.set(abuelo.cedula, datos ?? null);
+    if (!datos) return;
+    setBautismo((prev) => ({
+      ...prev,
+      abuelos: prev.abuelos.map((a, i) =>
+        i === idx
+          ? {
+              ...a,
+              nombre: a.nombre.trim() ? a.nombre : datos.nombre,
+              primerApellido: a.primerApellido.trim() ? a.primerApellido : datos.primerApellido,
+              segundoApellido: a.segundoApellido.trim() ? a.segundoApellido : datos.segundoApellido,
+            }
+          : a,
+      ),
+    }));
+  };
+
   const agregarAbueloBautismo = () => {
     const usados = bautismo.abuelos.map((a) => a.parentesco);
     const disponible = PARENTESCOS.find((p) => !usados.includes(p));
@@ -536,7 +592,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
       <Label>{titulo}</Label>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <Input type="text" placeholder="Cédula (0-0000-0000)" maxLength={12} className={inputClass(Boolean(errors[`${prefijo}Cedula`]))} value={persona.cedula} onChange={(e) => setCampoPersona(setter, 'cedula', e.target.value)} />
+          <Input type="text" placeholder="Cédula (0-0000-0000)" maxLength={12} className={inputClass(Boolean(errors[`${prefijo}Cedula`]))} value={persona.cedula} onChange={(e) => setCampoPersona(setter, 'cedula', e.target.value)} onBlur={() => void autocompletarPorCedula(setter, persona.cedula, persona)} />
           <ErrorMsg errors={errors} clave={`${prefijo}Cedula`} />
         </div>
         <div>
@@ -591,7 +647,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
                 ))}
               </select>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} onChange={(e) => setAbueloBautismoCampo(idx, 'cedula', e.target.value)} />
+                <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} onChange={(e) => setAbueloBautismoCampo(idx, 'cedula', e.target.value)} onBlur={() => void autocompletarAbueloPorCedula(idx, ab)} />
                 <Input type="text" placeholder="Nombre" maxLength={30} value={ab.nombre} onChange={(e) => setAbueloBautismoCampo(idx, 'nombre', e.target.value)} />
                 <Input type="text" placeholder="Primer apellido" maxLength={30} value={ab.primerApellido} onChange={(e) => setAbueloBautismoCampo(idx, 'primerApellido', e.target.value)} />
                 <Input type="text" placeholder="Segundo apellido" maxLength={30} value={ab.segundoApellido} onChange={(e) => setAbueloBautismoCampo(idx, 'segundoApellido', e.target.value)} />
