@@ -1223,6 +1223,7 @@ const mensaje =
                 </p>
               </section>
 
+              <div className="grid items-stretch gap-4 md:grid-cols-2">
               <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
                 <EtiquetaSeccion>Comprobante de pago</EtiquetaSeccion>
                 {solicitudSeleccionada.comprobanteUrl ? (
@@ -1241,30 +1242,9 @@ const mensaje =
                 )}
               </section>
 
-              <div className="grid gap-4 rounded-[12px] border border-[#aa7323]/25 bg-[#aa7323]/[0.07] p-4 md:grid-cols-2">
-                <div className="flex flex-col gap-3">
-                  <EtiquetaSeccion>Estado actual</EtiquetaSeccion>
-                  <span
-                    className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold ${
-                      ESTADO_MODAL_STYLES[
-                        solicitudSeleccionada.Estado ?? "Pendiente"
-                      ].pill
-                    }`}
-                  >
-                    <span
-                      className={`size-1.5 rounded-full ${
-                        ESTADO_MODAL_STYLES[
-                          solicitudSeleccionada.Estado ?? "Pendiente"
-                        ].dot
-                      }`}
-                    />
-                    {solicitudSeleccionada.Estado ?? "Pendiente"}
-                  </span>
-                </div>
-
-                {isAdmin && (
-                  <div className="flex flex-col gap-3">
-                    <EtiquetaSeccion>Cambiar estado</EtiquetaSeccion>
+              {isAdmin && (
+              <div className="flex flex-col gap-3 rounded-[12px] border border-[#aa7323]/25 bg-[#aa7323]/[0.07] p-4">
+                  <EtiquetaSeccion>Cambiar estado</EtiquetaSeccion>
                     <div
                       className="relative"
                       ref={estadoMenuRef}
@@ -1350,7 +1330,7 @@ const mensaje =
                         </ul>
                       )}
                     </div>
-                  </div>
+              </div>
                 )}
               </div>
             </div>
