@@ -224,14 +224,6 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                   </h4>
                   <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
                     <Fila
-                      label="Persona:"
-                      valor={
-                        sacramental.comunion
-                          ? nombreCompleto((sacramental.comunion.detalle as { persona: PersonaDetalle }).persona)
-                          : ''
-                      }
-                    />
-                    <Fila
                       label="Parroquia:"
                       valor={sacramental.comunion?.parroquia.nombre}
                     />
@@ -257,14 +249,6 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                     {TIPO_SACRAMENTO_LABEL.confirmacion}
                   </h4>
                   <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
-                    <Fila
-                      label="Persona:"
-                      valor={
-                        sacramental.confirmacion
-                          ? nombreCompleto((sacramental.confirmacion.detalle as { persona: PersonaDetalle }).persona)
-                          : ''
-                      }
-                    />
                     <Fila
                       label="Parroquia:"
                       valor={sacramental.confirmacion?.parroquia.nombre}
@@ -338,7 +322,6 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                       {sacramental.bautismo?.observaciones?.trim() || '\u00A0'}
                     </p>
                   </div>
-                  <Fila label="Observaciones:" valor={sacramental.bautismo?.observaciones ?? ''} />
                 </div>
               </div>
             </div>
