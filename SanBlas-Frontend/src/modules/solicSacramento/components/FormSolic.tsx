@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
+import { useNavigate } from "@tanstack/react-router";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
 import { RecaptchaWidget } from "../../../shared/components/RecaptchaWidget";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
@@ -73,6 +74,7 @@ const fieldClass =
 
 const FormSolic = () => {
   const { mutateAsync, isPending } = useCreateSolicSacramento();
+  const navigate = useNavigate();
   const [enviado, setEnviado] = useState(false);
   const [confirmacionAbierta, setConfirmacionAbierta] = useState(true);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
@@ -343,7 +345,7 @@ const FormSolic = () => {
                 Requisitos para la solicitud
               </h3>
               <p className="m-0 mt-2 text-sm leading-relaxed text-gray-600">
-                Antes de completar el formulario, es necesario cumplir con los
+                Para completar el formulario es necesario cumplir con los
                 siguientes requisitos:
               </p>
             </div>
@@ -371,7 +373,7 @@ const FormSolic = () => {
                     Realizar el pago de ₡1000
                   </p>
                   <p className="m-0 mt-0.5 text-[0.84rem] leading-relaxed text-gray-600">
-                    El costo de la solicitud es de 1000 colones (mil colones).
+                    El costo de la solicitud es de 1000 colones al sinpe de la parroquia: 2685-3540.
                   </p>
                 </div>
               </li>
@@ -411,7 +413,14 @@ const FormSolic = () => {
                 onClick={() => setConfirmacionAbierta(false)}
                 className="min-h-11 px-5"
               >
-                Entendido, continuar
+                Continuar
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => navigate({ to: "/" })}
+                className="min-h-11 px-5"
+              >
+                Cancelar
               </Button>
             </div>
           </div>
