@@ -467,18 +467,18 @@ const TableSacramentos = () => {
       }),
       columnHelper.display({
         id: "motivo",
-        header: () => "Motivo",
+        header: () => "Acciones",
         cell: (info) => (
           <button
             type="button"
             onClick={() => setSolicitudSeleccionada(info.row.original)}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-lg border-0 bg-transparent px-2 py-1.5 text-[0.7rem] font-bold tracking-wider text-info uppercase transition-colors hover:bg-info-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            aria-label="Ver motivo"
+            className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-info transition-colors hover:bg-info-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
             <Eye
-              size={13}
+              size={17}
               strokeWidth={1.5}
             />
-            Ver motivo
           </button>
         ),
       }),
