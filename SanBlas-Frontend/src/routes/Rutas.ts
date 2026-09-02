@@ -8,7 +8,6 @@ const dashboardPath = {
   eventos: "eventos",
   gestionLanding: "landing",
   gestionUsuarios: "usuarios",
-  historialRechazos: "historial-rechazos",
 };
 
 const Rutas = {
@@ -35,7 +34,6 @@ const Rutas = {
     eventos: `${dashboardBase}/${dashboardPath.eventos}`,
     gestionLanding: `${dashboardBase}/${dashboardPath.gestionLanding}`,
     gestionUsuarios: `${dashboardBase}/${dashboardPath.gestionUsuarios}`,
-    historialRechazos: `${dashboardBase}/${dashboardPath.historialRechazos}`,
   },
 };
 

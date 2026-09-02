@@ -31,7 +31,8 @@ interface AdminRecordCardProps {
 }
 
 const actionVariantClasses = {
-  primary: "border-none bg-blue-600 text-white",
+  primary:
+    "border-none bg-royal-blue text-white transition-colors hover:bg-royal-blue-dark",
   ghost: "border border-slate-300 bg-surface text-slate-700",
   danger: "border border-red-200 bg-danger-bg text-danger",
 } as const;

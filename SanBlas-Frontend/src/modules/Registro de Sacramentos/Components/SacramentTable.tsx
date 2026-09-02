@@ -1,6 +1,8 @@
 import { Pencil, Trash2, ChevronLeft, ChevronRight, FileText, MapPin, Calendar, Eye } from 'lucide-react';
 import { AdminRecordCard } from '../../../shared/components/admin/AdminRecordCard';
 import {
+  AdminPagination,
+  AdminPaginationButton,
   AdminTable,
   AdminTableActions,
   AdminTableCell,
@@ -110,8 +112,7 @@ const SacramentTable = ({
   return (
     <div>
       <AdminTablePanel className="hidden md:block">
-        <div className="max-h-[60vh] overflow-auto">
-          <AdminTable className="min-w-[700px]">
+        <AdminTable className="min-w-[700px] [&_td]:py-2! [&_th]:py-2.5!">
             <AdminTableHead>
               <AdminTableRow>
                 <AdminTableHeaderCell>Nombre del fiel</AdminTableHeaderCell>
@@ -149,54 +150,6 @@ const SacramentTable = ({
               ))}
             </tbody>
           </AdminTable>
-        </div>
-
-        <AdminTableFooter>
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <span className="text-sm text-text-muted">
-              Mostrando {pageStart}-{pageEnd} de {total} registros
-            </span>
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="flex items-center gap-2 text-sm text-text-muted">
-                Registros por página
-                <select
-                  value={pageSize}
-                  onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                  className="min-h-9 rounded-lg border border-border-strong bg-surface px-2 text-sm text-text focus-visible:outline-none"
-                >
-                  {PAGE_SIZES.map((tam) => (
-                    <option key={tam} value={tam}>
-                      {tam}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => onPageChange(page - 1)}
-                  disabled={page <= 1}
-                  className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-border-strong bg-surface text-text transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label="Anterior"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <span className="px-2 text-sm text-text-muted">
-                  Página {page} de {totalPages}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onPageChange(page + 1)}
-                  disabled={page >= totalPages}
-                  className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-border-strong bg-surface text-text transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label="Siguiente"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </AdminTableFooter>
       </AdminTablePanel>
 
       <div className="flex flex-col gap-2.5 md:hidden">
@@ -242,30 +195,58 @@ const SacramentTable = ({
             ]}
           />
         ))}
-        {total > pageSize && (
-          <div className="flex items-center justify-between px-1 pt-1 text-sm text-text-muted">
-            <button
+      </div>
+
+      {sacramentos.length > 0 && (
+        <AdminTableFooter className="mt-2! pt-2!">
+          <span className="text-sm text-text-muted">
+            Mostrando{" "}
+            <strong className="text-text tabular-nums">
+              {pageStart}-{pageEnd}
+            </strong>{" "}
+            de <strong className="text-text tabular-nums">{total}</strong>{" "}
+            registros
+          </span>
+          <AdminPagination>
+            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+              Registros por página
+              <select
+                value={pageSize}
+                onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                aria-label="Cantidad de registros por página"
+              >
+                {PAGE_SIZES.map((tamano) => (
+                  <option key={tamano} value={tamano}>
+                    {tamano}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <AdminPaginationButton
               type="button"
               onClick={() => onPageChange(page - 1)}
               disabled={page <= 1}
-              className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border-strong bg-surface px-3 py-1.5 transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Página anterior"
             >
-              <ChevronLeft size={14} /> Anterior
-            </button>
-            <span>
-              Página {page} de {totalPages}
+              <ChevronLeft size={16} strokeWidth={2} />
+            </AdminPaginationButton>
+            <span className="text-sm whitespace-nowrap text-text-muted">
+              Página{" "}
+              <strong className="text-text tabular-nums">{page}</strong> de{" "}
+              <strong className="text-text tabular-nums">{totalPages}</strong>
             </span>
-            <button
+            <AdminPaginationButton
               type="button"
               onClick={() => onPageChange(page + 1)}
               disabled={page >= totalPages}
-              className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border-strong bg-surface px-3 py-1.5 transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Página siguiente"
             >
-              Siguiente <ChevronRight size={14} />
-            </button>
-          </div>
-        )}
-      </div>
+              <ChevronRight size={16} strokeWidth={2} />
+            </AdminPaginationButton>
+          </AdminPagination>
+        </AdminTableFooter>
+      )}
     </div>
   );
 };

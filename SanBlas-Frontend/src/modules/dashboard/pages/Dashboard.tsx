@@ -90,10 +90,6 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
     title: "Gestión de usuarios",
     subtitle: "Administre cuentas, roles y accesos del sistema.",
   },
-  [Rutas.dashboardUrl.historialRechazos]: {
-    title: "Historial de rechazos",
-    subtitle: "Consulte el registro de solicitudes rechazadas y sus justificaciones.",
-  },
 };
 
 const menuItemBaseClassName =
@@ -258,11 +254,11 @@ function Dashboard() {
       {/* Main content */}
       <main className="h-[calc(100vh-50px)] flex-1 overflow-y-auto p-4 sm:p-6 lg:h-screen lg:p-8">
         {pathname !== Rutas.dashboard && (
-          <header className="mb-4 rounded-[20px] border border-border bg-surface p-4 shadow-sm sm:p-6 lg:mb-6">
-            <p className="mb-1.5 text-[0.72rem] font-extrabold tracking-[0.14em] text-brand-gold uppercase">
+          <header className="mb-3 rounded-[20px] border border-border bg-surface p-4 shadow-sm sm:p-5 lg:mb-4">
+            <p className="mb-1 text-[0.72rem] leading-tight font-extrabold tracking-[0.14em] text-brand-gold uppercase">
               Administración
             </p>
-            <h1 className="mb-1.5 font-heading text-xl leading-tight text-brand-blue lg:text-3xl">
+            <h1 className="mb-1 font-heading text-lg leading-tight text-brand-blue lg:text-2xl">
               {pageInfo.title}
             </h1>
             <p className="max-w-3xl text-sm text-text-secondary">{pageInfo.subtitle}</p>

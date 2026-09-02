@@ -23,6 +23,9 @@ import {
   X,
   Archive,
   ArchiveRestore,
+  CalendarDays,
+  ExternalLink,
+  Image as ImageIcon,
 } from "lucide-react";
 import type { FormSacramento } from "../../types/formSacramento";
 import {
@@ -39,8 +42,6 @@ import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 import { ApiError } from "../../services/apiClient";
 import { toFriendlySolicitudesMessage } from "../../services/constancias/solicitudesQueryHandler";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "@tanstack/react-router";
-import Rutas from "../../routes/Rutas";
 import { AdminRecordCard } from "../../shared/components/admin/AdminRecordCard";
 import {
   AdminModule,
@@ -65,7 +66,8 @@ import {
 } from "../../shared/ui";
 
 const columnHelper = createColumnHelper<FormSacramento>();
-const PAGE_SIZE = 10;
+const PAGE_SIZES = [10, 25, 50] as const;
+const PAGE_SIZE_INICIAL = 10;
 
 const EtiquetaSeccion = ({ children }: { children: ReactNode }) => (
   <span className="m-0 flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] text-[#16243c] uppercase">
@@ -153,7 +155,7 @@ const REGEX_MOTIVO_VALIDO =
 const tieneCaracteresInvalidos = (texto: string) =>
   texto.length > 0 && !REGEX_MOTIVO_VALIDO.test(texto);
 
-const formatearTelefono = (valor: string) => {
+const formatearTelefono = (valor?: string | number) => {
   const digitos = soloDigitos(String(valor ?? "")).slice(0, 8);
   if (digitos.length <= 4) return digitos;
   return `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
@@ -192,12 +194,22 @@ const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   return "warning";
 };
 
+const esEstadoProcesado = (estado?: string) => {
+  const normalizado = normalizeText(estado);
+  return normalizado === "aprobado" || normalizado === "rechazado";
+};
+
 const ORDEN_ESTADO: Record<string, number> = {
   Pendiente: 0,
   Aprobado: 1,
   Rechazado: 2,
   Archivado: 3,
 };
+
+const VISTAS = [
+  { valor: "solicitudes", label: "Solicitudes", icono: null },
+  { valor: "archivados", label: "Archivadas", icono: ArchiveRestore },
+] as const;
 
 const STORAGE_KEY_ARCHIVADAS = "sanblas_sacramentos_archivadas";
 
@@ -233,7 +245,6 @@ const esArchivadaLocal = (
   );
 
 const TableSacramentos = () => {
-  const navigate = useNavigate();
   const [filtroNombre, setFiltroNombre] = useState("");
   const [filtroCedula, setFiltroCedula] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<
@@ -271,6 +282,9 @@ const TableSacramentos = () => {
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
   const [solicitudAAprobar, setSolicitudAAprobar] =
     useState<FormSacramento | null>(null);
+  const [solicitudAArchivar, setSolicitudAArchivar] =
+    useState<FormSacramento | null>(null);
+  const [isArchivarTodasOpen, setIsArchivarTodasOpen] = useState(false);
   const { toasts, showToast } = useToast();
   const [estadoMenuAbierto, setEstadoMenuAbierto] = useState(false);
   const estadoMenuRef = useRef<HTMLDivElement>(null);
@@ -313,6 +327,8 @@ const TableSacramentos = () => {
         !isApproveModalOpen &&
         !isRejectModalOpen &&
         !isConfirmRejectOpen &&
+        !solicitudAArchivar &&
+        !isArchivarTodasOpen &&
         !rechazoEnBlur &&
         !aprobacionEnBlur &&
         toasts.length === 0
@@ -343,9 +359,24 @@ const TableSacramentos = () => {
       document.body.style.overflow = prevBodyOverflow;
       if (main) main.style.overflow = prevMainOverflow;
     };
-  }, [solicitudSeleccionada, isApproveModalOpen, isRejectModalOpen, isConfirmRejectOpen, rechazoEnBlur, aprobacionEnBlur, toasts.length]);
+  }, [solicitudSeleccionada, isApproveModalOpen, isRejectModalOpen, isConfirmRejectOpen, solicitudAArchivar, isArchivarTodasOpen, rechazoEnBlur, aprobacionEnBlur, toasts.length]);
+
+  useEffect(() => {
+    if (!solicitudAArchivar && !isArchivarTodasOpen) return;
+
+    const handleEscapeArchivar = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setSolicitudAArchivar(null);
+      setIsArchivarTodasOpen(false);
+    };
+
+    document.addEventListener("keydown", handleEscapeArchivar);
+    return () =>
+      document.removeEventListener("keydown", handleEscapeArchivar);
+  }, [solicitudAArchivar, isArchivarTodasOpen]);
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE_INICIAL);
   const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
   const debouncedCedula = useDebouncedValue(filtroCedula.trim(), 500);
   const debouncedEstado = useDebouncedValue(filtroEstado, 300);
@@ -355,13 +386,17 @@ const TableSacramentos = () => {
       cedula: debouncedCedula || undefined,
       estado: debouncedEstado || undefined,
       page: currentPage,
+      pageSize,
     }),
-    [debouncedNombre, debouncedCedula, debouncedEstado, currentPage],
+    [debouncedNombre, debouncedCedula, debouncedEstado, currentPage, pageSize],
   );
   const filtersChanged = `${debouncedNombre}|${debouncedCedula}|${debouncedEstado}`;
   useEffect(() => {
     setCurrentPage(1);
   }, [filtersChanged]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [pageSize]);
   useEffect(() => {
     setCurrentPage(1);
   }, [vista]);
@@ -376,7 +411,7 @@ const TableSacramentos = () => {
 
   const rows: FormSacramento[] = data?.data ?? [];
   const totalItems = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const isInitialLoading = isPending && rows.length === 0;
   const isFiltering = isFetching && !isInitialLoading;
 
@@ -476,21 +511,28 @@ const TableSacramentos = () => {
     setRejectionReasonText(value);
   };
 
-  const handleArchivar = useCallback(
-    (solicitud: FormSacramento) => {
-      if (solicitud.id == null) return;
-      setArchivadasLocal((prev) => {
-        if (esArchivadaLocal(prev, solicitud)) return prev;
-        const next = [solicitud, ...prev];
-        guardarArchivadasLocal(next);
-        return next;
-      });
-      showToast("Solicitud archivada correctamente", "success");
-      setSolicitudSeleccionada(null);
-      setVista("archivados");
-    },
-    [showToast],
-  );
+  const handleSolicitarArchivar = useCallback((solicitud: FormSacramento) => {
+    if (solicitud.id == null) return;
+    setSolicitudAArchivar(solicitud);
+  }, []);
+
+  const handleCancelArchivar = useCallback(() => {
+    setSolicitudAArchivar(null);
+  }, []);
+
+  const handleConfirmArchivar = useCallback(() => {
+    if (!solicitudAArchivar) return;
+    setArchivadasLocal((prev) => {
+      if (esArchivadaLocal(prev, solicitudAArchivar)) return prev;
+      const next = [solicitudAArchivar, ...prev];
+      guardarArchivadasLocal(next);
+      return next;
+    });
+    setSolicitudAArchivar(null);
+    setSolicitudSeleccionada(null);
+    showToast("Solicitud archivada correctamente", "success");
+    setVista("archivados");
+  }, [solicitudAArchivar, showToast]);
 
   const handleRestaurar = useCallback(
     (solicitud: FormSacramento) => {
@@ -544,13 +586,71 @@ const TableSacramentos = () => {
     filtroCedula,
   ]);
 
+  const filasArchivables = useMemo(
+    () =>
+      vista === "solicitudes"
+        ? filasVista.filter(
+            (row) => row.id != null && esEstadoProcesado(row.Estado),
+          )
+        : [],
+    [filasVista, vista],
+  );
+
+  const handleCancelArchivarTodas = useCallback(() => {
+    setIsArchivarTodasOpen(false);
+  }, []);
+
+  const handleConfirmArchivarTodas = useCallback(() => {
+    if (filasArchivables.length === 0) {
+      setIsArchivarTodasOpen(false);
+      return;
+    }
+
+    setArchivadasLocal((prev) => {
+      const nuevas = filasArchivables.filter(
+        (row) => !esArchivadaLocal(prev, row),
+      );
+      if (nuevas.length === 0) return prev;
+      const next = [...nuevas, ...prev];
+      guardarArchivadasLocal(next);
+      return next;
+    });
+    setIsArchivarTodasOpen(false);
+    setSolicitudSeleccionada(null);
+    showToast(
+      filasArchivables.length === 1
+        ? "1 solicitud archivada correctamente"
+        : `${filasArchivables.length} solicitudes archivadas correctamente`,
+      "success",
+    );
+    setVista("archivados");
+  }, [filasArchivables, showToast]);
+
   const totalVista = vista === "archivados" ? filasVista.length : totalItems;
   const totalPagesVista =
     vista === "archivados"
-      ? Math.max(1, Math.ceil(filasVista.length / PAGE_SIZE))
+      ? Math.max(1, Math.ceil(filasVista.length / pageSize))
       : totalPages;
   const canPreviousPageVista = currentPage > 1;
   const canNextPageVista = currentPage < totalPagesVista;
+
+  // Las solicitudes ya llegan paginadas del servidor, pero las archivadas se
+  // resuelven en el cliente y hay que recortarlas acá
+  const filasPagina = useMemo(
+    () =>
+      vista === "archivados"
+        ? filasVista.slice(
+            (currentPage - 1) * pageSize,
+            currentPage * pageSize,
+          )
+        : filasVista,
+    [filasVista, vista, currentPage, pageSize],
+  );
+
+  const primerRegistroVista =
+    filasPagina.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const ultimoRegistroVista =
+    (currentPage - 1) * pageSize + filasPagina.length;
 
   const columns = useMemo(
     () => [
@@ -572,9 +672,9 @@ const TableSacramentos = () => {
         ),
       }),
       columnHelper.accessor("Fecha", {
-        header: () => "Fecha",
+        header: () => "Fecha de ingreso",
         cell: (info) => (
-          <span className="text-text-secondary">
+          <span className="tabular-nums text-text-secondary">
             {formatFechaHora(info.getValue())}
           </span>
         ),
@@ -585,10 +685,10 @@ const TableSacramentos = () => {
         cell: (info) => {
           const r = info.row.original;
           return (
-            <span className="flex flex-col gap-0.5 text-xs leading-snug text-text-secondary">
+            <span className="flex flex-col text-xs leading-snug text-text-secondary">
               <span>{r.Correo}</span>
               <span className="tabular-nums">
-                {r.Telefono?.toString() || "—"}
+                {formatearTelefono(r.Telefono) || "—"}
               </span>
             </span>
           );
@@ -634,7 +734,7 @@ const TableSacramentos = () => {
               ) : (
                 <button
                   type="button"
-                  onClick={() => handleArchivar(info.row.original)}
+                  onClick={() => handleSolicitarArchivar(info.row.original)}
                   aria-label="Archivar solicitud"
                   title="Archivar solicitud"
                   className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
@@ -650,11 +750,11 @@ const TableSacramentos = () => {
         },
       }),
     ],
-    [archivadasLocal, handleArchivar, handleRestaurar],
+    [archivadasLocal, handleSolicitarArchivar, handleRestaurar],
   );
 
   const table = useReactTable({
-    data: filasVista,
+    data: filasPagina,
     columns,
     autoResetPageIndex: true,
     getCoreRowModel: getCoreRowModel(),
@@ -666,7 +766,14 @@ const TableSacramentos = () => {
   ) => {
     if (id === undefined || id === null) return;
 
-    const solicitud = rows.find((r) => String(r.id) === String(id));
+    // La lista se recarga en segundo plano, así que la fila puede no estar en
+    // la página vigente; en ese caso vale la que ya se abrió en el detalle
+    const solicitud =
+      rows.find((r) => String(r.id) === String(id)) ??
+      (solicitudSeleccionada &&
+      String(solicitudSeleccionada.id) === String(id)
+        ? solicitudSeleccionada
+        : undefined);
     const estadoActual = solicitud?.Estado ?? "Pendiente";
 
     // Los estados "Aprobado" y "Rechazado" son permanentes e irreversibles
@@ -684,7 +791,6 @@ const TableSacramentos = () => {
     }
 
     if (nextEstado === "Aprobado") {
-      const solicitud = rows.find((r) => String(r.id) === String(id));
       if (solicitud) {
         setAprobacionEnBlur(false);
         setIsApproveModalOpen(true);
@@ -810,54 +916,71 @@ const mensaje =
   }
 
   return (
-    <AdminModule className="p-2">
-      <AdminToolbar>
+    <AdminModule className="gap-3!">
+      <AdminToolbar className="p-3!">
         <div className="flex flex-wrap items-center gap-2">
           <div
             className="flex items-center gap-0.5 rounded-lg border border-border-strong bg-surface p-0.5"
             role="group"
             aria-label="Cambiar vista de solicitudes"
           >
-            <button
-              type="button"
-              onClick={() => setVista("solicitudes")}
-              aria-pressed={vista === "solicitudes"}
-              className={cn(
-                "cursor-pointer rounded-md px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-                vista === "solicitudes"
-                  ? "bg-royal-blue text-white"
-                  : "text-text-muted hover:bg-surface-muted hover:text-text",
-              )}
-            >
-              Solicitudes
-            </button>
-            <button
-              type="button"
-              onClick={() => setVista("archivados")}
-              aria-pressed={vista === "archivados"}
-              className={cn(
-                "inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-                vista === "archivados"
-                  ? "bg-royal-blue text-white"
-                  : "text-text-muted hover:bg-surface-muted hover:text-text",
-              )}
-            >
-              <ArchiveRestore
-                size={14}
-                strokeWidth={2}
-              />
-              Archivadas
-            </button>
+            {VISTAS.map(({ valor, label, icono: Icono }) => {
+              const activo = vista === valor;
+              return (
+                <button
+                  key={valor}
+                  type="button"
+                  onClick={() => setVista(valor)}
+                  aria-pressed={activo}
+                  className={cn(
+                    "relative inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                    activo ? "text-white" : "text-text-muted hover:text-text",
+                  )}
+                >
+                  {activo && (
+                    <motion.span
+                      layoutId="vistaSolicitudesActiva"
+                      className="absolute inset-0 rounded-md bg-royal-blue"
+                      transition={{
+                        type: "spring",
+                        stiffness: 420,
+                        damping: 34,
+                        mass: 0.7,
+                      }}
+                      aria-hidden="true"
+                    />
+                  )}
+                  {Icono && (
+                    <Icono
+                      size={14}
+                      strokeWidth={2}
+                      className="relative z-10"
+                    />
+                  )}
+                  <span className="relative z-10">{label}</span>
+                </button>
+              );
+            })}
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() =>
-              navigate({ to: Rutas.dashboardUrl.historialRechazos })
-            }
-          >
-            Ver historial de rechazos
-          </Button>
+          {vista === "solicitudes" && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsArchivarTodasOpen(true)}
+              disabled={filasArchivables.length === 0}
+              title={
+                filasArchivables.length === 0
+                  ? "No hay solicitudes aprobadas o rechazadas para archivar"
+                  : "Archivar las solicitudes aprobadas y rechazadas de la lista"
+              }
+            >
+              <Archive
+                size={15}
+                strokeWidth={1.8}
+              />
+              Archivar procesadas
+            </Button>
+          )}
           <input
             type="text"
             value={filtroNombre}
@@ -867,22 +990,22 @@ const mensaje =
               )
             }
             placeholder="Nombre completo"
-            className="min-h-11 w-full rounded-xl border border-border-strong bg-surface-muted py-2.5 pr-3.5 pl-2 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none min-w-[200px] flex-1"
+            className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
             aria-label="Filtrar por nombre completo"
-            style={{ width: "200px" }}
           />
           <input
             type="text"
             inputMode="numeric"
-            value={filtroCedula || ""}
-            onChange={(e) => setFiltroCedula(e.target.value.replace(/\D/g, ""))}
+            value={formatearCedula(filtroCedula)}
+            onChange={(e) =>
+              setFiltroCedula(soloDigitos(e.target.value).slice(0, 9))
+            }
             placeholder="Cédula"
-            className="min-h-11 w-full rounded-xl border border-border-strong bg-surface-muted py-2.5 pr-3.5 pl-2 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none min-w-[200px] flex-1"
+            className="min-h-11 w-[150px] shrink-0 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm tabular-nums text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
             aria-label="Filtrar por cédula"
-            style={{ width: "120px" }}
           />
           <div
-            className="relative"
+            className="relative shrink-0"
             ref={filtroEstadoMenuRef}
           >
             <button
@@ -890,11 +1013,15 @@ const mensaje =
               aria-haspopup="listbox"
               aria-expanded={filtroEstadoMenuAbierto}
               onClick={() => setFiltroEstadoMenuAbierto((prev) => !prev)}
-              className="flex w-[150px] cursor-pointer items-center justify-between gap-2 rounded border border-slate-300 bg-surface px-2 py-1 text-sm text-slate-800 transition-colors hover:bg-surface-muted"
+              className={`flex min-h-11 w-[150px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none ${
+                filtroEstadoMenuAbierto
+                  ? "border-blue-400 bg-surface"
+                  : "border-border-strong"
+              }`}
             >
               <span>{filtroEstado || "Todos"}</span>
               <ChevronDown
-                size={14}
+                size={16}
                 strokeWidth={2.5}
                 className={`transition-transform duration-200 ${
                   filtroEstadoMenuAbierto ? "rotate-180" : ""
@@ -978,14 +1105,14 @@ const mensaje =
         <>
           <div className="hidden md:block">
             <AdminTablePanel>
-              <AdminTable className="table-fixed">
+              <AdminTable className="table-fixed [&_td]:py-2! [&_th]:py-2.5!">
                 <colgroup>
-                  <col className="w-[22%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[14%]" />
                   <col className="w-[15%]" />
+                  <col className="w-[23%]" />
                   <col className="w-[13%]" />
-                  <col className="w-[24%]" />
-                  <col className="w-[13%]" />
-                  <col className="w-[13%]" />
+                  <col className="w-[15%]" />
                 </colgroup>
                 <AdminTableHead>
                   {table.getHeaderGroups().map((hg) => (
@@ -1042,8 +1169,7 @@ const mensaje =
               <AdminRecordCard
                 key={String(row.id)}
                 icon={<ScrollText size={20} />}
-                accent="#1d4ed8"
-                code={`SOL-${row.id}`}
+                accent="#003366"
                 title={nombreCompleto(row)}
                 badges={renderEstadoBadge(
                   vista === "archivados" ? "Archivado" : row.Estado,
@@ -1052,12 +1178,17 @@ const mensaje =
                   {
                     icon: <IdCard size={12} />,
                     label: "Cédula",
-                    value: String(row.Cedula ?? "—"),
+                    value: formatearCedula(String(row.Cedula ?? "")) || "—",
                   },
                   {
                     icon: <Phone size={12} />,
                     label: "Teléfono",
-                    value: row.Telefono?.toString() || "No provisto",
+                    value: formatearTelefono(row.Telefono) || "No provisto",
+                  },
+                  {
+                    icon: <CalendarDays size={12} />,
+                    label: "Fecha de ingreso",
+                    value: formatFechaHora(row.Fecha),
                   },
                 ]}
                 actions={[
@@ -1081,7 +1212,7 @@ const mensaje =
                           label: "Archivar",
                           icon: <Archive size={15} />,
                           variant: "ghost" as const,
-                          onClick: () => handleArchivar(row),
+                          onClick: () => handleSolicitarArchivar(row),
                         },
                       ]),
                 ]}
@@ -1141,14 +1272,14 @@ const mensaje =
             }}
           >
             <div
-              className="relative z-10 flex w-full flex-col rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
+              className="relative z-10 flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
             style={{ fontFamily: "'Geist', sans-serif" }}
             role="dialog"
             aria-modal="true"
             aria-label="Datos de la solicitud"
             onClick={(event) => event.stopPropagation()}
           >
-            <header className="flex items-center justify-between gap-4 rounded-t-[16px] bg-[#f1f5fa] px-6 py-4">
+            <header className="flex shrink-0 items-center justify-between gap-4 rounded-t-[16px] bg-[#f1f5fa] px-6 py-4">
               <div className="min-w-0">
                 <p className="m-0 text-[11px] font-semibold tracking-[0.22em] text-[#aa7323] uppercase">
                   Solicitud
@@ -1172,7 +1303,7 @@ const mensaje =
 
             <div
               ref={modalBodyRef}
-              className="flex flex-col gap-4 p-6"
+              className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6"
             >
               <div className="grid items-stretch gap-4 md:grid-cols-2">
                 <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
@@ -1180,6 +1311,21 @@ const mensaje =
                   <p className="m-0 text-sm font-semibold text-[#16243c]">
                     {nombreCompleto(solicitudSeleccionada)}
                   </p>
+                  <div className="h-px w-full bg-[#16243c]/10" />
+                  <div className="flex items-start gap-2">
+                    <CalendarDays
+                      size={16}
+                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                    />
+                    <div className="min-w-0">
+                      <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
+                        Fecha de ingreso
+                      </p>
+                      <p className="m-0 mt-1 text-sm font-semibold tabular-nums text-[#16243c]">
+                        {formatFechaHora(solicitudSeleccionada.Fecha)}
+                      </p>
+                    </div>
+                  </div>
                 </section>
 
                 <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
@@ -1231,9 +1377,19 @@ const mensaje =
                     href={solicitudSeleccionada.comprobanteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#aa7323]/30 px-4 py-2 text-sm font-semibold text-[#aa7323] transition-colors duration-100 ease-out hover:bg-[#aa7323]/10 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                    className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-xl bg-royal-blue px-4 py-2.5 text-sm font-bold text-white no-underline transition-colors duration-150 ease-out hover:bg-royal-blue-dark focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:ring-focus-ring focus-visible:outline-none"
                   >
+                    <ImageIcon
+                      size={16}
+                      strokeWidth={2}
+                      className="shrink-0"
+                    />
                     Abrir imagen del comprobante
+                    <ExternalLink
+                      size={14}
+                      strokeWidth={2}
+                      className="shrink-0 opacity-70"
+                    />
                   </a>
                 ) : (
                   <p className="m-0 text-sm text-[#16243c]/70">
@@ -1563,12 +1719,117 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
         </Modal>
       )}
 
+      {solicitudAArchivar && (
+        <Modal
+          onClose={handleCancelArchivar}
+          title="Confirmar archivado"
+          sinFondo
+        >
+          <div className="flex min-h-44 flex-col">
+            <LineaDoradaTitulo
+              parteSubrayada="Archivar solicitud sac"
+              resto="ramental"
+            />
+            <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
+              <p className="text-sm leading-relaxed text-text-secondary">
+                ¿Estás seguro/a que quieres archivar la solicitud de{" "}
+                <strong className="font-semibold text-text">
+                  {nombreCompleto(solicitudAArchivar)}
+                </strong>
+                ? Podrás restaurarla desde la vista de archivadas.
+              </p>
+            </div>
+            <div className="flex shrink-0 justify-end gap-2">
+              <Button
+                variant="royal"
+                className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                onClick={handleConfirmArchivar}
+              >
+                Archivar
+              </Button>
+              <Button
+                variant="secondary"
+                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                onClick={handleCancelArchivar}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {isArchivarTodasOpen && (
+        <Modal
+          onClose={handleCancelArchivarTodas}
+          title="Confirmar archivado masivo"
+          sinFondo
+        >
+          <div className="flex min-h-44 flex-col">
+            <LineaDoradaTitulo
+              parteSubrayada="Archivar solicitudes proc"
+              resto="esadas"
+            />
+            <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
+              <p className="text-sm leading-relaxed text-text-secondary">
+                Se archivarán las{" "}
+                <strong className="font-semibold text-text">
+                  {filasArchivables.length}
+                </strong>{" "}
+                solicitudes aprobadas o rechazadas de la lista. Las pendientes
+                no se archivarán y podrás restaurar las archivadas cuando
+                quieras.
+              </p>
+            </div>
+            <div className="flex shrink-0 justify-end gap-2">
+              <Button
+                variant="royal"
+                className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                onClick={handleConfirmArchivarTodas}
+              >
+                Archivar
+              </Button>
+              <Button
+                variant="secondary"
+                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                onClick={handleCancelArchivarTodas}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {!isInitialLoading && table.getRowModel().rows.length > 0 && (
-        <AdminTableFooter>
+        <AdminTableFooter className="mt-2! pt-2!">
           <span className="text-sm text-text-muted">
-            <strong className="text-text">{totalVista}</strong> registros
+            Mostrando{" "}
+            <strong className="text-text tabular-nums">
+              {primerRegistroVista}-{ultimoRegistroVista}
+            </strong>{" "}
+            de <strong className="text-text tabular-nums">{totalVista}</strong>{" "}
+            registros
           </span>
           <AdminPagination>
+            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+              Registros por página
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                aria-label="Cantidad de registros por página"
+              >
+                {PAGE_SIZES.map((tamano) => (
+                  <option
+                    key={tamano}
+                    value={tamano}
+                  >
+                    {tamano}
+                  </option>
+                ))}
+              </select>
+            </label>
             <AdminPaginationButton
               type="button"
               onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
@@ -1580,9 +1841,13 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                 strokeWidth={2}
               />
             </AdminPaginationButton>
-            <span className="text-sm text-text-muted">
-              <strong className="text-text">{currentPage}</strong> de{" "}
-              <strong className="text-text">{totalPagesVista}</strong>
+            <span className="text-sm whitespace-nowrap text-text-muted">
+              Página{" "}
+              <strong className="text-text tabular-nums">{currentPage}</strong>{" "}
+              de{" "}
+              <strong className="text-text tabular-nums">
+                {totalPagesVista}
+              </strong>
             </span>
             <AdminPaginationButton
               type="button"

@@ -96,7 +96,7 @@ export function AdminRecordDetailSheet({
               {primaryAction && (
                 <button
                   type="button"
-                  className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-[10px] border-none bg-blue-600 px-3 py-2 text-[0.85rem] font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                  className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-[10px] border-none bg-royal-blue px-3 py-2 text-[0.85rem] font-bold text-white transition-colors hover:bg-royal-blue-dark focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                   onClick={primaryAction.onClick}
                 >
                   {primaryAction.icon}

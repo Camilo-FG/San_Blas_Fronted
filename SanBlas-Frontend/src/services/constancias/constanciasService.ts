@@ -20,17 +20,6 @@ import {
   toFriendlySolicitudesMessage,
 } from "./solicitudesQueryHandler";
 
-export interface HistorialRechazo {
-  id: number;
-  solicitud_id: number;
-  usuario_id: number;
-  motivo: string;
-  detalle: string | null;
-  creado_en: string;
-  nombre_solicitante: string | null;
-  nombre_usuario_rechazo: string | null;
-}
-
 const BASE = "/solic-sacramento";
 
 export interface SolicitudesSacramentosFilters {
@@ -38,6 +27,7 @@ export interface SolicitudesSacramentosFilters {
   cedula?: string;
   estado?: string;
   page?: number;
+  pageSize?: number;
 }
 
 export const obtenerSolicitudesSacramentos = async (
@@ -58,6 +48,9 @@ export const obtenerSolicitudesSacramentos = async (
       params.append("estado", filters.estado);
     }
     params.append("page", String(filters.page ?? 1));
+    if (filters.pageSize) {
+      params.append("pageSize", String(filters.pageSize));
+    }
     const queryString = params.toString() ? `?${params.toString()}` : "";
     const { data } = await apiClient.get<SolicitudesSacramentosResponseBackend>(
       `${BASE}${queryString}`,
@@ -163,6 +156,8 @@ export const rechazarSolicitudSacramento = async (
     const { data } = await apiClient.patch<FormSacraBackend>(
       `${BASE}/${id}/rechazar`,
       { motivoRechazo, detalleRechazo },
+      // Evita que el botón quede esperando si el servidor no responde
+      { timeout: 15000 },
     );
     return mapBackendToFormSacramento(data);
   } catch (error) {
@@ -173,16 +168,3 @@ export const rechazarSolicitudSacramento = async (
 // Alias para compatibilidad con imports existentes
 export const getSolicitudes = obtenerSolicitudesSacramentos;
 export const CreateSolicSacramento = crearSolicitudSacramento;
-
-export const obtenerHistorialRechazos = async (): Promise<
-  HistorialRechazo[]
-> => {
-  try {
-    const { data } = await apiClient.get<HistorialRechazo[]>(
-      `${BASE}/historial-rechazos`,
-    );
-    return data;
-  } catch (error) {
-    handleApiError(error);
-  }
-};

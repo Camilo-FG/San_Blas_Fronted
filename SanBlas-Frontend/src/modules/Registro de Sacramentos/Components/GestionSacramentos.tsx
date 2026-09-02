@@ -109,14 +109,14 @@ const GestionSacramentos = () => {
     !query.isPending && !query.error && (query.data?.items.length ?? 0) === 0 && hayBusquedaActiva;
 
   return (
-    <AdminModule className="w-full py-5">
-      <div className="mb-6">
-        <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue">
+    <AdminModule className="w-full gap-3!">
+      <div>
+        <h2 className="m-0 font-heading text-lg font-extrabold text-royal-blue">
           CONSULTA DE REGISTROS SACRAMENTALES
         </h2>
       </div>
 
-      <div className="mb-6 flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-4 shadow-sm">
+      <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm">
         <AdminSearch
           type="text"
           placeholder="Cédula (0-0000-0000)"

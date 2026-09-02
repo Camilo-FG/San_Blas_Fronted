@@ -8,9 +8,14 @@ import {
 
 export { clearAuthToken, getAuthToken, setAuthToken } from "../utils/authToken";
 
+// Sin un límite global, una petición sin respuesta deja la interfaz esperando
+// de forma indefinida en lugar de mostrar un error
+const TIEMPO_MAXIMO_PETICION_MS = 30_000;
+
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { ...DEFAULT_HEADERS },
+  timeout: TIEMPO_MAXIMO_PETICION_MS,
 });
 
 apiClient.interceptors.request.use(
@@ -28,6 +33,11 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// Las consultas se repiten en segundo plano, así que una sesión vencida puede
+// generar varios 401 seguidos. Sin este control, cada uno relanzaría la
+// navegación y dejaría la pestaña bloqueada.
+let redirigiendoAlLogin = false;
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -38,7 +48,8 @@ apiClient.interceptors.response.use(
       if (!isLoginRequest) {
         clearAuthToken();
         const currentPath = window.location.pathname;
-        if (!currentPath.startsWith("/login")) {
+        if (!currentPath.startsWith("/login") && !redirigiendoAlLogin) {
+          redirigiendoAlLogin = true;
           const redirect = encodeURIComponent(currentPath);
           window.location.assign(`/login?redirect=${redirect}`);
         }
