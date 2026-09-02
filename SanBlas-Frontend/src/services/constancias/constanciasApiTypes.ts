@@ -13,6 +13,7 @@ export interface FormSacraBackend {
   Motivo: string;
   Estado?: string | null;
   comprobanteUrl?: string | null;
+  FechaSolicitud?: string | null;
   Nombre?: string;
   TipoSacramento?: string;
 }

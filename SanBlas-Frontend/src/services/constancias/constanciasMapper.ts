@@ -70,7 +70,7 @@ export const mapBackendToFormSacramento = (
   Correo: solicitud.Correo,
   Telefono: solicitud.Telefono,
   TipoSacramento: mapTipoSacramentoToFrontend(solicitud.TipoSacramento),
-  Motivo: solicitud.Motivo,
+Motivo: solicitud.Motivo,
   Estado: solicitud.Estado ?? "pendiente",
-  comprobanteUrl: solicitud.comprobanteUrl ?? undefined,
+  Fecha: solicitud.FechaSolicitud,
 });

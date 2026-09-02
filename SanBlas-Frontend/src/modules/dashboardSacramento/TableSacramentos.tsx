@@ -160,6 +160,16 @@ const toFechaTime = (fecha?: string) => {
   return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
 };
 
+const formatFechaHora = (fecha?: string | null) => {
+  if (!fecha) return "—";
+  const date = new Date(fecha);
+  if (Number.isNaN(date.getTime())) return "—";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   const normalized = (estado ?? "Pendiente").toLowerCase();
   if (normalized === "aprobado") return "success";
@@ -432,7 +442,9 @@ const TableSacramentos = () => {
       columnHelper.accessor("Fecha", {
         header: () => "Fecha",
         cell: (info) => (
-          <span className="text-text-secondary">{info.getValue() || "—"}</span>
+          <span className="text-text-secondary">
+            {formatFechaHora(info.getValue())}
+          </span>
         ),
       }),
       columnHelper.display({
