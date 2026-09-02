@@ -13,6 +13,7 @@ import {
   Loader2,
   Mail,
   X,
+  Archive,
 } from "lucide-react";
 import type { FormSacramento } from "../../types/formSacramento";
 import {
@@ -469,17 +470,30 @@ const TableSacramentos = () => {
         id: "motivo",
         header: () => "Acciones",
         cell: (info) => (
-          <button
-            type="button"
-            onClick={() => setSolicitudSeleccionada(info.row.original)}
-            aria-label="Ver motivo"
-            className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-info transition-colors hover:bg-info-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-          >
-            <Eye
-              size={17}
-              strokeWidth={1.5}
-            />
-          </button>
+          <span className="inline-flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => setSolicitudSeleccionada(info.row.original)}
+              aria-label="Ver motivo"
+              className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            >
+              <Eye
+                size={17}
+                strokeWidth={1.5}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={() => setSolicitudSeleccionada(info.row.original)}
+              aria-label="Archivar solicitud"
+              className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            >
+              <Archive
+                size={17}
+                strokeWidth={1.5}
+              />
+            </button>
+          </span>
         ),
       }),
     ],
