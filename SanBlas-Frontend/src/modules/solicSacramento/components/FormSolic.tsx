@@ -6,7 +6,7 @@ import { RecaptchaWidget } from "../../../shared/components/RecaptchaWidget";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 import { ApiError } from "../../../services/apiClient";
 import { obtenerDatosCedula, type DatosCedula } from "../../../services/cedulaService";
-import { Button, Input, Label, Modal, Textarea } from "../../../shared/ui";
+import { Button, Input, Label, Modal, Select, Textarea } from "../../../shared/ui";
 import { SubidaImagen, type ArchivoImagen } from "./SubidaImagen";
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
@@ -42,10 +42,14 @@ const validarPrimerApellido = (valor: string) =>
 const validarSegundoApellido = (valor: string) =>
   requerido(valor, "El segundo apellido es obligatorio.");
 
-const validarCedula = (valor: string) => {
+const validarCedula = (valor: string, tipo: "nacional" | "extranjera") => {
   const cedula = soloDigitos(valor);
   if (!cedula) return "La cédula es obligatoria.";
-  if (cedula.length !== 9) return "La cédula debe tener 9 dígitos.";
+  if (tipo === "nacional") {
+    if (cedula.length !== 9) return "La cédula debe tener 9 dígitos.";
+  } else {
+    if (cedula.length !== 12) return "La cédula debe tener 12 dígitos.";
+  }
   return undefined;
 };
 
@@ -89,6 +93,9 @@ const FormSolic = () => {
   const [intentoEnvio, setIntentoEnvio] = useState(false);
   const [archivoImagen, setArchivoImagen] = useState<ArchivoImagen | null>(null);
   const [errorComprobante, setErrorComprobante] = useState<string | null>(null);
+  const [tipoCedula, setTipoCedula] = useState<"nacional" | "extranjera">(
+    "nacional",
+  );
   const cedulaValidadaRef = useRef<string | null>(null);
   const exitoRef = useRef<HTMLDivElement | null>(null);
 
@@ -189,16 +196,24 @@ const FormSolic = () => {
     if (validarPrimerApellido(valores.PrimerApellido)) return "PrimerApellido";
     if (validarSegundoApellido(valores.SegundoApellido))
       return "SegundoApellido";
-    if (validarCedula(valores.Cedula)) return "Cedula";
+    if (validarCedula(valores.Cedula, tipoCedula)) return "Cedula";
     if (validarCorreo(valores.Correo)) return "Correo";
     if (validarTelefono(valores.Telefono)) return "Telefono";
     if (validarMotivo(valores.Motivo)) return "Motivo";
     return null;
   };
 
-  // Trigger cédula validation when 9 digits are entered
+  // Trigger cédula validation when 9 digits are entered (nacional only)
   useEffect(() => {
     const digitos = soloDigitos(valores.Cedula);
+    if (tipoCedula !== "nacional") {
+      setVerificandoCedula(false);
+      setCedulaValida(false);
+      setDatosCedulaValidada(null);
+      setErrorCedula(null);
+      cedulaValidadaRef.current = null;
+      return;
+    }
     if (digitos.length === 9) {
       const validar = async () => {
         setVerificandoCedula(true);
@@ -260,7 +275,7 @@ const FormSolic = () => {
       form.setFieldValue("PrimerApellido", "");
       form.setFieldValue("SegundoApellido", "");
     }
-  }, [valores.Cedula, form]);
+  }, [valores.Cedula, tipoCedula, form]);
 
   const manejarEnvio = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -277,8 +292,8 @@ const FormSolic = () => {
       return;
     }
 
-    // Check if cedula was already validated before submitting
-    if (!cedulaValida) {
+    // Check if cedula was already validated before submitting (nacional only)
+    if (tipoCedula === "nacional" && !cedulaValida) {
       if (!errorCedula) {
         setErrorCedula("La cédula no ha sido validada. Complete la cédula y espere la validación.");
       }
@@ -321,6 +336,7 @@ const FormSolic = () => {
     setIntentoEnvio(false);
     cedulaValidadaRef.current = null;
     resetCaptcha();
+    setTipoCedula("nacional");
     setEnviado(false);
   };
 
@@ -483,11 +499,38 @@ const FormSolic = () => {
             className="grid w-full min-w-0 grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4"
             onSubmit={manejarEnvio}
           >
+            <div className="col-span-1 flex w-full min-w-0 flex-col gap-2 sm:col-span-2">
+              <Label
+                htmlFor="tipo-cedula"
+                required
+                className="text-sm font-bold text-royal-blue"
+              >
+                Tipo de cédula
+              </Label>
+              <Select
+                id="tipo-cedula"
+                value={tipoCedula}
+                onChange={(e) => {
+                  const tipo = e.target.value as "nacional" | "extranjera";
+                  setTipoCedula(tipo);
+                  form.setFieldValue("Cedula", "");
+                  cedulaValidadaRef.current = null;
+                  setCedulaValida(false);
+                  setDatosCedulaValidada(null);
+                  setErrorCedula(null);
+                  setVerificandoCedula(false);
+                }}
+              >
+                <option value="nacional">Nacional</option>
+                <option value="extranjera">Extranjero</option>
+              </Select>
+            </div>
+
             <div className="flex w-full min-w-0 flex-col gap-2">
               <form.Field
                 name="Cedula"
                 validators={{
-                  onChange: ({ value }) => validarCedula(value),
+                  onChange: ({ value }) => validarCedula(value, tipoCedula),
                 }}
               >
                 {(field) => (
@@ -505,10 +548,17 @@ const FormSolic = () => {
                       name={field.name}
                       type="text"
                       inputMode="numeric"
-                      placeholder="Ej: 1-2345-6789"
+                      placeholder={
+                        tipoCedula === "nacional"
+                          ? "Ej: 1-2345-6789"
+                          : "Ej: N123456789012"
+                      }
                       value={field.state.value}
                       onChange={(e) => {
-                        const formatted = formatearCedula(e.target.value);
+                        const formatted =
+                          tipoCedula === "nacional"
+                            ? formatearCedula(e.target.value)
+                            : soloDigitos(e.target.value).slice(0, 12);
                         field.handleChange(formatted);
 
                         // Detect post-validation modification
