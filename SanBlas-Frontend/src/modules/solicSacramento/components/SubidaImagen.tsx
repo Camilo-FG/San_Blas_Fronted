@@ -81,9 +81,14 @@ export const SubidaImagen = ({
       className="col-span-1 flex w-full min-w-0 flex-col gap-2 sm:col-span-2"
     >
       {required && (
-        <Label className="text-sm font-bold text-royal-blue" required>
-          Comprobante de pago
-        </Label>
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <Label className="text-sm font-bold text-royal-blue" required>
+            Comprobante de pago
+          </Label>
+          <span className="text-xs text-gray-500">
+            sinpe de la parroquia: 2685-3540
+          </span>
+        </div>
       )}
       <input
         ref={inputRef}
