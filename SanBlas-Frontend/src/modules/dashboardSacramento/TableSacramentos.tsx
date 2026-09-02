@@ -345,17 +345,8 @@ const TableSacramentos = () => {
     document.body.style.overflow = "hidden";
     if (main) main.style.overflow = "hidden";
 
-    const backdrop = modalBackdropRef.current;
-    const bloquearRueda = (event: WheelEvent) => {
-      if (!modalBodyRef.current?.contains(event.target as Node)) {
-        event.preventDefault();
-      }
-    };
-    backdrop?.addEventListener("wheel", bloquearRueda, { passive: false });
-
     return () => {
       document.removeEventListener("keydown", handleEscape);
-      backdrop?.removeEventListener("wheel", bloquearRueda);
       document.body.style.overflow = prevBodyOverflow;
       if (main) main.style.overflow = prevMainOverflow;
     };
@@ -471,14 +462,13 @@ const TableSacramentos = () => {
   };
 
   const handleOpenConfirmReject = () => {
-    const motivo =
-      rejectionReasonSelect.trim() || rejectionReasonText.trim();
+    const motivo = rejectionReasonSelect.trim();
     if (!motivo || tieneCaracteresInvalidos(rejectionReasonText)) return;
     setIsConfirmRejectOpen(true);
   };
 
   const handleRejectSubmit = async () => {
-    const motivo = rejectionReasonSelect.trim() || rejectionReasonText.trim();
+    const motivo = rejectionReasonSelect.trim();
     if (!solicitudARechazar || solicitudARechazar.id == null || !motivo) return;
 
     try {
@@ -1260,7 +1250,7 @@ const mensaje =
       {solicitudSeleccionada && (
         <div
           ref={modalBackdropRef}
-          className="fixed inset-0 z-[1300] flex items-end justify-center md:items-center md:p-4"
+          className="fixed inset-0 z-[1300] overflow-y-auto"
           role="presentation"
           onClick={() => setSolicitudSeleccionada(null)}
         >
@@ -1271,8 +1261,9 @@ const mensaje =
               allowOutsideClick: () => true,
             }}
           >
+            <div className="flex min-h-full items-end justify-center md:items-center md:p-4">
             <div
-              className="relative z-10 flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
+              className="relative z-10 w-full rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
             style={{ fontFamily: "'Geist', sans-serif" }}
             role="dialog"
             aria-modal="true"
@@ -1303,7 +1294,7 @@ const mensaje =
 
             <div
               ref={modalBodyRef}
-              className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6"
+              className="flex flex-col gap-4 p-6"
             >
               <div className="grid items-stretch gap-4 md:grid-cols-2">
                 <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
@@ -1490,7 +1481,8 @@ const mensaje =
                 )}
               </div>
             </div>
-          </div>
+            </div>
+            </div>
           </FocusTrap>
         </div>
       )}
@@ -1556,8 +1548,8 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
             <div className="flex min-h-44 flex-col gap-4">
               <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
               <p className="text-sm text-text-secondary">
-                Seleccione el motivo de rechazo en la lista o bien, especifique el
-                motivo en el campo de texto.
+                Seleccione el motivo de rechazo en la lista. El campo de texto es
+                opcional para agregar un detalle.
               </p>
               <div className="relative" ref={motivoMenuRef}>
                 <button
@@ -1571,7 +1563,13 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                       : "border-border-strong"
                   }`}
                 >
-                  <span className={rejectionReasonSelect ? "" : "text-slate-400"}>
+                  <span
+                    className={
+                      rejectionReasonSelect
+                        ? "font-semibold text-[#16243c]"
+                        : "font-medium text-slate-700"
+                    }
+                  >
                     {rejectionReasonSelect || "Seleccione un motivo"}
                   </span>
                   <ChevronDown
@@ -1651,8 +1649,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                   className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
                   onClick={handleOpenConfirmReject}
                   disabled={
-                    (!rejectionReasonSelect.trim() &&
-                      !rejectionReasonText.trim()) ||
+                    !rejectionReasonSelect.trim() ||
                     tieneCaracteresInvalidos(rejectionReasonText)
                   }
                 >

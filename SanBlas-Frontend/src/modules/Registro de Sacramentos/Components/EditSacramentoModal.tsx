@@ -24,6 +24,7 @@ import {
   soloNumeros,
   textoEnRango,
 } from '../../../shared/utils/formValidation';
+import { opcionesLugarCelebracion } from '../constants/filialesCelebracion';
 
 interface Props {
   isOpen: boolean;
@@ -53,7 +54,7 @@ const inputClass = (hasError = false) =>
 
 // Mensajes de validación mostrados bajo cada campo, igual que en la solicitud de sacramentos.
 const MENSAJES: Record<string, string> = {
-  idParroquia: 'Seleccione la parroquia.',
+  idParroquia: 'Seleccione la filial.',
   idPresbitero: 'Seleccione el presbítero.',
   fechaSacramento: 'Seleccione la fecha de celebración.',
   bautizadoNombre: 'El nombre del bautizado es obligatorio.',
@@ -728,16 +729,19 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>
-                  <Label required>Parroquia</Label>
+                  <Label required>Filial</Label>
                   <select
                     value={idParroquia}
                     onChange={(e) => setIdParroquia(e.target.value)}
                     className={inputClass(Boolean(errors.idParroquia))}
                   >
                     <option value="">Seleccione...</option>
-                    {(parroquias ?? []).map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nombre} {p.canton ? `(${p.canton})` : ''}
+                    {opcionesLugarCelebracion(
+                      parroquias,
+                      sacramentoDelTab?.parroquia ?? null,
+                    ).map((lugar) => (
+                      <option key={lugar.id} value={lugar.id}>
+                        {lugar.nombre}
                       </option>
                     ))}
                   </select>
@@ -786,7 +790,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
             </div>
 
             <div className="flex shrink-0 justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4">
-              <Button type="submit" variant="primary" disabled={saving}>
+              <Button type="submit" variant="royal" disabled={saving}>
                 {saving
                   ? 'GUARDANDO...'
                   : existeEnTab

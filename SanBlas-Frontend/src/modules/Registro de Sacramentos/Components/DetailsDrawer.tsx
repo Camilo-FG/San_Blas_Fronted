@@ -202,7 +202,7 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                   </div>
                   {sacramental.bautismo && (
                     <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
-                      <Fila label="Parroquia:" valor={sacramental.bautismo.parroquia.nombre} />
+                      <Fila label="Filial:" valor={sacramental.bautismo.parroquia.nombre} />
                       <Fila label="Presbítero:" valor={nombrePresbitero(sacramental.bautismo.presbitero)} />
                       <Fila label="Fecha:" valor={sacramental.bautismo.fechaSacramento} />
                     </div>
@@ -224,7 +224,7 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                   </h4>
                   <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
                     <Fila
-                      label="Parroquia:"
+                      label="Filial:"
                       valor={sacramental.comunion?.parroquia.nombre}
                     />
                     <Fila
@@ -250,7 +250,7 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                   </h4>
                   <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
                     <Fila
-                      label="Parroquia:"
+                      label="Filial:"
                       valor={sacramental.confirmacion?.parroquia.nombre}
                     />
                     <Fila
@@ -303,7 +303,7 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                       label="Folio:"
                       valor={(sacramental.matrimonio?.detalle as { folio: string | null } | undefined)?.folio}
                     />
-                    <Fila label="Parroquia:" valor={sacramental.matrimonio?.parroquia.nombre} />
+                    <Fila label="Filial:" valor={sacramental.matrimonio?.parroquia.nombre} />
                     <Fila
                       label="Presbítero:"
                       valor={nombrePresbitero(sacramental.matrimonio?.presbitero ?? null)}

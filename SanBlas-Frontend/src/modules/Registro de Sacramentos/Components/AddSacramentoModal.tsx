@@ -16,6 +16,7 @@ import {
   soloLetras,
   soloNumeros,
 } from '../../../shared/utils/formValidation';
+import { opcionesLugarCelebracion } from '../constants/filialesCelebracion';
 
 interface Props {
   isOpen: boolean;
@@ -43,7 +44,7 @@ const inputClass = (hasError = false) =>
 
 // Mensajes de validación mostrados bajo cada campo, igual que en la solicitud de sacramentos.
 const MENSAJES: Record<string, string> = {
-  idParroquia: 'Seleccione la parroquia.',
+  idParroquia: 'Seleccione la filial.',
   idPresbitero: 'Seleccione el presbítero.',
   fechaSacramento: 'Seleccione la fecha de celebración.',
   bautizadoNombre: 'El nombre del bautizado es obligatorio.',
@@ -582,16 +583,16 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
               <>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div>
-                    <Label required>Parroquia</Label>
+                    <Label required>Filial</Label>
                     <select
                       value={idParroquia}
                       onChange={(e) => setIdParroquia(e.target.value)}
                       className={inputClass(Boolean(errors.idParroquia))}
                     >
                       <option value="">Seleccione...</option>
-                      {(parroquias ?? []).map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.nombre} {p.canton ? `(${p.canton})` : ''}
+                      {opcionesLugarCelebracion(parroquias).map((lugar) => (
+                        <option key={lugar.id} value={lugar.id}>
+                          {lugar.nombre}
                         </option>
                       ))}
                     </select>
@@ -647,7 +648,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
           </div>
 
           <div className="flex justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4">
-            <Button type="submit" variant="primary" disabled={saving || catalogoCargando}>
+            <Button type="submit" variant="royal" disabled={saving || catalogoCargando}>
               {saving ? 'GUARDANDO...' : 'INSCRIBIR ACTA'}
             </Button>
             <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>

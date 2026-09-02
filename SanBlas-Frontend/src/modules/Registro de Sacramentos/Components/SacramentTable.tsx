@@ -118,7 +118,7 @@ const SacramentTable = ({
                 <AdminTableHeaderCell>Nombre del fiel</AdminTableHeaderCell>
                 <AdminTableHeaderCell>Cédula</AdminTableHeaderCell>
                 <AdminTableHeaderCell>Fecha</AdminTableHeaderCell>
-                <AdminTableHeaderCell>Lugar</AdminTableHeaderCell>
+                <AdminTableHeaderCell>Filial</AdminTableHeaderCell>
                 <AdminTableHeaderCell>Acciones</AdminTableHeaderCell>
               </AdminTableRow>
             </AdminTableHead>
