@@ -117,6 +117,16 @@ const FormSolic = () => {
   const [tipoCedula, setTipoCedula] = useState<"nacional" | "extranjera">(
     "nacional",
   );
+
+  useEffect(() => {
+    if (!confirmacionAbierta) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+    };
+  }, [confirmacionAbierta]);
+
   const cedulaValidadaRef = useRef<string | null>(null);
   const exitoRef = useRef<HTMLDivElement | null>(null);
 
