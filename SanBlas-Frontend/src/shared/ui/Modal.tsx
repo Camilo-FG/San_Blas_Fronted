@@ -11,6 +11,7 @@ type ModalProps = {
   title?: string;
   sinFondo?: boolean;
   overlayClassName?: string;
+  cerrarAlClicFuera?: boolean;
 };
 
 export function Modal({
@@ -20,6 +21,7 @@ export function Modal({
   title,
   sinFondo,
   overlayClassName,
+  cerrarAlClicFuera = true,
 }: ModalProps) {
   const clasesContenido = sinFondo
     ? "fixed top-1/2 left-1/2 z-[1400] max-h-[90vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-border bg-surface p-6 shadow-[0_22px_55px_rgba(6,15,32,0.45)]"
@@ -74,7 +76,7 @@ export function Modal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          onClick={onClose}
+          onClick={cerrarAlClicFuera ? onClose : undefined}
           role="presentation"
         />
         {focoAtrapado}
@@ -85,7 +87,7 @@ export function Modal({
   return (
     <div
       className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-900/55 p-4"
-      onClick={onClose}
+      onClick={cerrarAlClicFuera ? onClose : undefined}
       role="presentation"
     >
       {focoAtrapado}

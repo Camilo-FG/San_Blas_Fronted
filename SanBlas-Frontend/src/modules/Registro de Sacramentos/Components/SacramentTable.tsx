@@ -12,6 +12,7 @@ import {
   AdminTablePanel,
   AdminTableRow,
   cn,
+  resaltarCoincidencia,
 } from '../../../shared/ui';
 import { SacramentoListaItem } from '../../../types/sacramentosNuevos';
 
@@ -44,24 +45,6 @@ const formatearFecha = (fecha: string | undefined | null): string => {
   const m = String(fecha).match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m) return `${m[3]}/${m[2]}/${m[1]}`;
   return String(fecha);
-};
-
-const resaltar = (texto: string, termino: string) => {
-  const term = (termino || '').trim();
-  if (!term) return texto;
-  const lower = texto.toLowerCase();
-  const termLower = term.toLowerCase();
-  const idx = lower.indexOf(termLower);
-  if (idx === -1) return texto;
-  return (
-    <>
-      {texto.slice(0, idx)}
-      <mark className="rounded-sm bg-yellow-200 px-0.5 font-semibold text-inherit">
-        {texto.slice(idx, idx + term.length)}
-      </mark>
-      {texto.slice(idx + term.length)}
-    </>
-  );
 };
 
 const SacramentTable = ({
@@ -130,7 +113,7 @@ const SacramentTable = ({
                   onClick={() => onViewDetails(s)}
                 >
                   <AdminTableCell>
-                    <span className="font-medium text-text">{resaltar(s.nombre, searchNombre)}</span>
+                    <span className="font-medium text-text">{resaltarCoincidencia(s.nombre, searchNombre)}</span>
                   </AdminTableCell>
                   <AdminTableCell>
                     <span className="tabular-nums text-text-secondary">{formatearCedula(s.cedula)}</span>

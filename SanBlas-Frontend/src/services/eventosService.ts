@@ -8,6 +8,7 @@ export interface Evento {
   fechaFin?: string | null;
   lugar: string;
   publicado: boolean;
+  activo: boolean;
 }
 
 export interface EventoPayload {
@@ -22,10 +23,16 @@ export interface EventoPayload {
 
 const BASE = "/Evento";
 
+const normalizarEvento = (evento: Evento): Evento => ({
+  ...evento,
+  activo: evento.activo !== false,
+  publicado: Boolean(evento.publicado),
+});
+
 export const obtenerEventosPublicos = async (): Promise<Evento[]> => {
   try {
     const { data } = await apiClient.get<Evento[]>(`${BASE}/publicos`);
-    return data;
+    return data.map(normalizarEvento);
   } catch (error) {
     handleApiError(error);
   }
@@ -34,7 +41,7 @@ export const obtenerEventosPublicos = async (): Promise<Evento[]> => {
 export const obtenerEventos = async (): Promise<Evento[]> => {
   try {
     const { data } = await apiClient.get<Evento[]>(BASE);
-    return data;
+    return data.map(normalizarEvento);
   } catch (error) {
     handleApiError(error);
   }
@@ -43,7 +50,7 @@ export const obtenerEventos = async (): Promise<Evento[]> => {
 export const obtenerEventoPorId = async (id: number): Promise<Evento> => {
   try {
     const { data } = await apiClient.get<Evento>(`${BASE}/${id}`);
-    return data;
+    return normalizarEvento(data);
   } catch (error) {
     handleApiError(error);
   }
@@ -52,7 +59,7 @@ export const obtenerEventoPorId = async (id: number): Promise<Evento> => {
 export const crearEvento = async (payload: EventoPayload): Promise<Evento> => {
   try {
     const { data } = await apiClient.post<Evento>(BASE, payload);
-    return data;
+    return normalizarEvento(data);
   } catch (error) {
     handleApiError(error);
   }
@@ -67,7 +74,34 @@ export const actualizarEvento = async (
       ...payload,
       id,
     });
-    return data;
+    return normalizarEvento(data);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const publicarEvento = async (id: number): Promise<Evento> => {
+  try {
+    const { data } = await apiClient.patch<Evento>(`${BASE}/${id}/publicar`);
+    return normalizarEvento(data);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const activarEvento = async (id: number): Promise<Evento> => {
+  try {
+    const { data } = await apiClient.patch<Evento>(`${BASE}/${id}/activar`);
+    return normalizarEvento(data);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const desactivarEvento = async (id: number): Promise<Evento> => {
+  try {
+    const { data } = await apiClient.patch<Evento>(`${BASE}/${id}/desactivar`);
+    return normalizarEvento(data);
   } catch (error) {
     handleApiError(error);
   }

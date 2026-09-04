@@ -1,6 +1,7 @@
 import { apiClient, handleApiError } from "./apiClient";
 
 export type EstadoDonacion = "Pendiente" | "Aprobado" | "Rechazado";
+export type EstadoDonacionAccion = "Aprobado" | "Rechazado";
 
 export interface DonacionBackend {
   id: number;
@@ -71,12 +72,12 @@ export const crearDonacion = async (
 
 export const actualizarEstadoDonacion = async (
   id: number,
-  estado: EstadoDonacion,
+  estado: EstadoDonacionAccion,
 ): Promise<DonacionBackend> => {
   try {
     const { data } = await apiClient.patch<DonacionBackend>(
       `/Donacion/${id}/estado`,
-      estado,
+      { estado },
     );
     return data;
   } catch (error) {

@@ -15,6 +15,7 @@ interface AdminRecordDetailSheetProps {
   };
   hideHeader?: boolean;
   onClose: () => void;
+  cerrarAlClicFuera?: boolean;
 }
 
 export function AdminRecordDetailSheet({
@@ -27,6 +28,7 @@ export function AdminRecordDetailSheet({
   primaryAction,
   hideHeader = false,
   onClose,
+  cerrarAlClicFuera = true,
 }: AdminRecordDetailSheetProps) {
   const titleId = useId();
 
@@ -52,7 +54,7 @@ export function AdminRecordDetailSheet({
     <div
       className="fixed inset-0 z-[1300] flex items-end justify-center bg-slate-900/55 md:items-center md:p-4"
       role="presentation"
-      onClick={onClose}
+      onClick={cerrarAlClicFuera ? onClose : undefined}
     >
       <div
         className="relative flex max-h-[94vh] w-full flex-col rounded-t-[18px] bg-surface shadow-[0_-8px_30px_rgba(15,23,42,0.18)] md:max-h-[88vh] md:max-w-[640px] md:rounded-[18px]"
