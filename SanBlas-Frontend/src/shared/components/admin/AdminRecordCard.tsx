@@ -17,7 +17,7 @@ export interface AdminRecordAction {
 }
 
 interface AdminRecordCardProps {
-  title: string;
+  title: ReactNode;
   subtitle?: string;
   code?: string;
   icon?: ReactNode;

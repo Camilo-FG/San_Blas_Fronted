@@ -1,11 +1,9 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
-  type ReactNode,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FocusTrap from "focus-trap-react";
@@ -57,6 +55,9 @@ import {
   AdminToolbar,
   Badge,
   Button,
+  ConfirmacionAccionModal,
+  EtiquetaSeccion,
+  LineaDoradaTitulo,
   Modal,
   Select,
   Textarea,
@@ -68,60 +69,6 @@ import {
 const columnHelper = createColumnHelper<FormSacramento>();
 const PAGE_SIZES = [10, 25, 50] as const;
 const PAGE_SIZE_INICIAL = 10;
-
-const EtiquetaSeccion = ({ children }: { children: ReactNode }) => (
-  <span className="m-0 flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] text-[#16243c] uppercase">
-    <span
-      className="h-3 w-px bg-[#aa7323]"
-      aria-hidden="true"
-    />
-    {children}
-  </span>
-);
-
-const LineaDoradaTitulo = ({
-  parteSubrayada,
-  resto = "",
-}: {
-  parteSubrayada: string;
-  resto?: string;
-}) => {
-  const refContenedor = useRef<HTMLDivElement>(null);
-  const refTexto = useRef<HTMLSpanElement>(null);
-  const [medidas, setMedidas] = useState({ ancho: 0, top: 0 });
-
-  useLayoutEffect(() => {
-    const contenedor = refContenedor.current;
-    const span = refTexto.current;
-    if (!contenedor || !span) return;
-    const estilos = window.getComputedStyle(span);
-    const fontSize = parseFloat(estilos.fontSize);
-    const lineaBase = span.offsetTop + span.offsetHeight - fontSize * 0.24;
-    setMedidas({ ancho: span.offsetWidth, top: lineaBase + 8 });
-  }, [parteSubrayada]);
-
-  return (
-    <div ref={refContenedor} className="relative w-fit">
-      <h2
-        className="m-0 mt-1 pb-2 text-lg leading-tight font-semibold tracking-tight text-[#16243c]"
-        style={{ fontFamily: "'Geist', sans-serif" }}
-      >
-        <span ref={refTexto}>{parteSubrayada}</span>
-        {resto}
-      </h2>
-      {medidas.ancho > 0 && (
-        <motion.div
-          className="absolute left-0 h-[3px] origin-left rounded-full bg-[#dcb55a]"
-          style={{ top: medidas.top, width: medidas.ancho }}
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ duration: 0.6, ease: [0.45, 0, 0.35, 1] }}
-          aria-hidden="true"
-        />
-      )}
-    </div>
-  );
-};
 
 const ESTADO_MODAL_STYLES = {
   Pendiente: {
@@ -1689,51 +1636,18 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
         </Modal>
       )}
 
-      {isApproveModalOpen && solicitudAAprobar && (
-        <Modal
-          onClose={handleCancelApprove}
-          title="Confirmar aprobación"
-          sinFondo
-        >
-            <div className="flex min-h-44 flex-col">
-              <LineaDoradaTitulo parteSubrayada="Aprobar solicitud sac" resto="ramental" />
-              <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
-                <p className="text-sm leading-relaxed text-text-secondary">
-                  ¿Estás seguro/a que quieres aprobar esta solicitud de
-                  sacramento? Una vez aprobada su estado no podrá ser cambiado.
-                </p>
-              </div>
-              <div className="flex shrink-0 justify-end gap-2">
-                <Button
-                  variant="royal"
-className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
-                  onClick={handleApproveConfirm}
-                  disabled={aprobarSolicitud.isPending}
-                >
-                  {aprobarSolicitud.isPending ? (
-                    <>
-                      <Loader2
-                        size={16}
-                        className="animate-spin"
-                      />
-                      Aprobando...
-                    </>
-                  ) : (
-                    "Aprobar"
-                  )}
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
-                  onClick={handleCancelApprove}
-                  disabled={aprobarSolicitud.isPending}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </div>
-        </Modal>
-      )}
+      <ConfirmacionAccionModal
+        open={isApproveModalOpen && solicitudAAprobar !== null}
+        title="Confirmar aprobación"
+        parteSubrayada="Aprobar solicitud sac"
+        resto="ramental"
+        mensaje="¿Estás seguro/a que quieres aprobar esta solicitud de sacramento? Una vez aprobada su estado no podrá ser cambiado."
+        confirmLabel="Aprobar"
+        pendingLabel="Aprobando..."
+        isPending={aprobarSolicitud.isPending}
+        onConfirm={handleApproveConfirm}
+        onCancel={handleCancelApprove}
+      />
 
       {solicitudAArchivar && (
         <Modal
