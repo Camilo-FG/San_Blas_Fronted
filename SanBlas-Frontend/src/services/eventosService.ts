@@ -1,3 +1,4 @@
+import { extraerFechaCalendario } from "../shared/utils/fechas";
 import { apiClient, handleApiError } from "./apiClient";
 
 export interface Evento {
@@ -7,6 +8,8 @@ export interface Evento {
   fechaInicio: string;
   fechaFin?: string | null;
   lugar: string;
+  hora?: string | null;
+  imagenUrl?: string | null;
   publicado: boolean;
   activo: boolean;
 }
@@ -18,15 +21,39 @@ export interface EventoPayload {
   fechaInicio: string;
   fechaFin?: string | null;
   lugar: string;
+  hora?: string | null;
+  imagenUrl?: string | null;
   publicado: boolean;
 }
 
 const BASE = "/Evento";
 
+const fechaPayload = (valor?: string | null) => {
+  const calendario = extraerFechaCalendario(valor);
+  return calendario || valor || null;
+};
+
+const textoOpcional = (valor?: string | null) => {
+  const texto = valor?.trim();
+  return texto ? texto : null;
+};
+
 const normalizarEvento = (evento: Evento): Evento => ({
   ...evento,
+  fechaInicio: fechaPayload(evento.fechaInicio) ?? evento.fechaInicio,
+  fechaFin: fechaPayload(evento.fechaFin ?? null),
+  hora: textoOpcional(evento.hora),
+  imagenUrl: textoOpcional(evento.imagenUrl),
   activo: evento.activo !== false,
   publicado: Boolean(evento.publicado),
+});
+
+const payloadCalendario = (payload: EventoPayload): EventoPayload => ({
+  ...payload,
+  fechaInicio: fechaPayload(payload.fechaInicio) ?? payload.fechaInicio,
+  fechaFin: payload.fechaFin ? fechaPayload(payload.fechaFin) : payload.fechaFin,
+  hora: textoOpcional(payload.hora),
+  imagenUrl: textoOpcional(payload.imagenUrl),
 });
 
 export const obtenerEventosPublicos = async (): Promise<Evento[]> => {
@@ -56,9 +83,33 @@ export const obtenerEventoPorId = async (id: number): Promise<Evento> => {
   }
 };
 
-export const crearEvento = async (payload: EventoPayload): Promise<Evento> => {
+export type OpcionesImagenEvento = {
+  archivo?: File | null;
+  eliminarImagen?: boolean;
+};
+
+const enviarEventoConImagen = async (
+  url: string,
+  payload: EventoPayload,
+  archivo: File,
+  metodo: "post" | "put",
+) => {
+  const formData = new FormData();
+  formData.append("Payload", JSON.stringify(payloadCalendario(payload)));
+  formData.append("archivo", archivo);
+  const { data } = await apiClient[metodo]<Evento>(url, formData);
+  return normalizarEvento(data);
+};
+
+export const crearEvento = async (
+  payload: EventoPayload,
+  opciones?: OpcionesImagenEvento,
+): Promise<Evento> => {
   try {
-    const { data } = await apiClient.post<Evento>(BASE, payload);
+    if (opciones?.archivo) {
+      return await enviarEventoConImagen(BASE + "/con-imagen", payload, opciones.archivo, "post");
+    }
+    const { data } = await apiClient.post<Evento>(BASE, payloadCalendario(payload));
     return normalizarEvento(data);
   } catch (error) {
     handleApiError(error);
@@ -68,12 +119,25 @@ export const crearEvento = async (payload: EventoPayload): Promise<Evento> => {
 export const actualizarEvento = async (
   id: number,
   payload: EventoPayload,
+  opciones?: OpcionesImagenEvento,
 ): Promise<Evento> => {
   try {
-    const { data } = await apiClient.put<Evento>(`${BASE}/${id}`, {
-      ...payload,
+    const cuerpo = {
+      ...payloadCalendario(payload),
       id,
-    });
+      eliminarImagen: Boolean(opciones?.eliminarImagen),
+    };
+
+    if (opciones?.archivo) {
+      return await enviarEventoConImagen(
+        `${BASE}/${id}/con-imagen`,
+        cuerpo,
+        opciones.archivo,
+        "put",
+      );
+    }
+
+    const { data } = await apiClient.put<Evento>(`${BASE}/${id}`, cuerpo);
     return normalizarEvento(data);
   } catch (error) {
     handleApiError(error);

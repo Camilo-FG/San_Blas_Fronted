@@ -20,8 +20,15 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    if (config.data instanceof FormData) {
-      delete config.headers["Content-Type"];
+    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+      const headers = config.headers;
+      if (headers && typeof headers.delete === "function") {
+        headers.delete("Content-Type");
+        headers.delete("content-type");
+      } else if (headers) {
+        delete headers["Content-Type"];
+        delete headers["content-type"];
+      }
     }
 
     const token = getAuthToken();

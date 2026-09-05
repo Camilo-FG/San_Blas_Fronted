@@ -1,14 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Calendar,
-  MapPin,
-  Pencil,
-  Trash2,
-  Eye,
-  Plus,
-  CalendarDays,
   Globe,
+  Pencil,
+  Plus,
+  Power,
   PowerOff,
+  Trash2,
 } from "lucide-react";
 import {
   eventoToFormulario,
@@ -16,7 +13,22 @@ import {
 } from "../hooks/useGestionEventos";
 import type { Evento } from "../../../../services/eventosService";
 import type { EventoPayload } from "../../../../services/eventosService";
-import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
+import {
+  extraerFechaCalendario,
+  formatearFechaCalendario,
+  formatearHoraEvento,
+} from "../../../../shared/utils/fechas";
+import { EventoCard } from "../components/EventoCard";
+import {
+  ETIQUETA_ESTADO_EVENTO,
+  VARIANTE_ESTADO_EVENTO,
+  obtenerEstadoEvento,
+  type EstadoEvento,
+} from "../utils/estadoEvento";
+import {
+  SubidaImagen,
+  type ArchivoImagen,
+} from "../../../solicSacramento/components/SubidaImagen";
 import { AdminRecordDetailSheet } from "../../../../shared/components/admin/AdminRecordDetailSheet";
 import {
   AdminModule,
@@ -31,25 +43,16 @@ import {
   Input,
   Label,
   Modal,
+  Select,
   Textarea,
   useToast,
 } from "../../../../shared/ui";
 
-const formatearFecha = (fecha: string) =>
-  new Date(fecha).toLocaleDateString("es-CR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
-const formatearHora = (fecha: string) =>
-  new Date(fecha).toLocaleTimeString("es-CR", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+const formatearFecha = (fecha: string) => formatearFechaCalendario(fecha);
 
 type Confirmacion =
   | { tipo: "publicar"; evento?: Evento }
+  | { tipo: "activar"; evento?: Evento }
   | { tipo: "desactivar"; evento: Evento }
   | null;
 
@@ -59,6 +62,8 @@ type ErroresFormulario = {
   fechaInicio?: string;
   fechaFin?: string;
   lugar?: string;
+  hora?: string;
+  imagen?: string;
 };
 
 const LIMITE_LETRAS = {
@@ -72,11 +77,9 @@ const limitarLetras = (valor: string, maximo: number) => valor.slice(0, maximo);
 const fechaHoy = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "America/Costa_Rica" });
 
-const soloFecha = (valor?: string | null) =>
-  valor ? valor.slice(0, 10) : "";
+const soloFecha = (valor?: string | null) => extraerFechaCalendario(valor);
 
-const eventoEstaPublicado = (evento?: Evento | null) =>
-  Boolean(evento?.publicado && evento.activo);
+type FiltroEstadoEvento = "todos" | EstadoEvento;
 
 const ContadorLetras = ({
   valor,
@@ -117,35 +120,65 @@ const GestionEventos = () => {
   const { showToast } = useToast();
 
   const [busqueda, setBusqueda] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState<FiltroEstadoEvento>("todos");
   const [modalAbierto, setModalAbierto] = useState(false);
   const [formulario, setFormulario] = useState<EventoPayload>(formularioVacio());
   const [errores, setErrores] = useState<ErroresFormulario>({});
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
   const [confirmacion, setConfirmacion] = useState<Confirmacion>(null);
+  const [archivoImagen, setArchivoImagen] = useState<ArchivoImagen | null>(null);
+  const [quitarImagen, setQuitarImagen] = useState(false);
 
   const eventosFiltrados = useMemo(() => {
     const query = busqueda.trim().toLowerCase();
-    if (!query) return eventos;
 
-    return eventos.filter((evento) =>
-      [evento.titulo, evento.descripcion, evento.lugar]
-        .join(" ")
-        .toLowerCase()
-        .includes(query),
-    );
-  }, [busqueda, eventos]);
+    return eventos.filter((evento) => {
+      const coincideTexto =
+        !query ||
+        [evento.titulo, evento.descripcion, evento.lugar]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+
+      if (!coincideTexto) return false;
+
+      return filtroEstado === "todos" || obtenerEstadoEvento(evento) === filtroEstado;
+    });
+  }, [busqueda, eventos, filtroEstado]);
+
+  useEffect(() => {
+    if (!eventoSeleccionado) return;
+    const actualizado = eventos.find((item) => item.id === eventoSeleccionado.id);
+    if (actualizado && actualizado !== eventoSeleccionado) {
+      setEventoSeleccionado(actualizado);
+    }
+  }, [eventos, eventoSeleccionado]);
 
   const eventoEnEdicion =
     editandoId != null
       ? eventos.find((evento) => evento.id === editandoId)
       : undefined;
-  const mostrarPublicar = !eventoEstaPublicado(eventoEnEdicion);
+  const estadoEnEdicion = obtenerEstadoEvento(eventoEnEdicion);
+  const mostrarPublicar = !editandoId || estadoEnEdicion === "borrador";
+  const mostrarActivar = estadoEnEdicion === "publicado-inactivo";
+
+  const limpiarImagenLocal = () => {
+    if (archivoImagen?.preview) URL.revokeObjectURL(archivoImagen.preview);
+    setArchivoImagen(null);
+    setQuitarImagen(false);
+  };
+
+  const opcionesImagen = () => ({
+    archivo: archivoImagen?.file ?? null,
+    eliminarImagen: quitarImagen && !archivoImagen,
+  });
 
   const abrirCrear = () => {
     setEditandoId(null);
     setFormulario(formularioVacio());
     setErrores({});
+    limpiarImagenLocal();
     setModalAbierto(true);
   };
 
@@ -153,6 +186,7 @@ const GestionEventos = () => {
     setEditandoId(evento.id);
     setFormulario(eventoToFormulario(evento));
     setErrores({});
+    limpiarImagenLocal();
     setModalAbierto(true);
   };
 
@@ -161,6 +195,7 @@ const GestionEventos = () => {
     setEditandoId(null);
     setFormulario(formularioVacio());
     setErrores({});
+    limpiarImagenLocal();
   };
 
   const actualizarCampo = <K extends keyof EventoPayload>(
@@ -220,6 +255,10 @@ const GestionEventos = () => {
       nuevosErrores.lugar = `El lugar no puede superar las ${LIMITE_LETRAS.lugar} letras.`;
     }
 
+    if (formulario.hora && !/^\d{2}:\d{2}$/.test(formulario.hora)) {
+      nuevosErrores.hora = "La hora no es válida.";
+    }
+
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
@@ -227,14 +266,18 @@ const GestionEventos = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!validarFormulario()) return;
-    const resultado = await guardarEvento(formulario, editandoId ?? undefined);
+    const resultado = await guardarEvento(
+      formulario,
+      editandoId ?? undefined,
+      opcionesImagen(),
+    );
     if (resultado.ok) cerrarModal();
   };
 
-  const handleEliminar = async (id: number) => {
+  const handleEliminar = async (evento: Evento) => {
     const confirmar = window.confirm("¿Desea eliminar este evento?");
     if (!confirmar) return;
-    await borrarEvento(id);
+    await borrarEvento(evento.id);
     setEventoSeleccionado(null);
   };
 
@@ -245,7 +288,7 @@ const GestionEventos = () => {
   };
 
   const solicitarPublicarDesdeLista = (evento: Evento) => {
-    if (guardando || eventoEstaPublicado(evento)) return;
+    if (guardando || obtenerEstadoEvento(evento) !== "borrador") return;
 
     const hoy = fechaHoy();
     const inicio = soloFecha(evento.fechaInicio);
@@ -262,8 +305,16 @@ const GestionEventos = () => {
     setConfirmacion({ tipo: "publicar", evento });
   };
 
+  const solicitarActivar = (evento?: Evento) => {
+    if (guardando) return;
+    if (evento && obtenerEstadoEvento(evento) !== "publicado-inactivo") return;
+    if (!evento && !mostrarActivar) return;
+    if (!evento && !validarFormulario()) return;
+    setConfirmacion({ tipo: "activar", evento });
+  };
+
   const solicitarDesactivar = (evento: Evento) => {
-    if (guardando || !eventoEstaPublicado(evento)) return;
+    if (guardando || obtenerEstadoEvento(evento) !== "publicado-activo") return;
     setConfirmacion({ tipo: "desactivar", evento });
   };
 
@@ -287,6 +338,7 @@ const GestionEventos = () => {
       : await publicarEventoDesdeFormulario(
           formulario,
           editandoId ?? undefined,
+          opcionesImagen(),
         );
 
     if (resultado.ok) {
@@ -296,6 +348,7 @@ const GestionEventos = () => {
         setModalAbierto(false);
         setEditandoId(null);
         setFormulario(formularioVacio());
+        limpiarImagenLocal();
       }
       showToast("Evento publicado correctamente", "success");
       return;
@@ -308,6 +361,37 @@ const GestionEventos = () => {
 
     showToast(
       resultado.mensaje || "No se pudo completar la publicación del evento.",
+      "error",
+    );
+  };
+
+  const confirmarActivar = async () => {
+    if (confirmacion?.tipo !== "activar") return;
+
+    const eventoEnLista = confirmacion.evento;
+    const resultado = eventoEnLista
+      ? await cambiarDisponibilidadEvento(eventoEnLista.id, true)
+      : await publicarEventoDesdeFormulario(
+          formulario,
+          editandoId ?? undefined,
+          opcionesImagen(),
+        );
+
+    if (resultado.ok) {
+      sincronizarEventoSeleccionado(resultado.evento);
+      setConfirmacion(null);
+      if (!eventoEnLista) {
+        setModalAbierto(false);
+        setEditandoId(null);
+        setFormulario(formularioVacio());
+        limpiarImagenLocal();
+      }
+      showToast("Evento activado correctamente", "success");
+      return;
+    }
+
+    showToast(
+      resultado.mensaje || "No fue posible activar el evento.",
       "error",
     );
   };
@@ -333,18 +417,19 @@ const GestionEventos = () => {
     );
   };
 
-  const renderEstadoBadge = (evento: Evento) =>
-    eventoEstaPublicado(evento) ? (
-      <Badge variant="success">Publicado</Badge>
-    ) : (
-      <Badge variant="neutral">Desactivado</Badge>
+  const renderEstadoBadge = (evento: Evento) => {
+    const estado = obtenerEstadoEvento(evento);
+    return (
+      <Badge variant={VARIANTE_ESTADO_EVENTO[estado]}>
+        {ETIQUETA_ESTADO_EVENTO[estado]}
+      </Badge>
     );
-
-  const etiquetaPortada = (evento: Evento) =>
-    eventoEstaPublicado(evento) ? "Publicado" : "Desactivado";
+  };
 
   const botonEstado = (evento: Evento) => {
-    if (eventoEstaPublicado(evento)) {
+    const estado = obtenerEstadoEvento(evento);
+
+    if (estado === "publicado-activo") {
       return (
         <Button
           variant="royal"
@@ -353,6 +438,19 @@ const GestionEventos = () => {
         >
           <PowerOff size={16} />
           Desactivar evento
+        </Button>
+      );
+    }
+
+    if (estado === "publicado-inactivo") {
+      return (
+        <Button
+          variant="royal"
+          onClick={() => solicitarActivar(evento)}
+          disabled={guardando}
+        >
+          <Power size={16} />
+          Activar evento
         </Button>
       );
     }
@@ -380,6 +478,19 @@ const GestionEventos = () => {
           onChange={(event) => setBusqueda(event.target.value)}
           aria-label="Buscar eventos"
         />
+        <Select
+          className="md:w-60"
+          value={filtroEstado}
+          onChange={(event) =>
+            setFiltroEstado(event.target.value as FiltroEstadoEvento)
+          }
+          aria-label="Filtrar por estado"
+        >
+          <option value="todos">Todos los estados</option>
+          <option value="publicado-activo">Publicado / Activo</option>
+          <option value="publicado-inactivo">Publicado / Inactivo</option>
+          <option value="borrador">Borrador</option>
+        </Select>
         <Button variant="royal" onClick={abrirCrear}>
           <Plus size={18} />
           Nuevo evento
@@ -391,142 +502,27 @@ const GestionEventos = () => {
       ) : eventosFiltrados.length === 0 ? (
         <EmptyState
           title={
-            busqueda
+            busqueda || filtroEstado !== "todos"
               ? "No se encontraron eventos con ese criterio."
               : "No hay eventos registrados."
           }
         />
       ) : (
-        <>
-          <div className="hidden gap-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] lg:grid-cols-3">
-            {eventosFiltrados.map((evento) => (
-              <article
-                key={evento.id}
-                className="flex flex-col overflow-hidden rounded-2xl border border-border-strong bg-surface shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div
-                  className={`relative flex min-h-32 items-center justify-center text-white/90 ${
-                    eventoEstaPublicado(evento)
-                      ? "bg-gradient-to-br from-teal to-teal-hover"
-                      : "bg-gradient-to-br from-slate-500 to-slate-400"
-                  }`}
-                >
-                  <CalendarDays size={42} />
-                  <span
-                    className={`absolute top-2.5 right-2.5 rounded-full px-2.5 py-0.5 text-xs font-extrabold tracking-wide uppercase ${
-                      eventoEstaPublicado(evento)
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-sky-100 text-sky-700"
-                    }`}
-                  >
-                    {etiquetaPortada(evento)}
-                  </span>
-                </div>
-
-                <div className="flex flex-1 flex-col gap-2 p-4">
-                  <h3 className="m-0 text-base font-extrabold leading-snug text-slate-900">
-                    {evento.titulo}
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-text-muted">
-                    <span>{formatearFecha(evento.fechaInicio)}</span>
-                    <span className="rounded-full bg-info-bg px-2 py-0.5 text-xs font-bold text-info">
-                      {formatearHora(evento.fechaInicio)}
-                    </span>
-                  </div>
-                  <p className="m-0 line-clamp-3 flex-1 text-sm leading-relaxed text-text-muted">
-                    {evento.descripcion}
-                  </p>
-                  <p className="m-0 flex items-center gap-1.5 text-sm text-text-muted">
-                    <MapPin size={14} />
-                    {evento.lugar}
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-2 px-4 pb-4">
-                  {botonEstado(evento)}
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button variant="ghost" onClick={() => abrirEditar(evento)}>
-                      <Pencil size={16} />
-                      Editar
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleEliminar(evento.id)}
-                      disabled={guardando}
-                    >
-                      <Trash2 size={16} />
-                      Eliminar
-                    </Button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-2.5 md:hidden">
-            {eventosFiltrados.map((evento) => (
-              <AdminRecordCard
-                key={evento.id}
-                icon={<Calendar size={20} />}
-                accent={
-                  eventoEstaPublicado(evento) ? "#047857" : "#b45309"
-                }
-                code={`EVT-${evento.id}`}
-                title={evento.titulo}
-                subtitle={evento.lugar}
-                badges={renderEstadoBadge(evento)}
-                meta={[
-                  {
-                    icon: <Calendar size={12} />,
-                    label: "Fecha",
-                    value: formatearFecha(evento.fechaInicio),
-                  },
-                  {
-                    icon: <MapPin size={12} />,
-                    label: "Lugar",
-                    value: evento.lugar,
-                  },
-                ]}
-                actions={[
-                  eventoEstaPublicado(evento)
-                    ? {
-                        label: "Desactivar evento",
-                        icon: <PowerOff size={15} />,
-                        variant: "primary" as const,
-                        disabled: guardando,
-                        onClick: () => solicitarDesactivar(evento),
-                      }
-                    : {
-                        label: "Publicar evento",
-                        icon: <Globe size={15} />,
-                        variant: "primary" as const,
-                        disabled: guardando,
-                        onClick: () => solicitarPublicarDesdeLista(evento),
-                      },
-                  {
-                    label: "Editar",
-                    icon: <Pencil size={15} />,
-                    variant: "ghost" as const,
-                    onClick: () => abrirEditar(evento),
-                  },
-                  {
-                    label: "Ver evento",
-                    icon: <Eye size={15} />,
-                    variant: "ghost" as const,
-                    onClick: () => setEventoSeleccionado(evento),
-                  },
-                  {
-                    label: "Eliminar",
-                    icon: <Trash2 size={15} />,
-                    variant: "danger" as const,
-                    disabled: guardando,
-                    onClick: () => handleEliminar(evento.id),
-                  },
-                ]}
-              />
-            ))}
-          </div>
-        </>
+        <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {eventosFiltrados.map((evento) => (
+            <EventoCard
+              key={evento.id}
+              evento={evento}
+              guardando={guardando}
+              onPublicar={solicitarPublicarDesdeLista}
+              onActivar={solicitarActivar}
+              onDesactivar={solicitarDesactivar}
+              onEditar={abrirEditar}
+              onEliminar={handleEliminar}
+              onVer={setEventoSeleccionado}
+            />
+          ))}
+        </div>
       )}
 
       <AdminRecordDetailSheet
@@ -554,7 +550,7 @@ const GestionEventos = () => {
               {botonEstado(eventoSeleccionado)}
               <Button
                 variant="danger"
-                onClick={() => handleEliminar(eventoSeleccionado.id)}
+                onClick={() => handleEliminar(eventoSeleccionado)}
                 disabled={guardando}
               >
                 <Trash2 size={16} />
@@ -566,9 +562,20 @@ const GestionEventos = () => {
       >
         {eventoSeleccionado && (
           <>
+            {eventoSeleccionado.imagenUrl && (
+              <img
+                src={eventoSeleccionado.imagenUrl}
+                alt=""
+                className="mb-4 h-40 w-full rounded-xl border border-border-strong object-cover"
+              />
+            )}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <p className="m-0 text-sm text-slate-600">
                 <strong className="text-slate-800">Lugar:</strong> {eventoSeleccionado.lugar}
+              </p>
+              <p className="m-0 text-sm text-slate-600">
+                <strong className="text-slate-800">Hora:</strong>{" "}
+                {formatearHoraEvento(eventoSeleccionado.hora) || "No definida"}
               </p>
               <p className="m-0 text-sm text-slate-600">
                 <strong className="text-slate-800">Fecha fin:</strong>{" "}
@@ -652,21 +659,36 @@ const GestionEventos = () => {
               <FieldError message={errores.descripcion} />
             </div>
 
-            <div>
-              <Label htmlFor="fechaInicio" required>
-                Fecha de inicio
-              </Label>
-              <Input
-                id="fechaInicio"
-                type="date"
-                min={fechaHoy()}
-                value={formulario.fechaInicio}
-                hasError={Boolean(errores.fechaInicio)}
-                onChange={(e) =>
-                  actualizarCampo("fechaInicio", e.target.value)
-                }
-              />
-              <FieldError message={errores.fechaInicio} />
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="fechaInicio" required>
+                  Fecha de inicio
+                </Label>
+                <Input
+                  id="fechaInicio"
+                  type="date"
+                  min={fechaHoy()}
+                  value={formulario.fechaInicio}
+                  hasError={Boolean(errores.fechaInicio)}
+                  onChange={(e) =>
+                    actualizarCampo("fechaInicio", e.target.value)
+                  }
+                />
+                <FieldError message={errores.fechaInicio} />
+              </div>
+              <div>
+                <Label htmlFor="hora">Hora</Label>
+                <Input
+                  id="hora"
+                  type="time"
+                  value={formulario.hora ?? ""}
+                  hasError={Boolean(errores.hora)}
+                  onChange={(e) =>
+                    actualizarCampo("hora", e.target.value || null)
+                  }
+                />
+                <FieldError message={errores.hora} />
+              </div>
             </div>
 
             <div>
@@ -708,6 +730,34 @@ const GestionEventos = () => {
               <FieldError message={errores.lugar} />
             </div>
 
+            <SubidaImagen
+              id="imagen-evento"
+              label="Imagen del evento"
+              hint="Opcional. JPG, PNG, WEBP o GIF de hasta 5 MB."
+              textoArrastrar="Arrastra y suelta archivos aquí"
+              textoBoton="Seleccionar archivo"
+              mostrarVistaPrevia={false}
+              value={archivoImagen}
+              existingPreview={quitarImagen ? null : formulario.imagenUrl}
+              errorExterno={errores.imagen}
+              onChange={(archivo) => {
+                setArchivoImagen(archivo);
+                if (archivo) {
+                  setQuitarImagen(false);
+                  setErrores((prev) => {
+                    if (!prev.imagen) return prev;
+                    const siguiente = { ...prev };
+                    delete siguiente.imagen;
+                    return siguiente;
+                  });
+                }
+              }}
+              onClearExisting={() => {
+                setQuitarImagen(true);
+                actualizarCampo("imagenUrl", null);
+              }}
+            />
+
             <div className="mt-2 flex flex-wrap justify-end gap-3">
               {mostrarPublicar && (
                 <Button
@@ -718,6 +768,17 @@ const GestionEventos = () => {
                 >
                   <Globe size={16} />
                   Publicar evento
+                </Button>
+              )}
+              {mostrarActivar && (
+                <Button
+                  type="button"
+                  variant="royal"
+                  onClick={() => solicitarActivar()}
+                  disabled={guardando}
+                >
+                  <Power size={16} />
+                  Activar evento
                 </Button>
               )}
               <Button type="submit" variant="royal" disabled={guardando}>
@@ -745,6 +806,18 @@ const GestionEventos = () => {
         pendingLabel="Publicando..."
         isPending={guardando}
         onConfirm={() => void confirmarPublicar()}
+        onCancel={cancelarConfirmacion}
+      />
+
+      <ConfirmacionAccionModal
+        open={confirmacion?.tipo === "activar"}
+        title="Confirmar activación"
+        parteSubrayada="Activar evento"
+        mensaje="¿Estás seguro/a que quieres activar este evento? Volverá a mostrarse en el sitio web."
+        confirmLabel="Activar"
+        pendingLabel="Activando..."
+        isPending={guardando}
+        onConfirm={() => void confirmarActivar()}
         onCancel={cancelarConfirmacion}
       />
 

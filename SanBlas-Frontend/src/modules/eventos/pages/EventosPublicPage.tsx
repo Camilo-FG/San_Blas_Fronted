@@ -3,9 +3,11 @@ import { getEventSchema } from "../../../seo/structuredData";
 import { useEffect, useState } from "react";
 import { obtenerEventosPublicos, type Evento } from "../../../services/eventosService";
 import { ApiError } from "../../../services/apiClient";
+import { Clock3, MapPin } from "lucide-react";
+import { formatearFechaCalendario, formatearHoraEvento } from "../../../shared/utils/fechas";
 
 const formatearFecha = (fecha: string) =>
-  new Date(fecha).toLocaleDateString("es-CR", {
+  formatearFechaCalendario(fecha, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -69,19 +71,40 @@ const EventosPublicPage = () => {
 
       {!cargando && !error && eventos.length > 0 && (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5">
-          {eventos.map((evento) => (
+          {eventos.map((evento) => {
+            const hora = formatearHoraEvento(evento.hora);
+            return (
             <article
               key={evento.id}
-              className="rounded-2xl border border-border bg-surface p-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)]"
+              className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_8px_24px_rgba(15,23,42,0.05)]"
             >
-              <span className="text-sm font-bold uppercase tracking-wider text-royal-gold">
-                {formatearFecha(evento.fechaInicio)}
-              </span>
-              <h2 className="my-2 text-xl text-royal-blue">{evento.titulo}</h2>
-              <p className="mb-3 text-sm text-text-muted">{evento.lugar}</p>
-              <p className="leading-relaxed text-slate-700">{evento.descripcion}</p>
+              {evento.imagenUrl ? (
+                <img
+                  src={evento.imagenUrl}
+                  alt=""
+                  className="h-40 w-full object-cover"
+                />
+              ) : null}
+              <div className="flex flex-1 flex-col p-5">
+                <span className="text-sm font-bold uppercase tracking-wider text-royal-gold">
+                  {formatearFecha(evento.fechaInicio)}
+                </span>
+                {hora && (
+                  <p className="mt-1 mb-0 flex items-center gap-1.5 text-sm text-text-muted">
+                    <Clock3 size={14} />
+                    {hora}
+                  </p>
+                )}
+                <h2 className="my-2 text-xl text-royal-blue">{evento.titulo}</h2>
+                <p className="mb-3 flex items-center gap-1.5 text-sm text-text-muted">
+                  <MapPin size={14} />
+                  {evento.lugar}
+                </p>
+                <p className="leading-relaxed text-slate-700">{evento.descripcion}</p>
+              </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
     </section>

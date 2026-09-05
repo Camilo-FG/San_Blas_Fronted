@@ -9,9 +9,14 @@ import {
 } from "../../../services/eventosService";
 import Rutas from "../../../routes/Rutas";
 import { cn } from "../../../shared/ui/cn";
+import {
+  fechaComoLocal,
+  formatearFechaCalendario,
+  formatearHoraEvento,
+} from "../../../shared/utils/fechas";
 
 const formatearFecha = (fecha: string) =>
-  new Date(fecha).toLocaleDateString("es-CR", {
+  formatearFechaCalendario(fecha, {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -19,11 +24,10 @@ const formatearFecha = (fecha: string) =>
   });
 
 const formatearDia = (fecha: string) =>
-  new Date(fecha).toLocaleDateString("es-CR", { day: "2-digit" });
+  formatearFechaCalendario(fecha, { day: "2-digit" });
 
 const formatearMes = (fecha: string) =>
-  new Date(fecha)
-    .toLocaleDateString("es-CR", { month: "short" })
+  formatearFechaCalendario(fecha, { month: "short" })
     .replace(".", "")
     .toUpperCase();
 
@@ -42,8 +46,8 @@ export default function EventosCarousel() {
         const data = await obtenerEventosPublicos();
         const ordenados = [...data].sort(
           (a, b) =>
-            new Date(a.fechaInicio).getTime() -
-            new Date(b.fechaInicio).getTime(),
+            fechaComoLocal(a.fechaInicio).getTime() -
+            fechaComoLocal(b.fechaInicio).getTime(),
         );
         setEventos(ordenados);
       } catch (err) {
@@ -170,9 +174,19 @@ export default function EventosCarousel() {
                         </div>
                       </div>
 
+                      {evento.imagenUrl ? (
+                        <img
+                          src={evento.imagenUrl}
+                          alt=""
+                          className="h-36 w-full rounded-[14px] object-cover"
+                        />
+                      ) : null}
                       <div className="flex flex-1 flex-col gap-2.5">
                         <p className="m-0 text-[0.78rem] font-extrabold uppercase tracking-wider text-royal-gold">
                           {formatearFecha(evento.fechaInicio)}
+                          {formatearHoraEvento(evento.hora)
+                            ? ` · ${formatearHoraEvento(evento.hora)}`
+                            : ""}
                         </p>
                         <h3 className="m-0 font-heading text-xl leading-tight text-royal-blue">
                           {evento.titulo}
