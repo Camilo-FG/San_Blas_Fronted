@@ -12,6 +12,7 @@ import {
 import type { Evento } from "../../../../services/eventosService";
 import { Badge, Button } from "../../../../shared/ui";
 import {
+  extraerFechaCalendario,
   formatearFechaCalendario,
   formatearHoraEvento,
 } from "../../../../shared/utils/fechas";
@@ -50,11 +51,12 @@ export function EventoCard({
     setImagenRota(false);
   }, [evento.imagenUrl]);
   const hora = formatearHoraEvento(evento.hora);
+  const fechaFin = extraerFechaCalendario(evento.fechaFin);
   const mostrarImagen = Boolean(evento.imagenUrl) && !imagenRota;
 
   return (
     <article
-      className={`flex h-full flex-col overflow-hidden rounded-2xl border bg-surface shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
+      className={`flex h-[520px] flex-col overflow-hidden rounded-2xl border bg-surface shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
         estado === "publicado-inactivo"
           ? "border-amber-300"
           : "border-border-strong"
@@ -94,17 +96,23 @@ export function EventoCard({
         </div>
       </button>
 
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex flex-1 flex-col gap-2 p-3.5">
         <div className="min-h-[3.2rem]">
           <h3 className="m-0 line-clamp-2 text-base font-extrabold leading-snug text-slate-900">
             {evento.titulo}
           </h3>
         </div>
 
-        <div className="flex flex-col gap-1.5 text-sm text-text-muted">
+        <div className="flex flex-col gap-1 text-sm text-text-muted">
           <p className="m-0 flex items-center gap-1.5">
             <CalendarDays size={14} className="shrink-0 text-royal-gold" />
-            <span>{formatearFechaCalendario(evento.fechaInicio)}</span>
+            <span className="truncate">{formatearFechaCalendario(evento.fechaInicio)}</span>
+          </p>
+          <p className={`m-0 flex items-center gap-1.5 ${fechaFin ? "" : "invisible"}`}>
+            <CalendarDays size={14} className="shrink-0 text-royal-gold" />
+            <span className="truncate">
+              Hasta {fechaFin ? formatearFechaCalendario(evento.fechaFin ?? "") : "—"}
+            </span>
           </p>
           <p className="m-0 flex items-center gap-1.5">
             <Clock3 size={14} className="shrink-0 text-royal-gold" />

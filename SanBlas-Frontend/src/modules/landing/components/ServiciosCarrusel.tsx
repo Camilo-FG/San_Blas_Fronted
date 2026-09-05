@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 import Rutas from "../../../routes/Rutas";
-import { cn } from "../../../shared/ui/cn";
+import { cn, ScrollReveal } from "../../../shared/ui";
 
 interface ServiceItem {
   id: string;
@@ -197,7 +197,7 @@ export default function ServiciosCarousel() {
   return (
     <section className="border-y border-[#f0f0f0] bg-surface py-24 max-[900px]:py-[76px] max-sm:py-[60px]">
       <div className="mx-auto max-w-[1200px] px-6 max-sm:px-4">
-        <div className="mx-auto mb-12 max-w-[620px] text-center max-sm:mb-8">
+        <ScrollReveal className="mx-auto mb-12 max-w-[620px] text-center max-sm:mb-8" amount={0.35}>
           <span className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.25em] text-[#b7832f] max-sm:text-[10px] max-sm:tracking-[0.18em]">
             Guías y Sacramentos
           </span>
@@ -208,9 +208,9 @@ export default function ServiciosCarousel() {
             Acompañamiento y trámites espirituales administrados por la
             Parroquia San Blas.
           </p>
-        </div>
+        </ScrollReveal>
 
-        <div className="relative px-7 max-[900px]:px-[22px] max-sm:px-0">
+        <ScrollReveal className="relative px-7 max-[900px]:px-[22px] max-sm:px-0" delay={0.08}>
           <div className="overflow-hidden">
             <motion.div
               className="flex"
@@ -316,7 +316,7 @@ export default function ServiciosCarousel() {
               </button>
             </>
           )}
-        </div>
+        </ScrollReveal>
 
         {maxIndex > 0 && (
           <div className="mt-8 flex justify-center gap-2 max-sm:mt-[26px]">

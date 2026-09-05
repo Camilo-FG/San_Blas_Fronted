@@ -1,5 +1,6 @@
 import image1 from "../../../assets/Hitoria-1.avif";
 import image2 from "../../../assets/iglesia-nicoya-lista.jpg";
+import { ScrollReveal } from "../../../shared/ui";
 
 function HistoriaSection() {
   return (
@@ -9,12 +10,14 @@ function HistoriaSection() {
         style={{ backgroundImage: `url(${image1})` }}
       >
         <div className="absolute inset-0 z-[1] bg-gradient-to-b from-royal-blue/60 to-royal-blue/30" />
-        <h1 className="relative z-[2] m-0 p-5 text-center font-heading text-[clamp(36px,6vw,64px)] text-white shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-          Historia y Legado
-        </h1>
+        <ScrollReveal className="relative z-[2]" amount={0.35}>
+          <h1 className="m-0 p-5 text-center font-heading text-[clamp(36px,6vw,64px)] text-white shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+            Historia y Legado
+          </h1>
+        </ScrollReveal>
       </div>
 
-      <div className="mx-auto max-w-[860px] px-6 py-20 max-sm:px-5 max-sm:py-[50px]">
+      <ScrollReveal className="mx-auto max-w-[860px] px-6 py-20 max-sm:px-5 max-sm:py-[50px]" amount={0.2}>
         <span className="mb-3 block text-center text-sm font-bold uppercase tracking-[0.2em] text-royal-gold">
           Raíces de Fe
         </span>
@@ -36,19 +39,21 @@ function HistoriaSection() {
             y fe inquebrantable de la comunidad nicoyana a través de las generaciones.
           </p>
         </div>
-      </div>
+      </ScrollReveal>
 
       <div
         className="relative flex min-h-[40vh] items-center justify-center bg-cover bg-fixed bg-center bg-no-repeat px-5"
         style={{ backgroundImage: `url(${image2})` }}
       >
         <div className="absolute inset-0 z-[1] bg-gradient-to-b from-royal-blue/60 to-royal-blue/30" />
-        <div className="relative z-[2] max-w-[800px] text-center font-heading text-[clamp(20px,3.5vw,32px)] leading-snug text-white shadow-[0_4px_8px_rgba(0,0,0,0.4)]">
-          "Un espacio donde nuestra tradición ancestral se encuentra con la paz espiritual."
-        </div>
+        <ScrollReveal className="relative z-[2] max-w-[800px]" amount={0.4}>
+          <p className="m-0 text-center font-heading text-[clamp(20px,3.5vw,32px)] leading-snug text-white shadow-[0_4px_8px_rgba(0,0,0,0.4)]">
+            "Un espacio donde nuestra tradición ancestral se encuentra con la paz espiritual."
+          </p>
+        </ScrollReveal>
       </div>
 
-      <div className="mx-auto max-w-[860px] px-6 py-20 max-sm:px-5 max-sm:py-[50px]">
+      <ScrollReveal className="mx-auto max-w-[860px] px-6 py-20 max-sm:px-5 max-sm:py-[50px]">
         <div className="flex flex-col gap-5">
           <p className="text-justify text-[1.1rem] leading-[1.8] text-text-secondary max-sm:text-base">
             Su inconfundible fachada, su armazón de cálidos tonos blancos y su imponente
@@ -62,9 +67,9 @@ function HistoriaSection() {
             en esta gran misión espiritual.
           </p>
         </div>
-      </div>
+      </ScrollReveal>
 
-      <div className="mx-auto max-w-[900px] px-6 pb-[100px] pt-5">
+      <ScrollReveal className="mx-auto max-w-[900px] px-6 pb-[100px] pt-5">
         <div className="relative h-0 overflow-hidden rounded-xl bg-black pb-[56.25%] shadow-[0_16px_32px_rgba(0,0,0,0.1)]">
           <iframe
             className="absolute inset-0 size-full border-0"
@@ -74,7 +79,7 @@ function HistoriaSection() {
             allowFullScreen
           />
         </div>
-      </div>
+      </ScrollReveal>
     </section>
   );
 }

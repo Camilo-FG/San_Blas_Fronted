@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  ChevronLeft,
+  ChevronRight,
   Globe,
   Pencil,
   Plus,
@@ -32,7 +34,10 @@ import {
 import { AdminRecordDetailSheet } from "../../../../shared/components/admin/AdminRecordDetailSheet";
 import {
   AdminModule,
+  AdminPagination,
+  AdminPaginationButton,
   AdminSearch,
+  AdminTableFooter,
   AdminToolbar,
   Badge,
   Button,
@@ -81,6 +86,9 @@ const soloFecha = (valor?: string | null) => extraerFechaCalendario(valor);
 
 type FiltroEstadoEvento = "todos" | EstadoEvento;
 
+const TAMANOS_PAGINA = [6, 9, 12] as const;
+const TAMANO_PAGINA_INICIAL = 6;
+
 const ContadorLetras = ({
   valor,
   maximo,
@@ -121,6 +129,10 @@ const GestionEventos = () => {
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstadoEvento>("todos");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [registrosPorPagina, setRegistrosPorPagina] = useState(TAMANO_PAGINA_INICIAL);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [formulario, setFormulario] = useState<EventoPayload>(formularioVacio());
   const [errores, setErrores] = useState<ErroresFormulario>({});
@@ -143,9 +155,39 @@ const GestionEventos = () => {
 
       if (!coincideTexto) return false;
 
+      const fechaEvento = extraerFechaCalendario(evento.fechaInicio);
+      const coincideDesde = !fechaDesde || fechaEvento >= fechaDesde;
+      const coincideHasta = !fechaHasta || fechaEvento <= fechaHasta;
+
+      if (!coincideDesde || !coincideHasta) return false;
+
       return filtroEstado === "todos" || obtenerEstadoEvento(evento) === filtroEstado;
     });
-  }, [busqueda, eventos, filtroEstado]);
+  }, [busqueda, eventos, fechaDesde, fechaHasta, filtroEstado]);
+
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(eventosFiltrados.length / registrosPorPagina),
+  );
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [busqueda, fechaDesde, fechaHasta, filtroEstado, registrosPorPagina]);
+
+  useEffect(() => {
+    setPaginaActual((pagina) => Math.min(pagina, totalPaginas));
+  }, [totalPaginas]);
+
+  const indiceInicio = (paginaActual - 1) * registrosPorPagina;
+  const eventosPagina = eventosFiltrados.slice(
+    indiceInicio,
+    indiceInicio + registrosPorPagina,
+  );
+  const primerRegistro = eventosFiltrados.length === 0 ? 0 : indiceInicio + 1;
+  const ultimoRegistro = Math.min(
+    indiceInicio + registrosPorPagina,
+    eventosFiltrados.length,
+  );
 
   useEffect(() => {
     if (!eventoSeleccionado) return;
@@ -472,12 +514,38 @@ const GestionEventos = () => {
       {error && <ErrorMessage message={error} />}
 
       <AdminToolbar>
-        <AdminSearch
-          placeholder="Buscar eventos..."
-          value={busqueda}
-          onChange={(event) => setBusqueda(event.target.value)}
-          aria-label="Buscar eventos"
-        />
+        <div className="w-full min-w-0 md:w-[36rem] md:shrink-0">
+          <AdminSearch
+            placeholder="Buscar eventos..."
+            value={busqueda}
+            onChange={(event) => setBusqueda(event.target.value)}
+            aria-label="Buscar eventos"
+          />
+        </div>
+        <div className="flex min-w-0 flex-1 items-center gap-2 md:max-w-64">
+          <Label htmlFor="filtro-fecha-desde" className="mb-0 shrink-0">
+            Desde
+          </Label>
+          <Input
+            id="filtro-fecha-desde"
+            type="date"
+            value={fechaDesde}
+            max={fechaHasta || undefined}
+            onChange={(event) => setFechaDesde(event.target.value)}
+          />
+        </div>
+        <div className="flex min-w-0 flex-1 items-center gap-2 md:max-w-64">
+          <Label htmlFor="filtro-fecha-hasta" className="mb-0 shrink-0">
+            Hasta
+          </Label>
+          <Input
+            id="filtro-fecha-hasta"
+            type="date"
+            value={fechaHasta}
+            min={fechaDesde || undefined}
+            onChange={(event) => setFechaHasta(event.target.value)}
+          />
+        </div>
         <Select
           className="md:w-60"
           value={filtroEstado}
@@ -502,14 +570,15 @@ const GestionEventos = () => {
       ) : eventosFiltrados.length === 0 ? (
         <EmptyState
           title={
-            busqueda || filtroEstado !== "todos"
+            busqueda || filtroEstado !== "todos" || fechaDesde || fechaHasta
               ? "No se encontraron eventos con ese criterio."
               : "No hay eventos registrados."
           }
         />
       ) : (
+        <>
         <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {eventosFiltrados.map((evento) => (
+          {eventosPagina.map((evento) => (
             <EventoCard
               key={evento.id}
               evento={evento}
@@ -523,6 +592,63 @@ const GestionEventos = () => {
             />
           ))}
         </div>
+        <AdminTableFooter className="sticky bottom-0 z-10 mt-2! border-t border-border bg-gray-50/95 pt-4! pb-3 backdrop-blur-sm">
+          <span className="text-sm text-text-muted">
+            Mostrando{" "}
+            <strong className="text-text tabular-nums">
+              {primerRegistro}-{ultimoRegistro}
+            </strong>{" "}
+            de{" "}
+            <strong className="text-text tabular-nums">
+              {eventosFiltrados.length}
+            </strong>{" "}
+            registros
+          </span>
+          <AdminPagination className="flex-wrap">
+            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+              Registros por página
+              <select
+                value={registrosPorPagina}
+                onChange={(event) =>
+                  setRegistrosPorPagina(Number(event.target.value))
+                }
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                aria-label="Cantidad de registros por página"
+              >
+                {TAMANOS_PAGINA.map((tamano) => (
+                  <option key={tamano} value={tamano}>
+                    {tamano}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <AdminPaginationButton
+              type="button"
+              onClick={() => setPaginaActual((pagina) => Math.max(1, pagina - 1))}
+              disabled={paginaActual <= 1}
+              aria-label="Página anterior"
+            >
+              <ChevronLeft size={16} strokeWidth={2} />
+            </AdminPaginationButton>
+            <span className="text-sm whitespace-nowrap text-text-muted">
+              Página{" "}
+              <strong className="text-text tabular-nums">{paginaActual}</strong>{" "}
+              de{" "}
+              <strong className="text-text tabular-nums">{totalPaginas}</strong>
+            </span>
+            <AdminPaginationButton
+              type="button"
+              onClick={() =>
+                setPaginaActual((pagina) => Math.min(totalPaginas, pagina + 1))
+              }
+              disabled={paginaActual >= totalPaginas}
+              aria-label="Página siguiente"
+            >
+              <ChevronRight size={16} strokeWidth={2} />
+            </AdminPaginationButton>
+          </AdminPagination>
+        </AdminTableFooter>
+        </>
       )}
 
       <AdminRecordDetailSheet

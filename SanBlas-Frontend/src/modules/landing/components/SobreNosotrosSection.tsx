@@ -1,4 +1,5 @@
 import { useLandingSection } from "../../../hooks/useLandingSection";
+import { ScrollReveal } from "../../../shared/ui";
 
 const SOBRE_NOSOTROS_IMAGE = "/sobre-nosotros.jpg";
 
@@ -52,7 +53,7 @@ function SobreNosotrosSection() {
   return (
     <section className="bg-surface py-24 pb-[84px] max-md:px-5 max-md:py-[72px] max-md:pb-16" id="sobre-nosotros">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="mx-auto mb-10 min-h-[210px] max-w-[820px] text-center max-md:mb-7 max-md:text-left">
+        <ScrollReveal className="mx-auto mb-10 min-h-[210px] max-w-[820px] text-center max-md:mb-7 max-md:text-left" amount={0.35}>
           <span className="mb-3 inline-flex text-[11px] font-black uppercase tracking-[0.32em] text-royal-gold">
             {data.eyebrow}
           </span>
@@ -62,12 +63,13 @@ function SobreNosotrosSection() {
           <p className="mx-auto max-w-[720px] text-[15px] leading-[1.75] text-text-secondary max-md:mx-0">
             {data.lead}
           </p>
-        </div>
+        </ScrollReveal>
 
         <div className="mx-auto grid max-w-[1180px] grid-cols-[minmax(160px,1fr)_minmax(420px,480px)_minmax(160px,1fr)] items-center gap-12 max-lg:grid-cols-1 max-lg:gap-7">
           <div className="flex flex-col justify-center gap-6 pt-3 max-lg:items-start max-lg:pt-0">
-            {leftCards.map((destacado) => (
-              <article className="max-w-[260px] max-md:max-w-none" key={destacado.titulo}>
+            {leftCards.map((destacado, indice) => (
+              <ScrollReveal key={destacado.titulo} delay={indice * 0.08}>
+              <article className="max-w-[260px] max-md:max-w-none">
                 <div className="mb-2.5 flex size-7 items-center justify-center rounded-full border border-royal-gold/28 text-[11px] font-extrabold text-royal-gold">
                   {destacado.icono}
                 </div>
@@ -78,10 +80,11 @@ function SobreNosotrosSection() {
                   {destacado.texto}
                 </p>
               </article>
+              </ScrollReveal>
             ))}
           </div>
 
-          <div className="relative flex items-center justify-center before:absolute before:inset-x-3.5 before:inset-y-6 before:-z-0 before:rounded-[34px] before:bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.12),rgba(255,255,255,0)_68%)] before:blur-lg max-lg:before:inset-x-2.5 max-lg:before:inset-y-[18px] max-md:before:inset-x-2 max-md:before:inset-y-3">
+          <ScrollReveal className="relative flex items-center justify-center before:absolute before:inset-x-3.5 before:inset-y-6 before:-z-0 before:rounded-[34px] before:bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.12),rgba(255,255,255,0)_68%)] before:blur-lg max-lg:before:inset-x-2.5 max-lg:before:inset-y-[18px] max-md:before:inset-x-2 max-md:before:inset-y-3" delay={0.08}>
             <div className="relative z-[1] h-[480px] w-full max-w-[420px] overflow-hidden rounded-md shadow-[0_32px_64px_rgba(23,37,84,0.18),0_10px_24px_rgba(23,37,84,0.08)] max-lg:max-w-[320px] max-lg:min-h-[380px] max-md:max-w-[280px] max-md:min-h-[320px]">
               <img
                 src={SOBRE_NOSOTROS_IMAGE}
@@ -93,11 +96,12 @@ function SobreNosotrosSection() {
                 decoding="async"
               />
             </div>
-          </div>
+          </ScrollReveal>
 
           <div className="flex flex-col justify-center gap-6 pt-3 max-lg:items-start max-lg:pt-0">
-            {rightCards.map((destacado) => (
-              <article className="ml-auto max-w-[260px] max-lg:ml-0 max-md:max-w-none" key={destacado.titulo}>
+            {rightCards.map((destacado, indice) => (
+              <ScrollReveal key={destacado.titulo} delay={indice * 0.08}>
+              <article className="ml-auto max-w-[260px] max-lg:ml-0 max-md:max-w-none">
                 <div className="mb-2.5 flex size-7 items-center justify-center rounded-full border border-royal-gold/28 text-[11px] font-extrabold text-royal-gold">
                   {destacado.icono}
                 </div>
@@ -108,6 +112,7 @@ function SobreNosotrosSection() {
                   {destacado.texto}
                 </p>
               </article>
+              </ScrollReveal>
             ))}
           </div>
         </div>
