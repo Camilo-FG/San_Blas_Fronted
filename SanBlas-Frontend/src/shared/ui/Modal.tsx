@@ -28,12 +28,15 @@ export function Modal({
     : "relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-xl";
 
   const contenido = (
-    <div
+    <motion.div
       className={cn(clasesContenido, className)}
       onClick={(event) => event.stopPropagation()}
       role="dialog"
       aria-modal="true"
       aria-label={title}
+      initial={false}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
     >
       <button
         type="button"
@@ -50,7 +53,7 @@ export function Modal({
       </button>
 
       {children}
-    </div>
+    </motion.div>
   );
 
   const focoAtrapado = (
@@ -68,15 +71,16 @@ export function Modal({
   if (sinFondo) {
     return (
       <>
-        <motion.div
+<motion.div
           className={
             overlayClassName ??
             "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
           }
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          onClick={cerrarAlClicFuera ? onClose : undefined}
+          onClick={onClose}
           role="presentation"
         />
         {focoAtrapado}

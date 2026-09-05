@@ -258,6 +258,7 @@ const TableSacramentos = () => {
   const modalBodyRef = useRef<HTMLDivElement>(null);
   const [filtroEstadoMenuAbierto, setFiltroEstadoMenuAbierto] = useState(false);
   const filtroEstadoMenuRef = useRef<HTMLDivElement>(null);
+  const ultimoMaxIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     const handleClickFuera = (event: MouseEvent) => {
@@ -371,6 +372,25 @@ const TableSacramentos = () => {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const isInitialLoading = isPending && rows.length === 0;
   const isFiltering = isFetching && !isInitialLoading;
+
+  useEffect(() => {
+    if (!rows.length) return;
+    const maxIdActual = Math.max(...rows.map((row) => row.id));
+    const previo = ultimoMaxIdRef.current;
+    if (previo === null) {
+      ultimoMaxIdRef.current = maxIdActual;
+      return;
+    }
+    if (maxIdActual > previo) {
+      ultimoMaxIdRef.current = maxIdActual;
+      if (!isInitialLoading && !isFiltering) {
+        showToast("Nueva solicitud entrante", "success", {
+          duration: 8_000,
+          position: "bottom-right",
+        });
+      }
+    }
+  }, [rows, isInitialLoading, isFiltering, showToast]);
 
   const filteredRows = useMemo(
     () =>
@@ -641,9 +661,8 @@ const TableSacramentos = () => {
         cell: (info) => {
           const r = info.row.original;
           return (
-            <span className="flex flex-col text-xs leading-snug text-text-secondary">
-              <span>{r.Correo}</span>
-              <span className="tabular-nums">
+            <span className="flex flex-col text-sm leading-snug text-text-secondary">
+              <span className="tabular-nums font-medium">
                 {formatearTelefono(r.Telefono) || "—"}
               </span>
             </span>
@@ -1334,7 +1353,7 @@ const mensaje =
                     href={solicitudSeleccionada.comprobanteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-xl bg-royal-blue px-4 py-2.5 text-sm font-bold text-white no-underline transition-colors duration-150 ease-out hover:bg-royal-blue-dark focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:ring-focus-ring focus-visible:outline-none"
+                    className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-xl border-2 border-solid border-royal-blue px-4 py-2.5 font-[Arial,Helvetica,sans-serif] text-sm font-bold text-royal-blue no-underline transition-colors duration-200 ease-out hover:border-royal-blue hover:bg-royal-blue hover:text-white focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:ring-focus-ring focus-visible:outline-none"
                   >
                     <ImageIcon
                       size={16}
