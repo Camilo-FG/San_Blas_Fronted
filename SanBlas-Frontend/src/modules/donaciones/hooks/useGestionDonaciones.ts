@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {
   actualizarEstadoDonacion,
   obtenerDonaciones,
+  rechazarDonacion,
   type Donacion,
   type EstadoDonacion,
   type EstadoDonacionAccion,
@@ -44,6 +45,7 @@ export const useGestionDonaciones = () => {
   const cambiarEstadoDonacion = async (
     id: number,
     nuevoEstado: EstadoDonacionAccion,
+    detalle?: string,
   ): Promise<ResultadoCambioEstado> => {
     const donacion = donaciones.find((item) => item.id === id);
 
@@ -57,7 +59,7 @@ export const useGestionDonaciones = () => {
     setGuardando(true);
 
     try {
-      await actualizarEstadoDonacion(id, nuevoEstado);
+      await actualizarEstadoDonacion(id, nuevoEstado, detalle);
 
       setDonaciones((prev) =>
         prev.map((item) =>
@@ -77,6 +79,43 @@ export const useGestionDonaciones = () => {
     }
   };
 
+  const rechazarDonacionConMotivo = async (
+    id: number,
+    motivo: string,
+    detalle?: string,
+  ): Promise<ResultadoCambioEstado> => {
+    const donacion = donaciones.find((item) => item.id === id);
+
+    if (donacion && esEstadoFinal(donacion.estado)) {
+      return {
+        ok: false,
+        mensaje: `Este donativo ya fue ${donacion.estado.toLowerCase()} y no puede procesarse nuevamente.`,
+      };
+    }
+
+    setGuardando(true);
+
+    try {
+      await rechazarDonacion(id, motivo, detalle);
+
+      setDonaciones((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, estado: "Rechazado" } : item,
+        ),
+      );
+      return { ok: true };
+    } catch (err) {
+      const mensaje =
+        err instanceof ApiError
+          ? err.message
+          : "No se pudo rechazar el donativo. Intente de nuevo.";
+      console.error(err);
+      return { ok: false, mensaje };
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   useEffect(() => {
     cargarDonaciones();
   }, []);
@@ -87,6 +126,7 @@ export const useGestionDonaciones = () => {
     guardando,
     error,
     cambiarEstadoDonacion,
+    rechazarDonacion: rechazarDonacionConMotivo,
     recargar: cargarDonaciones,
   };
 };

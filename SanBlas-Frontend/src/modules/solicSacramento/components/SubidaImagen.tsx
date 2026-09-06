@@ -26,9 +26,7 @@ interface SubidaImagenProps {
 const TIPOS_PERMITIDOS = [
   "image/jpeg",
   "image/png",
-  "image/gif",
   "image/webp",
-  "image/svg+xml",
 ];
 
 const MAX_DEFAULT_MB = 5;
@@ -239,7 +237,7 @@ export const SubidaImagen = ({
                 }}
                 className="cursor-pointer rounded-md border-2 border-solid border-royal-blue px-4 py-1.5 font-[Arial,Helvetica,sans-serif] text-[0.8rem] font-bold text-royal-blue transition-colors duration-200 ease-out hover:border-royal-blue hover:bg-royal-blue hover:text-white"
               >
-                {textoBoton}
+                Buscar archivo
               </button>
             </div>
           </>

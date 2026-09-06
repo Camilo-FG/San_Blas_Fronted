@@ -5,6 +5,7 @@ import {
   crearEvento,
   desactivarEvento,
   eliminarEvento,
+  obtenerEventoPorId,
   obtenerEventos,
   publicarEvento,
   type Evento,
@@ -12,14 +13,18 @@ import {
   type OpcionesImagenEvento,
 } from "../../../../services/eventosService";
 import { ApiError } from "../../../../services/apiClient";
-import { extraerFechaCalendario } from "../../../../shared/utils/fechas";
+import { extraerFechaCalendario, extraerHora } from "../../../../shared/utils/fechas";
 
 export type ResultadoAccionEvento =
   | { ok: true; evento: Evento }
-  | { ok: false; mensaje: string; evento?: Evento };
+  | { ok: false; mensaje: string; evento?: Evento; errores?: Record<string, string[]> };
 
 const mensajeError = (err: unknown, respaldo: string) =>
   err instanceof ApiError ? err.message : respaldo;
+
+// los errores de validación del back vienen como Record<campo, mensajes[]>, se reenvían para pintarlos por campo
+const erroresBackend = (err: unknown): Record<string, string[]> | undefined =>
+  err instanceof ApiError ? err.errores : undefined;
 
 const formularioVacio = (): EventoPayload => ({
   titulo: "",
@@ -36,6 +41,7 @@ export const useGestionEventos = () => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [cargandoEdicion, setCargandoEdicion] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const upsertEvento = (evento: Evento) => {
@@ -82,7 +88,7 @@ export const useGestionEventos = () => {
     } catch (err) {
       const mensaje = mensajeError(err, "No se pudo guardar el evento.");
       setError(mensaje);
-      return { ok: false as const, mensaje };
+      return { ok: false as const, mensaje, errores: erroresBackend(err) };
     } finally {
       setGuardando(false);
     }
@@ -139,6 +145,7 @@ export const useGestionEventos = () => {
           "No se pudo completar la publicación del evento.",
         ),
         evento: eventoGuardado,
+        errores: erroresBackend(err),
       };
     } finally {
       setGuardando(false);
@@ -219,10 +226,25 @@ export const useGestionEventos = () => {
     }
   };
 
+  const cargarEventoPorId = async (id: number): Promise<Evento | null> => {
+    setCargandoEdicion(true);
+    try {
+      const evento = await obtenerEventoPorId(id);
+      return evento;
+    } catch (err) {
+      const mensaje = mensajeError(err, "No se pudo cargar el evento.");
+      setError(mensaje);
+      return null;
+    } finally {
+      setCargandoEdicion(false);
+    }
+  };
+
   return {
     eventos,
     cargando,
     guardando,
+    cargandoEdicion,
     error,
     formularioVacio,
     guardarEvento,
@@ -230,18 +252,18 @@ export const useGestionEventos = () => {
     publicarEventoDesdeFormulario,
     publicarEventoEnLista,
     cambiarDisponibilidadEvento,
+    cargarEventoPorId,
     recargar: cargarEventos,
   };
 };
 
 export const eventoToFormulario = (evento: Evento): EventoPayload => ({
-  id: evento.id,
   titulo: evento.titulo,
   descripcion: evento.descripcion,
   fechaInicio: extraerFechaCalendario(evento.fechaInicio),
   fechaFin: evento.fechaFin ? extraerFechaCalendario(evento.fechaFin) : null,
   lugar: evento.lugar,
-  hora: evento.hora ?? null,
+  hora: extraerHora(evento.hora),
   imagenUrl: evento.imagenUrl ?? null,
   publicado: evento.publicado,
 });

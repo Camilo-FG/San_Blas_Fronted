@@ -253,7 +253,7 @@ export const UserList = ({ users, onAddUser, onRefetch }: UserListProps) => {
                 })}
             </div>
 
-            <AdminTableFooter>
+            <AdminTableFooter pegadoAbajo>
                 <span>
                     Total de registros: <strong className="text-royal-blue">{totalItems}</strong>
                 </span>

@@ -30,6 +30,12 @@ const normalizarTexto = (valor: string) =>
     .toLowerCase()
     .trim();
 
+const minutosHora = (hora?: string | null) => {
+  const match = String(hora ?? "").trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return 0;
+  return Number(match[1]) * 60 + Number(match[2]);
+};
+
 const formatearFecha = (fecha: string) =>
   formatearFechaCalendario(fecha, {
     weekday: "long",
@@ -48,7 +54,7 @@ function PortadaEvento({ imagenUrl }: { imagenUrl?: string | null }) {
   const mostrarImagen = Boolean(imagenUrl) && !imagenRota;
 
   return (
-    <div className="relative h-52 overflow-hidden bg-gradient-to-br from-teal to-teal-hover max-sm:h-44">
+    <div className="relative h-52 overflow-hidden bg-gradient-to-br from-royal-blue to-royal-blue-dark max-sm:h-44">
       {mostrarImagen ? (
         <img
           src={imagenUrl ?? undefined}
@@ -120,15 +126,24 @@ const EventosPublicPage = () => {
   const eventosFiltrados = useMemo(() => {
     const nombre = normalizarTexto(busquedaNombre);
 
-    return eventos.filter((evento) => {
-      const coincideNombre =
-        !nombre || normalizarTexto(evento.titulo).includes(nombre);
-      const fechaEvento = extraerFechaCalendario(evento.fechaInicio);
-      const coincideDesde = !fechaDesde || fechaEvento >= fechaDesde;
-      const coincideHasta = !fechaHasta || fechaEvento <= fechaHasta;
+    return eventos
+      .filter((evento) => {
+        const coincideNombre =
+          !nombre || normalizarTexto(evento.titulo).includes(nombre);
+        const fechaEvento = extraerFechaCalendario(evento.fechaInicio);
+        const coincideDesde = !fechaDesde || fechaEvento >= fechaDesde;
+        const coincideHasta = !fechaHasta || fechaEvento <= fechaHasta;
 
-      return coincideNombre && coincideDesde && coincideHasta;
-    });
+        return coincideNombre && coincideDesde && coincideHasta;
+      })
+      .sort((a, b) => {
+        const fechaA = extraerFechaCalendario(a.fechaInicio);
+        const fechaB = extraerFechaCalendario(b.fechaInicio);
+        if (fechaA !== fechaB) return fechaB.localeCompare(fechaA);
+        const diferenciaHora = minutosHora(b.hora) - minutosHora(a.hora);
+        if (diferenciaHora !== 0) return diferenciaHora;
+        return b.id - a.id;
+      });
   }, [busquedaNombre, eventos, fechaDesde, fechaHasta]);
 
   const totalPaginas = Math.max(
@@ -163,7 +178,7 @@ const EventosPublicPage = () => {
       <ScrollReveal className="mb-10 text-center" amount={0.4}>
         <header>
           <h1 className="mb-3 font-heading text-4xl text-royal-blue">
-            Próximos eventos
+            Eventos
           </h1>
           <p className="text-text-muted">
             Actividades, celebraciones y encuentros de la Parroquia San Blas.
@@ -252,17 +267,17 @@ const EventosPublicPage = () => {
                   {evento.titulo}
                 </h2>
                 <p className="mb-1.5 flex items-center gap-1.5 text-[0.82rem] text-text-muted">
-                  <MapPin size={14} className="shrink-0" aria-hidden="true" />
+                  <MapPin size={14} className="shrink-0 text-royal-gold" aria-hidden="true" />
                   <span className="truncate">{evento.lugar}</span>
                 </p>
                 <p className="mb-0 flex items-center gap-1.5 text-[0.82rem] text-text-muted">
-                  <CalendarDays size={14} className="shrink-0" aria-hidden="true" />
+                  <CalendarDays size={14} className="shrink-0 text-royal-gold" aria-hidden="true" />
                   <span className="truncate">{formatearFecha(evento.fechaInicio)}</span>
                 </p>
                 <p
                   className={`mt-1 mb-0 flex items-center gap-1.5 text-[0.82rem] text-text-muted ${fechaFin ? "" : "invisible"}`}
                 >
-                  <CalendarDays size={14} className="shrink-0" aria-hidden="true" />
+                  <CalendarDays size={14} className="shrink-0 text-royal-gold" aria-hidden="true" />
                   <span className="truncate">
                     Hasta {fechaFin ? formatearFecha(evento.fechaFin ?? "") : "—"}
                   </span>
@@ -270,7 +285,7 @@ const EventosPublicPage = () => {
                 <p
                   className={`mt-1 mb-0 flex items-center gap-1.5 text-[0.82rem] text-text-muted ${hora ? "" : "invisible"}`}
                 >
-                  <Clock3 size={14} className="shrink-0" aria-hidden="true" />
+                  <Clock3 size={14} className="shrink-0 text-royal-gold" aria-hidden="true" />
                   <span className="truncate">{hora || "—"}</span>
                 </p>
                 <p className="mt-3 mb-3 line-clamp-3 min-h-[5.6rem] text-[1.1rem] leading-[1.7] text-slate-700">

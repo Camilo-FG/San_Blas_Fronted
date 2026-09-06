@@ -22,7 +22,7 @@ export function AdminToolbar({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-2xl border border-border-strong bg-surface p-4 shadow-sm md:flex-row md:items-center",
+        "flex flex-col gap-3 rounded-2xl border border-border-strong bg-surface p-4 shadow-sm md:flex-row md:flex-wrap md:items-center",
         className,
       )}
       {...props}
@@ -161,18 +161,30 @@ export function AdminTableActions({
 export function AdminTableFooter({
   className,
   children,
+  pegadoAbajo = false,
   ...props
-}: HTMLAttributes<HTMLDivElement>) {
-  return (
+}: HTMLAttributes<HTMLDivElement> & { pegadoAbajo?: boolean }) {
+  const barra = (
     <div
       className={cn(
         "mt-3.5 flex flex-wrap items-center justify-between gap-3 px-1 pt-3.5 text-sm text-text-muted",
+        pegadoAbajo &&
+          "fixed right-0 bottom-0 left-0 z-20 mt-0 border-t border-border bg-gray-50/95 px-4 pt-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 lg:left-64 lg:px-8",
         className,
       )}
       {...props}
     >
       {children}
     </div>
+  );
+
+  if (!pegadoAbajo) return barra;
+
+  return (
+    <>
+      <div className="min-h-24 shrink-0 sm:min-h-20" aria-hidden="true" />
+      {barra}
+    </>
   );
 }
 
