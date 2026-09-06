@@ -1,6 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Eye, HandHeart, Loader2, Mail, Phone, Search } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  HandHeart,
+  Loader2,
+  Mail,
+  Phone,
+  Search,
+} from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import FocusTrap from "focus-trap-react";
 import {
   useGestionDonaciones,
   Donacion,
@@ -10,17 +21,23 @@ import { DonacionDetalleModal } from "../components/DonacionDetalleModal";
 import { AdminRecordCard } from "../../../shared/components/admin/AdminRecordCard";
 import {
   AdminModule,
+  AdminPagination,
+  AdminPaginationButton,
   AdminSearch,
   AdminTable,
   AdminTableCell,
+  AdminTableFooter,
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTablePanel,
   AdminTableRow,
   Badge,
-  ConfirmacionAccionModal,
+  Button,
   EmptyState,
   ErrorMessage,
+  LineaDoradaTitulo,
+  Modal,
+  Textarea,
   resaltarCoincidencia,
   type BadgeVariant,
   useToast,
@@ -42,9 +59,23 @@ const normalizeText = (value: unknown) =>
 
 type Confirmacion = "aprobar" | "rechazar" | null;
 
+const TAMANOS_PAGINA = [10, 25, 50] as const;
+const TAMANO_PAGINA_INICIAL = 10;
+
+const REGEX_MOTIVO_VALIDO =
+  /^[a-zA-Z\u00C0-\u024F\d\s.,;:!?¡¿()'"\-–—]*$/;
+const tieneCaracteresInvalidos = (texto: string) =>
+  texto.length > 0 && !REGEX_MOTIVO_VALIDO.test(texto);
+
 export default function GestionDonaciones(): React.JSX.Element {
-  const { donaciones, cargando, guardando, error, cambiarEstadoDonacion } =
-    useGestionDonaciones();
+  const {
+    donaciones,
+    cargando,
+    guardando,
+    error,
+    cambiarEstadoDonacion,
+    rechazarDonacion,
+  } = useGestionDonaciones();
   const { showToast, toasts } = useToast();
   const [donacionSeleccionada, setDonacionSeleccionada] =
     useState<Donacion | null>(null);
@@ -52,6 +83,24 @@ export default function GestionDonaciones(): React.JSX.Element {
   const [nombreInput, setNombreInput] = useState("");
   const [correoInput, setCorreoInput] = useState("");
   const [filtros, setFiltros] = useState({ nombre: "", correo: "" });
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [registrosPorPagina, setRegistrosPorPagina] = useState(
+    TAMANO_PAGINA_INICIAL,
+  );
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isConfirmRejectOpen, setIsConfirmRejectOpen] = useState(false);
+  const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
+  const [rejectionReasonText, setRejectionReasonText] = useState("");
+  const [motivoError, setMotivoError] = useState<string | null>(null);
+  const [motivoMenuAbierto, setMotivoMenuAbierto] = useState(false);
+  const motivoMenuRef = useRef<HTMLDivElement>(null);
+  const [approvalDetail, setApprovalDetail] = useState("");
+
+  const rejectionReasons = [
+    "Comprobante de pago inválido",
+    "Datos incorrectos",
+    "Otro",
+  ];
 
   const formatearFecha = (fechaStr: string) => {
     const opciones: Intl.DateTimeFormatOptions = {
@@ -72,6 +121,22 @@ export default function GestionDonaciones(): React.JSX.Element {
     return () => clearTimeout(timer);
   }, [nombreInput, correoInput]);
 
+  useEffect(() => {
+    if (!motivoMenuAbierto) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        motivoMenuRef.current &&
+        !motivoMenuRef.current.contains(event.target as Node)
+      ) {
+        setMotivoMenuAbierto(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [motivoMenuAbierto]);
+
   const handleSoloLetrasNombre = (valor: string) =>
     valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "").slice(0, 30);
 
@@ -82,17 +147,50 @@ export default function GestionDonaciones(): React.JSX.Element {
     const nombreBuscado = normalizeText(filtros.nombre);
     const correoBuscado = normalizeText(filtros.correo);
 
-    return donaciones.filter((donacion) => {
-      const coincideNombre =
-        !nombreBuscado ||
-        normalizeText(donacion.nombre).includes(nombreBuscado);
-      const coincideCorreo =
-        !correoBuscado ||
-        normalizeText(donacion.correo).includes(correoBuscado);
+    return donaciones
+      .filter((donacion) => {
+        const coincideNombre =
+          !nombreBuscado ||
+          normalizeText(donacion.nombre).includes(nombreBuscado);
+        const coincideCorreo =
+          !correoBuscado ||
+          normalizeText(donacion.correo).includes(correoBuscado);
 
-      return coincideNombre && coincideCorreo;
-    });
+        return coincideNombre && coincideCorreo;
+      })
+      .sort((a, b) => {
+        const aPendiente =
+          (a.estado || "Pendiente").toLowerCase() === "pendiente" ? 0 : 1;
+        const bPendiente =
+          (b.estado || "Pendiente").toLowerCase() === "pendiente" ? 0 : 1;
+        if (aPendiente !== bPendiente) return aPendiente - bPendiente;
+        return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
+      });
   }, [donaciones, filtros]);
+
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(donacionesFiltradas.length / registrosPorPagina),
+  );
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [filtros, registrosPorPagina]);
+
+  useEffect(() => {
+    setPaginaActual((pagina) => Math.min(pagina, totalPaginas));
+  }, [totalPaginas]);
+
+  const indiceInicio = (paginaActual - 1) * registrosPorPagina;
+  const donacionesPagina = donacionesFiltradas.slice(
+    indiceInicio,
+    indiceInicio + registrosPorPagina,
+  );
+  const primerRegistro = donacionesFiltradas.length === 0 ? 0 : indiceInicio + 1;
+  const ultimoRegistro = Math.min(
+    indiceInicio + registrosPorPagina,
+    donacionesFiltradas.length,
+  );
 
   const hayBusquedaActiva = filtros.nombre !== "" || filtros.correo !== "";
   const mostrarEstadoVacio =
@@ -116,19 +214,97 @@ export default function GestionDonaciones(): React.JSX.Element {
     if (!donacionSeleccionada || donacionSeleccionada.estado !== "Pendiente") {
       return;
     }
+    if (accion === "rechazar") {
+      abrirRechazo();
+      return;
+    }
+    setApprovalDetail("");
     setConfirmacion(accion);
+  };
+
+  const abrirRechazo = () => {
+    if (!donacionSeleccionada || donacionSeleccionada.estado !== "Pendiente") {
+      return;
+    }
+    setConfirmacion(null);
+    setIsConfirmRejectOpen(false);
+    setRejectionReasonSelect("");
+    setRejectionReasonText("");
+    setMotivoError(null);
+    setMotivoMenuAbierto(false);
+    setIsRejectModalOpen(true);
+  };
+
+  const cerrarRechazo = (opciones?: { volverAlDetalle?: boolean }) => {
+    if (guardando) return;
+    const { volverAlDetalle = true } = opciones ?? {};
+    setIsRejectModalOpen(false);
+    setIsConfirmRejectOpen(false);
+    setRejectionReasonSelect("");
+    setRejectionReasonText("");
+    setMotivoError(null);
+    setMotivoMenuAbierto(false);
+    if (!volverAlDetalle) {
+      setDonacionSeleccionada(null);
+    }
+    setConfirmacion(null);
+  };
+
+  const handleOpenConfirmReject = () => {
+    const motivo = rejectionReasonSelect.trim();
+    if (tieneCaracteresInvalidos(rejectionReasonText)) return;
+    if (!motivo) {
+      setMotivoError("Por favor seleccione un motivo para continuar");
+      return;
+    }
+    setMotivoError(null);
+    setIsConfirmRejectOpen(true);
+  };
+
+  const handleCancelConfirmReject = () => {
+    if (guardando) return;
+    setIsConfirmRejectOpen(false);
+  };
+
+  const handleRejectSubmit = async () => {
+    const motivo = rejectionReasonSelect.trim();
+    const detalle = rejectionReasonText.trim() || undefined;
+    if (!donacionSeleccionada || !motivo || guardando) return;
+
+    const resultado = await rechazarDonacion(
+      donacionSeleccionada.id,
+      motivo,
+      detalle,
+    );
+
+    if (resultado.ok) {
+      showToast("Donativo rechazado correctamente", "error");
+      cerrarRechazo({ volverAlDetalle: false });
+      return;
+    }
+
+    showToast(resultado.mensaje, "error");
   };
 
   const cancelarConfirmacion = () => {
     if (guardando) return;
     setConfirmacion(null);
+    setApprovalDetail("");
   };
 
   useEffect(() => {
-    if (!donacionSeleccionada && !confirmacion) return;
+    if (!donacionSeleccionada && !confirmacion && !isRejectModalOpen) return;
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || toasts.length > 0) return;
+      if (isConfirmRejectOpen) {
+        handleCancelConfirmReject();
+        return;
+      }
+      if (isRejectModalOpen) {
+        cerrarRechazo();
+        return;
+      }
       if (confirmacion) {
         cancelarConfirmacion();
         return;
@@ -138,18 +314,30 @@ export default function GestionDonaciones(): React.JSX.Element {
 
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [donacionSeleccionada, confirmacion, guardando, toasts.length]);
+  }, [
+    donacionSeleccionada,
+    confirmacion,
+    isRejectModalOpen,
+    isConfirmRejectOpen,
+    guardando,
+    toasts.length,
+  ]);
 
-  const confirmarCambioEstado = async (nuevoEstado: EstadoDonacionAccion) => {
+  const confirmarCambioEstado = async (
+    nuevoEstado: EstadoDonacionAccion,
+    detalle?: string,
+  ) => {
     if (!donacionSeleccionada) return;
 
     const resultado = await cambiarEstadoDonacion(
       donacionSeleccionada.id,
       nuevoEstado,
+      detalle,
     );
 
     if (resultado.ok) {
       setConfirmacion(null);
+      setApprovalDetail("");
       setDonacionSeleccionada(null);
       if (nuevoEstado === "Aprobado") {
         showToast("Donativo aprobado correctamente", "success");
@@ -245,7 +433,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                   </AdminTableRow>
                 </AdminTableHead>
                 <tbody>
-                  {donacionesFiltradas.map((donacion: Donacion) => (
+                  {donacionesPagina.map((donacion: Donacion) => (
                     <AdminTableRow key={donacion.id}>
                       <AdminTableCell>
                         {formatearFecha(donacion.fecha)}
@@ -301,7 +489,7 @@ export default function GestionDonaciones(): React.JSX.Element {
           </div>
 
           <div className="flex flex-col gap-2.5 md:hidden">
-            {donacionesFiltradas.map((donacion: Donacion) => (
+            {donacionesPagina.map((donacion: Donacion) => (
               <AdminRecordCard
                 key={donacion.id}
                 icon={<HandHeart size={20} />}
@@ -339,6 +527,65 @@ export default function GestionDonaciones(): React.JSX.Element {
               />
             ))}
           </div>
+
+          <AdminTableFooter pegadoAbajo>
+            <span className="text-sm text-text-muted">
+              Mostrando{" "}
+              <strong className="text-text tabular-nums">
+                {primerRegistro}-{ultimoRegistro}
+              </strong>{" "}
+              de{" "}
+              <strong className="text-text tabular-nums">
+                {donacionesFiltradas.length}
+              </strong>{" "}
+              registros
+            </span>
+            <AdminPagination className="flex-wrap">
+              <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+                Registros por página
+                <select
+                  value={registrosPorPagina}
+                  onChange={(event) =>
+                    setRegistrosPorPagina(Number(event.target.value))
+                  }
+                  className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                  aria-label="Cantidad de registros por página"
+                >
+                  {TAMANOS_PAGINA.map((tamano) => (
+                    <option key={tamano} value={tamano}>
+                      {tamano}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <AdminPaginationButton
+                type="button"
+                onClick={() =>
+                  setPaginaActual((pagina) => Math.max(1, pagina - 1))
+                }
+                disabled={paginaActual <= 1}
+                aria-label="Página anterior"
+              >
+                <ChevronLeft size={16} strokeWidth={2} />
+              </AdminPaginationButton>
+              <span className="text-sm whitespace-nowrap text-text-muted">
+                Página{" "}
+                <strong className="text-text tabular-nums">{paginaActual}</strong>{" "}
+                de{" "}
+                <strong className="text-text tabular-nums">{totalPaginas}</strong>
+              </span>
+              <AdminPaginationButton
+                type="button"
+                onClick={() =>
+                  setPaginaActual((pagina) => Math.min(totalPaginas, pagina + 1))
+                }
+                disabled={paginaActual >= totalPaginas}
+                aria-label="Página siguiente"
+              >
+                <ChevronRight size={16} strokeWidth={2} />
+              </AdminPaginationButton>
+            </AdminPagination>
+          </AdminTableFooter>
         </>
       )}
 
@@ -355,7 +602,7 @@ export default function GestionDonaciones(): React.JSX.Element {
         )}
       </AnimatePresence>
 
-      {donacionSeleccionada && !confirmacion && (
+      {donacionSeleccionada && !confirmacion && !isRejectModalOpen && (
         <DonacionDetalleModal
           donacion={donacionSeleccionada}
           formatearFecha={formatearFecha}
@@ -365,29 +612,271 @@ export default function GestionDonaciones(): React.JSX.Element {
         />
       )}
 
-      <ConfirmacionAccionModal
-        open={confirmacion === "aprobar" && donacionSeleccionada !== null}
-        title="Confirmar aprobación"
-        parteSubrayada="Aprobar donativo"
-        mensaje="¿Estás seguro/a que quieres aprobar este donativo? Una vez aprobado su estado no podrá ser cambiado."
-        confirmLabel="Aprobar"
-        pendingLabel="Aprobando..."
-        isPending={guardando}
-        onConfirm={() => void confirmarCambioEstado("Aprobado")}
-        onCancel={cancelarConfirmacion}
-      />
+      {confirmacion === "aprobar" && donacionSeleccionada && (
+        <Modal
+          onClose={cancelarConfirmacion}
+          title="Confirmar aprobación"
+          sinFondo
+          cerrarAlClicFuera={false}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="flex min-h-44 flex-col gap-4">
+              <LineaDoradaTitulo parteSubrayada="Aprobar donativo" />
+              <p className="text-sm leading-relaxed text-text-secondary">
+                ¿Estás seguro/a que quieres aprobar este donativo? Una vez
+                aprobado su estado no podrá ser cambiado.
+              </p>
+              <Textarea
+                value={approvalDetail}
+                onChange={(e) => setApprovalDetail(e.target.value)}
+                placeholder="Agregue un comentario (opcional)"
+                rows={3}
+                maxLength={150}
+                className="min-h-20"
+              />
+              <div className="-mt-2 flex items-baseline justify-between gap-2">
+                {tieneCaracteresInvalidos(approvalDetail) && (
+                  <p className="m-0 text-xs font-semibold text-red-600">
+                    Los caracteres especiales no están permitidos
+                  </p>
+                )}
+                <p
+                  className={`m-0 ml-auto text-xs ${
+                    approvalDetail.length >= 150
+                      ? "font-semibold text-red-600"
+                      : "text-text-muted"
+                  }`}
+                >
+                  {approvalDetail.length}/150
+                </p>
+              </div>
+              <div className="flex shrink-0 justify-end gap-2">
+                <Button
+                  variant="royal"
+                  className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                  onClick={() =>
+                    void confirmarCambioEstado(
+                      "Aprobado",
+                      approvalDetail.trim() || undefined,
+                    )
+                  }
+                  disabled={
+                    guardando || tieneCaracteresInvalidos(approvalDetail)
+                  }
+                >
+                  {guardando ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Aprobando...
+                    </>
+                  ) : (
+                    "Aprobar"
+                  )}
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                  onClick={cancelarConfirmacion}
+                  disabled={guardando}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </Modal>
+      )}
 
-      <ConfirmacionAccionModal
-        open={confirmacion === "rechazar" && donacionSeleccionada !== null}
-        title="Confirmar rechazo"
-        parteSubrayada="Rechazar donativo"
-        mensaje="¿Estás seguro/a que quieres rechazar este donativo? Una vez rechazado, su estado no podrá ser cambiado."
-        confirmLabel="Rechazar"
-        pendingLabel="Rechazando..."
-        isPending={guardando}
-        onConfirm={() => void confirmarCambioEstado("Rechazado")}
-        onCancel={cancelarConfirmacion}
-      />
+      {isRejectModalOpen && donacionSeleccionada && (
+        <Modal
+          onClose={
+            isConfirmRejectOpen ? handleCancelConfirmReject : () => cerrarRechazo()
+          }
+          title={isConfirmRejectOpen ? "Confirmar rechazo" : "Rechazar donativo"}
+          sinFondo
+          overlayClassName={
+            isConfirmRejectOpen
+              ? "fixed inset-0 z-[1350] backdrop-blur-[6px]"
+              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+          }
+        >
+          <motion.div
+            key={isConfirmRejectOpen ? "confirmar" : "formulario"}
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {isConfirmRejectOpen ? (
+              <div className="flex min-h-44 flex-col">
+                <LineaDoradaTitulo parteSubrayada="Rechazar donativo" />
+                <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
+                  <p className="text-sm leading-relaxed text-text-secondary">
+                    ¿Estás seguro/a que quieres rechazar este donativo? Una vez
+                    rechazado, su estado no podrá ser cambiado.
+                  </p>
+                </div>
+                <div className="flex shrink-0 justify-end gap-2">
+                  <Button
+                    variant="royal"
+                    className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                    onClick={() => void handleRejectSubmit()}
+                    disabled={guardando}
+                  >
+                    {guardando ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Rechazando...
+                      </>
+                    ) : (
+                      "Rechazar"
+                    )}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                    onClick={handleCancelConfirmReject}
+                    disabled={guardando}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex min-h-44 flex-col gap-4">
+                <LineaDoradaTitulo parteSubrayada="Rechazar donativo" />
+                <p className="text-sm text-text-secondary">
+                  Seleccione el motivo de rechazo en la lista. El campo de texto
+                  es opcional para agregar un detalle.
+                </p>
+                <div className="relative" ref={motivoMenuRef}>
+                  <button
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={motivoMenuAbierto}
+                    onClick={() => setMotivoMenuAbierto((prev) => !prev)}
+                    className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 ${
+                      motivoMenuAbierto
+                        ? "border-blue-400 bg-surface"
+                        : "border-border-strong"
+                    }`}
+                  >
+                    <span
+                      className={
+                        rejectionReasonSelect
+                          ? "font-semibold text-[#16243c]"
+                          : "font-medium text-slate-700"
+                      }
+                    >
+                      {rejectionReasonSelect || "Seleccione un motivo"}
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      className={`shrink-0 text-slate-900 transition-transform duration-200 ${
+                        motivoMenuAbierto ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {motivoMenuAbierto && (
+                      <FocusTrap
+                        focusTrapOptions={{
+                          clickOutsideDeactivates: false,
+                          escapeDeactivates: false,
+                          allowOutsideClick: () => true,
+                        }}
+                      >
+                        <motion.ul
+                          role="listbox"
+                          initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                          transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                          className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                        >
+                          {rejectionReasons.map((reason) => (
+                            <li
+                              key={reason}
+                              role="option"
+                              aria-selected={rejectionReasonSelect === reason}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setRejectionReasonSelect(reason);
+                                  setMotivoError(null);
+                                  setMotivoMenuAbierto(false);
+                                }}
+                                className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
+                                  rejectionReasonSelect === reason
+                                    ? "bg-[#aa7323]/10 text-[#16243c]"
+                                    : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                                }`}
+                              >
+                                {reason}
+                              </button>
+                            </li>
+                          ))}
+                        </motion.ul>
+                      </FocusTrap>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <Textarea
+                  value={rejectionReasonText}
+                  onChange={(e) => setRejectionReasonText(e.target.value)}
+                  placeholder="Detalle un motivo personalizado (opcional)"
+                  rows={3}
+                  maxLength={150}
+                  className="min-h-20"
+                />
+                <div className="-mt-2 flex items-baseline justify-between gap-2">
+                  {motivoError && (
+                    <p className="m-0 text-xs font-semibold text-red-600">
+                      {motivoError}
+                    </p>
+                  )}
+                  {tieneCaracteresInvalidos(rejectionReasonText) && (
+                    <p className="m-0 text-xs font-semibold text-red-600">
+                      Los caracteres especiales no están permitidos
+                    </p>
+                  )}
+                  <p
+                    className={`m-0 ml-auto text-xs ${
+                      rejectionReasonText.length >= 150
+                        ? "font-semibold text-red-600"
+                        : "text-text-muted"
+                    }`}
+                  >
+                    {rejectionReasonText.length}/150
+                  </p>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    variant="royal"
+                    className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                    onClick={handleOpenConfirmReject}
+                    disabled={tieneCaracteresInvalidos(rejectionReasonText)}
+                  >
+                    Continuar
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                    onClick={() => cerrarRechazo()}
+                    disabled={guardando}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </Modal>
+      )}
     </AdminModule>
   );
 }
