@@ -1,25 +1,50 @@
-import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, ScrollText, Phone, IdCard, Eye } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import FocusTrap from "focus-trap-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ScrollText,
+  Phone,
+  IdCard,
+  Eye,
+  Search,
+  Loader2,
+  Mail,
+  X,
+  Archive,
+  ArchiveRestore,
+  CalendarDays,
+  ExternalLink,
+  Image as ImageIcon,
+} from "lucide-react";
 import type { FormSacramento } from "../../types/formSacramento";
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { useGetSolicitudes } from "../solicSacramento/hooks/useGetSolicitudes";
 import { useUpdateSolicitudEstado } from "../solicSacramento/hooks/useUpdateSolicitudEstado";
-import { usePagination } from "../../shared/hooks/usePagination";
+import { useAprobarSolicitud } from "../solicSacramento/hooks/useAprobarSolicitud";
+import { useRechazarSolicitudSacramento } from "../solicSacramento/hooks/useRechazarSolicitudSacramento";
+import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 import { ApiError } from "../../services/apiClient";
+import { toFriendlySolicitudesMessage } from "../../services/constancias/solicitudesQueryHandler";
 import { useAuth } from "../../context/AuthContext";
 import { AdminRecordCard } from "../../shared/components/admin/AdminRecordCard";
-import { AdminRecordDetailSheet } from "../../shared/components/admin/AdminRecordDetailSheet";
 import {
   AdminModule,
   AdminPagination,
   AdminPaginationButton,
-  AdminSearch,
   AdminTable,
   AdminTableCell,
   AdminTableFooter,
@@ -29,15 +54,80 @@ import {
   AdminTableRow,
   AdminToolbar,
   Badge,
+  Button,
+  ConfirmacionAccionModal,
+  EtiquetaSeccion,
+  LineaDoradaTitulo,
+  Modal,
   Select,
+  Textarea,
   cn,
   type BadgeVariant,
+  useToast,
 } from "../../shared/ui";
 
 const columnHelper = createColumnHelper<FormSacramento>();
+const PAGE_SIZES = [10, 25, 50] as const;
+const PAGE_SIZE_INICIAL = 10;
 
+const ESTADO_MODAL_STYLES = {
+  Pendiente: {
+    dot: "bg-[#aa7323]",
+    pill: "border-[#aa7323]/30 bg-[#aa7323]/10 text-[#aa7323]",
+  },
+  Aprobado: {
+    dot: "bg-emerald-600",
+    pill: "border-emerald-600/25 bg-emerald-600/10 text-emerald-700",
+  },
+  Rechazado: {
+    dot: "bg-red-600",
+    pill: "border-red-600/25 bg-red-600/10 text-red-700",
+  },
+  Archivado: {
+    dot: "bg-slate-500",
+    pill: "border-slate-400/30 bg-slate-100 text-slate-600",
+  },
+} as const;
+
+const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
+const formatearCedula = (valor: string) => {
+  const digitos = soloDigitos(valor).slice(0, 9);
+  if (digitos.length <= 1) return digitos;
+  if (digitos.length <= 5) return `${digitos.slice(0, 1)}-${digitos.slice(1)}`;
+  return `${digitos.slice(0, 1)}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
+};
+
+const CEDULAS_EXTRANJERAS_KEY = "sanblas_cedulas_extranjeras";
+const cargarCedulasExtranjeras = (): Record<string, string> => {
+  try {
+    const crudo = localStorage.getItem(CEDULAS_EXTRANJERAS_KEY);
+    return crudo ? JSON.parse(crudo) : {};
+  } catch {
+    return {};
+  }
+};
+const cedulaExtranjeraCompleta = (truncado: string): string | null => {
+  const mapa = cargarCedulasExtranjeras();
+  return mapa[soloDigitos(truncado).slice(0, 9)] ?? null;
+};
+const formatearCedulaMostrada = (valor: string) => {
+  const completa = cedulaExtranjeraCompleta(valor);
+  if (completa) return completa;
+  return formatearCedula(valor);
+};
+
+const REGEX_MOTIVO_VALIDO =
+  /^[a-zA-Z\u00C0-\u024F\d\s.,;:!?¡¿()'"\-–—]*$/;
+const tieneCaracteresInvalidos = (texto: string) =>
+  texto.length > 0 && !REGEX_MOTIVO_VALIDO.test(texto);
+
+const formatearTelefono = (valor?: string | number) => {
+  const digitos = soloDigitos(String(valor ?? "")).slice(0, 8);
+  if (digitos.length <= 4) return digitos;
+  return `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
+};
 const nombreCompleto = (row: FormSacramento) =>
-  [row.Nombre, row.PrimerApellido, row.SegundoApellido].filter(Boolean).join(" ");
+  [row.Nombre, row.PrimerApellido].filter(Boolean).join(" ");
 
 const normalizeText = (value: unknown) =>
   String(value ?? "")
@@ -46,45 +136,477 @@ const normalizeText = (value: unknown) =>
     .toLowerCase()
     .trim();
 
+const toFechaTime = (fecha?: string) => {
+  if (!fecha) return Number.NEGATIVE_INFINITY;
+  const t = new Date(fecha).getTime();
+  return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
+};
+
+const formatFechaHora = (fecha?: string | null) => {
+  if (!fecha) return "—";
+  const date = new Date(fecha);
+  if (Number.isNaN(date.getTime())) return "—";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   const normalized = (estado ?? "Pendiente").toLowerCase();
   if (normalized === "aprobado") return "success";
   if (normalized === "rechazado") return "danger";
+  if (normalized === "archivado") return "neutral";
   return "warning";
 };
 
-const estadoSelectClass = (estado?: string) =>
-  cn(
-    "rounded-full border bg-transparent font-bold",
-    (estado ?? "Pendiente").toLowerCase() === "aprobado" &&
-      "border-emerald-300 bg-success-bg text-success",
-    (estado ?? "Pendiente").toLowerCase() === "rechazado" &&
-      "border-red-300 bg-danger-bg text-danger",
-    (estado ?? "Pendiente").toLowerCase() === "pendiente" &&
-      "border-orange-300 bg-warning-bg text-warning",
+const esEstadoProcesado = (estado?: string) => {
+  const normalizado = normalizeText(estado);
+  return normalizado === "aprobado" || normalizado === "rechazado";
+};
+
+const ORDEN_ESTADO: Record<string, number> = {
+  Pendiente: 0,
+  Aprobado: 1,
+  Rechazado: 2,
+  Archivado: 3,
+};
+
+const VISTAS = [
+  { valor: "solicitudes", label: "Solicitudes", icono: null },
+  { valor: "archivados", label: "Archivadas", icono: ArchiveRestore },
+] as const;
+
+const STORAGE_KEY_ARCHIVADAS = "sanblas_sacramentos_archivadas";
+
+const cargarArchivadasLocal = (): FormSacramento[] => {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY_ARCHIVADAS);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as FormSacramento[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const guardarArchivadasLocal = (archivadas: FormSacramento[]) => {
+  try {
+    window.localStorage.setItem(
+      STORAGE_KEY_ARCHIVADAS,
+      JSON.stringify(archivadas),
+    );
+  } catch {
+    // Almacenamiento no disponible; se mantiene el estado en memoria
+  }
+};
+
+const esArchivadaLocal = (
+  archivadasLocal: FormSacramento[],
+  solicitud: FormSacramento,
+) =>
+  solicitud.Estado === "Archivado" ||
+  archivadasLocal.some(
+    (local) => String(local.id) === String(solicitud.id),
   );
 
 const TableSacramentos = () => {
-  const [query, setQuery] = useState("");
+  const [filtroNombre, setFiltroNombre] = useState("");
+  const [filtroCedula, setFiltroCedula] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState<
+    "Pendiente" | "Aprobado" | "Rechazado" | ""
+  >("");
+  const [vista, setVista] = useState<"solicitudes" | "archivados">(
+    "solicitudes",
+  );
+  const [archivadasLocal, setArchivadasLocal] = useState<FormSacramento[]>(
+    cargarArchivadasLocal,
+  );
   const [solicitudSeleccionada, setSolicitudSeleccionada] =
     useState<FormSacramento | null>(null);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isConfirmRejectOpen, setIsConfirmRejectOpen] = useState(false);
+  const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
+  const [motivoMenuAbierto, setMotivoMenuAbierto] = useState(false);
+  const [rechazoEnBlur, setRechazoEnBlur] = useState(false);
+  const [aprobacionEnBlur, setAprobacionEnBlur] = useState(false);
+  const motivoMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!motivoMenuAbierto) return;
+    const handleEscapeMotivo = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMotivoMenuAbierto(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscapeMotivo);
+    return () => document.removeEventListener("keydown", handleEscapeMotivo);
+  }, [motivoMenuAbierto]);
+  const [rejectionReasonText, setRejectionReasonText] = useState("");
+  const [solicitudARechazar, setSolicitudARechazar] =
+    useState<FormSacramento | null>(null);
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [solicitudAAprobar, setSolicitudAAprobar] =
+    useState<FormSacramento | null>(null);
+  const [solicitudAArchivar, setSolicitudAArchivar] =
+    useState<FormSacramento | null>(null);
+  const [isArchivarTodasOpen, setIsArchivarTodasOpen] = useState(false);
+  const { toasts, showToast } = useToast();
+  const [estadoMenuAbierto, setEstadoMenuAbierto] = useState(false);
+  const estadoMenuRef = useRef<HTMLDivElement>(null);
+  const modalBackdropRef = useRef<HTMLDivElement>(null);
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+  const [filtroEstadoMenuAbierto, setFiltroEstadoMenuAbierto] = useState(false);
+  const filtroEstadoMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickFuera = (event: MouseEvent) => {
+      if (
+        estadoMenuRef.current &&
+        !estadoMenuRef.current.contains(event.target as Node)
+      ) {
+        setEstadoMenuAbierto(false);
+      }
+      if (
+        filtroEstadoMenuRef.current &&
+        !filtroEstadoMenuRef.current.contains(event.target as Node)
+      ) {
+        setFiltroEstadoMenuAbierto(false);
+      }
+      if (
+        motivoMenuRef.current &&
+        !motivoMenuRef.current.contains(event.target as Node)
+      ) {
+        setMotivoMenuAbierto(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, []);
+
+  useEffect(() => {
+    if (!solicitudSeleccionada) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (
+        event.key === "Escape" &&
+        !isApproveModalOpen &&
+        !isRejectModalOpen &&
+        !isConfirmRejectOpen &&
+        !solicitudAArchivar &&
+        !isArchivarTodasOpen &&
+        !rechazoEnBlur &&
+        !aprobacionEnBlur &&
+        toasts.length === 0
+      ) {
+        setSolicitudSeleccionada(null);
+      }
+    };
+
+    const main = document.querySelector("main");
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevMainOverflow = main?.style.overflow ?? "";
+
+    document.addEventListener("keydown", handleEscape);
+    document.body.style.overflow = "hidden";
+    if (main) main.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = prevBodyOverflow;
+      if (main) main.style.overflow = prevMainOverflow;
+    };
+  }, [solicitudSeleccionada, isApproveModalOpen, isRejectModalOpen, isConfirmRejectOpen, solicitudAArchivar, isArchivarTodasOpen, rechazoEnBlur, aprobacionEnBlur, toasts.length]);
+
+  useEffect(() => {
+    if (!solicitudAArchivar && !isArchivarTodasOpen) return;
+
+    const handleEscapeArchivar = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setSolicitudAArchivar(null);
+      setIsArchivarTodasOpen(false);
+    };
+
+    document.addEventListener("keydown", handleEscapeArchivar);
+    return () =>
+      document.removeEventListener("keydown", handleEscapeArchivar);
+  }, [solicitudAArchivar, isArchivarTodasOpen]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE_INICIAL);
+  const debouncedNombre = useDebouncedValue(filtroNombre.trim(), 500);
+  const debouncedCedula = useDebouncedValue(filtroCedula.trim(), 500);
+  const debouncedEstado = useDebouncedValue(filtroEstado, 300);
+  const filters = useMemo(
+    () => ({
+      nombre: debouncedNombre || undefined,
+      cedula: debouncedCedula || undefined,
+      estado: debouncedEstado || undefined,
+      page: currentPage,
+      pageSize,
+    }),
+    [debouncedNombre, debouncedCedula, debouncedEstado, currentPage, pageSize],
+  );
+  const filtersChanged = `${debouncedNombre}|${debouncedCedula}|${debouncedEstado}`;
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filtersChanged]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [pageSize]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vista]);
   const { isAdmin } = useAuth();
-  const { data, error, isPending } = useGetSolicitudes();
+  const { data, error, isPending, isFetching, refetch } =
+    useGetSolicitudes(filters);
   const updateEstado = useUpdateSolicitudEstado();
+  const aprobarSolicitud = useAprobarSolicitud();
+  const rechazarSolicitud = useRechazarSolicitudSacramento();
   const isUpdatingEstado = updateEstado.isPending;
+  const isSubmitting = rechazarSolicitud.isPending;
 
-  const rows: FormSacramento[] = Array.isArray(data) ? data : [];
+  const rows: FormSacramento[] = data?.data ?? [];
+  const totalItems = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const isInitialLoading = isPending && rows.length === 0;
+  const isFiltering = isFetching && !isInitialLoading;
 
-  const filtered = useMemo(() => {
-    const normalizedQuery = normalizeText(query);
-    if (!normalizedQuery) return rows;
-    return rows.filter((row) => {
-      const searchable = [row.Nombre, row.PrimerApellido, row.SegundoApellido, String(row.Cedula)]
-        .map(normalizeText)
-        .join(" ");
-      return searchable.includes(normalizedQuery);
+  const filteredRows = useMemo(
+    () =>
+      rows
+        .filter((row) => {
+          const matchNombre =
+            !filtroNombre.trim() ||
+            normalizeText(nombreCompleto(row)).includes(
+              normalizeText(filtroNombre),
+            );
+          const matchCedula =
+            !filtroCedula.trim() ||
+            normalizeText(String(row.Cedula)).includes(
+              normalizeText(filtroCedula),
+            );
+          const matchEstado = !filtroEstado || row.Estado === filtroEstado;
+          return matchNombre && matchCedula && matchEstado;
+        })
+        .sort((a, b) => {
+          const diffEstado =
+            (ORDEN_ESTADO[a.Estado ?? "Pendiente"] ?? 0) -
+            (ORDEN_ESTADO[b.Estado ?? "Pendiente"] ?? 0);
+          if (diffEstado !== 0) return diffEstado;
+          return toFechaTime(b.Fecha) - toFechaTime(a.Fecha);
+        }),
+    [rows, filtroNombre, filtroCedula, filtroEstado],
+  );
+
+  const rejectionReasons = [
+    "Comprobante de pago inválido",
+    "Datos incorrectos",
+    "Otro",
+  ];
+
+  const handleOpenRejectModal = (solicitud: FormSacramento) => {
+    setRechazoEnBlur(false);
+    setIsConfirmRejectOpen(false);
+    setSolicitudARechazar(solicitud);
+    setRejectionReasonSelect("");
+    setRejectionReasonText("");
+    setIsRejectModalOpen(true);
+  };
+
+  const handleCloseRejectModal = (opciones?: { volverAlDetalle?: boolean }) => {
+    const { volverAlDetalle = true } = opciones ?? {};
+    const solicitud = solicitudARechazar;
+    setIsRejectModalOpen(false);
+    setRejectionReasonSelect("");
+    setRejectionReasonText("");
+    setSolicitudARechazar(null);
+    if (volverAlDetalle && solicitud) {
+      setRechazoEnBlur(true);
+      setSolicitudSeleccionada(solicitud);
+    }
+  };
+
+  const handleOpenConfirmReject = () => {
+    const motivo = rejectionReasonSelect.trim();
+    if (!motivo || tieneCaracteresInvalidos(rejectionReasonText)) return;
+    setIsConfirmRejectOpen(true);
+  };
+
+  const handleRejectSubmit = async () => {
+    const motivo = rejectionReasonSelect.trim();
+    if (!solicitudARechazar || solicitudARechazar.id == null || !motivo) return;
+
+    try {
+      await rechazarSolicitud.mutateAsync({
+        id: solicitudARechazar.id,
+        motivoRechazo: motivo,
+        detalleRechazo: rejectionReasonText.trim() || undefined,
+      });
+      showToast("Solicitud rechazada correctamente", "error");
+      setIsConfirmRejectOpen(false);
+      setIsRejectModalOpen(false);
+      handleCloseRejectModal({ volverAlDetalle: false });
+    } catch (err) {
+      const mensaje =
+        err instanceof ApiError
+          ? err.message
+          : "No se pudo rechazar la solicitud.";
+      showToast(mensaje, "error");
+    }
+  };
+
+  const handleCancelConfirmReject = () => {
+    setIsConfirmRejectOpen(false);
+  };
+  const handleReasonSelectChange = (value: string) => {
+    setRejectionReasonSelect(value);
+  };
+
+  const handleReasonTextChange = (value: string) => {
+    setRejectionReasonText(value);
+  };
+
+  const handleSolicitarArchivar = useCallback((solicitud: FormSacramento) => {
+    if (solicitud.id == null) return;
+    setSolicitudAArchivar(solicitud);
+  }, []);
+
+  const handleCancelArchivar = useCallback(() => {
+    setSolicitudAArchivar(null);
+  }, []);
+
+  const handleConfirmArchivar = useCallback(() => {
+    if (!solicitudAArchivar) return;
+    setArchivadasLocal((prev) => {
+      if (esArchivadaLocal(prev, solicitudAArchivar)) return prev;
+      const next = [solicitudAArchivar, ...prev];
+      guardarArchivadasLocal(next);
+      return next;
     });
-  }, [query, rows]);
+    setSolicitudAArchivar(null);
+    setSolicitudSeleccionada(null);
+    showToast("Solicitud archivada correctamente", "success");
+    setVista("archivados");
+  }, [solicitudAArchivar, showToast]);
+
+  const handleRestaurar = useCallback(
+    (solicitud: FormSacramento) => {
+      setArchivadasLocal((prev) => {
+        const next = prev.filter(
+          (local) => String(local.id) !== String(solicitud.id),
+        );
+        guardarArchivadasLocal(next);
+        return next;
+      });
+      showToast("Solicitud restaurada", "success");
+    },
+    [showToast],
+  );
+
+  const filasVista = useMemo(() => {
+    if (vista === "archivados") {
+      const archivadas = [
+        ...archivadasLocal,
+        ...rows.filter(
+          (row) =>
+            row.Estado === "Archivado" &&
+            !esArchivadaLocal(archivadasLocal, row),
+        ),
+      ];
+      return archivadas
+        .filter((row) => {
+          const matchNombre =
+            !filtroNombre.trim() ||
+            normalizeText(nombreCompleto(row)).includes(
+              normalizeText(filtroNombre),
+            );
+          const matchCedula =
+            !filtroCedula.trim() ||
+            normalizeText(String(row.Cedula)).includes(
+              normalizeText(filtroCedula),
+            );
+          return matchNombre && matchCedula;
+        })
+        .sort((a, b) => toFechaTime(b.Fecha) - toFechaTime(a.Fecha));
+    }
+    return filteredRows.filter(
+      (row) => !esArchivadaLocal(archivadasLocal, row),
+    );
+  }, [
+    archivadasLocal,
+    rows,
+    filteredRows,
+    vista,
+    filtroNombre,
+    filtroCedula,
+  ]);
+
+  const filasArchivables = useMemo(
+    () =>
+      vista === "solicitudes"
+        ? filasVista.filter(
+            (row) => row.id != null && esEstadoProcesado(row.Estado),
+          )
+        : [],
+    [filasVista, vista],
+  );
+
+  const handleCancelArchivarTodas = useCallback(() => {
+    setIsArchivarTodasOpen(false);
+  }, []);
+
+  const handleConfirmArchivarTodas = useCallback(() => {
+    if (filasArchivables.length === 0) {
+      setIsArchivarTodasOpen(false);
+      return;
+    }
+
+    setArchivadasLocal((prev) => {
+      const nuevas = filasArchivables.filter(
+        (row) => !esArchivadaLocal(prev, row),
+      );
+      if (nuevas.length === 0) return prev;
+      const next = [...nuevas, ...prev];
+      guardarArchivadasLocal(next);
+      return next;
+    });
+    setIsArchivarTodasOpen(false);
+    setSolicitudSeleccionada(null);
+    showToast(
+      filasArchivables.length === 1
+        ? "1 solicitud archivada correctamente"
+        : `${filasArchivables.length} solicitudes archivadas correctamente`,
+      "success",
+    );
+    setVista("archivados");
+  }, [filasArchivables, showToast]);
+
+  const totalVista = vista === "archivados" ? filasVista.length : totalItems;
+  const totalPagesVista =
+    vista === "archivados"
+      ? Math.max(1, Math.ceil(filasVista.length / pageSize))
+      : totalPages;
+  const canPreviousPageVista = currentPage > 1;
+  const canNextPageVista = currentPage < totalPagesVista;
+
+  // Las solicitudes ya llegan paginadas del servidor, pero las archivadas se
+  // resuelven en el cliente y hay que recortarlas acá
+  const filasPagina = useMemo(
+    () =>
+      vista === "archivados"
+        ? filasVista.slice(
+            (currentPage - 1) * pageSize,
+            currentPage * pageSize,
+          )
+        : filasVista,
+    [filasVista, vista, currentPage, pageSize],
+  );
+
+  const primerRegistroVista =
+    filasPagina.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const ultimoRegistroVista =
+    (currentPage - 1) * pageSize + filasPagina.length;
 
   const columns = useMemo(
     () => [
@@ -101,15 +623,15 @@ const TableSacramentos = () => {
         header: () => "Cédula",
         cell: (info) => (
           <span className="tabular-nums text-text-secondary">
-            {info.getValue()}
+            {formatearCedulaMostrada(String(info.getValue() ?? ""))}
           </span>
         ),
       }),
-      columnHelper.accessor("TipoSacramento", {
-        header: () => "Sacramento",
+      columnHelper.accessor("Fecha", {
+        header: () => "Fecha de ingreso",
         cell: (info) => (
-          <span className="text-[0.7rem] font-semibold tracking-wider text-text-muted uppercase">
-            {info.getValue()}
+          <span className="tabular-nums text-text-secondary">
+            {formatFechaHora(info.getValue())}
           </span>
         ),
       }),
@@ -119,9 +641,11 @@ const TableSacramentos = () => {
         cell: (info) => {
           const r = info.row.original;
           return (
-            <span className="flex flex-col gap-0.5 text-xs leading-snug text-text-secondary">
+            <span className="flex flex-col text-xs leading-snug text-text-secondary">
               <span>{r.Correo}</span>
-              <span className="tabular-nums">{r.Telefono?.toString() || "—"}</span>
+              <span className="tabular-nums">
+                {formatearTelefono(r.Telefono) || "—"}
+              </span>
             </span>
           );
         },
@@ -131,93 +655,432 @@ const TableSacramentos = () => {
       }),
       columnHelper.display({
         id: "motivo",
-        header: () => "Motivo",
-        cell: (info) => (
-          <button
-            type="button"
-            onClick={() => setSolicitudSeleccionada(info.row.original)}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-lg border-0 bg-transparent px-2 py-1.5 text-[0.7rem] font-bold tracking-wider text-info uppercase transition-colors hover:bg-info-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-          >
-            <Eye size={13} strokeWidth={1.5} />
-            Ver motivo
-          </button>
-        ),
+        header: () => "Acciones",
+        cell: (info) => {
+          const esArchivada = esArchivadaLocal(
+            archivadasLocal,
+            info.row.original,
+          );
+          return (
+            <span className="inline-flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => setSolicitudSeleccionada(info.row.original)}
+                aria-label="Ver solicitud"
+                className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+              >
+                <Eye
+                  size={17}
+                  strokeWidth={1.5}
+                />
+              </button>
+              {esArchivada ? (
+                <button
+                  type="button"
+                  onClick={() => handleRestaurar(info.row.original)}
+                  aria-label="Restaurar solicitud"
+                  title="Restaurar solicitud"
+                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                >
+                  <ArchiveRestore
+                    size={17}
+                    strokeWidth={1.5}
+                  />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleSolicitarArchivar(info.row.original)}
+                  aria-label="Archivar solicitud"
+                  title="Archivar solicitud"
+                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                >
+                  <Archive
+                    size={17}
+                    strokeWidth={1.5}
+                  />
+                </button>
+              )}
+            </span>
+          );
+        },
       }),
     ],
-    [],
+    [archivadasLocal, handleSolicitarArchivar, handleRestaurar],
   );
 
   const table = useReactTable({
-    data: filtered,
+    data: filasPagina,
     columns,
+    autoResetPageIndex: true,
     getCoreRowModel: getCoreRowModel(),
-    initialState: { pagination: { pageSize: 7 } },
-    getPaginationRowModel: getPaginationRowModel(),
   });
-
-  const {
-    totalItems, currentPage, totalPages,
-    canPreviousPage, canNextPage,
-    goToPreviousPage, goToNextPage,
-  } = usePagination(table);
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setQuery(e.target.value || "");
 
   const handleEstadoChange = (
     id: number | string | undefined,
     nextEstado: "Pendiente" | "Aprobado" | "Rechazado",
   ) => {
     if (id === undefined || id === null) return;
+
+    // La lista se recarga en segundo plano, así que la fila puede no estar en
+    // la página vigente; en ese caso vale la que ya se abrió en el detalle
+    const solicitud =
+      rows.find((r) => String(r.id) === String(id)) ??
+      (solicitudSeleccionada &&
+      String(solicitudSeleccionada.id) === String(id)
+        ? solicitudSeleccionada
+        : undefined);
+    const estadoActual = solicitud?.Estado ?? "Pendiente";
+
+    // Los estados "Aprobado" y "Rechazado" son permanentes e irreversibles
+    if (estadoActual === "Aprobado" || estadoActual === "Rechazado") {
+      return;
+    }
+
+    // Si se selecciona "Rechazado", abrir modal de rechazo en lugar de actualizar directamente
+    if (nextEstado === "Rechazado") {
+      if (solicitud) {
+        setSolicitudSeleccionada(null); // Cerrar modal de detalle
+        handleOpenRejectModal(solicitud); // Abrir modal de rechazo
+      }
+      return;
+    }
+
+    if (nextEstado === "Aprobado") {
+      if (solicitud) {
+        setAprobacionEnBlur(false);
+        setIsApproveModalOpen(true);
+        setSolicitudAAprobar(solicitud);
+      }
+      return;
+    }
+
     updateEstado.mutate(
-      { id, Estado: nextEstado },
+      { id, nuevoEstado: nextEstado },
       {
         onSuccess: () => {
-          if (solicitudSeleccionada && String(solicitudSeleccionada.id) === String(id)) {
-            setSolicitudSeleccionada({ ...solicitudSeleccionada, Estado: nextEstado });
+          if (
+            solicitudSeleccionada &&
+            String(solicitudSeleccionada.id) === String(id)
+          ) {
+            setSolicitudSeleccionada({
+              ...solicitudSeleccionada,
+              Estado: nextEstado,
+            });
           }
         },
         onError: (err: unknown) => {
-          const mensaje = err instanceof ApiError ? err.message : "No se pudo actualizar el estado.";
-          alert(mensaje);
+          const mensaje =
+            err instanceof ApiError
+              ? err.message
+              : "No se pudo actualizar el estado.";
+          showToast(mensaje, "error");
         },
       },
     );
   };
 
+  const handleApproveConfirm = () => {
+    if (!solicitudAAprobar) return;
+    aprobarSolicitud.mutate(
+      { id: solicitudAAprobar.id },
+      {
+        onSuccess: () => {
+          setIsApproveModalOpen(false);
+          setSolicitudAAprobar(null);
+          setSolicitudSeleccionada(null);
+          showToast("Solicitud aprobada correctamente", "success");
+        },
+        onError: (err: unknown) => {
+          // El modal permanece abierto, el botón "Confirmar" se reactiva solo
+          // (isPending vuelve a false) y el estado de la tabla no cambia
+const mensaje =
+              err instanceof Error && err.message
+                ? err.message
+                : "No hay conexión a Internet, inténtalo más tarde.";
+          showToast(mensaje, "error");
+        },
+      },
+    );
+  };
+
+  const handleCancelApprove = () => {
+    const restoredSolicitud = solicitudAAprobar;
+    setIsApproveModalOpen(false);
+    setSolicitudAAprobar(null);
+    setAprobacionEnBlur(true);
+    setSolicitudSeleccionada(restoredSolicitud);
+  };
+
+  useEffect(() => {
+    if (!isApproveModalOpen && !isRejectModalOpen && !isConfirmRejectOpen)
+      return;
+
+    const handleEscapeModal = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || toasts.length > 0) return;
+      if (isApproveModalOpen) {
+        handleCancelApprove();
+      } else if (isConfirmRejectOpen) {
+        handleCancelConfirmReject();
+      } else if (isRejectModalOpen) {
+        handleCloseRejectModal();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscapeModal);
+    return () => document.removeEventListener("keydown", handleEscapeModal);
+  }, [
+    isApproveModalOpen,
+    isRejectModalOpen,
+    isConfirmRejectOpen,
+    toasts.length,
+    handleCancelApprove,
+    handleCloseRejectModal,
+    handleCancelConfirmReject,
+  ]);
+
+  const estadoActualSolicitud = solicitudSeleccionada?.Estado ?? "Pendiente";
+  const esEstadoPermanente =
+    estadoActualSolicitud === "Aprobado" ||
+    estadoActualSolicitud === "Rechazado" ||
+    estadoActualSolicitud === "Archivado";
+
   const renderEstadoBadge = (estado?: string) => {
     const currentEstado = estado ?? "Pendiente";
-    return <Badge variant={getEstadoBadgeVariant(currentEstado)}>{currentEstado}</Badge>;
+    return (
+      <Badge variant={getEstadoBadgeVariant(currentEstado)}>
+        {currentEstado}
+      </Badge>
+    );
   };
 
   if (error) {
-    const mensaje = error instanceof ApiError ? error.message : "No se pudieron cargar las solicitudes.";
-    return <div className="p-4 text-sm text-danger">{mensaje}</div>;
+    const mensaje = toFriendlySolicitudesMessage(error);
+    return (
+      <div className="rounded-lg border border-danger/30 bg-danger-bg p-4 text-sm text-danger">
+        <p className="m-0">{mensaje}</p>
+        <Button
+          type="button"
+          variant="secondary"
+          className="mt-3"
+          onClick={() => void refetch()}
+        >
+          Reintentar
+        </Button>
+      </div>
+    );
   }
 
   return (
-    <AdminModule className="p-2">
-      <AdminToolbar>
-        <AdminSearch
-          value={query}
-          type="search"
-          placeholder="Buscar por nombre, apellidos o cédula"
-          onChange={handleSearch}
-          aria-label="Buscar solicitudes de constancia"
-        />
+    <AdminModule className="gap-3!">
+      <AdminToolbar className="p-3!">
+        <div className="flex flex-wrap items-center gap-2">
+          <div
+            className="flex items-center gap-0.5 rounded-lg border border-border-strong bg-surface p-0.5"
+            role="group"
+            aria-label="Cambiar vista de solicitudes"
+          >
+            {VISTAS.map(({ valor, label, icono: Icono }) => {
+              const activo = vista === valor;
+              return (
+                <button
+                  key={valor}
+                  type="button"
+                  onClick={() => setVista(valor)}
+                  aria-pressed={activo}
+                  className={cn(
+                    "relative inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                    activo ? "text-white" : "text-text-muted hover:text-text",
+                  )}
+                >
+                  {activo && (
+                    <motion.span
+                      layoutId="vistaSolicitudesActiva"
+                      className="absolute inset-0 rounded-md bg-royal-blue"
+                      transition={{
+                        type: "spring",
+                        stiffness: 420,
+                        damping: 34,
+                        mass: 0.7,
+                      }}
+                      aria-hidden="true"
+                    />
+                  )}
+                  {Icono && (
+                    <Icono
+                      size={14}
+                      strokeWidth={2}
+                      className="relative z-10"
+                    />
+                  )}
+                  <span className="relative z-10">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+          {vista === "solicitudes" && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setIsArchivarTodasOpen(true)}
+              disabled={filasArchivables.length === 0}
+              title={
+                filasArchivables.length === 0
+                  ? "No hay solicitudes aprobadas o rechazadas para archivar"
+                  : "Archivar las solicitudes aprobadas y rechazadas de la lista"
+              }
+            >
+              <Archive
+                size={15}
+                strokeWidth={1.8}
+              />
+              Archivar procesadas
+            </Button>
+          )}
+          <input
+            type="text"
+            value={filtroNombre}
+            onChange={(e) =>
+              setFiltroNombre(
+                e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, ""),
+              )
+            }
+            placeholder="Nombre completo"
+            className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            aria-label="Filtrar por nombre completo"
+          />
+          <input
+            type="text"
+            inputMode="numeric"
+            value={formatearCedula(filtroCedula)}
+            onChange={(e) =>
+              setFiltroCedula(soloDigitos(e.target.value).slice(0, 9))
+            }
+            placeholder="Cédula"
+            className="min-h-11 w-[150px] shrink-0 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm tabular-nums text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            aria-label="Filtrar por cédula"
+          />
+          <div
+            className="relative shrink-0"
+            ref={filtroEstadoMenuRef}
+          >
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={filtroEstadoMenuAbierto}
+              onClick={() => setFiltroEstadoMenuAbierto((prev) => !prev)}
+              className={`flex min-h-11 w-[150px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none ${
+                filtroEstadoMenuAbierto
+                  ? "border-blue-400 bg-surface"
+                  : "border-border-strong"
+              }`}
+            >
+              <span>{filtroEstado || "Todos"}</span>
+              <ChevronDown
+                size={16}
+                strokeWidth={2.5}
+                className={`transition-transform duration-200 ${
+                  filtroEstadoMenuAbierto ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {filtroEstadoMenuAbierto && (
+              <ul
+                role="listbox"
+                className="absolute top-full left-0 z-50 mt-1.5 w-[150px] overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+              >
+                {(
+                  [
+                    { valor: "", label: "Todos" },
+                    { valor: "Pendiente", label: "Pendiente" },
+                    { valor: "Aprobado", label: "Aprobado" },
+                    { valor: "Rechazado", label: "Rechazado" },
+                  ] as const
+                ).map((opcion) => {
+                  const activo = filtroEstado === opcion.valor;
+                  return (
+                    <li
+                      key={opcion.label}
+                      role="option"
+                      aria-selected={activo}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFiltroEstado(
+                            opcion.valor as
+                              | "Pendiente"
+                              | "Aprobado"
+                              | "Rechazado"
+                              | "",
+                          );
+                          setFiltroEstadoMenuAbierto(false);
+                        }}
+                        className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
+                          activo
+                            ? "bg-royal-blue/10 text-royal-blue"
+                            : "text-slate-700 hover:bg-royal-blue/5"
+                        }`}
+                      >
+                        {opcion.label}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+          {isFiltering && (
+            <Loader2
+              size={18}
+              className="animate-spin text-text-muted"
+              aria-label="Aplicando filtros"
+            />
+          )}
+        </div>
       </AdminToolbar>
 
-      {!isPending && (
+      {isInitialLoading && (
+        <p className="py-6 text-center text-sm text-text-muted">
+          Cargando solicitudes...
+        </p>
+      )}
+
+      {!isInitialLoading && filasVista.length === 0 && (
+        <p className="py-6 text-center text-sm text-text-muted">
+          {vista === "archivados"
+            ? "Actualmente no existen solicitudes archivadas."
+            : filtroNombre.trim() || filtroCedula.trim() || filtroEstado
+              ? "No se encontraron solicitudes con los filtros seleccionados."
+              : "Actualmente no existen solicitudes registradas."}
+        </p>
+      )}
+
+      {!isInitialLoading && filasVista.length > 0 && (
         <>
           <div className="hidden md:block">
             <AdminTablePanel>
-              <AdminTable>
+              <AdminTable className="table-fixed [&_td]:py-2! [&_th]:py-2.5!">
+                <colgroup>
+                  <col className="w-[20%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[23%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[15%]" />
+                </colgroup>
                 <AdminTableHead>
                   {table.getHeaderGroups().map((hg) => (
                     <AdminTableRow key={hg.id}>
                       {hg.headers.map((h) => (
                         <AdminTableHeaderCell key={h.id}>
-                          {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+                          {h.isPlaceholder
+                            ? null
+                            : flexRender(
+                                h.column.columnDef.header,
+                                h.getContext(),
+                              )}
                         </AdminTableHeaderCell>
                       ))}
                     </AdminTableRow>
@@ -229,31 +1092,24 @@ const TableSacramentos = () => {
                       {row.getVisibleCells().map((cell) => {
                         if (cell.column.id === "Estado") {
                           const originalRow = row.original;
-                          const currentEstado = originalRow.Estado ?? "Pendiente";
+                          const currentEstado =
+                            originalRow.Estado ?? "Pendiente";
                           return (
                             <AdminTableCell key={cell.id}>
-                              <div className={cn("inline-flex items-center rounded-full p-1", estadoSelectClass(currentEstado))}>
-                                {isAdmin ? (
-                                  <Select
-                                    className="min-h-0 border-0 bg-transparent px-2 py-1 text-xs font-bold shadow-none focus-visible:ring-0"
-                                    value={currentEstado}
-                                    onChange={(e) => handleEstadoChange(originalRow.id, e.target.value as "Pendiente" | "Aprobado" | "Rechazado")}
-                                    disabled={isUpdatingEstado}
-                                  >
-                                    <option value="Pendiente">Pendiente</option>
-                                    <option value="Aprobado">Aprobado</option>
-                                    <option value="Rechazado">Rechazado</option>
-                                  </Select>
-                                ) : (
-                                  <span className="px-2 py-1 text-xs font-bold">{currentEstado}</span>
-                                )}
-                              </div>
+                              {renderEstadoBadge(
+                                vista === "archivados"
+                                  ? "Archivado"
+                                  : currentEstado,
+                              )}
                             </AdminTableCell>
                           );
                         }
                         return (
                           <AdminTableCell key={cell.id}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
                           </AdminTableCell>
                         );
                       })}
@@ -265,36 +1121,56 @@ const TableSacramentos = () => {
           </div>
 
           <div className="flex flex-col gap-2.5 md:hidden">
-            {filtered.map((row) => (
+            {table.getRowModel().rows.map(({ original: row }) => (
               <AdminRecordCard
                 key={String(row.id)}
                 icon={<ScrollText size={20} />}
-                accent="#1d4ed8"
-                code={`SOL-${row.id}`}
+                accent="#003366"
                 title={nombreCompleto(row)}
-                subtitle={row.TipoSacramento ?? "Sacramento"}
-                badges={renderEstadoBadge(row.Estado)}
+                badges={renderEstadoBadge(
+                  vista === "archivados" ? "Archivado" : row.Estado,
+                )}
                 meta={[
-                  { icon: <IdCard size={12} />, label: "Cédula", value: String(row.Cedula ?? "—") },
-                  { icon: <Phone size={12} />, label: "Teléfono", value: row.Telefono?.toString() || "No provisto" },
+                  {
+                    icon: <IdCard size={12} />,
+                    label: "Cédula",
+                    value: formatearCedulaMostrada(String(row.Cedula ?? "")) || "—",
+                  },
+                  {
+                    icon: <Phone size={12} />,
+                    label: "Teléfono",
+                    value: formatearTelefono(row.Telefono) || "No provisto",
+                  },
+                  {
+                    icon: <CalendarDays size={12} />,
+                    label: "Fecha de ingreso",
+                    value: formatFechaHora(row.Fecha),
+                  },
                 ]}
-                footer={
-                  isAdmin ? (
-                    <Select
-                      className={cn("w-full", estadoSelectClass(row.Estado))}
-                      value={row.Estado ?? "Pendiente"}
-                      disabled={isUpdatingEstado}
-                      aria-label={`Estado de solicitud de ${nombreCompleto(row)}`}
-                      onChange={(e) => handleEstadoChange(row.id, e.target.value as "Pendiente" | "Aprobado" | "Rechazado")}
-                    >
-                      <option value="Pendiente">Pendiente</option>
-                      <option value="Aprobado">Aprobado</option>
-                      <option value="Rechazado">Rechazado</option>
-                    </Select>
-                  ) : undefined
-                }
                 actions={[
-                  { label: "Ver solicitud", icon: <Eye size={15} />, variant: "primary", onClick: () => setSolicitudSeleccionada(row) },
+                  {
+                    label: "Ver solicitud",
+                    icon: <Eye size={15} />,
+                    variant: "primary",
+                    onClick: () => setSolicitudSeleccionada(row),
+                  },
+                  ...(esArchivadaLocal(archivadasLocal, row)
+                    ? [
+                        {
+                          label: "Restaurar",
+                          icon: <ArchiveRestore size={15} />,
+                          variant: "ghost" as const,
+                          onClick: () => handleRestaurar(row),
+                        },
+                      ]
+                    : [
+                        {
+                          label: "Archivar",
+                          icon: <Archive size={15} />,
+                          variant: "ghost" as const,
+                          onClick: () => handleSolicitarArchivar(row),
+                        },
+                      ]),
                 ]}
               />
             ))}
@@ -302,54 +1178,621 @@ const TableSacramentos = () => {
         </>
       )}
 
-      <AdminRecordDetailSheet
-        open={solicitudSeleccionada !== null}
-        title={solicitudSeleccionada ? nombreCompleto(solicitudSeleccionada) : "Solicitud"}
-        subtitle={solicitudSeleccionada?.TipoSacramento}
-        badges={solicitudSeleccionada ? renderEstadoBadge(solicitudSeleccionada.Estado) : undefined}
-        onClose={() => setSolicitudSeleccionada(null)}
-        actions={
-          solicitudSeleccionada && isAdmin ? (
-            <label className="flex w-full flex-col gap-1.5 text-sm font-semibold text-text">
-              <span>Cambiar estado</span>
-              <Select
-                className={estadoSelectClass(solicitudSeleccionada.Estado)}
-                value={solicitudSeleccionada.Estado ?? "Pendiente"}
-                onChange={(e) => handleEstadoChange(solicitudSeleccionada.id, e.target.value as "Pendiente" | "Aprobado" | "Rechazado")}
-                disabled={isUpdatingEstado}
-              >
-                <option value="Pendiente">Pendiente</option>
-                <option value="Aprobado">Aprobado</option>
-                <option value="Rechazado">Rechazado</option>
-              </Select>
-            </label>
-          ) : undefined
-        }
-      >
-        {solicitudSeleccionada && (
-          <div className="flex flex-col gap-2">
-            <h4 className="m-0 text-xs font-semibold tracking-wider text-text-muted uppercase">Motivo</h4>
-            <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
-              {solicitudSeleccionada.Motivo}
-            </p>
-          </div>
+      <AnimatePresence>
+        {(solicitudSeleccionada || isRejectModalOpen) && (
+          <motion.div
+            className="fixed inset-0 z-[1300] bg-[#060f20]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isConfirmRejectOpen ? 0 : 0.7 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            aria-hidden="true"
+          />
         )}
-      </AdminRecordDetailSheet>
+      </AnimatePresence>
 
-      {!isPending && table.getRowModel().rows.length > 0 && (
-        <AdminTableFooter>
+      {rechazoEnBlur && (
+        <motion.div
+          className="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          onAnimationComplete={() => setRechazoEnBlur(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {aprobacionEnBlur && (
+        <motion.div
+          className="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          onAnimationComplete={() => setAprobacionEnBlur(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {solicitudSeleccionada && (
+        <div
+          ref={modalBackdropRef}
+          className="fixed inset-0 z-[1300] overflow-y-auto"
+          role="presentation"
+          onClick={() => setSolicitudSeleccionada(null)}
+        >
+          <FocusTrap
+            focusTrapOptions={{
+              clickOutsideDeactivates: false,
+              escapeDeactivates: false,
+              allowOutsideClick: () => true,
+            }}
+          >
+            <div className="flex min-h-full items-end justify-center md:items-center md:p-4">
+            <div
+              className="relative z-10 w-full rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
+            style={{ fontFamily: "'Geist', sans-serif" }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Datos de la solicitud"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="flex shrink-0 items-center justify-between gap-4 rounded-t-[16px] bg-[#f1f5fa] px-6 py-4">
+              <div className="min-w-0">
+                <p className="m-0 text-[11px] font-semibold tracking-[0.22em] text-[#aa7323] uppercase">
+                  Solicitud
+                </p>
+                <h2
+                  className="m-0 mt-1 text-[24px] leading-tight font-semibold tracking-tight text-[#16243c]"
+                  style={{ fontFamily: "'Geist', sans-serif" }}
+                >
+                  Datos de la solicitud
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSolicitudSeleccionada(null)}
+                aria-label="Cerrar detalle"
+                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+              >
+                <X size={16} />
+              </button>
+            </header>
+
+            <div
+              ref={modalBodyRef}
+              className="flex flex-col gap-4 p-6"
+            >
+              <div className="grid items-stretch gap-4 md:grid-cols-2">
+                <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
+                  <EtiquetaSeccion>Nombre del solicitante</EtiquetaSeccion>
+                  <p className="m-0 text-sm font-semibold text-[#16243c]">
+                    {nombreCompleto(solicitudSeleccionada)}
+                  </p>
+                  <div className="h-px w-full bg-[#16243c]/10" />
+                  <div className="flex items-start gap-2">
+                    <CalendarDays
+                      size={16}
+                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                    />
+                    <div className="min-w-0">
+                      <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
+                        Fecha de ingreso
+                      </p>
+                      <p className="m-0 mt-1 text-sm font-semibold tabular-nums text-[#16243c]">
+                        {formatFechaHora(solicitudSeleccionada.Fecha)}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
+                  <EtiquetaSeccion>Contacto</EtiquetaSeccion>
+                  <div className="flex items-start gap-2">
+                    <Mail
+                      size={16}
+                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                    />
+                    <div className="min-w-0">
+                      <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
+                        Correo
+                      </p>
+                      <p className="m-0 mt-1 break-words text-sm font-semibold text-[#16243c]">
+                        {solicitudSeleccionada.Correo || "—"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="h-px w-full bg-[#16243c]/10" />
+                  <div className="flex items-start gap-2">
+                    <Phone
+                      size={16}
+                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                    />
+                    <div className="min-w-0">
+                      <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
+                        Teléfono
+                      </p>
+                      <p className="m-0 mt-1 text-sm font-semibold tabular-nums text-[#16243c]">
+                        {formatearTelefono(solicitudSeleccionada.Telefono) || "—"}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
+                <EtiquetaSeccion>Motivo</EtiquetaSeccion>
+                <p className="m-0 min-w-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c]">
+                  {solicitudSeleccionada.Motivo || "—"}
+                </p>
+              </section>
+
+              <div className="grid items-stretch gap-4 md:grid-cols-2">
+              <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
+                <EtiquetaSeccion>Comprobante de pago</EtiquetaSeccion>
+                {solicitudSeleccionada.comprobanteUrl ? (
+                  <a
+                    href={solicitudSeleccionada.comprobanteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-xl bg-royal-blue px-4 py-2.5 text-sm font-bold text-white no-underline transition-colors duration-150 ease-out hover:bg-royal-blue-dark focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:ring-focus-ring focus-visible:outline-none"
+                  >
+                    <ImageIcon
+                      size={16}
+                      strokeWidth={2}
+                      className="shrink-0"
+                    />
+                    Abrir imagen del comprobante
+                    <ExternalLink
+                      size={14}
+                      strokeWidth={2}
+                      className="shrink-0 opacity-70"
+                    />
+                  </a>
+                ) : (
+                  <p className="m-0 text-sm text-[#16243c]/70">
+                    No se adjuntó ningún comprobante.
+                  </p>
+                )}
+              </section>
+
+              {isAdmin && (
+              <div className="flex flex-col gap-3 rounded-[12px] border border-[#aa7323]/25 bg-[#aa7323]/[0.07] p-4">
+                  <EtiquetaSeccion>Cambiar estado</EtiquetaSeccion>
+                    <div
+                      className="relative"
+                      ref={estadoMenuRef}
+                    >
+                      <button
+                        type="button"
+                        disabled={isUpdatingEstado || esEstadoPermanente}
+                        aria-haspopup="listbox"
+                        aria-expanded={estadoMenuAbierto}
+                        onClick={() => setEstadoMenuAbierto((prev) => !prev)}
+                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                      >
+                        <span>
+                          {solicitudSeleccionada.Estado ?? "Pendiente"}
+                          {esEstadoPermanente ? " (permanente)" : ""}
+                        </span>
+                        <ChevronDown
+                          size={16}
+                          strokeWidth={2.5}
+                          className={`transition-transform duration-200 ${
+                            estadoMenuAbierto ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+
+                      {estadoMenuAbierto && (
+                        <ul
+                          role="listbox"
+                          className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                        >
+                          {(
+                            [
+                              {
+                                valor: "Aprobado",
+                                dot: ESTADO_MODAL_STYLES.Aprobado.dot,
+                              },
+                              {
+                                valor: "Rechazado",
+                                dot: ESTADO_MODAL_STYLES.Rechazado.dot,
+                              },
+                            ] as const
+                          ).map((opcion) => {
+                            const activo =
+                              (solicitudSeleccionada.Estado ?? "Pendiente") ===
+                              opcion.valor;
+                            return (
+                              <li
+                                key={opcion.valor}
+                                role="option"
+                                aria-selected={activo}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (opcion.valor === "Rechazado") {
+                                      handleEstadoChange(
+                                        solicitudSeleccionada.id,
+                                        "Rechazado",
+                                      );
+                                    } else {
+                                      setSolicitudAAprobar(
+                                        solicitudSeleccionada,
+                                      );
+                                      setAprobacionEnBlur(false);
+                                      setIsApproveModalOpen(true);
+                                    }
+                                    setEstadoMenuAbierto(false);
+                                  }}
+                                  className={`flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
+                                    activo
+                                      ? "bg-[#aa7323]/10 text-[#16243c]"
+                                      : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                                  }`}
+                                >
+                                  <span
+                                    className={`size-1.5 shrink-0 rounded-full ${opcion.dot}`}
+                                  />
+                                  {opcion.valor}
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+              </div>
+                )}
+              </div>
+            </div>
+            </div>
+            </div>
+          </FocusTrap>
+        </div>
+      )}
+
+      {isRejectModalOpen && (
+        <Modal
+          onClose={
+            isConfirmRejectOpen ? handleCancelConfirmReject : handleCloseRejectModal
+          }
+          title={isConfirmRejectOpen ? "Confirmar rechazo" : "Rechazar solicitud"}
+          sinFondo
+          overlayClassName={
+            isConfirmRejectOpen
+              ? "fixed inset-0 z-[1350] backdrop-blur-[6px]"
+              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+          }
+        >
+          <motion.div
+            key={isConfirmRejectOpen ? "confirmar" : "formulario"}
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          >
+          {isConfirmRejectOpen ? (
+            <div className="flex min-h-44 flex-col">
+              <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
+              <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
+                <p className="text-sm leading-relaxed text-text-secondary">
+                  ¿Estás seguro/a que quieres rechazar esta solicitud de
+                  sacramento? Una vez rechazada, su estado no podrá ser cambiado.
+                </p>
+              </div>
+              <div className="flex shrink-0 justify-end gap-2">
+                <Button
+                  variant="royal"
+className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                  onClick={handleRejectSubmit}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2
+                        size={16}
+                        className="animate-spin"
+                      />
+                      Rechazando...
+                    </>
+                  ) : (
+                    "Rechazar"
+                  )}
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                  onClick={handleCancelConfirmReject}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex min-h-44 flex-col gap-4">
+              <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
+              <p className="text-sm text-text-secondary">
+                Seleccione el motivo de rechazo en la lista. El campo de texto es
+                opcional para agregar un detalle.
+              </p>
+              <div className="relative" ref={motivoMenuRef}>
+                <button
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={motivoMenuAbierto}
+                  onClick={() => setMotivoMenuAbierto((prev) => !prev)}
+                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 ${
+                    motivoMenuAbierto
+                      ? "border-blue-400 bg-surface"
+                      : "border-border-strong"
+                  }`}
+                >
+                  <span
+                    className={
+                      rejectionReasonSelect
+                        ? "font-semibold text-[#16243c]"
+                        : "font-medium text-slate-700"
+                    }
+                  >
+                    {rejectionReasonSelect || "Seleccione un motivo"}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`shrink-0 text-slate-900 transition-transform duration-200 ${
+                      motivoMenuAbierto ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                <AnimatePresence>
+                  {motivoMenuAbierto && (
+                    <FocusTrap
+                      focusTrapOptions={{
+                        clickOutsideDeactivates: false,
+                        escapeDeactivates: false,
+                        allowOutsideClick: () => true,
+                      }}
+                    >
+                      <motion.ul
+                        role="listbox"
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                        className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                      >
+                        {rejectionReasons.map((reason) => (
+                          <li key={reason} role="option" aria-selected={rejectionReasonSelect === reason}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRejectionReasonSelect(reason);
+                                setMotivoMenuAbierto(false);
+                              }}
+                              className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
+                                rejectionReasonSelect === reason
+                                  ? "bg-[#aa7323]/10 text-[#16243c]"
+                                  : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                              }`}
+                            >
+                              {reason}
+                            </button>
+                          </li>
+                        ))}
+                      </motion.ul>
+                    </FocusTrap>
+                  )}
+                </AnimatePresence>
+              </div>
+<Textarea
+                  value={rejectionReasonText}
+                  onChange={(e) => handleReasonTextChange(e.target.value)}
+                  placeholder="Detalle un motivo personalizado (opcional)"
+                  rows={3}
+                  maxLength={150}
+                  className="min-h-20"
+                />
+                <div className="-mt-2 flex items-baseline justify-between gap-2">
+                  {tieneCaracteresInvalidos(rejectionReasonText) && (
+                    <p className="m-0 text-xs font-semibold text-red-600">
+                      Los caracteres especiales no están permitidos
+                    </p>
+                  )}
+                  <p
+                    className={`m-0 ml-auto text-xs ${
+                      rejectionReasonText.length >= 150
+                        ? "font-semibold text-red-600"
+                        : "text-text-muted"
+                    }`}
+                  >
+                    {rejectionReasonText.length}/150
+                  </p>
+                </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="royal"
+                  className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                  onClick={handleOpenConfirmReject}
+                  disabled={
+                    !rejectionReasonSelect.trim() ||
+                    tieneCaracteresInvalidos(rejectionReasonText)
+                  }
+                >
+                  Continuar
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                  onClick={handleCloseRejectModal}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
+          </motion.div>
+        </Modal>
+      )}
+
+      <ConfirmacionAccionModal
+        open={isApproveModalOpen && solicitudAAprobar !== null}
+        title="Confirmar aprobación"
+        parteSubrayada="Aprobar solicitud sac"
+        resto="ramental"
+        mensaje="¿Estás seguro/a que quieres aprobar esta solicitud de sacramento? Una vez aprobada su estado no podrá ser cambiado."
+        confirmLabel="Aprobar"
+        pendingLabel="Aprobando..."
+        isPending={aprobarSolicitud.isPending}
+        onConfirm={handleApproveConfirm}
+        onCancel={handleCancelApprove}
+      />
+
+      {solicitudAArchivar && (
+        <Modal
+          onClose={handleCancelArchivar}
+          title="Confirmar archivado"
+          sinFondo
+        >
+          <div className="flex min-h-44 flex-col">
+            <LineaDoradaTitulo
+              parteSubrayada="Archivar solicitud sac"
+              resto="ramental"
+            />
+            <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
+              <p className="text-sm leading-relaxed text-text-secondary">
+                ¿Estás seguro/a que quieres archivar la solicitud de{" "}
+                <strong className="font-semibold text-text">
+                  {nombreCompleto(solicitudAArchivar)}
+                </strong>
+                ? Podrás restaurarla desde la vista de archivadas.
+              </p>
+            </div>
+            <div className="flex shrink-0 justify-end gap-2">
+              <Button
+                variant="royal"
+                className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                onClick={handleConfirmArchivar}
+              >
+                Archivar
+              </Button>
+              <Button
+                variant="secondary"
+                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                onClick={handleCancelArchivar}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {isArchivarTodasOpen && (
+        <Modal
+          onClose={handleCancelArchivarTodas}
+          title="Confirmar archivado masivo"
+          sinFondo
+        >
+          <div className="flex min-h-44 flex-col">
+            <LineaDoradaTitulo
+              parteSubrayada="Archivar solicitudes proc"
+              resto="esadas"
+            />
+            <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
+              <p className="text-sm leading-relaxed text-text-secondary">
+                Se archivarán las{" "}
+                <strong className="font-semibold text-text">
+                  {filasArchivables.length}
+                </strong>{" "}
+                solicitudes aprobadas o rechazadas de la lista. Las pendientes
+                no se archivarán y podrás restaurar las archivadas cuando
+                quieras.
+              </p>
+            </div>
+            <div className="flex shrink-0 justify-end gap-2">
+              <Button
+                variant="royal"
+                className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                onClick={handleConfirmArchivarTodas}
+              >
+                Archivar
+              </Button>
+              <Button
+                variant="secondary"
+                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                onClick={handleCancelArchivarTodas}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {!isInitialLoading && table.getRowModel().rows.length > 0 && (
+        <AdminTableFooter className="mt-2! pt-2!">
           <span className="text-sm text-text-muted">
-            <strong className="text-text">{totalItems}</strong> registros
+            Mostrando{" "}
+            <strong className="text-text tabular-nums">
+              {primerRegistroVista}-{ultimoRegistroVista}
+            </strong>{" "}
+            de <strong className="text-text tabular-nums">{totalVista}</strong>{" "}
+            registros
           </span>
           <AdminPagination>
-            <AdminPaginationButton type="button" onClick={goToPreviousPage} disabled={!canPreviousPage} aria-label="Página anterior">
-              <ChevronLeft size={16} strokeWidth={2} />
+            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+              Registros por página
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                aria-label="Cantidad de registros por página"
+              >
+                {PAGE_SIZES.map((tamano) => (
+                  <option
+                    key={tamano}
+                    value={tamano}
+                  >
+                    {tamano}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <AdminPaginationButton
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={!canPreviousPageVista}
+              aria-label="Página anterior"
+            >
+              <ChevronLeft
+                size={16}
+                strokeWidth={2}
+              />
             </AdminPaginationButton>
-            <span className="text-sm text-text-muted">
-              <strong className="text-text">{currentPage}</strong> de <strong className="text-text">{totalPages}</strong>
+            <span className="text-sm whitespace-nowrap text-text-muted">
+              Página{" "}
+              <strong className="text-text tabular-nums">{currentPage}</strong>{" "}
+              de{" "}
+              <strong className="text-text tabular-nums">
+                {totalPagesVista}
+              </strong>
             </span>
-            <AdminPaginationButton type="button" onClick={goToNextPage} disabled={!canNextPage} aria-label="Página siguiente">
-              <ChevronRight size={16} strokeWidth={2} />
+            <AdminPaginationButton
+              type="button"
+              onClick={() =>
+                setCurrentPage((page) =>
+                  Math.min(totalPagesVista, page + 1),
+                )
+              }
+              disabled={!canNextPageVista}
+              aria-label="Página siguiente"
+            >
+              <ChevronRight
+                size={16}
+                strokeWidth={2}
+              />
             </AdminPaginationButton>
           </AdminPagination>
         </AdminTableFooter>

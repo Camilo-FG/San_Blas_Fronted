@@ -1,26 +1,142 @@
-import { useState } from "react";
-import { useForm } from "@tanstack/react-form";
-import ReCAPTCHA from "react-google-recaptcha";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { useNavigate } from "@tanstack/react-router";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
+import { RecaptchaWidget } from "../../../shared/components/RecaptchaWidget";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 import { ApiError } from "../../../services/apiClient";
-import { Button, cn, Input, Label, Select } from "../../../shared/ui";
+import { obtenerDatosCedula, type DatosCedula } from "../../../services/cedulaService";
+import { Button, Input, Label, Modal, Select, Textarea } from "../../../shared/ui";
+import { SubidaImagen, type ArchivoImagen } from "./SubidaImagen";
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
+
+const formatearCedula = (valor: string) => {
+  const digitos = soloDigitos(valor).slice(0, 9);
+  if (digitos.length <= 1) return digitos;
+  if (digitos.length <= 5)
+    return `${digitos.slice(0, 1)}-${digitos.slice(1)}`;
+  return `${digitos.slice(0, 1)}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
+};
+
+const formatearTelefono = (valor: string) => {
+  const digitos = soloDigitos(valor).slice(0, 8);
+  if (digitos.length <= 4) return digitos;
+  return `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
+};
+
+const soloLetras = (valor: string) =>
+  valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "").replace(/\s{2,}/g, " ");
+
+const soloCorreo = (valor: string) => valor.replace(/[^a-zA-Z0-9@._+-]/g, "");
 
 const requerido = (valor: string, mensaje: string) =>
   valor.trim() ? undefined : mensaje;
 
+const validarNombre = (valor: string) =>
+  requerido(valor, "El nombre es obligatorio.");
+
+const validarPrimerApellido = (valor: string) =>
+  requerido(valor, "El primer apellido es obligatorio.");
+
+const validarSegundoApellido = (valor: string) =>
+  requerido(valor, "El segundo apellido es obligatorio.");
+
+const validarCedula = (valor: string, tipo: "nacional" | "extranjera") => {
+  const cedula = soloDigitos(valor);
+  if (!cedula) return "La cédula es obligatoria.";
+  if (tipo === "nacional") {
+    if (cedula.length !== 9) return "La cédula debe tener 9 dígitos.";
+  } else {
+    if (cedula.length !== 12) return "La cédula debe tener 12 dígitos.";
+  }
+  return undefined;
+};
+
+const validarCorreo = (valor: string) => {
+  const correo = valor.trim();
+  if (!correo) return "El correo es obligatorio.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+    return "Ingresá un correo válido.";
+  }
+  return undefined;
+};
+
+const validarTelefono = (valor: string) => {
+  const telefono = soloDigitos(valor);
+  if (!telefono) return "El teléfono es obligatorio.";
+  if (!/^\d{8}$/.test(telefono)) {
+    return "El teléfono debe contener exactamente 8 dígitos numéricos.";
+  }
+  return undefined;
+};
+
+const validarMotivo = (valor: string) => requerido(valor, "Campo obligatorio.");
+
 const fieldClass =
   "min-h-11 w-full rounded-xl border-[1.5px] border-slate-300 bg-[#fdfdfd] px-3.5 py-3 text-[0.96rem] text-slate-800 transition-[border-color,box-shadow,transform] focus:border-royal-gold focus:shadow-[0_0_0_4px_rgba(212,175,55,0.14)] focus:outline-none max-sm:min-h-11 max-sm:text-base max-sm:focus:translate-y-0";
 
+const CEDULAS_EXTRANJERAS_KEY = "sanblas_cedulas_extranjeras";
+
+const cargarCedulasExtranjeras = (): Record<string, string> => {
+  try {
+    const crudo = localStorage.getItem(CEDULAS_EXTRANJERAS_KEY);
+    return crudo ? JSON.parse(crudo) : {};
+  } catch {
+    return {};
+  }
+};
+
+const guardarCedulaExtranjera = (truncado: string, completa: string) => {
+  const mapa = cargarCedulasExtranjeras();
+  mapa[truncado] = completa;
+  try {
+    localStorage.setItem(CEDULAS_EXTRANJERAS_KEY, JSON.stringify(mapa));
+  } catch {
+    /* noop */
+  }
+};
+
 const FormSolic = () => {
   const { mutateAsync, isPending } = useCreateSolicSacramento();
+  const navigate = useNavigate();
   const [enviado, setEnviado] = useState(false);
+  const [confirmacionAbierta, setConfirmacionAbierta] = useState(true);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
-  const { captchaRef, captchaToken, handleCaptchaChange, handleCaptchaExpired, resetCaptcha } =
-    useCaptcha();
+  const [errorCedula, setErrorCedula] = useState<string | null>(null);
+  const [errorMotivoBackend, setErrorMotivoBackend] = useState<string | null>(
+    null,
+  );
+  const [verificandoCedula, setVerificandoCedula] = useState(false);
+  const [cedulaValida, setCedulaValida] = useState(false);
+  const [datosCedulaValidada, setDatosCedulaValidada] = useState<DatosCedula | null>(null);
+  const [intentoEnvio, setIntentoEnvio] = useState(false);
+  const [archivoImagen, setArchivoImagen] = useState<ArchivoImagen | null>(null);
+  const [errorComprobante, setErrorComprobante] = useState<string | null>(null);
+  const [tipoCedula, setTipoCedula] = useState<"nacional" | "extranjera">(
+    "nacional",
+  );
+  const cedulaValidadaRef = useRef<string | null>(null);
+  const exitoRef = useRef<HTMLDivElement | null>(null);
+
+  const RECAPTCHA_KEY =
+    import.meta.env.VITE_RECAPTCHA_SITE_KEY ??
+    "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+
+  useEffect(() => {
+    if (enviado) {
+      exitoRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [enviado]);
+
+  const {
+    captchaRef,
+    captchaToken,
+    handleCaptchaChange,
+    handleCaptchaExpired,
+    resetCaptcha,
+  } = useCaptcha();
 
   const form = useForm({
     defaultValues: {
@@ -30,7 +146,7 @@ const FormSolic = () => {
       Cedula: "",
       Correo: "",
       Telefono: "",
-      TipoSacramento: "",
+      TipoSacramento: "Bautismo",
       Motivo: "",
     },
     onSubmit: async ({ value }: any) => {
@@ -41,36 +157,325 @@ const FormSolic = () => {
 
       try {
         setErrorEnvio(null);
-        await mutateAsync(value);
+        await mutateAsync({
+          ...value,
+          archivoImagen: archivoImagen?.file ?? null,
+        });
+        if (tipoCedula === "extranjera") {
+          guardarCedulaExtranjera(
+            soloDigitos(value.Cedula).slice(0, 9),
+            soloDigitos(value.Cedula),
+          );
+        }
         form.reset();
+        setArchivoImagen(null);
         setCaptchaError(null);
+        setErrorCedula(null);
+        setErrorMotivoBackend(null);
         resetCaptcha();
         setEnviado(true);
       } catch (error) {
-        const mensaje =
-          error instanceof ApiError
-            ? error.errores
-              ? Object.values(error.errores).flat().filter(Boolean).join(" ") ||
-                error.message
-              : error.message
-            : "No se pudo enviar la solicitud. Intente nuevamente.";
-        setErrorEnvio(mensaje);
+        const erroresMotivo: string[] = [];
+        const esErrorMotivo = (clave: string, mensaje: string) =>
+          /motivo/i.test(clave) || /contiene caracteres no permitidos/i.test(mensaje);
+        let mensaje = "No se pudo enviar la solicitud. Intente nuevamente.";
+        if (error instanceof ApiError) {
+          if (error.errores) {
+            mensaje =
+              Object.entries(error.errores)
+                .flatMap(([clave, mensajes]) =>
+                  (Array.isArray(mensajes) ? mensajes : [mensajes]).map(
+                    (m) => ({ clave, m }),
+                  ),
+                )
+                .filter(({ m }) => Boolean(m))
+                .filter(({ clave, m }) => {
+                  if (esErrorMotivo(clave, m)) {
+                    erroresMotivo.push(m);
+                    return false;
+                  }
+                  return !/Cedula must not be less than \d+/.test(m);
+                })
+                .map(({ m }) => m)
+                .join(" ") || error.message;
+          } else if (/motivo/i.test(error.message)) {
+            erroresMotivo.push(error.message);
+            mensaje = "";
+          } else {
+            mensaje = error.message;
+          }
+        }
+        if (erroresMotivo.length > 0) {
+          setErrorMotivoBackend(erroresMotivo.join(" "));
+          document
+            .getElementById("Motivo")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        setErrorEnvio(mensaje || null);
       }
     },
   });
 
+  const valores = useStore(form.store, (state) => state.values);
+
+  const obtenerPrimerCampoInvalido = () => {
+    if (validarNombre(valores.Nombre)) return "Nombre";
+    if (validarPrimerApellido(valores.PrimerApellido)) return "PrimerApellido";
+    if (validarSegundoApellido(valores.SegundoApellido))
+      return "SegundoApellido";
+    if (validarCedula(valores.Cedula, tipoCedula)) return "Cedula";
+    if (validarCorreo(valores.Correo)) return "Correo";
+    if (validarTelefono(valores.Telefono)) return "Telefono";
+    if (validarMotivo(valores.Motivo)) return "Motivo";
+    return null;
+  };
+
+  // Trigger cédula validation when 9 digits are entered (nacional only)
+  useEffect(() => {
+    const digitos = soloDigitos(valores.Cedula);
+    if (tipoCedula !== "nacional") {
+      setVerificandoCedula(false);
+      setCedulaValida(false);
+      setDatosCedulaValidada(null);
+      setErrorCedula(null);
+      cedulaValidadaRef.current = null;
+      return;
+    }
+    if (digitos.length === 9) {
+      const validar = async () => {
+        setVerificandoCedula(true);
+        setErrorCedula(null);
+        setCedulaValida(false);
+        setDatosCedulaValidada(null);
+
+        try {
+          // Forced minimum 2-second loading
+          const [datos] = await Promise.all([
+            obtenerDatosCedula(digitos),
+            new Promise((resolve) => setTimeout(resolve, 2000)),
+          ]);
+
+          if (datos) {
+            setCedulaValida(true);
+            setDatosCedulaValidada(datos);
+            setErrorCedula(null);
+            cedulaValidadaRef.current = digitos;
+
+            // Auto-fill name fields
+            form.setFieldValue(
+              "Nombre",
+              soloLetras(datos.nombre).slice(0, 20),
+            );
+            form.setFieldValue(
+              "PrimerApellido",
+              soloLetras(datos.primerApellido).slice(0, 20),
+            );
+            form.setFieldValue(
+              "SegundoApellido",
+              soloLetras(datos.segundoApellido).slice(0, 20),
+            );
+          } else {
+            setCedulaValida(false);
+            setDatosCedulaValidada(null);
+            setErrorCedula("La cédula ingresada no existe.");
+          }
+        } catch {
+          setCedulaValida(false);
+          setDatosCedulaValidada(null);
+          setErrorCedula("No se pudo verificar la cédula. Intente nuevamente.");
+        } finally {
+          setVerificandoCedula(false);
+        }
+      };
+
+      validar();
+    } else if (digitos.length < 9) {
+      // Reset when cedula is cleared or incomplete
+      setCedulaValida(false);
+      setDatosCedulaValidada(null);
+      setVerificandoCedula(false);
+      setErrorCedula(null);
+      cedulaValidadaRef.current = null;
+
+      // Clear auto-filled name fields
+      form.setFieldValue("Nombre", "");
+      form.setFieldValue("PrimerApellido", "");
+      form.setFieldValue("SegundoApellido", "");
+    }
+  }, [valores.Cedula, tipoCedula, form]);
+
+  const manejarEnvio = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIntentoEnvio(true);
+
+    const campoInvalido = obtenerPrimerCampoInvalido();
+    if (campoInvalido) {
+      const elemento = document.getElementById(
+        campoInvalido,
+      ) as HTMLInputElement | null;
+      elemento?.focus();
+      elemento?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    // Check if cedula was already validated before submitting (nacional only)
+    if (tipoCedula === "nacional" && !cedulaValida) {
+      if (!errorCedula) {
+        setErrorCedula("La cédula no ha sido validada. Complete la cédula y espere la validación.");
+      }
+      const cedulaInput = document.getElementById(
+        "Cedula",
+      ) as HTMLInputElement | null;
+      cedulaInput?.focus();
+      cedulaInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    if (!captchaToken) {
+      document
+        .getElementById("captcha-container")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    if (!archivoImagen) {
+      setErrorComprobante(
+        "Debe adjuntar el comprobante de pago para continuar.",
+      );
+      document
+        .getElementById("imagen-comprobante")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    await form.handleSubmit();
+  };
+
   const handleHacerOtraSolicitud = () => {
     form.reset();
     setCaptchaError(null);
+    setErrorCedula(null);
+    setErrorMotivoBackend(null);
     setErrorEnvio(null);
+    setVerificandoCedula(false);
+    setCedulaValida(false);
+    setDatosCedulaValidada(null);
+    setIntentoEnvio(false);
+    cedulaValidadaRef.current = null;
     resetCaptcha();
+    setTipoCedula("nacional");
     setEnviado(false);
   };
 
   return (
-    <div className="mx-auto box-border min-w-0 w-full max-w-[760px] overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:rounded-[22px] sm:p-8">
+    <>
+      {confirmacionAbierta && (
+        <Modal
+          sinFondo
+          title="Requisitos para la solicitud"
+          onClose={() => setConfirmacionAbierta(false)}
+          className="max-w-lg"
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              <p className="m-0 text-xs font-black tracking-[2px] text-royal-gold uppercase">
+                Requisitos
+              </p>
+              <h3
+                className="m-0 mt-1 text-[1.45rem] font-extrabold text-royal-blue"
+                style={{ fontFamily: "'Geist', sans-serif" }}
+              >
+                Requisitos para la solicitud
+              </h3>
+              <p className="m-0 mt-2 text-sm leading-relaxed text-gray-600">
+                Para completar el formulario es necesario cumplir con los
+                siguientes requisitos:
+              </p>
+            </div>
+
+            <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+              <li className="flex items-start gap-3 rounded-xl border border-border bg-surface-muted p-3.5">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-royal-blue/10 text-royal-blue">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 2v20" />
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                </span>
+                <div className="min-w-0">
+                  <p className="m-0 text-sm font-bold text-royal-blue">
+                    Realizar el pago de ₡1000
+                  </p>
+                  <p className="m-0 mt-0.5 text-[0.84rem] leading-relaxed text-gray-600">
+                    El costo de la solicitud es de 1000 colones al sinpe de la parroquia: 2685-3540.
+                  </p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-3 rounded-xl border border-border bg-surface-muted p-3.5">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-royal-blue/10 text-royal-blue">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                    <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                  </svg>
+                </span>
+                <div className="min-w-0">
+                  <p className="m-0 text-sm font-bold text-royal-blue">
+                    Subir el comprobante de pago
+                  </p>
+                  <p className="m-0 mt-0.5 text-[0.84rem] leading-relaxed text-gray-600">
+                    Adjunta el comprobante de pago en el campo habilitado dentro
+                    del formulario.
+                  </p>
+                </div>
+              </li>
+            </ul>
+
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:justify-end">
+              <Button
+                variant="royal"
+                onClick={() => setConfirmacionAbierta(false)}
+                className="min-h-11 px-5"
+              >
+                Continuar
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => navigate({ to: "/" })}
+                className="min-h-11 px-5"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      <div className="mx-auto box-border min-w-0 w-full max-w-[760px] overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:rounded-[22px] sm:p-8">
       {enviado ? (
-        <div className="flex min-h-[260px] flex-col items-center justify-center gap-3.5 py-3 text-center sm:min-h-[320px]">
+        <div
+          ref={exitoRef}
+          className="flex min-h-[260px] flex-col items-center justify-center gap-3.5 py-3 text-center sm:min-h-[320px]"
+        >
           <div className="flex h-[60px] w-[60px] items-center justify-center rounded-2xl bg-gradient-to-br from-green-600 to-green-400 shadow-[0_10px_24px_rgba(34,197,94,0.24)]">
             <svg
               width="28"
@@ -90,7 +495,8 @@ const FormSolic = () => {
             ¡Solicitud enviada con éxito!
           </h3>
           <p className="m-0 max-w-[460px] text-[0.98rem] leading-relaxed text-gray-600">
-            Recibimos tu solicitud de sacramento. En breve se revisará y te contactaremos.
+            Recibimos tu solicitud de sacramento. En breve se revisará y te
+            contactaremos.
           </p>
 
           <Button
@@ -109,31 +515,171 @@ const FormSolic = () => {
               Solicitud pastoral
             </p>
             <h2 className="m-0 mb-2 font-heading text-2xl font-extrabold text-royal-blue sm:text-[30px]">
-              Formulario de Sacramento
+              Solicitud de Sacramento
             </h2>
             <p className="m-0 text-sm leading-relaxed text-text-secondary sm:text-[15px]">
-              Completa los datos para registrar una nueva solicitud.
+              Completa el formulario para solicitar tus constancia sacramental.
             </p>
           </div>
 
           <form
             className="grid w-full min-w-0 grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              form.handleSubmit();
-            }}
+            onSubmit={manejarEnvio}
           >
+            <div className="col-span-1 flex w-full min-w-0 flex-col gap-2 sm:col-span-2">
+              <Label
+                htmlFor="tipo-cedula"
+                required
+                className="text-sm font-bold text-royal-blue"
+              >
+                Tipo de cédula
+              </Label>
+              <Select
+                id="tipo-cedula"
+                value={tipoCedula}
+                onChange={(e) => {
+                  const tipo = e.target.value as "nacional" | "extranjera";
+                  setTipoCedula(tipo);
+                  form.setFieldValue("Cedula", "");
+                  cedulaValidadaRef.current = null;
+                  setCedulaValida(false);
+                  setDatosCedulaValidada(null);
+                  setErrorCedula(null);
+                  setVerificandoCedula(false);
+                }}
+              >
+                <option value="nacional">Nacional</option>
+                <option value="extranjera">Extranjero</option>
+              </Select>
+            </div>
+
             <div className="flex w-full min-w-0 flex-col gap-2">
               <form.Field
-                name="Nombre"
+                name="Cedula"
                 validators={{
-                  onBlur: ({ value }) => requerido(value, "El nombre es obligatorio."),
+                  onChange: ({ value }) => validarCedula(value, tipoCedula),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
+                      Cédula
+                    </Label>
+                    <div className="relative">
+                      <Input
+                      id={field.name}
+                      name={field.name}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder={
+                        tipoCedula === "nacional"
+                          ? "Ej: 1-2345-6789"
+                          : "Ej: N123456789012"
+                      }
+                      value={field.state.value}
+                      onChange={(e) => {
+                        const formatted =
+                          tipoCedula === "nacional"
+                            ? formatearCedula(e.target.value)
+                            : soloDigitos(e.target.value).slice(0, 12);
+                        field.handleChange(formatted);
+
+                        // Detect post-validation modification
+                        const digitos = soloDigitos(formatted);
+                        if (cedulaValida && cedulaValidadaRef.current && digitos !== cedulaValidadaRef.current) {
+                          // User modified validated cedula - silently clear auto-filled data
+                          setCedulaValida(false);
+                          setDatosCedulaValidada(null);
+                          setErrorCedula(null);
+                          cedulaValidadaRef.current = null;
+                          form.setFieldValue("Nombre", "");
+                          form.setFieldValue("PrimerApellido", "");
+                          form.setFieldValue("SegundoApellido", "");
+                        }
+
+                        if (errorCedula) setErrorCedula(null);
+                      }}
+                      onBlur={field.handleBlur}
+                      className={fieldClass}
+                      disabled={verificandoCedula}
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                      {verificandoCedula && (
+                        <svg
+                          className="animate-spin h-4 w-4 text-royal-blue"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                      )}
+                      {cedulaValida && (
+                        <svg
+                          className="h-4 w-4 text-green-500"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth="3"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M4.5 12.75l6 6 9-13.5"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                    {intentoEnvio && field.state.meta.errors[0] && (
+                      <span className="text-[0.84rem] font-semibold text-red-500">
+                        ⚠ {field.state.meta.errors[0]}
+                      </span>
+                    )}
+                    {errorCedula && (
+                      <span
+                        role="alert"
+                        className="text-[0.84rem] font-semibold text-red-500"
+                      >
+                        ⚠ {errorCedula}
+                      </span>
+                    )}
+                  </>
+                )}
+              </form.Field>
+            </div>
+
+            <div className="flex w-full min-w-0 flex-col gap-2">
+              <form.Field
+                name="Nombre"
+                validators={{
+                  onChange: ({ value }) => validarNombre(value),
+                }}
+              >
+                {(field) => (
+                  <>
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Nombre
                     </Label>
                     <Input
@@ -142,15 +688,25 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: Juan"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      disabled={verificandoCedula}
+                      onChange={(e) =>
+                        field.handleChange(
+                          soloLetras(e.target.value).slice(0, 20),
+                        )
+                      }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
+                    <div className="flex w-full items-start justify-between gap-2">
+                      {intentoEnvio && field.state.meta.errors[0] && (
+                        <span className="text-[0.84rem] font-semibold text-red-500">
+                          ⚠ {field.state.meta.errors[0]}
+                        </span>
+                      )}
+                      <span className="ml-auto shrink-0 text-right text-[0.78rem] font-medium text-text-secondary">
+                        {field.state.value.length}/20
                       </span>
-                    )}
+                    </div>
                   </>
                 )}
               </form.Field>
@@ -160,13 +716,16 @@ const FormSolic = () => {
               <form.Field
                 name="PrimerApellido"
                 validators={{
-                  onBlur: ({ value }) =>
-                    requerido(value, "El primer apellido es obligatorio."),
+                  onChange: ({ value }) => validarPrimerApellido(value),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Primer apellido
                     </Label>
                     <Input
@@ -175,15 +734,25 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: Pérez"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      disabled={verificandoCedula}
+                      onChange={(e) =>
+                        field.handleChange(
+                          soloLetras(e.target.value).slice(0, 20),
+                        )
+                      }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
+                    <div className="flex w-full items-start justify-between gap-2">
+                      {intentoEnvio && field.state.meta.errors[0] && (
+                        <span className="text-[0.84rem] font-semibold text-red-500">
+                          ⚠ {field.state.meta.errors[0]}
+                        </span>
+                      )}
+                      <span className="ml-auto shrink-0 text-right text-[0.78rem] font-medium text-text-secondary">
+                        {field.state.value.length}/20
                       </span>
-                    )}
+                    </div>
                   </>
                 )}
               </form.Field>
@@ -193,13 +762,16 @@ const FormSolic = () => {
               <form.Field
                 name="SegundoApellido"
                 validators={{
-                  onBlur: ({ value }) =>
-                    requerido(value, "El segundo apellido es obligatorio."),
+                  onChange: ({ value }) => validarSegundoApellido(value),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Segundo apellido
                     </Label>
                     <Input
@@ -208,53 +780,25 @@ const FormSolic = () => {
                       type="text"
                       placeholder="Ej: González"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      disabled={verificandoCedula}
+                      onChange={(e) =>
+                        field.handleChange(
+                          soloLetras(e.target.value).slice(0, 20),
+                        )
+                      }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
+                    <div className="flex w-full items-start justify-between gap-2">
+                      {intentoEnvio && field.state.meta.errors[0] && (
+                        <span className="text-[0.84rem] font-semibold text-red-500">
+                          ⚠ {field.state.meta.errors[0]}
+                        </span>
+                      )}
+                      <span className="ml-auto shrink-0 text-right text-[0.78rem] font-medium text-text-secondary">
+                        {field.state.value.length}/20
                       </span>
-                    )}
-                  </>
-                )}
-              </form.Field>
-            </div>
-
-            <div className="flex w-full min-w-0 flex-col gap-2">
-              <form.Field
-                name="Cedula"
-                validators={{
-                  onBlur: ({ value }) => {
-                    const cedula = soloDigitos(value);
-                    if (!cedula) return "La cédula es obligatoria.";
-                    if (cedula.length !== 9) return "La cédula debe tener 9 dígitos.";
-                    return undefined;
-                  },
-                }}
-              >
-                {(field) => (
-                  <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
-                      Cédula
-                    </Label>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Ej: 123456789"
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                      className={fieldClass}
-                    />
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
-                      </span>
-                    )}
+                    </div>
                   </>
                 )}
               </form.Field>
@@ -264,19 +808,16 @@ const FormSolic = () => {
               <form.Field
                 name="Correo"
                 validators={{
-                  onBlur: ({ value }) => {
-                    const correo = value.trim();
-                    if (!correo) return "El correo es obligatorio.";
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-                      return "Ingresá un correo válido.";
-                    }
-                    return undefined;
-                  },
+                  onChange: ({ value }) => validarCorreo(value),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Correo
                     </Label>
                     <Input
@@ -284,16 +825,26 @@ const FormSolic = () => {
                       name={field.name}
                       type="email"
                       placeholder="Ej: nombre@correo.com"
+                      maxLength={35}
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) =>
+                        field.handleChange(
+                          soloCorreo(e.target.value).slice(0, 35),
+                        )
+                      }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
+                    <div className="flex w-full items-start justify-between gap-2">
+                      {intentoEnvio && field.state.meta.errors[0] && (
+                        <span className="text-[0.84rem] font-semibold text-red-500">
+                          ⚠ {field.state.meta.errors[0]}
+                        </span>
+                      )}
+                      <span className="ml-auto shrink-0 text-right text-[0.78rem] font-medium text-text-secondary">
+                        {field.state.value.length}/35
                       </span>
-                    )}
+                    </div>
                   </>
                 )}
               </form.Field>
@@ -303,17 +854,16 @@ const FormSolic = () => {
               <form.Field
                 name="Telefono"
                 validators={{
-                  onBlur: ({ value }) => {
-                    const telefono = soloDigitos(value);
-                    if (!telefono) return "El teléfono es obligatorio.";
-                    if (telefono.length !== 8) return "El teléfono debe tener 8 dígitos.";
-                    return undefined;
-                  },
+                  onChange: ({ value }) => validarTelefono(value),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Teléfono
                     </Label>
                     <Input
@@ -321,49 +871,15 @@ const FormSolic = () => {
                       name={field.name}
                       type="tel"
                       inputMode="numeric"
-                      placeholder="Ej: 88888888"
+                      placeholder="Ej: 8888-8888"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) =>
+                        field.handleChange(formatearTelefono(e.target.value))
+                      }
                       onBlur={field.handleBlur}
                       className={fieldClass}
                     />
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
-                      </span>
-                    )}
-                  </>
-                )}
-              </form.Field>
-            </div>
-
-            <div className="flex w-full min-w-0 flex-col gap-2">
-              <form.Field
-                name="TipoSacramento"
-                validators={{
-                  onBlur: ({ value }) =>
-                    value ? undefined : "Seleccioná el tipo de sacramento.",
-                }}
-              >
-                {(field) => (
-                  <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
-                      Tipo de sacramento
-                    </Label>
-                    <Select
-                      value={field.state.value}
-                      name={field.name}
-                      id={field.name}
-                      className={cn(fieldClass, "cursor-pointer")}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                    >
-                      <option value="">Seleccione un sacramento</option>
-                      <option value="Bautismo">Bautismo</option>
-                      <option value="Confirmación">Confirmación</option>
-                      <option value="Matrimonio">Matrimonio</option>
-                    </Select>
-                    {field.state.meta.errors[0] && (
+                    {intentoEnvio && field.state.meta.errors[0] && (
                       <span className="text-[0.84rem] font-semibold text-red-500">
                         ⚠ {field.state.meta.errors[0]}
                       </span>
@@ -377,47 +893,78 @@ const FormSolic = () => {
               <form.Field
                 name="Motivo"
                 validators={{
-                  onBlur: ({ value }) =>
-                    requerido(value, "Indicá el motivo de la solicitud."),
+                  onChange: ({ value }) => validarMotivo(value),
                 }}
               >
                 {(field) => (
                   <>
-                    <Label htmlFor={field.name} className="text-sm font-bold text-royal-blue">
+                    <Label
+                      htmlFor={field.name}
+                      required
+                      className="text-sm font-bold text-royal-blue"
+                    >
                       Motivo
                     </Label>
-                    <Input
+                    <Textarea
                       id={field.name}
                       name={field.name}
-                      type="text"
                       placeholder="Describe brevemente el motivo"
+                      maxLength={250}
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => {
+                        field.handleChange(e.target.value.slice(0, 250));
+                        if (errorMotivoBackend) setErrorMotivoBackend(null);
+                      }}
                       onBlur={field.handleBlur}
-                      className={fieldClass}
                     />
-                    {field.state.meta.errors[0] && (
-                      <span className="text-[0.84rem] font-semibold text-red-500">
-                        ⚠ {field.state.meta.errors[0]}
+                    <div className="flex w-full items-start justify-between gap-2">
+                      {(errorMotivoBackend || (intentoEnvio && field.state.meta.errors[0])) && (
+                        <span className="text-[0.84rem] font-semibold text-red-500">
+                          {errorMotivoBackend && (
+                            <span role="alert">⚠ {errorMotivoBackend}</span>
+                          )}
+                          {intentoEnvio && field.state.meta.errors[0] && (
+                            <span>⚠ {field.state.meta.errors[0]}</span>
+                          )}
+                        </span>
+                      )}
+                      <span className="ml-auto shrink-0 text-right text-[0.78rem] font-medium text-text-secondary">
+                        {field.state.value.length}/250
                       </span>
-                    )}
+                    </div>
                   </>
                 )}
               </form.Field>
             </div>
 
-            <div className="col-span-1 overflow-x-auto rounded-xl border border-border bg-surface-muted p-4 sm:col-span-2">
-              <ReCAPTCHA
-                ref={captchaRef}
-                sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
-                onChange={(token: string | null) => {
-                  handleCaptchaChange(token);
-                  if (token) {
-                    setCaptchaError(null);
-                  }
-                }}
-                onExpired={handleCaptchaExpired}
-              />
+            <SubidaImagen
+              id="imagen-comprobante"
+              value={archivoImagen}
+              onChange={(archivo) => {
+                setArchivoImagen(archivo);
+                if (archivo) setErrorComprobante(null);
+              }}
+              required
+              errorExterno={errorComprobante}
+            />
+
+            <div
+              id="captcha-container"
+              className="col-span-1 flex flex-col items-center rounded-xl border border-border bg-surface-muted p-4 sm:col-span-2"
+            >
+              <div className="flex w-full max-w-[304px] justify-center overflow-visible">
+                <RecaptchaWidget
+                  sitekey={RECAPTCHA_KEY}
+                  captchaRef={captchaRef}
+                  onChange={(token: string | null) => {
+                    handleCaptchaChange(token);
+                    if (token) {
+                      setCaptchaError(null);
+                    }
+                  }}
+                  onExpired={handleCaptchaExpired}
+                />
+              </div>
               {captchaError && (
                 <span className="mt-2 block text-[0.84rem] font-semibold text-red-500">
                   ⚠ {captchaError}
@@ -426,11 +973,16 @@ const FormSolic = () => {
             </div>
 
             <Button
-              className="col-span-1 mt-1.5 min-h-[52px] w-full bg-gradient-to-br from-royal-gold to-[#f0d67a] text-base font-extrabold text-royal-blue shadow-[0_10px_18px_rgba(212,175,55,0.22)] hover:-translate-y-px hover:shadow-[0_14px_24px_rgba(212,175,55,0.28)] disabled:cursor-not-allowed disabled:opacity-70 disabled:shadow-none sm:col-span-2"
+              variant="royal"
+              className="col-span-1 mt-7 w-full rounded-2xl px-6 py-4 text-[0.95rem] transition-colors focus:outline-none focus:ring-2 focus:ring-royal-gold/40 sm:col-span-2 sm:py-[1.15rem] sm:text-base"
               type="submit"
               disabled={isPending}
             >
-              {isPending ? "Guardando..." : "Guardar"}
+              {isPending
+                ? "Enviando..."
+                : verificandoCedula
+                  ? "Verificando cédula..."
+                  : "Enviar solicitud de sacramento"}
             </Button>
             {errorEnvio && (
               <p className="col-span-1 text-[0.84rem] font-semibold text-red-500 sm:col-span-2">
@@ -441,6 +993,7 @@ const FormSolic = () => {
         </>
       )}
     </div>
+    </>
   );
 };
 

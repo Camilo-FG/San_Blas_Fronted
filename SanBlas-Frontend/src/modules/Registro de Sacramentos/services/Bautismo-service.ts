@@ -13,6 +13,10 @@ export const fetchCreateBautismo = async (bautismo: RegistroBautismo): Promise<R
 
 export const fetchUpdateBautismo = async (bautismoActualizado: RegistroBautismo): Promise<RegistroBautismo> => {
   const response = await apiClient.put(`/Bautismo/${bautismoActualizado.id}`, bautismoActualizado);
+  // Backend devuelve 204 No Content sin body
+  if (response.status === 204) {
+    return bautismoActualizado;
+  }
   return response.data;
 };
 

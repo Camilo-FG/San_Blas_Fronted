@@ -38,7 +38,7 @@ const cardsConfig: CardConfig[] = [
   {
     key: "solicitudesConstancias",
     icon: ScrollText,
-    label: "Solicitudes de constancia",
+    label: "Solicitudes de constancias sacramentales",
     color: "#1d4ed8",
     link: Rutas.dashboardUrl.constanciasSacramentos,
   },

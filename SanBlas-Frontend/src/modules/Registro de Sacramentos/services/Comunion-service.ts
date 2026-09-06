@@ -13,6 +13,7 @@ export const fetchCreateComunion = async (comunion: RegistroComunion): Promise<R
 
 export const fetchUpdateComunion = async (ComunionActualizado: RegistroComunion): Promise<RegistroComunion> => {
   const response = await apiClient.put(`/Comunion/${ComunionActualizado.id}`, ComunionActualizado);
+  if (response.status === 204) return ComunionActualizado;
   return response.data;
 };
 

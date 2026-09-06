@@ -1,23 +1,79 @@
 import type { FormSacramento } from "../../types/formSacramento";
-import { apiClient, handleApiError } from "../apiClient";
+import { ApiError, apiClient, handleApiError } from "../apiClient";
+import {
+  clasificarErrorAprobacion,
+  MENSAJES_APROBACION,
+} from "./aprobacionErrors";
 import type {
-  EstadoConstancia,
+  EstadoSolicitudBackend,
   FormSacraBackend,
+  SolicitudesSacramentosResponseBackend,
 } from "./constanciasApiTypes";
 import {
   mapBackendToFormSacramento,
   mapFormToBackendRequest,
 } from "./constanciasMapper";
+import {
+  assertSolicitudesResponse,
+  logSolicitudesQueryError,
+  MENSAJES_CONSULTA_SOLICITUDES,
+  toFriendlySolicitudesMessage,
+} from "./solicitudesQueryHandler";
 
 const BASE = "/solic-sacramento";
 
-export const obtenerSolicitudesSacramentos = async (): Promise<
-  FormSacramento[]
-> => {
+export interface SolicitudesSacramentosFilters {
+  nombre?: string;
+  cedula?: string;
+  estado?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export const obtenerSolicitudesSacramentos = async (
+  filters: SolicitudesSacramentosFilters = {},
+): Promise<{
+  data: FormSacramento[];
+  total: number;
+}> => {
   try {
-    const { data } = await apiClient.get<FormSacraBackend[]>(BASE);
-    return data.map(mapBackendToFormSacramento);
+    const params = new URLSearchParams();
+    if (filters.nombre) {
+      params.append("nombre", filters.nombre);
+    }
+    if (filters.cedula) {
+      params.append("cedula", filters.cedula.toString());
+    }
+    if (filters.estado) {
+      params.append("estado", filters.estado);
+    }
+    params.append("page", String(filters.page ?? 1));
+    if (filters.pageSize) {
+      params.append("pageSize", String(filters.pageSize));
+    }
+    const queryString = params.toString() ? `?${params.toString()}` : "";
+    const { data } = await apiClient.get<SolicitudesSacramentosResponseBackend>(
+      `${BASE}${queryString}`,
+    );
+
+    if (!assertSolicitudesResponse(data)) {
+      logSolicitudesQueryError("obtenerSolicitudesSacramentos", data);
+      throw new ApiError(MENSAJES_CONSULTA_SOLICITUDES.respuestaInvalida, 500);
+    }
+
+    return {
+      data: data.data.map(mapBackendToFormSacramento),
+      total: data.total,
+    };
   } catch (error) {
+    logSolicitudesQueryError("obtenerSolicitudesSacramentos", error);
+    if (error instanceof ApiError) {
+      throw new ApiError(
+        toFriendlySolicitudesMessage(error),
+        error.status,
+        error.errores,
+      );
+    }
     handleApiError(error);
   }
 };
@@ -38,6 +94,18 @@ export const crearSolicitudSacramento = async (
 ): Promise<FormSacramento> => {
   try {
     const payload = mapFormToBackendRequest(solicitud);
+
+    if (solicitud.archivoImagen) {
+      const formData = new FormData();
+      formData.append("Payload", JSON.stringify(payload));
+      formData.append("archivo", solicitud.archivoImagen);
+      const { data } = await apiClient.post<FormSacraBackend>(
+        `${BASE}/con-imagen`,
+        formData,
+      );
+      return mapBackendToFormSacramento(data);
+    }
+
     const { data } = await apiClient.post<FormSacraBackend>(BASE, payload);
     return mapBackendToFormSacramento(data);
   } catch (error) {
@@ -47,12 +115,49 @@ export const crearSolicitudSacramento = async (
 
 export const actualizarEstadoSacramento = async (
   id: number,
-  estado: EstadoConstancia,
+  nuevoEstado: EstadoSolicitudBackend,
 ): Promise<FormSacramento> => {
   try {
     const { data } = await apiClient.patch<FormSacraBackend>(
-      `${BASE}/${id}`,
-      { Estado: estado },
+      `${BASE}/cambiar-estado/${id}`,
+      { nuevoEstado },
+    );
+    return mapBackendToFormSacramento(data);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const aprobarSolicitudSacramento = async (
+  id: number,
+): Promise<FormSacramento> => {
+  try {
+    const { data } = await apiClient.patch<FormSacraBackend>(
+      `${BASE}/cambiar-estado/${id}`,
+      { nuevoEstado: "Aprobado" },
+      // Cancela automáticamente si el servidor no responde en 5 segundos
+      { timeout: 5000 },
+    );
+    return mapBackendToFormSacramento(data);
+  } catch (error) {
+    if (clasificarErrorAprobacion(error) === "timeout") {
+      throw new ApiError(MENSAJES_APROBACION.timeout, 0);
+    }
+    handleApiError(error);
+  }
+};
+
+export const rechazarSolicitudSacramento = async (
+  id: number,
+  motivoRechazo: string,
+  detalleRechazo?: string,
+): Promise<FormSacramento> => {
+  try {
+    const { data } = await apiClient.patch<FormSacraBackend>(
+      `${BASE}/${id}/rechazar`,
+      { motivoRechazo, detalleRechazo },
+      // Evita que el botón quede esperando si el servidor no responde
+      { timeout: 15000 },
     );
     return mapBackendToFormSacramento(data);
   } catch (error) {

@@ -6,7 +6,7 @@ export const useCreateSolicSacramento = () => {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data: FormSacramento) =>
+    mutationFn: (data: FormSacramento & { archivoImagen?: File | null }) =>
       crearSolicitudSacramento(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["solicitudes"] });

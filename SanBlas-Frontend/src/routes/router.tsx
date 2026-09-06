@@ -63,7 +63,6 @@ const GestionLanding = lazyWithRetry(
 const GestionUsuarios = lazyWithRetry(
   () => import("../modules/Gestión de Usuarios/pages/GestionUsuarios"),
 );
-
 function withSuspense(Component: React.LazyExoticComponent<() => React.JSX.Element>) {
   return function SuspenseRoute() {
     return (

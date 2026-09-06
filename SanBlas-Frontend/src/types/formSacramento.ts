@@ -1,4 +1,3 @@
-
 export type FormSacramento = {
   id?: number | string;
   Nombre: string;
@@ -10,4 +9,7 @@ export type FormSacramento = {
   TipoSacramento: string;
   Motivo: string;
   Estado?: string;
+  Fecha?: string;
+  comprobanteUrl?: string;
+  archivoImagen?: File | null;
 };

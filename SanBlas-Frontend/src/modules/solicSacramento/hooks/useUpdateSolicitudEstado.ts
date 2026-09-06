@@ -1,18 +1,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { actualizarEstadoSacramento } from "../../../services/constancias/constanciasService";
-import type { EstadoConstancia } from "../../../services/constancias/constanciasApiTypes";
+import type { EstadoSolicitudBackend } from "../../../services/constancias/constanciasApiTypes";
 
 type UpdateEstadoPayload = {
   id: number | string;
-  Estado: EstadoConstancia;
+  nuevoEstado: EstadoSolicitudBackend;
 };
 
 export const useUpdateSolicitudEstado = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, Estado }: UpdateEstadoPayload) => {
-      return actualizarEstadoSacramento(Number(id), Estado);
+    mutationFn: async ({ id, nuevoEstado }: UpdateEstadoPayload) => {
+      return actualizarEstadoSacramento(Number(id), nuevoEstado);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["solicitudes"] });
