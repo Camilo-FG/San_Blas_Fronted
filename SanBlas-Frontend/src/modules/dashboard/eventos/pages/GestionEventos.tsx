@@ -15,11 +15,7 @@ import {
 } from "../hooks/useGestionEventos";
 import type { Evento } from "../../../../services/eventosService";
 import type { EventoPayload } from "../../../../services/eventosService";
-import {
-  extraerFechaCalendario,
-  formatearFechaCalendario,
-  formatearHoraEvento,
-} from "../../../../shared/utils/fechas";
+import { extraerFechaCalendario } from "../../../../shared/utils/fechas";
 import { EventoCard } from "../components/EventoCard";
 import {
   ETIQUETA_ESTADO_EVENTO,
@@ -31,7 +27,7 @@ import {
   SubidaImagen,
   type ArchivoImagen,
 } from "../../../solicSacramento/components/SubidaImagen";
-import { AdminRecordDetailSheet } from "../../../../shared/components/admin/AdminRecordDetailSheet";
+import { ModalEvento } from "../../../eventos/components/ModalEvento";
 import {
   AdminModule,
   AdminPagination,
@@ -53,12 +49,11 @@ import {
   useToast,
 } from "../../../../shared/ui";
 
-const formatearFecha = (fecha: string) => formatearFechaCalendario(fecha);
-
 type Confirmacion =
   | { tipo: "publicar"; evento?: Evento }
   | { tipo: "activar"; evento?: Evento }
   | { tipo: "desactivar"; evento: Evento }
+  | { tipo: "eliminar"; evento: Evento }
   | null;
 
 type ErroresFormulario = {
@@ -228,15 +223,15 @@ const GestionEventos = () => {
 
   const abrirEditar = async (evento: Evento) => {
     setEditandoId(evento.id);
+    setFormulario(eventoToFormulario(evento));
     setErrores({});
     limpiarImagenLocal();
+    setEventoSeleccionado(null);
     setModalAbierto(true);
 
     const eventoActualizado = await cargarEventoPorId(evento.id);
     if (eventoActualizado) {
       setFormulario(eventoToFormulario(eventoActualizado));
-    } else {
-      cerrarModal();
     }
   };
 
@@ -324,11 +319,9 @@ const GestionEventos = () => {
     if (resultado.ok) cerrarModal();
   };
 
-  const handleEliminar = async (evento: Evento) => {
-    const confirmar = window.confirm("¿Desea eliminar este evento?");
-    if (!confirmar) return;
-    await borrarEvento(evento.id);
-    setEventoSeleccionado(null);
+  const solicitarEliminar = (evento: Evento) => {
+    if (guardando) return;
+    setConfirmacion({ tipo: "eliminar", evento });
   };
 
   const solicitarPublicar = () => {
@@ -446,6 +439,20 @@ const GestionEventos = () => {
     );
   };
 
+  const confirmarEliminar = async () => {
+    if (confirmacion?.tipo !== "eliminar") return;
+
+    const ok = await borrarEvento(confirmacion.evento.id);
+    if (ok) {
+      setEventoSeleccionado(null);
+      setConfirmacion(null);
+      showToast("Evento eliminado correctamente", "success");
+      return;
+    }
+
+    showToast("No se pudo eliminar el evento.", "error");
+  };
+
   const confirmarDesactivar = async () => {
     if (confirmacion?.tipo !== "desactivar") return;
 
@@ -470,7 +477,10 @@ const GestionEventos = () => {
   const renderEstadoBadge = (evento: Evento) => {
     const estado = obtenerEstadoEvento(evento);
     return (
-      <Badge variant={VARIANTE_ESTADO_EVENTO[estado]}>
+      <Badge
+        variant={VARIANTE_ESTADO_EVENTO[estado]}
+        className="uppercase tracking-wide shadow-sm"
+      >
         {ETIQUETA_ESTADO_EVENTO[estado]}
       </Badge>
     );
@@ -483,6 +493,7 @@ const GestionEventos = () => {
       return (
         <Button
           variant="royal"
+          className="max-sm:w-full"
           onClick={() => solicitarDesactivar(evento)}
           disabled={guardando}
         >
@@ -496,6 +507,7 @@ const GestionEventos = () => {
       return (
         <Button
           variant="royal"
+          className="max-sm:w-full"
           onClick={() => solicitarActivar(evento)}
           disabled={guardando}
         >
@@ -508,6 +520,7 @@ const GestionEventos = () => {
     return (
       <Button
         variant="royal"
+        className="max-sm:w-full"
         onClick={() => solicitarPublicarDesdeLista(evento)}
         disabled={guardando}
       >
@@ -603,7 +616,7 @@ const GestionEventos = () => {
               onActivar={solicitarActivar}
               onDesactivar={solicitarDesactivar}
               onEditar={abrirEditar}
-              onEliminar={handleEliminar}
+              onEliminar={solicitarEliminar}
               onVer={setEventoSeleccionado}
             />
           ))}
@@ -667,74 +680,36 @@ const GestionEventos = () => {
         </>
       )}
 
-      <AdminRecordDetailSheet
-        open={eventoSeleccionado !== null}
-        title={eventoSeleccionado?.titulo ?? "Evento"}
-        subtitle={eventoSeleccionado ? formatearFecha(eventoSeleccionado.fechaInicio) : undefined}
-        badges={eventoSeleccionado ? renderEstadoBadge(eventoSeleccionado) : undefined}
-        onClose={() => setEventoSeleccionado(null)}
-        cerrarAlClicFuera={false}
-        primaryAction={
-          eventoSeleccionado
-            ? {
-                label: "Editar",
-                icon: <Pencil size={16} />,
-                onClick: () => {
-                  abrirEditar(eventoSeleccionado);
-                  setEventoSeleccionado(null);
-                },
-              }
-            : undefined
-        }
-        actions={
-          eventoSeleccionado ? (
+      {eventoSeleccionado && confirmacion === null ? (
+        <ModalEvento
+          evento={eventoSeleccionado}
+          onCerrar={() => setEventoSeleccionado(null)}
+          cerrarAlClicFuera={false}
+          badge={renderEstadoBadge(eventoSeleccionado)}
+          acciones={
             <>
               {botonEstado(eventoSeleccionado)}
               <Button
-                variant="danger"
-                onClick={() => handleEliminar(eventoSeleccionado)}
+                variant="royal"
+                className="max-sm:w-full"
+                onClick={() => void abrirEditar(eventoSeleccionado)}
+              >
+                <Pencil size={16} />
+                Editar
+              </Button>
+              <Button
+                variant="secondary"
+                className="max-sm:w-full"
+                onClick={() => solicitarEliminar(eventoSeleccionado)}
                 disabled={guardando}
               >
                 <Trash2 size={16} />
                 Eliminar
               </Button>
             </>
-          ) : undefined
-        }
-      >
-        {eventoSeleccionado && (
-          <>
-            {eventoSeleccionado.imagenUrl && (
-              <img
-                src={eventoSeleccionado.imagenUrl}
-                alt=""
-                className="mb-4 h-40 w-full rounded-xl border border-border-strong object-cover"
-              />
-            )}
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <p className="m-0 text-sm text-slate-600">
-                <strong className="text-slate-800">Lugar:</strong> {eventoSeleccionado.lugar}
-              </p>
-              <p className="m-0 text-sm text-slate-600">
-                <strong className="text-slate-800">Hora:</strong>{" "}
-                {formatearHoraEvento(eventoSeleccionado.hora) || "No definida"}
-              </p>
-              <p className="m-0 text-sm text-slate-600">
-                <strong className="text-slate-800">Fecha fin:</strong>{" "}
-                {eventoSeleccionado.fechaFin
-                  ? formatearFecha(eventoSeleccionado.fechaFin)
-                  : "No definida"}
-              </p>
-            </div>
-            <div className="mt-4">
-              <strong className="text-sm text-slate-800">Descripción</strong>
-              <p className="mt-1.5 rounded-xl border border-border-strong bg-surface-muted p-3 text-sm leading-relaxed whitespace-pre-wrap text-slate-600">
-                {eventoSeleccionado.descripcion}
-              </p>
-            </div>
-          </>
-        )}
-      </AdminRecordDetailSheet>
+          }
+        />
+      ) : null}
 
       {modalAbierto && confirmacion === null && (
         <Modal
@@ -789,6 +764,10 @@ const GestionEventos = () => {
               </Label>
               <Textarea
                 id="descripcion"
+                autoExpand
+                rows={3}
+                minRows={1}
+                maxRows={8}
                 value={formulario.descripcion}
                 hasError={Boolean(errores.descripcion)}
                 maxLength={LIMITE_LETRAS.descripcion}
@@ -979,6 +958,18 @@ const GestionEventos = () => {
         pendingLabel="Desactivando..."
         isPending={guardando}
         onConfirm={() => void confirmarDesactivar()}
+        onCancel={cancelarConfirmacion}
+      />
+
+      <ConfirmacionAccionModal
+        open={confirmacion?.tipo === "eliminar"}
+        title="Confirmar eliminación"
+        parteSubrayada="Eliminar evento"
+        mensaje="¿Estás seguro/a que quieres eliminar este evento? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        pendingLabel="Eliminando..."
+        isPending={guardando}
+        onConfirm={() => void confirmarEliminar()}
         onCancel={cancelarConfirmacion}
       />
     </AdminModule>

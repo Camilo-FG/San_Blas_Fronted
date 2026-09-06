@@ -6,6 +6,11 @@ export const extraerFechaCalendario = (fecha?: string | null): string => {
   return match ? `${match[1]}-${match[2]}-${match[3]}` : "";
 };
 
+export const extraerHora = (hora?: string | null): string | null => {
+  const match = String(hora ?? "").trim().match(/^(\d{1,2}):(\d{2})/);
+  return match ? `${match[1].padStart(2, "0")}:${match[2]}` : null;
+};
+
 export const fechaComoLocal = (fecha: string): Date => {
   const calendario = extraerFechaCalendario(fecha);
   if (calendario) {

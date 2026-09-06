@@ -13,7 +13,7 @@ import {
   type OpcionesImagenEvento,
 } from "../../../../services/eventosService";
 import { ApiError } from "../../../../services/apiClient";
-import { extraerFechaCalendario } from "../../../../shared/utils/fechas";
+import { extraerFechaCalendario, extraerHora } from "../../../../shared/utils/fechas";
 
 export type ResultadoAccionEvento =
   | { ok: true; evento: Evento }
@@ -253,13 +253,12 @@ export const useGestionEventos = () => {
 };
 
 export const eventoToFormulario = (evento: Evento): EventoPayload => ({
-  id: evento.id,
   titulo: evento.titulo,
   descripcion: evento.descripcion,
   fechaInicio: extraerFechaCalendario(evento.fechaInicio),
   fechaFin: evento.fechaFin ? extraerFechaCalendario(evento.fechaFin) : null,
   lugar: evento.lugar,
-  hora: evento.hora ?? null,
+  hora: extraerHora(evento.hora),
   imagenUrl: evento.imagenUrl ?? null,
   publicado: evento.publicado,
 });
