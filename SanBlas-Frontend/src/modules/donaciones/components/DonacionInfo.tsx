@@ -8,7 +8,6 @@ type Method = {
   note: string;
   value: string;
   copyValue: string;
-  compactValue?: boolean;
 };
 
 interface Props {
@@ -48,14 +47,8 @@ function PaymentCard({ method }: { method: Method }) {
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-border bg-surface-muted/80 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4">
-        <span
-          className={
-            method.compactValue
-              ? "break-all font-mono text-[0.95rem] font-bold leading-snug tracking-tight text-royal-blue sm:text-base"
-              : "font-mono text-xl font-bold tracking-tight text-royal-blue sm:text-2xl"
-          }
-        >
+      <div className="mt-6 flex min-h-[3.25rem] flex-col gap-3 rounded-2xl border border-border bg-surface-muted/80 px-4 py-3 sm:mt-auto sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5 sm:py-4">
+        <span className="min-w-0 flex-1 break-all font-mono text-[0.95rem] font-bold leading-snug tracking-tight text-royal-blue sm:truncate sm:whitespace-nowrap sm:text-base">
           {method.value}
         </span>
         <button
@@ -103,36 +96,35 @@ export default function DonacionInfo({
       note: `Para montos mayores — ${banco}`,
       value: cuentaBancaria,
       copyValue: cuentaBancaria,
-      compactValue: true,
     },
   ];
 
   return (
     <section>
-      <div className="mb-10 flex flex-col items-center text-center sm:mb-12">
+      <div className="mb-8 flex flex-col items-center text-center sm:mb-10">
         <div
-          className="relative w-full overflow-hidden rounded-[1.75rem] bg-royal-blue px-7 py-9 sm:px-12 sm:py-11"
+          className="relative w-full overflow-hidden rounded-[1.75rem] bg-royal-blue px-6 py-6 sm:px-10 sm:py-7"
           style={{
             backgroundImage:
               "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
             backgroundSize: "22px 22px",
           }}
         >
-          <span className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full border border-royal-gold/50 bg-royal-blue text-royal-gold sm:mb-6 sm:size-16">
-            <Heart className="size-7 fill-royal-gold sm:size-8" aria-hidden="true" />
+          <span className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full border border-royal-gold/50 bg-royal-blue text-royal-gold sm:mb-5 sm:size-14">
+            <Heart className="size-6 fill-royal-gold sm:size-7" aria-hidden="true" />
           </span>
 
-          <h2 className="font-heading text-[clamp(1.75rem,4vw,2.35rem)] font-bold leading-tight text-royal-gold">
+          <h2 className="font-heading text-[clamp(1.6rem,3.5vw,2.1rem)] font-bold leading-tight text-royal-gold">
             Apoya a Nuestra Parroquia
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-[0.95rem] leading-[1.75] text-white/90 sm:text-base">
+          <p className="mx-auto mt-3 max-w-xl text-[0.95rem] leading-[1.75] text-white/90 sm:text-base">
             Tu generosidad nos permite continuar con nuestra misión. Puedes
             realizar tu donación económica mediante los siguientes medios.
           </p>
         </div>
       </div>
 
-      <h3 className="mb-7 text-center font-heading text-[clamp(1.35rem,3vw,1.65rem)] font-bold text-royal-blue sm:mb-8">
+      <h3 className="mb-6 text-center font-heading text-[clamp(1.35rem,3vw,1.65rem)] font-bold text-royal-blue sm:mb-7">
         Donación económica
       </h3>
 
