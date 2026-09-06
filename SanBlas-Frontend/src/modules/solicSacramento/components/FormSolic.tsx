@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
+import { motion, AnimatePresence } from "framer-motion";
+import FocusTrap from "focus-trap-react";
+import { ChevronDown } from "lucide-react";
 import { useCreateSolicSacramento } from "../hooks/useCreateSacramento";
 import { RecaptchaWidget } from "../../../shared/components/RecaptchaWidget";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 import { ApiError } from "../../../services/apiClient";
 import { obtenerDatosCedula, type DatosCedula } from "../../../services/cedulaService";
-import { Button, Input, Label, Modal, Select, Textarea } from "../../../shared/ui";
+import { Button, Input, Label, Modal, Textarea } from "../../../shared/ui";
 import { SubidaImagen, type ArchivoImagen } from "./SubidaImagen";
 
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
@@ -117,6 +120,42 @@ const FormSolic = () => {
   const [tipoCedula, setTipoCedula] = useState<"nacional" | "extranjera">(
     "nacional",
   );
+  const [tipoCedulaAbierto, setTipoCedulaAbierto] = useState(false);
+  const tipoCedulaMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!confirmacionAbierta) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+    };
+  }, [confirmacionAbierta]);
+
+  useEffect(() => {
+    if (!tipoCedulaAbierto) return;
+    const handleEscapeTipo = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setTipoCedulaAbierto(false);
+    };
+    document.addEventListener("keydown", handleEscapeTipo);
+    return () =>
+      document.removeEventListener("keydown", handleEscapeTipo);
+  }, [tipoCedulaAbierto]);
+
+  useEffect(() => {
+    if (!tipoCedulaAbierto) return;
+    const handleClickFuera = (event: MouseEvent) => {
+      if (
+        tipoCedulaMenuRef.current &&
+        !tipoCedulaMenuRef.current.contains(event.target as Node)
+      ) {
+        setTipoCedulaAbierto(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, [tipoCedulaAbierto]);
+
   const cedulaValidadaRef = useRef<string | null>(null);
   const exitoRef = useRef<HTMLDivElement | null>(null);
 
@@ -369,7 +408,8 @@ const FormSolic = () => {
 
   return (
     <>
-      {confirmacionAbierta && (
+      <AnimatePresence>
+        {confirmacionAbierta && (
         <Modal
           sinFondo
           title="Requisitos para la solicitud"
@@ -454,21 +494,22 @@ const FormSolic = () => {
               <Button
                 variant="royal"
                 onClick={() => setConfirmacionAbierta(false)}
-                className="min-h-11 px-5"
+                className="min-h-11 px-5 transition-colors duration-300 ease-out hover:bg-royal-blue! hover:text-royal-gold!"
               >
                 Continuar
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => navigate({ to: "/" })}
-                className="min-h-11 px-5"
+                className="min-h-11 px-5 transition-colors duration-300 ease-out hover:bg-slate-200!"
               >
                 Cancelar
               </Button>
             </div>
           </div>
         </Modal>
-      )}
+        )}
+      </AnimatePresence>
 
       <div className="mx-auto box-border min-w-0 w-full max-w-[760px] overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] sm:rounded-[22px] sm:p-8">
       {enviado ? (
@@ -534,23 +575,82 @@ const FormSolic = () => {
               >
                 Tipo de cédula
               </Label>
-              <Select
-                id="tipo-cedula"
-                value={tipoCedula}
-                onChange={(e) => {
-                  const tipo = e.target.value as "nacional" | "extranjera";
-                  setTipoCedula(tipo);
-                  form.setFieldValue("Cedula", "");
-                  cedulaValidadaRef.current = null;
-                  setCedulaValida(false);
-                  setDatosCedulaValidada(null);
-                  setErrorCedula(null);
-                  setVerificandoCedula(false);
-                }}
-              >
-                <option value="nacional">Nacional</option>
-                <option value="extranjera">Extranjero</option>
-              </Select>
+              <div className="relative" ref={tipoCedulaMenuRef}>
+                <button
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={tipoCedulaAbierto}
+                  onClick={() => setTipoCedulaAbierto((prev) => !prev)}
+                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 ${
+                    tipoCedulaAbierto
+                      ? "border-blue-400 bg-surface"
+                      : "border-border-strong"
+                  }`}
+                >
+                  <span className="font-medium text-slate-700">
+                    {tipoCedula === "nacional" ? "Nacional" : "Extranjero"}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`shrink-0 text-slate-900 transition-transform duration-200 ${
+                      tipoCedulaAbierto ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                <AnimatePresence>
+                  {tipoCedulaAbierto && (
+                    <FocusTrap
+                      focusTrapOptions={{
+                        clickOutsideDeactivates: false,
+                        escapeDeactivates: false,
+                        allowOutsideClick: () => true,
+                      }}
+                    >
+                      <motion.ul
+                        role="listbox"
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                        className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                      >
+                        {([
+                          ["nacional", "Nacional"],
+                          ["extranjera", "Extranjero"],
+                        ] as const).map(([valor, etiqueta]) => (
+                          <li
+                            key={valor}
+                            role="option"
+                            aria-selected={tipoCedula === valor}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const tipo: "nacional" | "extranjera" = valor;
+                                setTipoCedula(tipo);
+                                setTipoCedulaAbierto(false);
+                                form.setFieldValue("Cedula", "");
+                                cedulaValidadaRef.current = null;
+                                setCedulaValida(false);
+                                setDatosCedulaValidada(null);
+                                setErrorCedula(null);
+                                setVerificandoCedula(false);
+                              }}
+                              className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
+                                tipoCedula === valor
+                                  ? "bg-[#aa7323]/10 text-[#16243c]"
+                                  : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                              }`}
+                            >
+                              {etiqueta}
+                            </button>
+                          </li>
+                        ))}
+                      </motion.ul>
+                    </FocusTrap>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
 
             <div className="flex w-full min-w-0 flex-col gap-2">
@@ -825,11 +925,11 @@ const FormSolic = () => {
                       name={field.name}
                       type="email"
                       placeholder="Ej: nombre@correo.com"
-                      maxLength={35}
+                      maxLength={40}
                       value={field.state.value}
                       onChange={(e) =>
                         field.handleChange(
-                          soloCorreo(e.target.value).slice(0, 35),
+                          soloCorreo(e.target.value).slice(0, 40),
                         )
                       }
                       onBlur={field.handleBlur}
@@ -842,7 +942,7 @@ const FormSolic = () => {
                         </span>
                       )}
                       <span className="ml-auto shrink-0 text-right text-[0.78rem] font-medium text-text-secondary">
-                        {field.state.value.length}/35
+                        {field.state.value.length}/40
                       </span>
                     </div>
                   </>
