@@ -7,6 +7,7 @@ export { FieldError, Label } from "./Label";
 export { Input } from "./Input";
 export { Modal } from "./Modal";
 export { LineaDoradaTitulo } from "./LineaDoradaTitulo";
+export { ScrollReveal } from "./ScrollReveal";
 export { EtiquetaSeccion } from "./EtiquetaSeccion";
 export { ConfirmacionAccionModal } from "./ConfirmacionAccionModal";
 export { resaltarCoincidencia } from "./resaltarCoincidencia";

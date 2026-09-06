@@ -25,7 +25,7 @@ function CarouselPlaceholder() {
 function EventosPlaceholder() {
   return (
     <div
-      className="min-h-[520px] border-t border-[#eef2f7] bg-surface-muted max-md:min-h-[460px] max-sm:min-h-[420px]"
+      className="min-h-[580px] border-t border-[#eef2f7] bg-surface-muted max-md:min-h-[520px] max-sm:min-h-[470px]"
       aria-hidden="true"
     />
   );

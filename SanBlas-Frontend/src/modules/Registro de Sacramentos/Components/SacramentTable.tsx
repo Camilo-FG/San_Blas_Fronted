@@ -181,7 +181,7 @@ const SacramentTable = ({
       </div>
 
       {sacramentos.length > 0 && (
-        <AdminTableFooter className="mt-2! pt-2!">
+        <AdminTableFooter pegadoAbajo>
           <span className="text-sm text-text-muted">
             Mostrando{" "}
             <strong className="text-text tabular-nums">

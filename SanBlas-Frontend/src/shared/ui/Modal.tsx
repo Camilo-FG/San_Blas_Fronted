@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import FocusTrap from "focus-trap-react";
 import { motion } from "framer-motion";
+import { useScrollLock } from "../hooks/useScrollLock";
 import { cn } from "./cn";
 
 type ModalProps = {
@@ -23,12 +24,16 @@ export function Modal({
   overlayClassName,
   cerrarAlClicFuera = true,
 }: ModalProps) {
+  const dialogoRef = useRef<HTMLDivElement>(null);
+  useScrollLock(true, dialogoRef);
+
   const clasesContenido = sinFondo
-    ? "fixed top-1/2 left-1/2 z-[1400] max-h-[90vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-border bg-surface p-6 shadow-[0_22px_55px_rgba(6,15,32,0.45)]"
-    : "relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-xl";
+    ? "fixed top-1/2 left-1/2 z-[1400] max-h-[90vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-lg border border-border bg-surface p-6 shadow-[0_22px_55px_rgba(6,15,32,0.45)]"
+    : "relative max-h-[90vh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface p-6 shadow-xl";
 
   const contenido = (
-    <motion.div
+    <div
+      ref={dialogoRef}
       className={cn(clasesContenido, className)}
       onClick={(event) => event.stopPropagation()}
       role="dialog"
@@ -53,19 +58,7 @@ export function Modal({
       </button>
 
       {children}
-    </motion.div>
-  );
-
-  const focoAtrapado = (
-    <FocusTrap
-      focusTrapOptions={{
-        clickOutsideDeactivates: false,
-        escapeDeactivates: false,
-        allowOutsideClick: () => true,
-      }}
-    >
-      {contenido}
-    </FocusTrap>
+    </div>
   );
 
   if (sinFondo) {
@@ -74,7 +67,7 @@ export function Modal({
 <motion.div
           className={
             overlayClassName ??
-            "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+            "fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px]"
           }
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -83,18 +76,34 @@ export function Modal({
           onClick={onClose}
           role="presentation"
         />
-        {focoAtrapado}
+        <FocusTrap
+          focusTrapOptions={{
+            clickOutsideDeactivates: false,
+            escapeDeactivates: false,
+            allowOutsideClick: () => true,
+          }}
+        >
+          <div>{contenido}</div>
+        </FocusTrap>
       </>
     );
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-900/55 p-4"
-      onClick={cerrarAlClicFuera ? onClose : undefined}
-      role="presentation"
+    <FocusTrap
+      focusTrapOptions={{
+        clickOutsideDeactivates: false,
+        escapeDeactivates: false,
+        allowOutsideClick: () => true,
+      }}
     >
-      {focoAtrapado}
-    </div>
+      <div
+        className="fixed inset-0 z-[1200] flex items-center justify-center overflow-hidden overscroll-none bg-slate-900/55 p-4"
+        onClick={cerrarAlClicFuera ? onClose : undefined}
+        role="presentation"
+      >
+        {contenido}
+      </div>
+    </FocusTrap>
   );
 }

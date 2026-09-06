@@ -9,8 +9,10 @@ import {
   publicarEvento,
   type Evento,
   type EventoPayload,
+  type OpcionesImagenEvento,
 } from "../../../../services/eventosService";
 import { ApiError } from "../../../../services/apiClient";
+import { extraerFechaCalendario } from "../../../../shared/utils/fechas";
 
 export type ResultadoAccionEvento =
   | { ok: true; evento: Evento }
@@ -25,6 +27,8 @@ const formularioVacio = (): EventoPayload => ({
   fechaInicio: "",
   fechaFin: null,
   lugar: "",
+  hora: null,
+  imagenUrl: null,
   publicado: false,
 });
 
@@ -61,14 +65,18 @@ export const useGestionEventos = () => {
     cargarEventos();
   }, [cargarEventos]);
 
-  const guardarEvento = async (payload: EventoPayload, id?: number) => {
+  const guardarEvento = async (
+    payload: EventoPayload,
+    id?: number,
+    imagen?: OpcionesImagenEvento,
+  ) => {
     setGuardando(true);
     setError(null);
 
     try {
       const evento = id
-        ? await actualizarEvento(id, payload)
-        : await crearEvento(payload);
+        ? await actualizarEvento(id, payload, imagen)
+        : await crearEvento(payload, imagen);
       upsertEvento(evento);
       return { ok: true as const, evento };
     } catch (err) {
@@ -100,6 +108,7 @@ export const useGestionEventos = () => {
   const publicarEventoDesdeFormulario = async (
     payload: EventoPayload,
     id?: number,
+    imagen?: OpcionesImagenEvento,
   ): Promise<ResultadoAccionEvento> => {
     setGuardando(true);
     setError(null);
@@ -107,8 +116,8 @@ export const useGestionEventos = () => {
 
     try {
       let evento = id
-        ? await actualizarEvento(id, payload)
-        : await crearEvento(payload);
+        ? await actualizarEvento(id, payload, imagen)
+        : await crearEvento(payload, imagen);
 
       eventoGuardado = evento;
       upsertEvento(evento);
@@ -229,8 +238,10 @@ export const eventoToFormulario = (evento: Evento): EventoPayload => ({
   id: evento.id,
   titulo: evento.titulo,
   descripcion: evento.descripcion,
-  fechaInicio: evento.fechaInicio.split("T")[0],
-  fechaFin: evento.fechaFin ? evento.fechaFin.split("T")[0] : null,
+  fechaInicio: extraerFechaCalendario(evento.fechaInicio),
+  fechaFin: evento.fechaFin ? extraerFechaCalendario(evento.fechaFin) : null,
   lugar: evento.lugar,
+  hora: evento.hora ?? null,
+  imagenUrl: evento.imagenUrl ?? null,
   publicado: evento.publicado,
 });
