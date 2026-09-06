@@ -229,6 +229,7 @@ const TableSacramentos = () => {
   const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
   const [motivoMenuAbierto, setMotivoMenuAbierto] = useState(false);
   const [rechazoEnBlur, setRechazoEnBlur] = useState(false);
+  const [motivoError, setMotivoError] = useState<string | null>(null);
   const [aprobacionEnBlur, setAprobacionEnBlur] = useState(false);
   const motivoMenuRef = useRef<HTMLDivElement>(null);
 
@@ -431,6 +432,7 @@ const TableSacramentos = () => {
     setSolicitudARechazar(solicitud);
     setRejectionReasonSelect("");
     setRejectionReasonText("");
+    setMotivoError(null);
     setIsRejectModalOpen(true);
   };
 
@@ -440,6 +442,7 @@ const TableSacramentos = () => {
     setIsRejectModalOpen(false);
     setRejectionReasonSelect("");
     setRejectionReasonText("");
+    setMotivoError(null);
     setSolicitudARechazar(null);
     if (volverAlDetalle && solicitud) {
       setRechazoEnBlur(true);
@@ -449,7 +452,11 @@ const TableSacramentos = () => {
 
   const handleOpenConfirmReject = () => {
     const motivo = rejectionReasonSelect.trim();
-    if (!motivo || tieneCaracteresInvalidos(rejectionReasonText)) return;
+    if (tieneCaracteresInvalidos(rejectionReasonText)) return;
+    if (!motivo) {
+      setMotivoError("Por favor seleccione un motivo para continuar");
+      return;
+    }
     setIsConfirmRejectOpen(true);
   };
 
@@ -1402,11 +1409,16 @@ const mensaje =
                         />
                       </button>
 
-                      {estadoMenuAbierto && (
-                        <ul
-                          role="listbox"
-                          className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
-                        >
+                      <AnimatePresence>
+                        {estadoMenuAbierto && (
+                          <motion.ul
+                            role="listbox"
+                            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                            transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                            className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                          >
                           {(
                             [
                               {
@@ -1459,8 +1471,9 @@ const mensaje =
                               </li>
                             );
                           })}
-                        </ul>
-                      )}
+                          </motion.ul>
+                        )}
+                      </AnimatePresence>
                     </div>
               </div>
                 )}
@@ -1587,6 +1600,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                               type="button"
                               onClick={() => {
                                 setRejectionReasonSelect(reason);
+                                setMotivoError(null);
                                 setMotivoMenuAbierto(false);
                               }}
                               className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
@@ -1613,6 +1627,11 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                   className="min-h-20"
                 />
                 <div className="-mt-2 flex items-baseline justify-between gap-2">
+                  {motivoError && (
+                    <p className="m-0 text-xs font-semibold text-red-600">
+                      {motivoError}
+                    </p>
+                  )}
                   {tieneCaracteresInvalidos(rejectionReasonText) && (
                     <p className="m-0 text-xs font-semibold text-red-600">
                       Los caracteres especiales no están permitidos
@@ -1633,10 +1652,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                   variant="royal"
                   className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
                   onClick={handleOpenConfirmReject}
-                  disabled={
-                    !rejectionReasonSelect.trim() ||
-                    tieneCaracteresInvalidos(rejectionReasonText)
-                  }
+                  disabled={tieneCaracteresInvalidos(rejectionReasonText)}
                 >
                   Continuar
                 </Button>
@@ -1668,12 +1684,13 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
         onCancel={handleCancelApprove}
       />
 
-      {solicitudAArchivar && (
-        <Modal
-          onClose={handleCancelArchivar}
-          title="Confirmar archivado"
-          sinFondo
-        >
+      <AnimatePresence>
+        {solicitudAArchivar && (
+          <Modal
+            onClose={handleCancelArchivar}
+            title="Confirmar archivado"
+            sinFondo
+          >
           <div className="flex min-h-44 flex-col">
             <LineaDoradaTitulo
               parteSubrayada="Archivar solicitud sac"
@@ -1705,15 +1722,17 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
               </Button>
             </div>
           </div>
-        </Modal>
-      )}
+          </Modal>
+        )}
+      </AnimatePresence>
 
-      {isArchivarTodasOpen && (
-        <Modal
-          onClose={handleCancelArchivarTodas}
-          title="Confirmar archivado masivo"
-          sinFondo
-        >
+      <AnimatePresence>
+        {isArchivarTodasOpen && (
+          <Modal
+            onClose={handleCancelArchivarTodas}
+            title="Confirmar archivado masivo"
+            sinFondo
+          >
           <div className="flex min-h-44 flex-col">
             <LineaDoradaTitulo
               parteSubrayada="Archivar solicitudes proc"
@@ -1747,8 +1766,9 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
               </Button>
             </div>
           </div>
-        </Modal>
-      )}
+          </Modal>
+        )}
+      </AnimatePresence>
 
       {!isInitialLoading && table.getRowModel().rows.length > 0 && (
         <AdminTableFooter className="mt-2! pt-2!">
