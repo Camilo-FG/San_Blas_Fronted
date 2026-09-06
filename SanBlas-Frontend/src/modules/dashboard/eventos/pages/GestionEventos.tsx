@@ -117,6 +117,7 @@ const GestionEventos = () => {
     eventos,
     cargando,
     guardando,
+    cargandoEdicion,
     error,
     formularioVacio,
     guardarEvento,
@@ -124,6 +125,7 @@ const GestionEventos = () => {
     publicarEventoDesdeFormulario,
     publicarEventoEnLista,
     cambiarDisponibilidadEvento,
+    cargarEventoPorId,
   } = useGestionEventos();
   const { showToast } = useToast();
 
@@ -224,12 +226,18 @@ const GestionEventos = () => {
     setModalAbierto(true);
   };
 
-  const abrirEditar = (evento: Evento) => {
+  const abrirEditar = async (evento: Evento) => {
     setEditandoId(evento.id);
-    setFormulario(eventoToFormulario(evento));
     setErrores({});
     limpiarImagenLocal();
     setModalAbierto(true);
+
+    const eventoActualizado = await cargarEventoPorId(evento.id);
+    if (eventoActualizado) {
+      setFormulario(eventoToFormulario(eventoActualizado));
+    } else {
+      cerrarModal();
+    }
   };
 
   const cerrarModal = () => {
@@ -740,6 +748,12 @@ const GestionEventos = () => {
           <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue">
             {editandoId ? "Editar evento" : "Nuevo evento"}
           </h3>
+          {cargandoEdicion ? (
+            <div className="flex flex-col items-center justify-center py-10">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-royal-blue border-t-transparent" />
+              <p className="mt-4 text-sm text-slate-500">Cargando datos del evento...</p>
+            </div>
+          ) : (
           <form
             noValidate
             onSubmit={handleSubmit}
@@ -928,6 +942,7 @@ const GestionEventos = () => {
               </Button>
             </div>
           </form>
+          )}
         </Modal>
       )}
 
