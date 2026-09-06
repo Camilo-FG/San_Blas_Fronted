@@ -251,7 +251,7 @@ export default function EventosCarousel() {
                       }}
                     >
                       <div className="relative">
-                        <div className="h-44 w-full overflow-hidden rounded-[16px] bg-gradient-to-br from-teal to-teal-hover max-sm:h-40">
+                        <div className="h-44 w-full overflow-hidden rounded-[16px] bg-gradient-to-br from-royal-blue to-royal-blue-dark max-sm:h-40">
                           {evento.imagenUrl ? (
                             <img
                               src={evento.imagenUrl}

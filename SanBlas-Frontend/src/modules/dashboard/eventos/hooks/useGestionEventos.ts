@@ -5,6 +5,7 @@ import {
   crearEvento,
   desactivarEvento,
   eliminarEvento,
+  obtenerEventoPorId,
   obtenerEventos,
   publicarEvento,
   type Evento,
@@ -12,7 +13,7 @@ import {
   type OpcionesImagenEvento,
 } from "../../../../services/eventosService";
 import { ApiError } from "../../../../services/apiClient";
-import { extraerFechaCalendario } from "../../../../shared/utils/fechas";
+import { extraerFechaCalendario, extraerHora } from "../../../../shared/utils/fechas";
 
 export type ResultadoAccionEvento =
   | { ok: true; evento: Evento }
@@ -36,6 +37,7 @@ export const useGestionEventos = () => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [cargandoEdicion, setCargandoEdicion] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const upsertEvento = (evento: Evento) => {
@@ -219,10 +221,25 @@ export const useGestionEventos = () => {
     }
   };
 
+  const cargarEventoPorId = async (id: number): Promise<Evento | null> => {
+    setCargandoEdicion(true);
+    try {
+      const evento = await obtenerEventoPorId(id);
+      return evento;
+    } catch (err) {
+      const mensaje = mensajeError(err, "No se pudo cargar el evento.");
+      setError(mensaje);
+      return null;
+    } finally {
+      setCargandoEdicion(false);
+    }
+  };
+
   return {
     eventos,
     cargando,
     guardando,
+    cargandoEdicion,
     error,
     formularioVacio,
     guardarEvento,
@@ -230,18 +247,18 @@ export const useGestionEventos = () => {
     publicarEventoDesdeFormulario,
     publicarEventoEnLista,
     cambiarDisponibilidadEvento,
+    cargarEventoPorId,
     recargar: cargarEventos,
   };
 };
 
 export const eventoToFormulario = (evento: Evento): EventoPayload => ({
-  id: evento.id,
   titulo: evento.titulo,
   descripcion: evento.descripcion,
   fechaInicio: extraerFechaCalendario(evento.fechaInicio),
   fechaFin: evento.fechaFin ? extraerFechaCalendario(evento.fechaFin) : null,
   lugar: evento.lugar,
-  hora: evento.hora ?? null,
+  hora: extraerHora(evento.hora),
   imagenUrl: evento.imagenUrl ?? null,
   publicado: evento.publicado,
 });

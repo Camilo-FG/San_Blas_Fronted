@@ -26,7 +26,13 @@ export const VARIANTE_ESTADO_EVENTO: Record<EstadoEvento, BadgeVariant> = {
 };
 
 export const PORTADA_ESTADO_EVENTO: Record<EstadoEvento, string> = {
-  borrador: "bg-gradient-to-br from-slate-500 to-slate-400",
-  "publicado-activo": "bg-gradient-to-br from-teal to-teal-hover",
-  "publicado-inactivo": "bg-gradient-to-br from-amber-600 to-orange-400",
+  borrador: "bg-gradient-to-br from-slate-400 to-slate-300",
+  "publicado-activo": "bg-gradient-to-br from-royal-blue to-royal-blue-dark",
+  "publicado-inactivo": "bg-gradient-to-br from-royal-gold to-royal-gold-light",
+};
+
+export const ICONO_PORTADA_ESTADO: Record<EstadoEvento, string> = {
+  borrador: "text-white/90",
+  "publicado-activo": "text-white/90",
+  "publicado-inactivo": "text-royal-blue",
 };

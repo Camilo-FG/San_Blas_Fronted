@@ -1,4 +1,4 @@
-import { extraerFechaCalendario } from "../shared/utils/fechas";
+import { extraerFechaCalendario, extraerHora } from "../shared/utils/fechas";
 import { apiClient, handleApiError } from "./apiClient";
 
 export interface Evento {
@@ -42,18 +42,21 @@ const normalizarEvento = (evento: Evento): Evento => ({
   ...evento,
   fechaInicio: fechaPayload(evento.fechaInicio) ?? evento.fechaInicio,
   fechaFin: fechaPayload(evento.fechaFin ?? null),
-  hora: textoOpcional(evento.hora),
+  hora: extraerHora(evento.hora),
   imagenUrl: textoOpcional(evento.imagenUrl),
   activo: evento.activo !== false,
   publicado: Boolean(evento.publicado),
 });
 
 const payloadCalendario = (payload: EventoPayload): EventoPayload => ({
-  ...payload,
+  titulo: payload.titulo,
+  descripcion: payload.descripcion,
   fechaInicio: fechaPayload(payload.fechaInicio) ?? payload.fechaInicio,
   fechaFin: payload.fechaFin ? fechaPayload(payload.fechaFin) : payload.fechaFin,
-  hora: textoOpcional(payload.hora),
+  lugar: payload.lugar,
+  hora: extraerHora(payload.hora),
   imagenUrl: textoOpcional(payload.imagenUrl),
+  publicado: payload.publicado,
 });
 
 export const obtenerEventosPublicos = async (): Promise<Evento[]> => {
@@ -124,7 +127,6 @@ export const actualizarEvento = async (
   try {
     const cuerpo = {
       ...payloadCalendario(payload),
-      id,
       eliminarImagen: Boolean(opciones?.eliminarImagen),
     };
 

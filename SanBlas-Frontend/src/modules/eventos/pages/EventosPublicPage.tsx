@@ -30,6 +30,12 @@ const normalizarTexto = (valor: string) =>
     .toLowerCase()
     .trim();
 
+const minutosHora = (hora?: string | null) => {
+  const match = String(hora ?? "").trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return 0;
+  return Number(match[1]) * 60 + Number(match[2]);
+};
+
 const formatearFecha = (fecha: string) =>
   formatearFechaCalendario(fecha, {
     weekday: "long",
@@ -48,7 +54,7 @@ function PortadaEvento({ imagenUrl }: { imagenUrl?: string | null }) {
   const mostrarImagen = Boolean(imagenUrl) && !imagenRota;
 
   return (
-    <div className="relative h-52 overflow-hidden bg-gradient-to-br from-teal to-teal-hover max-sm:h-44">
+    <div className="relative h-52 overflow-hidden bg-gradient-to-br from-royal-blue to-royal-blue-dark max-sm:h-44">
       {mostrarImagen ? (
         <img
           src={imagenUrl ?? undefined}
@@ -120,15 +126,24 @@ const EventosPublicPage = () => {
   const eventosFiltrados = useMemo(() => {
     const nombre = normalizarTexto(busquedaNombre);
 
-    return eventos.filter((evento) => {
-      const coincideNombre =
-        !nombre || normalizarTexto(evento.titulo).includes(nombre);
-      const fechaEvento = extraerFechaCalendario(evento.fechaInicio);
-      const coincideDesde = !fechaDesde || fechaEvento >= fechaDesde;
-      const coincideHasta = !fechaHasta || fechaEvento <= fechaHasta;
+    return eventos
+      .filter((evento) => {
+        const coincideNombre =
+          !nombre || normalizarTexto(evento.titulo).includes(nombre);
+        const fechaEvento = extraerFechaCalendario(evento.fechaInicio);
+        const coincideDesde = !fechaDesde || fechaEvento >= fechaDesde;
+        const coincideHasta = !fechaHasta || fechaEvento <= fechaHasta;
 
-      return coincideNombre && coincideDesde && coincideHasta;
-    });
+        return coincideNombre && coincideDesde && coincideHasta;
+      })
+      .sort((a, b) => {
+        const fechaA = extraerFechaCalendario(a.fechaInicio);
+        const fechaB = extraerFechaCalendario(b.fechaInicio);
+        if (fechaA !== fechaB) return fechaB.localeCompare(fechaA);
+        const diferenciaHora = minutosHora(b.hora) - minutosHora(a.hora);
+        if (diferenciaHora !== 0) return diferenciaHora;
+        return b.id - a.id;
+      });
   }, [busquedaNombre, eventos, fechaDesde, fechaHasta]);
 
   const totalPaginas = Math.max(
