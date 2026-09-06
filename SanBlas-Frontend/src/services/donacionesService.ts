@@ -5,7 +5,8 @@ export type EstadoDonacionAccion = "Aprobado" | "Rechazado";
 
 export interface DonacionBackend {
   id: number;
-  fecha: string;
+  fecha?: string;
+  fechaIngreso?: string;
   anonimo: boolean;
   nombre: string;
   correo: string;
@@ -42,7 +43,7 @@ const mapEstadoDonacion = (estado?: string): EstadoDonacion => {
 
 const mapDonacionBackend = (don: DonacionBackend): Donacion => ({
   id: don.id,
-  fecha: don.fecha ?? "",
+  fecha: don.fechaIngreso ?? don.fecha ?? "",
   anonimo: !!don.anonimo,
   nombre: don.nombre ?? "",
   correo: don.correo ?? "",
@@ -53,7 +54,9 @@ const mapDonacionBackend = (don: DonacionBackend): Donacion => ({
 
 export const obtenerDonaciones = async (): Promise<Donacion[]> => {
   try {
-    const { data } = await apiClient.get<DonacionBackend[]>("/Donacion");
+    const { data } = await apiClient.get<DonacionBackend[]>(
+      "/Donacion/solicitudes",
+    );
     return data.map(mapDonacionBackend);
   } catch (error) {
     handleApiError(error);
@@ -74,11 +77,28 @@ export const crearDonacion = async (
 export const actualizarEstadoDonacion = async (
   id: number,
   estado: EstadoDonacionAccion,
+  detalle?: string,
 ): Promise<DonacionBackend> => {
   try {
     const { data } = await apiClient.patch<DonacionBackend>(
       `/Donacion/${id}/estado`,
-      { estado },
+      detalle ? { estado, detalle } : { estado },
+    );
+    return data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const rechazarDonacion = async (
+  id: number,
+  motivo: string,
+  detalle?: string,
+): Promise<DonacionBackend> => {
+  try {
+    const { data } = await apiClient.patch<DonacionBackend>(
+      `/Donacion/${id}/rechazar`,
+      { motivo, detalle },
     );
     return data;
   } catch (error) {

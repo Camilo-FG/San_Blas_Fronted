@@ -79,6 +79,60 @@ const fechaHoy = () =>
 
 const soloFecha = (valor?: string | null) => extraerFechaCalendario(valor);
 
+// Mismas reglas que el submit, pero puras para poder deshabilitar Guardar en vivo
+const obtenerErroresFormulario = (
+  valores: EventoPayload,
+): ErroresFormulario => {
+  const nuevosErrores: ErroresFormulario = {};
+  const titulo = valores.titulo.trim();
+  const descripcion = valores.descripcion.trim();
+  const lugar = valores.lugar.trim();
+
+  if (!titulo) {
+    nuevosErrores.titulo = "El título es requerido.";
+  } else if (titulo.length > LIMITE_LETRAS.titulo) {
+    nuevosErrores.titulo = `El título no puede superar las ${LIMITE_LETRAS.titulo} letras.`;
+  }
+
+  if (!descripcion) {
+    nuevosErrores.descripcion = "La descripción es requerida.";
+  } else if (descripcion.length > LIMITE_LETRAS.descripcion) {
+    nuevosErrores.descripcion = `La descripción no puede superar las ${LIMITE_LETRAS.descripcion} letras.`;
+  }
+
+  if (!valores.fechaInicio) {
+    nuevosErrores.fechaInicio = "La fecha de inicio es requerida.";
+  } else if (valores.fechaInicio < fechaHoy()) {
+    nuevosErrores.fechaInicio =
+      "La fecha de inicio no puede ser anterior a la fecha actual.";
+  }
+
+  if (valores.fechaFin) {
+    if (valores.fechaFin < fechaHoy()) {
+      nuevosErrores.fechaFin =
+        "La fecha de fin no puede ser anterior a la fecha actual.";
+    } else if (
+      valores.fechaInicio &&
+      valores.fechaFin < valores.fechaInicio
+    ) {
+      nuevosErrores.fechaFin =
+        "La fecha de fin no puede ser anterior a la fecha de inicio.";
+    }
+  }
+
+  if (!lugar) {
+    nuevosErrores.lugar = "El lugar es requerido.";
+  } else if (lugar.length > LIMITE_LETRAS.lugar) {
+    nuevosErrores.lugar = `El lugar no puede superar las ${LIMITE_LETRAS.lugar} letras.`;
+  }
+
+  if (valores.hora && !/^\d{2}:\d{2}$/.test(valores.hora)) {
+    nuevosErrores.hora = "La hora no es válida.";
+  }
+
+  return nuevosErrores;
+};
+
 type FiltroEstadoEvento = "todos" | EstadoEvento;
 
 const TAMANOS_PAGINA = [6, 9, 12] as const;
@@ -257,56 +311,16 @@ const GestionEventos = () => {
   };
 
   const validarFormulario = () => {
-    const nuevosErrores: ErroresFormulario = {};
-    const titulo = formulario.titulo.trim();
-    const descripcion = formulario.descripcion.trim();
-    const lugar = formulario.lugar.trim();
-
-    if (!titulo) {
-      nuevosErrores.titulo = "El título es requerido.";
-    } else if (titulo.length > LIMITE_LETRAS.titulo) {
-      nuevosErrores.titulo = `El título no puede superar las ${LIMITE_LETRAS.titulo} letras.`;
-    }
-
-    if (!descripcion) {
-      nuevosErrores.descripcion = "La descripción es requerida.";
-    } else if (descripcion.length > LIMITE_LETRAS.descripcion) {
-      nuevosErrores.descripcion = `La descripción no puede superar las ${LIMITE_LETRAS.descripcion} letras.`;
-    }
-
-    if (!formulario.fechaInicio) {
-      nuevosErrores.fechaInicio = "La fecha de inicio es requerida.";
-    } else if (formulario.fechaInicio < fechaHoy()) {
-      nuevosErrores.fechaInicio =
-        "La fecha de inicio no puede ser anterior a la fecha actual.";
-    }
-
-    if (formulario.fechaFin) {
-      if (formulario.fechaFin < fechaHoy()) {
-        nuevosErrores.fechaFin =
-          "La fecha de fin no puede ser anterior a la fecha actual.";
-      } else if (
-        formulario.fechaInicio &&
-        formulario.fechaFin < formulario.fechaInicio
-      ) {
-        nuevosErrores.fechaFin =
-          "La fecha de fin no puede ser anterior a la fecha de inicio.";
-      }
-    }
-
-    if (!lugar) {
-      nuevosErrores.lugar = "El lugar es requerido.";
-    } else if (lugar.length > LIMITE_LETRAS.lugar) {
-      nuevosErrores.lugar = `El lugar no puede superar las ${LIMITE_LETRAS.lugar} letras.`;
-    }
-
-    if (formulario.hora && !/^\d{2}:\d{2}$/.test(formulario.hora)) {
-      nuevosErrores.hora = "La hora no es válida.";
-    }
-
+    const nuevosErrores = obtenerErroresFormulario(formulario);
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
+
+  // El botón Guardar se deshabilita en vivo con las mismas reglas del submit
+  const formularioValido = useMemo(
+    () => Object.keys(obtenerErroresFormulario(formulario)).length === 0,
+    [formulario],
+  );
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -891,7 +905,7 @@ const GestionEventos = () => {
                   type="button"
                   variant="royal"
                   onClick={solicitarPublicar}
-                  disabled={guardando}
+                  disabled={guardando || !formularioValido}
                 >
                   <Globe size={16} />
                   Publicar evento
@@ -908,7 +922,11 @@ const GestionEventos = () => {
                   Activar evento
                 </Button>
               )}
-              <Button type="submit" variant="royal" disabled={guardando}>
+              <Button
+                type="submit"
+                variant="royal"
+                disabled={guardando || !formularioValido}
+              >
                 {guardando ? "Guardando..." : "Guardar"}
               </Button>
               <Button
