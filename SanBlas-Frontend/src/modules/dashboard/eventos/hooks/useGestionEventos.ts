@@ -17,10 +17,14 @@ import { extraerFechaCalendario, extraerHora } from "../../../../shared/utils/fe
 
 export type ResultadoAccionEvento =
   | { ok: true; evento: Evento }
-  | { ok: false; mensaje: string; evento?: Evento };
+  | { ok: false; mensaje: string; evento?: Evento; errores?: Record<string, string[]> };
 
 const mensajeError = (err: unknown, respaldo: string) =>
   err instanceof ApiError ? err.message : respaldo;
+
+// los errores de validación del back vienen como Record<campo, mensajes[]>, se reenvían para pintarlos por campo
+const erroresBackend = (err: unknown): Record<string, string[]> | undefined =>
+  err instanceof ApiError ? err.errores : undefined;
 
 const formularioVacio = (): EventoPayload => ({
   titulo: "",
@@ -84,7 +88,7 @@ export const useGestionEventos = () => {
     } catch (err) {
       const mensaje = mensajeError(err, "No se pudo guardar el evento.");
       setError(mensaje);
-      return { ok: false as const, mensaje };
+      return { ok: false as const, mensaje, errores: erroresBackend(err) };
     } finally {
       setGuardando(false);
     }
@@ -141,6 +145,7 @@ export const useGestionEventos = () => {
           "No se pudo completar la publicación del evento.",
         ),
         evento: eventoGuardado,
+        errores: erroresBackend(err),
       };
     } finally {
       setGuardando(false);

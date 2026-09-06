@@ -135,6 +135,56 @@ const obtenerErroresFormulario = (
 
 type FiltroEstadoEvento = "todos" | EstadoEvento;
 
+// el back devuelve errores como { campo: ["msg"] }, a veces con prefijo "Payload." o mayúsculas, hay que normalizarlos
+const normalizarClaveError = (clave: string) => {
+  const sinPrefijo = clave.includes(".") ? clave.split(".").pop() ?? clave : clave;
+  return sinPrefijo.trim().toLowerCase();
+};
+
+// traduce las claves del back a los campos del formulario, lo que no calce va al mensaje general
+const mapearErroresBackend = (
+  errores?: Record<string, string[]>,
+): { porCampo: ErroresFormulario; general: string | null } => {
+  const porCampo: ErroresFormulario = {};
+  const generales: string[] = [];
+
+  if (!errores) return { porCampo, general: null };
+
+  for (const [clave, mensajes] of Object.entries(errores)) {
+    const texto = mensajes.filter(Boolean).join(" ");
+    if (!texto) continue;
+    switch (normalizarClaveError(clave)) {
+      case "titulo":
+        porCampo.titulo = porCampo.titulo ?? texto;
+        break;
+      case "descripcion":
+        porCampo.descripcion = porCampo.descripcion ?? texto;
+        break;
+      case "fechainicio":
+        porCampo.fechaInicio = porCampo.fechaInicio ?? texto;
+        break;
+      case "fechafin":
+        porCampo.fechaFin = porCampo.fechaFin ?? texto;
+        break;
+      case "lugar":
+        porCampo.lugar = porCampo.lugar ?? texto;
+        break;
+      case "hora":
+        porCampo.hora = porCampo.hora ?? texto;
+        break;
+      case "imagen":
+      case "imagenurl":
+      case "archivo":
+        porCampo.imagen = porCampo.imagen ?? texto;
+        break;
+      default:
+        generales.push(texto);
+    }
+  }
+
+  return { porCampo, general: generales.length > 0 ? generales.join(" ") : null };
+};
+
 const TAMANOS_PAGINA = [6, 9, 12] as const;
 const TAMANO_PAGINA_INICIAL = 6;
 
@@ -187,6 +237,7 @@ const GestionEventos = () => {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [formulario, setFormulario] = useState<EventoPayload>(formularioVacio());
   const [errores, setErrores] = useState<ErroresFormulario>({});
+  const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
   const [confirmacion, setConfirmacion] = useState<Confirmacion>(null);
@@ -271,6 +322,7 @@ const GestionEventos = () => {
     setEditandoId(null);
     setFormulario(formularioVacio());
     setErrores({});
+    setErrorGeneral(null);
     limpiarImagenLocal();
     setModalAbierto(true);
   };
@@ -279,6 +331,7 @@ const GestionEventos = () => {
     setEditandoId(evento.id);
     setFormulario(eventoToFormulario(evento));
     setErrores({});
+    setErrorGeneral(null);
     limpiarImagenLocal();
     setEventoSeleccionado(null);
     setModalAbierto(true);
@@ -294,6 +347,7 @@ const GestionEventos = () => {
     setEditandoId(null);
     setFormulario(formularioVacio());
     setErrores({});
+    setErrorGeneral(null);
     limpiarImagenLocal();
   };
 
@@ -302,6 +356,7 @@ const GestionEventos = () => {
     valor: EventoPayload[K],
   ) => {
     setFormulario((prev) => ({ ...prev, [campo]: valor }));
+    setErrorGeneral(null); // en cuanto corrige algo el mensaje general ya quedó viejo
     setErrores((prev) => {
       if (!prev[campo as keyof ErroresFormulario]) return prev;
       const siguiente = { ...prev };
@@ -322,15 +377,36 @@ const GestionEventos = () => {
     [formulario],
   );
 
+  // Guarda desde el modal, muestra el toast pedido en la task y pinta los errores del back por campo sin perder lo digitado
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!validarFormulario()) return;
+    setErrorGeneral(null);
+    const esEdicion = editandoId != null;
     const resultado = await guardarEvento(
       formulario,
       editandoId ?? undefined,
       opcionesImagen(),
     );
-    if (resultado.ok) cerrarModal();
+    if (resultado.ok) {
+      // se queda en la lista (el modal está sobre ella) por si quiere crear otro enseguida
+      showToast(
+        esEdicion
+          ? "El evento fue actualizado correctamente"
+          : "El evento fue registrado correctamente",
+        "success",
+      );
+      cerrarModal();
+      return;
+    }
+    // el modal sigue abierto y el formulario intacto para que corrija sin reescribir todo
+    const { porCampo, general } = mapearErroresBackend(resultado.errores);
+    if (Object.keys(porCampo).length > 0) {
+      setErrores((prev) => ({ ...prev, ...porCampo }));
+    }
+    const mensajeGeneral = general ?? resultado.mensaje;
+    setErrorGeneral(mensajeGeneral);
+    showToast(mensajeGeneral, "error");
   };
 
   const solicitarEliminar = (evento: Evento) => {
@@ -405,6 +481,8 @@ const GestionEventos = () => {
         setModalAbierto(false);
         setEditandoId(null);
         setFormulario(formularioVacio());
+        setErrores({});
+        setErrorGeneral(null);
         limpiarImagenLocal();
       }
       showToast("Evento publicado correctamente", "success");
@@ -414,6 +492,15 @@ const GestionEventos = () => {
     if (resultado.evento && !eventoEnLista) {
       setEditandoId(resultado.evento.id);
       sincronizarEventoSeleccionado(resultado.evento);
+    }
+
+    // si viene del modal, se pintan los errores por campo igual que en Guardar
+    if (!eventoEnLista) {
+      const { porCampo, general } = mapearErroresBackend(resultado.errores);
+      if (Object.keys(porCampo).length > 0) {
+        setErrores((prev) => ({ ...prev, ...porCampo }));
+      }
+      setErrorGeneral(general ?? resultado.mensaje);
     }
 
     showToast(
@@ -441,10 +528,20 @@ const GestionEventos = () => {
         setModalAbierto(false);
         setEditandoId(null);
         setFormulario(formularioVacio());
+        setErrores({});
+        setErrorGeneral(null);
         limpiarImagenLocal();
       }
       showToast("Evento activado correctamente", "success");
       return;
+    }
+
+    if (!eventoEnLista) {
+      const { porCampo, general } = mapearErroresBackend(resultado.errores);
+      if (Object.keys(porCampo).length > 0) {
+        setErrores((prev) => ({ ...prev, ...porCampo }));
+      }
+      setErrorGeneral(general ?? resultado.mensaje);
     }
 
     showToast(
@@ -748,6 +845,7 @@ const GestionEventos = () => {
             onSubmit={handleSubmit}
             className="flex flex-col gap-3.5"
           >
+            {errorGeneral && <ErrorMessage message={errorGeneral} />}
             <div>
               <Label htmlFor="titulo" required>
                 Título
