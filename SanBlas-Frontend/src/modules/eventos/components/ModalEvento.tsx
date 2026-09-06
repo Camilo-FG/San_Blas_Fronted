@@ -74,22 +74,22 @@ export function ModalEvento({ evento, onCerrar }: ModalEventoProps) {
             {evento.titulo}
           </h3>
           <p className="mb-2 flex items-center gap-1.5 text-[0.82rem] text-text-muted">
-            <MapPin size={14} aria-hidden="true" />
+            <MapPin size={14} className="shrink-0 text-royal-gold" aria-hidden="true" />
             {evento.lugar}
           </p>
           <p className="mb-0 flex items-center gap-1.5 text-[0.82rem] text-text-muted">
-            <CalendarDays size={14} aria-hidden="true" />
+            <CalendarDays size={14} className="shrink-0 text-royal-gold" aria-hidden="true" />
             {fecha}
           </p>
           {fechaFin ? (
             <p className="mt-1.5 mb-0 flex items-center gap-1.5 text-[0.82rem] text-text-muted">
-              <CalendarDays size={14} aria-hidden="true" />
+              <CalendarDays size={14} className="shrink-0 text-royal-gold" aria-hidden="true" />
               Hasta {fechaFin}
             </p>
           ) : null}
           {hora && (
             <p className="mt-1.5 mb-0 flex items-center gap-1.5 text-[0.82rem] text-text-muted">
-              <Clock3 size={14} aria-hidden="true" />
+              <Clock3 size={14} className="shrink-0 text-royal-gold" aria-hidden="true" />
               {hora}
             </p>
           )}

@@ -513,8 +513,8 @@ const GestionEventos = () => {
     <AdminModule>
       {error && <ErrorMessage message={error} />}
 
-      <AdminToolbar>
-        <div className="w-full min-w-0 md:w-[36rem] md:shrink-0">
+      <AdminToolbar className="md:flex-col md:items-stretch xl:flex-row xl:flex-wrap xl:items-center">
+        <div className="w-full min-w-0 xl:min-w-[14rem] xl:flex-1">
           <AdminSearch
             placeholder="Buscar eventos..."
             value={busqueda}
@@ -522,44 +522,52 @@ const GestionEventos = () => {
             aria-label="Buscar eventos"
           />
         </div>
-        <div className="flex min-w-0 flex-1 items-center gap-2 md:max-w-64">
-          <Label htmlFor="filtro-fecha-desde" className="mb-0 shrink-0">
-            Desde
-          </Label>
-          <Input
-            id="filtro-fecha-desde"
-            type="date"
-            value={fechaDesde}
-            max={fechaHasta || undefined}
-            onChange={(event) => setFechaDesde(event.target.value)}
-          />
+        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:flex xl:w-auto xl:flex-nowrap xl:items-center">
+          <div className="flex min-w-0 flex-col gap-1.5 xl:max-w-56 xl:flex-1 xl:flex-row xl:items-center xl:gap-2">
+            <Label htmlFor="filtro-fecha-desde" className="mb-0 shrink-0">
+              Desde
+            </Label>
+            <Input
+              id="filtro-fecha-desde"
+              type="date"
+              className="min-w-0 max-w-full"
+              value={fechaDesde}
+              max={fechaHasta || undefined}
+              onChange={(event) => setFechaDesde(event.target.value)}
+            />
+          </div>
+          <div className="flex min-w-0 flex-col gap-1.5 xl:max-w-56 xl:flex-1 xl:flex-row xl:items-center xl:gap-2">
+            <Label htmlFor="filtro-fecha-hasta" className="mb-0 shrink-0">
+              Hasta
+            </Label>
+            <Input
+              id="filtro-fecha-hasta"
+              type="date"
+              className="min-w-0 max-w-full"
+              value={fechaHasta}
+              min={fechaDesde || undefined}
+              onChange={(event) => setFechaHasta(event.target.value)}
+            />
+          </div>
+          <Select
+            className="w-full min-w-0 sm:col-span-2 lg:col-span-1 xl:w-56"
+            value={filtroEstado}
+            onChange={(event) =>
+              setFiltroEstado(event.target.value as FiltroEstadoEvento)
+            }
+            aria-label="Filtrar por estado"
+          >
+            <option value="todos">Todos los estados</option>
+            <option value="publicado-activo">Publicado / Activo</option>
+            <option value="publicado-inactivo">Publicado / Inactivo</option>
+            <option value="borrador">Borrador</option>
+          </Select>
         </div>
-        <div className="flex min-w-0 flex-1 items-center gap-2 md:max-w-64">
-          <Label htmlFor="filtro-fecha-hasta" className="mb-0 shrink-0">
-            Hasta
-          </Label>
-          <Input
-            id="filtro-fecha-hasta"
-            type="date"
-            value={fechaHasta}
-            min={fechaDesde || undefined}
-            onChange={(event) => setFechaHasta(event.target.value)}
-          />
-        </div>
-        <Select
-          className="md:w-60"
-          value={filtroEstado}
-          onChange={(event) =>
-            setFiltroEstado(event.target.value as FiltroEstadoEvento)
-          }
-          aria-label="Filtrar por estado"
+        <Button
+          variant="royal"
+          className="w-full shrink-0 sm:w-auto xl:ml-auto"
+          onClick={abrirCrear}
         >
-          <option value="todos">Todos los estados</option>
-          <option value="publicado-activo">Publicado / Activo</option>
-          <option value="publicado-inactivo">Publicado / Inactivo</option>
-          <option value="borrador">Borrador</option>
-        </Select>
-        <Button variant="royal" onClick={abrirCrear}>
           <Plus size={18} />
           Nuevo evento
         </Button>
@@ -592,7 +600,7 @@ const GestionEventos = () => {
             />
           ))}
         </div>
-        <AdminTableFooter className="sticky bottom-0 z-10 mt-2! border-t border-border bg-gray-50/95 pt-4! pb-3 backdrop-blur-sm">
+        <AdminTableFooter pegadoAbajo>
           <span className="text-sm text-text-muted">
             Mostrando{" "}
             <strong className="text-text tabular-nums">

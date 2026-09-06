@@ -1732,7 +1732,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
       )}
 
       {!isInitialLoading && table.getRowModel().rows.length > 0 && (
-        <AdminTableFooter className="mt-2! pt-2!">
+        <AdminTableFooter pegadoAbajo>
           <span className="text-sm text-text-muted">
             Mostrando{" "}
             <strong className="text-text tabular-nums">

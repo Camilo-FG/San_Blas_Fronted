@@ -163,7 +163,7 @@ const EventosPublicPage = () => {
       <ScrollReveal className="mb-10 text-center" amount={0.4}>
         <header>
           <h1 className="mb-3 font-heading text-4xl text-royal-blue">
-            Próximos eventos
+            Eventos
           </h1>
           <p className="text-text-muted">
             Actividades, celebraciones y encuentros de la Parroquia San Blas.
@@ -252,17 +252,17 @@ const EventosPublicPage = () => {
                   {evento.titulo}
                 </h2>
                 <p className="mb-1.5 flex items-center gap-1.5 text-[0.82rem] text-text-muted">
-                  <MapPin size={14} className="shrink-0" aria-hidden="true" />
+                  <MapPin size={14} className="shrink-0 text-royal-gold" aria-hidden="true" />
                   <span className="truncate">{evento.lugar}</span>
                 </p>
                 <p className="mb-0 flex items-center gap-1.5 text-[0.82rem] text-text-muted">
-                  <CalendarDays size={14} className="shrink-0" aria-hidden="true" />
+                  <CalendarDays size={14} className="shrink-0 text-royal-gold" aria-hidden="true" />
                   <span className="truncate">{formatearFecha(evento.fechaInicio)}</span>
                 </p>
                 <p
                   className={`mt-1 mb-0 flex items-center gap-1.5 text-[0.82rem] text-text-muted ${fechaFin ? "" : "invisible"}`}
                 >
-                  <CalendarDays size={14} className="shrink-0" aria-hidden="true" />
+                  <CalendarDays size={14} className="shrink-0 text-royal-gold" aria-hidden="true" />
                   <span className="truncate">
                     Hasta {fechaFin ? formatearFecha(evento.fechaFin ?? "") : "—"}
                   </span>
@@ -270,7 +270,7 @@ const EventosPublicPage = () => {
                 <p
                   className={`mt-1 mb-0 flex items-center gap-1.5 text-[0.82rem] text-text-muted ${hora ? "" : "invisible"}`}
                 >
-                  <Clock3 size={14} className="shrink-0" aria-hidden="true" />
+                  <Clock3 size={14} className="shrink-0 text-royal-gold" aria-hidden="true" />
                   <span className="truncate">{hora || "—"}</span>
                 </p>
                 <p className="mt-3 mb-3 line-clamp-3 min-h-[5.6rem] text-[1.1rem] leading-[1.7] text-slate-700">
