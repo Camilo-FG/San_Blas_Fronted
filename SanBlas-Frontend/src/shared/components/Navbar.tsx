@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, LogOut, User } from "lucide-react";
 import Rutas from "../../routes/Rutas";
 import { useAuth } from "../../context/AuthContext";
@@ -85,6 +85,17 @@ function Navbar() {
 
     if (dropdownTimeout.current) {
       clearTimeout(dropdownTimeout.current);
+    }
+  };
+
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  // Si ya estamos en /donaciones, no recargar: vuelve suavemente al inicio.
+  const manejarClickDonaciones = (event: ReactMouseEvent<HTMLAnchorElement>) => {
+    cerrarMenu();
+    if (pathname === Rutas.donacionesPublicas) {
+      event.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -233,7 +244,7 @@ function Navbar() {
           <Link
             to={Rutas.donacionesPublicas}
             className={navLinkClass}
-            onClick={cerrarMenu}
+            onClick={manejarClickDonaciones}
           >
             Donaciones
           </Link>
@@ -436,7 +447,7 @@ function Navbar() {
             <Link
               to={Rutas.donacionesPublicas}
               className="block w-full cursor-pointer border-b border-white/12 border-l-0 border-r-0 border-t-0 bg-transparent py-[13px] text-left font-serif text-[17px] italic text-white no-underline transition-colors hover:text-royal-gold"
-              onClick={cerrarMenu}
+              onClick={manejarClickDonaciones}
             >
               Donaciones
             </Link>
