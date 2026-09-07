@@ -18,6 +18,8 @@ import {
   type EstadoDonacionAccion,
 } from "../hooks/useGestionDonaciones";
 import { DonacionDetalleModal } from "../components/DonacionDetalleModal";
+import { useNotificacionDonaciones } from "../hooks/useNotificacionDonaciones";
+import { NotificacionSolicitudesNuevas } from "../../../shared/components/NotificacionSolicitudesNuevas";
 import { AdminRecordCard } from "../../../shared/components/admin/AdminRecordCard";
 import {
   AdminModule,
@@ -77,6 +79,8 @@ export default function GestionDonaciones(): React.JSX.Element {
     rechazarDonacion,
   } = useGestionDonaciones();
   const { showToast, toasts } = useToast();
+  const { cantidad: solicitudesNuevas, verificarNuevas } =
+    useNotificacionDonaciones();
   const [donacionSeleccionada, setDonacionSeleccionada] =
     useState<Donacion | null>(null);
   const [confirmacion, setConfirmacion] = useState<Confirmacion>(null);
@@ -120,6 +124,10 @@ export default function GestionDonaciones(): React.JSX.Element {
     }, 400);
     return () => clearTimeout(timer);
   }, [nombreInput, correoInput]);
+
+  useEffect(() => {
+    void verificarNuevas();
+  }, [verificarNuevas]);
 
   useEffect(() => {
     if (!motivoMenuAbierto) return;
@@ -358,6 +366,9 @@ export default function GestionDonaciones(): React.JSX.Element {
 
   return (
     <AdminModule className="gap-3!">
+      {solicitudesNuevas !== null && solicitudesNuevas > 0 && (
+        <NotificacionSolicitudesNuevas cantidad={solicitudesNuevas} />
+      )}
       <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm">
         <AdminSearch
           type="text"

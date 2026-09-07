@@ -1,5 +1,5 @@
 import type React from "react";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Loader2,
   Package,
@@ -9,9 +9,8 @@ import {
 } from "lucide-react";
 import { useCaptcha } from "../../../shared/hooks/useCaptcha";
 import { RecaptchaWidget } from "../../../shared/components/RecaptchaWidget";
-import { crearDonacion } from "../../../services/donacionesService";
-import { ApiError } from "../../../services/apiClient";
 import { useToast } from "../../../shared/ui";
+import { useDonacionInsumos } from "../hooks/useDonacionInsumos";
 
 const MAX_DETAIL = 300;
 
@@ -99,9 +98,19 @@ export default function DonacionForm() {
   const { captchaRef, captchaToken, handleCaptchaChange, handleCaptchaExpired, resetCaptcha } =
     useCaptcha();
   const { showToast } = useToast();
-  const [cargando, setCargando] = useState(false);
+  const { cargando, exito, error, erroresCampo, limpiarErroresCampo, enviar } =
+    useDonacionInsumos();
   const [captchaExpirado, setCaptchaExpirado] = useState(false);
-  const enviandoRef = useRef(false);
+
+  const erroresVisibles: FormErrors = useMemo(() => {
+    const combinados: FormErrors = { ...errors };
+    (Object.keys(erroresCampo) as (keyof FormErrors)[]).forEach((campo) => {
+      if (campo === "anonimo") return;
+      const mensaje = erroresCampo[campo];
+      if (mensaje) combinados[campo] = mensaje;
+    });
+    return combinados;
+  }, [errors, erroresCampo]);
 
   const RECAPTCHA_KEY =
     import.meta.env.VITE_RECAPTCHA_SITE_KEY ??
@@ -174,6 +183,7 @@ export default function DonacionForm() {
     if (typeof value === "string") {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
+    limpiarErroresCampo();
   };
 
   const handleTelefono = (value: string) => {
@@ -187,7 +197,6 @@ export default function DonacionForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (enviandoRef.current) return;
 
     const revision = validar();
     if (Object.keys(revision).length > 0) {
@@ -205,51 +214,45 @@ export default function DonacionForm() {
       return;
     }
 
-    enviandoRef.current = true;
-    setCargando(true);
-
     const nombreCompleto = [formData.nombre, formData.primerApellido, formData.segundoApellido]
       .map((parte) => parte.trim())
       .filter(Boolean)
       .join(" ");
 
-    try {
-      await crearDonacion({
-        anonimo: formData.anonimo,
-        nombre: formData.anonimo ? "Anónimo" : nombreCompleto,
-        correo: formData.correo.trim(),
-        telefono: formData.anonimo ? "N/A" : formData.telefono,
-        detalle: formData.detalle,
-        recaptchaToken: captchaToken ?? undefined,
-      });
-
-      showToast(
-        "¡Tu solicitud de donación fue enviada correctamente! Te contactaremos por los medios indicados.",
-        "success",
-      );
-      setFormData({
-        anonimo: false,
-        nombre: "",
-        primerApellido: "",
-        segundoApellido: "",
-        correo: "",
-        telefono: "",
-        detalle: "",
-      });
-      resetCaptcha();
-      setCaptchaExpirado(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (error) {
-      const mensaje =
-        error instanceof ApiError
-          ? error.message
-          : "Hubo un problema al enviar la donación al servidor. Inténtalo de nuevo.";
-      showToast(mensaje, "error");
-    } finally {
-      enviandoRef.current = false;
-      setCargando(false);
-    }
+    await enviar({
+      anonimo: formData.anonimo,
+      nombre: formData.anonimo ? "Anónimo" : nombreCompleto,
+      correo: formData.correo.trim(),
+      telefono: formData.anonimo ? "N/A" : formData.telefono,
+      detalle: formData.detalle,
+      recaptchaToken: captchaToken ?? undefined,
+    });
   };
+
+  useEffect(() => {
+    if (!exito) return;
+    showToast(
+      "¡Tu solicitud de donación fue enviada correctamente! Te contactaremos por los medios indicados.",
+      "success",
+    );
+    setFormData({
+      anonimo: false,
+      nombre: "",
+      primerApellido: "",
+      segundoApellido: "",
+      correo: "",
+      telefono: "",
+      detalle: "",
+    });
+    resetCaptcha();
+    setCaptchaExpirado(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [exito, showToast, resetCaptcha]);
+
+  useEffect(() => {
+    if (!error) return;
+    showToast(error, "error");
+  }, [error, showToast]);
 
   return (
     <section id="insumos" className="scroll-mt-24">
@@ -309,7 +312,7 @@ onChange={(e) => {
         {!formData.anonimo && (
           <div className="mt-7 grid gap-6 sm:gap-7">
           <div className="grid gap-6 sm:grid-cols-2 sm:gap-7">
-            <Field label="Nombre" htmlFor="nombre" error={errors.nombre}>
+            <Field label="Nombre" htmlFor="nombre" error={erroresVisibles.nombre}>
               <input
                 id="nombre"
                 type="text"
@@ -324,7 +327,7 @@ onChange={(e) => {
             <Field
               label="Primer apellido"
               htmlFor="primerApellido"
-              error={errors.primerApellido}
+              error={erroresVisibles.primerApellido}
             >
               <input
                 id="primerApellido"
@@ -340,7 +343,7 @@ onChange={(e) => {
             <Field
               label="Segundo apellido (opcional)"
               htmlFor="segundoApellido"
-              error={errors.segundoApellido}
+              error={erroresVisibles.segundoApellido}
             >
               <input
                 id="segundoApellido"
@@ -353,7 +356,7 @@ onChange={(e) => {
             </Field>
           </div>
 
-            <Field label="Teléfono" htmlFor="telefono" error={errors.telefono}>
+            <Field label="Teléfono" htmlFor="telefono" error={erroresVisibles.telefono}>
               <input
                 id="telefono"
                 type="tel"
@@ -369,7 +372,7 @@ onChange={(e) => {
         )}
 
         <div className={formData.anonimo ? "mt-7" : "mt-6"}>
-          <Field label="Correo electrónico" htmlFor="correo" error={errors.correo}>
+          <Field label="Correo electrónico" htmlFor="correo" error={erroresVisibles.correo}>
             <input
               id="correo"
               type="email"
@@ -401,8 +404,8 @@ onChange={(e) => {
             placeholder="Ej: Ropa en buen estado para niños de 5 a 10 años"
             className={`${inputClass} resize-none`}
           />
-          {errors.detalle && (
-            <span className="mt-1 block text-xs text-danger">⚠ {errors.detalle}</span>
+          {erroresVisibles.detalle && (
+            <span className="mt-1 block text-xs text-danger">⚠ {erroresVisibles.detalle}</span>
           )}
         </div>
 

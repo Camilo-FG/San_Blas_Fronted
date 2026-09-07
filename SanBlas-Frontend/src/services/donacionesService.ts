@@ -105,3 +105,16 @@ export const rechazarDonacion = async (
     handleApiError(error);
   }
 };
+
+export const obtenerNuevasSolicitudesDonaciones = async (
+  desde: string,
+): Promise<number> => {
+  try {
+    const { data } = await apiClient.get<{ cantidad: number }>("/Donacion/nuevas", {
+      params: { desde },
+    });
+    return data.cantidad;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
