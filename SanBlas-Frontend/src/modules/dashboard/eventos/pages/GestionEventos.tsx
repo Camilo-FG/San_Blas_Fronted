@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -243,6 +243,7 @@ const GestionEventos = () => {
   const [confirmacion, setConfirmacion] = useState<Confirmacion>(null);
   const [archivoImagen, setArchivoImagen] = useState<ArchivoImagen | null>(null);
   const [quitarImagen, setQuitarImagen] = useState(false);
+  const secuenciaEdicion = useRef(0);
 
   const eventosFiltrados = useMemo(() => {
     const query = busqueda.trim().toLowerCase();
@@ -319,6 +320,7 @@ const GestionEventos = () => {
   });
 
   const abrirCrear = () => {
+    secuenciaEdicion.current += 1;
     setEditandoId(null);
     setFormulario(formularioVacio());
     setErrores({});
@@ -328,6 +330,7 @@ const GestionEventos = () => {
   };
 
   const abrirEditar = async (evento: Evento) => {
+    const secuencia = ++secuenciaEdicion.current;
     setEditandoId(evento.id);
     setFormulario(eventoToFormulario(evento));
     setErrores({});
@@ -337,12 +340,12 @@ const GestionEventos = () => {
     setModalAbierto(true);
 
     const eventoActualizado = await cargarEventoPorId(evento.id);
-    if (eventoActualizado) {
-      setFormulario(eventoToFormulario(eventoActualizado));
-    }
+    if (secuencia !== secuenciaEdicion.current || !eventoActualizado) return;
+    setFormulario(eventoToFormulario(eventoActualizado));
   };
 
   const cerrarModal = () => {
+    secuenciaEdicion.current += 1;
     setModalAbierto(false);
     setEditandoId(null);
     setFormulario(formularioVacio());
@@ -972,7 +975,7 @@ const GestionEventos = () => {
             <SubidaImagen
               id="imagen-evento"
               label="Imagen del evento"
-              hint="Opcional. JPG, PNG, WEBP o GIF de hasta 5 MB."
+              hint="Opcional. JPG, PNG o WEBP de hasta 5 MB."
               textoArrastrar="Arrastra y suelta archivos aquí"
               textoBoton="Seleccionar archivo"
               mostrarVistaPrevia={false}
