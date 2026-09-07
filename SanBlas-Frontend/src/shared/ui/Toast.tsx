@@ -148,7 +148,7 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
             key={posicion}
             className={`fixed z-[1400] flex flex-col gap-2 pointer-events-none ${
               posicion === "top-right"
-                ? "top-4 right-4"
+                ? "top-20 right-4"
                 : "right-4 bottom-4 flex-col-reverse"
             }`}
             role="region"
