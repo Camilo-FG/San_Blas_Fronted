@@ -118,3 +118,32 @@ export const obtenerNuevasSolicitudesDonaciones = async (
     handleApiError(error);
   }
 };
+
+export interface HistorialDonacion {
+  id: number;
+  anonimo: boolean;
+  nombre: string;
+  correo: string;
+  telefono?: string | null;
+  detalle: string;
+  estado: string;
+  fechaIngreso?: string;
+  motivoRechazo?: string;
+  detalleRechazo?: string;
+  fechaRechazo?: string;
+  detalleAprobacion?: string;
+}
+
+export const obtenerHistorialDonaciones = async (
+  params?: { estado?: string; desde?: string; hasta?: string },
+): Promise<{ total: number; historial: HistorialDonacion[] }> => {
+  try {
+    const { data } = await apiClient.get<{
+      total: number;
+      historial: HistorialDonacion[];
+    }>("/Donacion/historial", { params });
+    return data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
