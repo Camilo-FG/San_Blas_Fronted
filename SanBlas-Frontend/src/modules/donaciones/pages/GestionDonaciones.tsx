@@ -141,8 +141,8 @@ export default function GestionDonaciones(): React.JSX.Element {
   const [historialFechaHasta, setHistorialFechaHasta] = useState("");
 
   const rejectionReasons = [
-    "Comprobante de pago inválido",
-    "Datos incorrectos",
+    "Datos ambiguos",
+    "Insumo no procede",
     "Otro",
   ];
 
@@ -1518,7 +1518,10 @@ export default function GestionDonaciones(): React.JSX.Element {
                     variant="royal"
                     className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
                     onClick={handleOpenConfirmReject}
-                    disabled={tieneCaracteresInvalidos(rejectionReasonText)}
+                    disabled={
+                      !rejectionReasonSelect.trim() ||
+                      tieneCaracteresInvalidos(rejectionReasonText)
+                    }
                   >
                     Continuar
                   </Button>

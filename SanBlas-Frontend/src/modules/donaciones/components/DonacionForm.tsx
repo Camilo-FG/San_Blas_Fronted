@@ -98,7 +98,7 @@ export default function DonacionForm() {
   const { captchaRef, captchaToken, handleCaptchaChange, handleCaptchaExpired, resetCaptcha } =
     useCaptcha();
   const { showToast } = useToast();
-  const { cargando, exito, error, erroresCampo, limpiarErroresCampo, enviar } =
+  const { cargando, error, erroresCampo, limpiarErroresCampo, enviar } =
     useDonacionInsumos();
   const [captchaExpirado, setCaptchaExpirado] = useState(false);
 
@@ -219,7 +219,7 @@ export default function DonacionForm() {
       .filter(Boolean)
       .join(" ");
 
-    await enviar({
+    const enviada = await enviar({
       anonimo: formData.anonimo,
       nombre: formData.anonimo ? "Anónimo" : nombreCompleto,
       correo: formData.correo.trim(),
@@ -227,10 +227,9 @@ export default function DonacionForm() {
       detalle: formData.detalle,
       recaptchaToken: captchaToken ?? undefined,
     });
-  };
 
-  useEffect(() => {
-    if (!exito) return;
+    if (!enviada) return;
+
     showToast(
       "¡Tu solicitud de donación fue enviada correctamente! Te contactaremos por los medios indicados.",
       "success",
@@ -247,7 +246,7 @@ export default function DonacionForm() {
     resetCaptcha();
     setCaptchaExpirado(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [exito, showToast, resetCaptcha]);
+  };
 
   useEffect(() => {
     if (!error) return;
