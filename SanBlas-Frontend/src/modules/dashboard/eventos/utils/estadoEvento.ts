@@ -21,8 +21,8 @@ export const ETIQUETA_ESTADO_EVENTO: Record<EstadoEvento, string> = {
 
 export const VARIANTE_ESTADO_EVENTO: Record<EstadoEvento, BadgeVariant> = {
   borrador: "neutral",
-  "publicado-activo": "success",
-  "publicado-inactivo": "warning",
+  "publicado-activo": "info",
+  "publicado-inactivo": "info",
 };
 
 export const PORTADA_ESTADO_EVENTO: Record<EstadoEvento, string> = {
