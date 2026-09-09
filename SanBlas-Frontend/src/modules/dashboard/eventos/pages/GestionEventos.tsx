@@ -79,6 +79,8 @@ const fechaHoy = () =>
 
 const soloFecha = (valor?: string | null) => extraerFechaCalendario(valor);
 
+const contieneCaracterRepetido = (valor: string) => /(.)\1{3,}/i.test(valor);
+
 // Mismas reglas que el submit, pero puras para poder deshabilitar Guardar en vivo
 const obtenerErroresFormulario = (
   valores: EventoPayload,
@@ -92,12 +94,18 @@ const obtenerErroresFormulario = (
     nuevosErrores.titulo = "El título es requerido.";
   } else if (titulo.length > LIMITE_LETRAS.titulo) {
     nuevosErrores.titulo = `El título no puede superar las ${LIMITE_LETRAS.titulo} letras.`;
+  } else if (contieneCaracterRepetido(titulo)) {
+    nuevosErrores.titulo =
+      "El título no puede contener un carácter repetido tantas veces.";
   }
 
   if (!descripcion) {
     nuevosErrores.descripcion = "La descripción es requerida.";
   } else if (descripcion.length > LIMITE_LETRAS.descripcion) {
     nuevosErrores.descripcion = `La descripción no puede superar las ${LIMITE_LETRAS.descripcion} letras.`;
+  } else if (contieneCaracterRepetido(descripcion)) {
+    nuevosErrores.descripcion =
+      "La descripción no puede contener un carácter repetido tantas veces.";
   }
 
   if (!valores.fechaInicio) {
@@ -111,10 +119,7 @@ const obtenerErroresFormulario = (
     if (valores.fechaFin < fechaHoy()) {
       nuevosErrores.fechaFin =
         "La fecha de fin no puede ser anterior a la fecha actual.";
-    } else if (
-      valores.fechaInicio &&
-      valores.fechaFin < valores.fechaInicio
-    ) {
+    } else if (valores.fechaInicio && valores.fechaFin < valores.fechaInicio) {
       nuevosErrores.fechaFin =
         "La fecha de fin no puede ser anterior a la fecha de inicio.";
     }
@@ -124,6 +129,9 @@ const obtenerErroresFormulario = (
     nuevosErrores.lugar = "El lugar es requerido.";
   } else if (lugar.length > LIMITE_LETRAS.lugar) {
     nuevosErrores.lugar = `El lugar no puede superar las ${LIMITE_LETRAS.lugar} letras.`;
+  } else if (contieneCaracterRepetido(lugar)) {
+    nuevosErrores.lugar =
+      "El lugar no puede contener un carácter repetido tantas veces.";
   }
 
   if (valores.hora && !/^\d{2}:\d{2}$/.test(valores.hora)) {
@@ -137,7 +145,9 @@ type FiltroEstadoEvento = "todos" | EstadoEvento;
 
 // el back devuelve errores como { campo: ["msg"] }, a veces con prefijo "Payload." o mayúsculas, hay que normalizarlos
 const normalizarClaveError = (clave: string) => {
-  const sinPrefijo = clave.includes(".") ? clave.split(".").pop() ?? clave : clave;
+  const sinPrefijo = clave.includes(".")
+    ? (clave.split(".").pop() ?? clave)
+    : clave;
   return sinPrefijo.trim().toLowerCase();
 };
 
@@ -182,7 +192,10 @@ const mapearErroresBackend = (
     }
   }
 
-  return { porCampo, general: generales.length > 0 ? generales.join(" ") : null };
+  return {
+    porCampo,
+    general: generales.length > 0 ? generales.join(" ") : null,
+  };
 };
 
 const TAMANOS_PAGINA = [6, 9, 12] as const;
@@ -233,15 +246,22 @@ const GestionEventos = () => {
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
-  const [registrosPorPagina, setRegistrosPorPagina] = useState(TAMANO_PAGINA_INICIAL);
+  const [registrosPorPagina, setRegistrosPorPagina] = useState(
+    TAMANO_PAGINA_INICIAL,
+  );
   const [modalAbierto, setModalAbierto] = useState(false);
-  const [formulario, setFormulario] = useState<EventoPayload>(formularioVacio());
+  const [formulario, setFormulario] =
+    useState<EventoPayload>(formularioVacio());
   const [errores, setErrores] = useState<ErroresFormulario>({});
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
   const [editandoId, setEditandoId] = useState<number | null>(null);
-  const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
+  const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(
+    null,
+  );
   const [confirmacion, setConfirmacion] = useState<Confirmacion>(null);
-  const [archivoImagen, setArchivoImagen] = useState<ArchivoImagen | null>(null);
+  const [archivoImagen, setArchivoImagen] = useState<ArchivoImagen | null>(
+    null,
+  );
   const [quitarImagen, setQuitarImagen] = useState(false);
   const secuenciaEdicion = useRef(0);
 
@@ -264,7 +284,9 @@ const GestionEventos = () => {
 
       if (!coincideDesde || !coincideHasta) return false;
 
-      return filtroEstado === "todos" || obtenerEstadoEvento(evento) === filtroEstado;
+      return (
+        filtroEstado === "todos" || obtenerEstadoEvento(evento) === filtroEstado
+      );
     });
   }, [busqueda, eventos, fechaDesde, fechaHasta, filtroEstado]);
 
@@ -294,7 +316,9 @@ const GestionEventos = () => {
 
   useEffect(() => {
     if (!eventoSeleccionado) return;
-    const actualizado = eventos.find((item) => item.id === eventoSeleccionado.id);
+    const actualizado = eventos.find(
+      (item) => item.id === eventoSeleccionado.id,
+    );
     if (actualizado && actualizado !== eventoSeleccionado) {
       setEventoSeleccionado(actualizado);
     }
@@ -358,12 +382,20 @@ const GestionEventos = () => {
     campo: K,
     valor: EventoPayload[K],
   ) => {
-    setFormulario((prev) => ({ ...prev, [campo]: valor }));
+    const siguienteFormulario = { ...formulario, [campo]: valor };
+    setFormulario(siguienteFormulario);
     setErrorGeneral(null); // en cuanto corrige algo el mensaje general ya quedó viejo
+    const erroresActualizados = obtenerErroresFormulario(siguienteFormulario);
     setErrores((prev) => {
-      if (!prev[campo as keyof ErroresFormulario]) return prev;
       const siguiente = { ...prev };
-      delete siguiente[campo as keyof ErroresFormulario];
+      const errorCampo = erroresActualizados[campo as keyof ErroresFormulario];
+
+      if (errorCampo) {
+        siguiente[campo as keyof ErroresFormulario] = errorCampo;
+      } else {
+        delete siguiente[campo as keyof ErroresFormulario];
+      }
+
       return siguiente;
     });
   };
@@ -659,7 +691,10 @@ const GestionEventos = () => {
         </div>
         <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:flex xl:w-auto xl:flex-nowrap xl:items-center">
           <div className="flex min-w-0 flex-col gap-1.5 xl:max-w-56 xl:flex-1 xl:flex-row xl:items-center xl:gap-2">
-            <Label htmlFor="filtro-fecha-desde" className="mb-0 shrink-0">
+            <Label
+              htmlFor="filtro-fecha-desde"
+              className="mb-0 shrink-0"
+            >
               Desde
             </Label>
             <Input
@@ -672,7 +707,10 @@ const GestionEventos = () => {
             />
           </div>
           <div className="flex min-w-0 flex-col gap-1.5 xl:max-w-56 xl:flex-1 xl:flex-row xl:items-center xl:gap-2">
-            <Label htmlFor="filtro-fecha-hasta" className="mb-0 shrink-0">
+            <Label
+              htmlFor="filtro-fecha-hasta"
+              className="mb-0 shrink-0"
+            >
               Hasta
             </Label>
             <Input
@@ -720,80 +758,97 @@ const GestionEventos = () => {
         />
       ) : (
         <>
-        <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {eventosPagina.map((evento) => (
-            <EventoCard
-              key={evento.id}
-              evento={evento}
-              guardando={guardando}
-              onPublicar={solicitarPublicarDesdeLista}
-              onActivar={solicitarActivar}
-              onDesactivar={solicitarDesactivar}
-              onEditar={abrirEditar}
-              onEliminar={solicitarEliminar}
-              onVer={setEventoSeleccionado}
-            />
-          ))}
-        </div>
-        <AdminTableFooter pegadoAbajo>
-          <span className="min-w-0 text-sm leading-snug text-text-muted">
-            Mostrando{" "}
-            <strong className="text-text tabular-nums">
-              {primerRegistro}-{ultimoRegistro}
-            </strong>{" "}
-            de{" "}
-            <strong className="text-text tabular-nums">
-              {eventosFiltrados.length}
-            </strong>{" "}
-            registros
-          </span>
-          <AdminPagination>
-            <label className="mr-1 flex min-w-0 items-center gap-2 text-sm text-text-muted max-sm:mr-0">
-              <span className="max-sm:hidden">Registros por página</span>
-              <span className="sm:hidden">Por página</span>
-              <select
-                value={registrosPorPagina}
-                onChange={(event) =>
-                  setRegistrosPorPagina(Number(event.target.value))
-                }
-                className="min-h-10 min-w-0 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
-                aria-label="Cantidad de registros por página"
-              >
-                {TAMANOS_PAGINA.map((tamano) => (
-                  <option key={tamano} value={tamano}>
-                    {tamano}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="flex min-w-0 shrink-0 items-center gap-2">
-              <AdminPaginationButton
-                type="button"
-                onClick={() => setPaginaActual((pagina) => Math.max(1, pagina - 1))}
-                disabled={paginaActual <= 1}
-                aria-label="Página anterior"
-              >
-                <ChevronLeft size={16} strokeWidth={2} />
-              </AdminPaginationButton>
-              <span className="text-sm whitespace-nowrap text-text-muted">
-                Página{" "}
-                <strong className="text-text tabular-nums">{paginaActual}</strong>{" "}
-                de{" "}
-                <strong className="text-text tabular-nums">{totalPaginas}</strong>
-              </span>
-              <AdminPaginationButton
-                type="button"
-                onClick={() =>
-                  setPaginaActual((pagina) => Math.min(totalPaginas, pagina + 1))
-                }
-                disabled={paginaActual >= totalPaginas}
-                aria-label="Página siguiente"
-              >
-                <ChevronRight size={16} strokeWidth={2} />
-              </AdminPaginationButton>
-            </div>
-          </AdminPagination>
-        </AdminTableFooter>
+          <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {eventosPagina.map((evento) => (
+              <EventoCard
+                key={evento.id}
+                evento={evento}
+                guardando={guardando}
+                onPublicar={solicitarPublicarDesdeLista}
+                onActivar={solicitarActivar}
+                onDesactivar={solicitarDesactivar}
+                onEditar={abrirEditar}
+                onEliminar={solicitarEliminar}
+                onVer={setEventoSeleccionado}
+              />
+            ))}
+          </div>
+          <AdminTableFooter pegadoAbajo>
+            <span className="min-w-0 text-sm leading-snug text-text-muted">
+              Mostrando{" "}
+              <strong className="text-text tabular-nums">
+                {primerRegistro}-{ultimoRegistro}
+              </strong>{" "}
+              de{" "}
+              <strong className="text-text tabular-nums">
+                {eventosFiltrados.length}
+              </strong>{" "}
+              registros
+            </span>
+            <AdminPagination>
+              <label className="mr-1 flex min-w-0 items-center gap-2 text-sm text-text-muted max-sm:mr-0">
+                <span className="max-sm:hidden">Registros por página</span>
+                <span className="sm:hidden">Por página</span>
+                <select
+                  value={registrosPorPagina}
+                  onChange={(event) =>
+                    setRegistrosPorPagina(Number(event.target.value))
+                  }
+                  className="min-h-10 min-w-0 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                  aria-label="Cantidad de registros por página"
+                >
+                  {TAMANOS_PAGINA.map((tamano) => (
+                    <option
+                      key={tamano}
+                      value={tamano}
+                    >
+                      {tamano}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="flex min-w-0 shrink-0 items-center gap-2">
+                <AdminPaginationButton
+                  type="button"
+                  onClick={() =>
+                    setPaginaActual((pagina) => Math.max(1, pagina - 1))
+                  }
+                  disabled={paginaActual <= 1}
+                  aria-label="Página anterior"
+                >
+                  <ChevronLeft
+                    size={16}
+                    strokeWidth={2}
+                  />
+                </AdminPaginationButton>
+                <span className="text-sm whitespace-nowrap text-text-muted">
+                  Página{" "}
+                  <strong className="text-text tabular-nums">
+                    {paginaActual}
+                  </strong>{" "}
+                  de{" "}
+                  <strong className="text-text tabular-nums">
+                    {totalPaginas}
+                  </strong>
+                </span>
+                <AdminPaginationButton
+                  type="button"
+                  onClick={() =>
+                    setPaginaActual((pagina) =>
+                      Math.min(totalPaginas, pagina + 1),
+                    )
+                  }
+                  disabled={paginaActual >= totalPaginas}
+                  aria-label="Página siguiente"
+                >
+                  <ChevronRight
+                    size={16}
+                    strokeWidth={2}
+                  />
+                </AdminPaginationButton>
+              </div>
+            </AdminPagination>
+          </AdminTableFooter>
         </>
       )}
 
@@ -843,206 +898,220 @@ const GestionEventos = () => {
           {cargandoEdicion ? (
             <div className="flex flex-col items-center justify-center py-10">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-royal-blue border-t-transparent" />
-              <p className="mt-4 text-sm text-slate-500">Cargando datos del evento...</p>
+              <p className="mt-4 text-sm text-slate-500">
+                Cargando datos del evento...
+              </p>
             </div>
           ) : (
-          <form
-            noValidate
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-3.5"
-          >
-            {errorGeneral && <ErrorMessage message={errorGeneral} />}
-            <div>
-              <Label htmlFor="titulo" required>
-                Título
-              </Label>
-              <Input
-                id="titulo"
-                value={formulario.titulo}
-                hasError={Boolean(errores.titulo)}
-                maxLength={LIMITE_LETRAS.titulo}
-                placeholder="Ej: Misa de San Blas"
-                onChange={(e) =>
-                  actualizarCampo(
-                    "titulo",
-                    limitarLetras(e.target.value, LIMITE_LETRAS.titulo),
-                  )
-                }
-              />
-              <ContadorLetras
-                valor={formulario.titulo}
-                maximo={LIMITE_LETRAS.titulo}
-              />
-              <FieldError message={errores.titulo} />
-            </div>
-
-            <div>
-              <Label htmlFor="descripcion" required>
-                Descripción
-              </Label>
-              <Textarea
-                id="descripcion"
-                autoExpand
-                rows={3}
-                minRows={1}
-                maxRows={8}
-                value={formulario.descripcion}
-                hasError={Boolean(errores.descripcion)}
-                maxLength={LIMITE_LETRAS.descripcion}
-                placeholder="Ej: Celebración eucarística y actividades para toda la comunidad."
-                onChange={(e) =>
-                  actualizarCampo(
-                    "descripcion",
-                    limitarLetras(e.target.value, LIMITE_LETRAS.descripcion),
-                  )
-                }
-              />
-              <ContadorLetras
-                valor={formulario.descripcion}
-                maximo={LIMITE_LETRAS.descripcion}
-              />
-              <FieldError message={errores.descripcion} />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <form
+              noValidate
+              onSubmit={handleSubmit}
+              className="flex flex-col gap-3.5"
+            >
+              {errorGeneral && <ErrorMessage message={errorGeneral} />}
               <div>
-                <Label htmlFor="fechaInicio" required>
-                  Fecha de inicio
+                <Label
+                  htmlFor="titulo"
+                  required
+                >
+                  Título
                 </Label>
                 <Input
-                  id="fechaInicio"
-                  type="date"
-                  min={fechaHoy()}
-                  value={formulario.fechaInicio}
-                  hasError={Boolean(errores.fechaInicio)}
+                  id="titulo"
+                  value={formulario.titulo}
+                  hasError={Boolean(errores.titulo)}
+                  maxLength={LIMITE_LETRAS.titulo}
+                  placeholder="Ej: Misa de San Blas"
                   onChange={(e) =>
-                    actualizarCampo("fechaInicio", e.target.value)
+                    actualizarCampo(
+                      "titulo",
+                      limitarLetras(e.target.value, LIMITE_LETRAS.titulo),
+                    )
                   }
                 />
-                <FieldError message={errores.fechaInicio} />
+                <ContadorLetras
+                  valor={formulario.titulo}
+                  maximo={LIMITE_LETRAS.titulo}
+                />
+                <FieldError message={errores.titulo} />
               </div>
+
               <div>
-                <Label htmlFor="hora">Hora</Label>
-                <Input
-                  id="hora"
-                  type="time"
-                  value={formulario.hora ?? ""}
-                  hasError={Boolean(errores.hora)}
+                <Label
+                  htmlFor="descripcion"
+                  required
+                >
+                  Descripción
+                </Label>
+                <Textarea
+                  id="descripcion"
+                  autoExpand
+                  rows={3}
+                  minRows={1}
+                  maxRows={8}
+                  value={formulario.descripcion}
+                  hasError={Boolean(errores.descripcion)}
+                  maxLength={LIMITE_LETRAS.descripcion}
+                  placeholder="Ej: Celebración eucarística y actividades para toda la comunidad."
                   onChange={(e) =>
-                    actualizarCampo("hora", e.target.value || null)
+                    actualizarCampo(
+                      "descripcion",
+                      limitarLetras(e.target.value, LIMITE_LETRAS.descripcion),
+                    )
                   }
                 />
-                <FieldError message={errores.hora} />
+                <ContadorLetras
+                  valor={formulario.descripcion}
+                  maximo={LIMITE_LETRAS.descripcion}
+                />
+                <FieldError message={errores.descripcion} />
               </div>
-            </div>
 
-            <div>
-              <Label htmlFor="fechaFin">Fecha de fin (opcional)</Label>
-              <Input
-                id="fechaFin"
-                type="date"
-                min={formulario.fechaInicio || fechaHoy()}
-                value={formulario.fechaFin ?? ""}
-                hasError={Boolean(errores.fechaFin)}
-                onChange={(e) =>
-                  actualizarCampo("fechaFin", e.target.value || null)
-                }
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div>
+                  <Label
+                    htmlFor="fechaInicio"
+                    required
+                  >
+                    Fecha de inicio
+                  </Label>
+                  <Input
+                    id="fechaInicio"
+                    type="date"
+                    min={fechaHoy()}
+                    value={formulario.fechaInicio}
+                    hasError={Boolean(errores.fechaInicio)}
+                    onChange={(e) =>
+                      actualizarCampo("fechaInicio", e.target.value)
+                    }
+                  />
+                  <FieldError message={errores.fechaInicio} />
+                </div>
+                <div>
+                  <Label htmlFor="hora">Hora</Label>
+                  <Input
+                    id="hora"
+                    type="time"
+                    value={formulario.hora ?? ""}
+                    hasError={Boolean(errores.hora)}
+                    onChange={(e) =>
+                      actualizarCampo("hora", e.target.value || null)
+                    }
+                  />
+                  <FieldError message={errores.hora} />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="fechaFin">Fecha de fin (opcional)</Label>
+                <Input
+                  id="fechaFin"
+                  type="date"
+                  min={formulario.fechaInicio || fechaHoy()}
+                  value={formulario.fechaFin ?? ""}
+                  hasError={Boolean(errores.fechaFin)}
+                  onChange={(e) =>
+                    actualizarCampo("fechaFin", e.target.value || null)
+                  }
+                />
+                <FieldError message={errores.fechaFin} />
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="lugar"
+                  required
+                >
+                  Lugar
+                </Label>
+                <Input
+                  id="lugar"
+                  value={formulario.lugar}
+                  hasError={Boolean(errores.lugar)}
+                  maxLength={LIMITE_LETRAS.lugar}
+                  placeholder="Ej: Iglesia parroquial de San Blas"
+                  onChange={(e) =>
+                    actualizarCampo(
+                      "lugar",
+                      limitarLetras(e.target.value, LIMITE_LETRAS.lugar),
+                    )
+                  }
+                />
+                <ContadorLetras
+                  valor={formulario.lugar}
+                  maximo={LIMITE_LETRAS.lugar}
+                />
+                <FieldError message={errores.lugar} />
+              </div>
+
+              <SubidaImagen
+                id="imagen-evento"
+                label="Imagen del evento"
+                hint="Opcional. JPG, PNG o WEBP de hasta 5 MB."
+                textoArrastrar="Arrastra y suelta archivos aquí"
+                textoBoton="Seleccionar archivo"
+                mostrarVistaPrevia={false}
+                value={archivoImagen}
+                existingPreview={quitarImagen ? null : formulario.imagenUrl}
+                errorExterno={errores.imagen}
+                onChange={(archivo) => {
+                  setArchivoImagen(archivo);
+                  if (archivo) {
+                    setQuitarImagen(false);
+                    setErrores((prev) => {
+                      if (!prev.imagen) return prev;
+                      const siguiente = { ...prev };
+                      delete siguiente.imagen;
+                      return siguiente;
+                    });
+                  }
+                }}
+                onClearExisting={() => {
+                  setQuitarImagen(true);
+                  actualizarCampo("imagenUrl", null);
+                }}
               />
-              <FieldError message={errores.fechaFin} />
-            </div>
 
-            <div>
-              <Label htmlFor="lugar" required>
-                Lugar
-              </Label>
-              <Input
-                id="lugar"
-                value={formulario.lugar}
-                hasError={Boolean(errores.lugar)}
-                maxLength={LIMITE_LETRAS.lugar}
-                placeholder="Ej: Iglesia parroquial de San Blas"
-                onChange={(e) =>
-                  actualizarCampo(
-                    "lugar",
-                    limitarLetras(e.target.value, LIMITE_LETRAS.lugar),
-                  )
-                }
-              />
-              <ContadorLetras
-                valor={formulario.lugar}
-                maximo={LIMITE_LETRAS.lugar}
-              />
-              <FieldError message={errores.lugar} />
-            </div>
-
-            <SubidaImagen
-              id="imagen-evento"
-              label="Imagen del evento"
-              hint="Opcional. JPG, PNG o WEBP de hasta 5 MB."
-              textoArrastrar="Arrastra y suelta archivos aquí"
-              textoBoton="Seleccionar archivo"
-              mostrarVistaPrevia={false}
-              value={archivoImagen}
-              existingPreview={quitarImagen ? null : formulario.imagenUrl}
-              errorExterno={errores.imagen}
-              onChange={(archivo) => {
-                setArchivoImagen(archivo);
-                if (archivo) {
-                  setQuitarImagen(false);
-                  setErrores((prev) => {
-                    if (!prev.imagen) return prev;
-                    const siguiente = { ...prev };
-                    delete siguiente.imagen;
-                    return siguiente;
-                  });
-                }
-              }}
-              onClearExisting={() => {
-                setQuitarImagen(true);
-                actualizarCampo("imagenUrl", null);
-              }}
-            />
-
-            <div className="mt-2 flex flex-wrap justify-end gap-3">
-              {mostrarPublicar && (
+              <div className="mt-2 flex flex-wrap justify-end gap-3">
+                {mostrarPublicar && (
+                  <Button
+                    type="button"
+                    variant="royal"
+                    onClick={solicitarPublicar}
+                    disabled={guardando || !formularioValido}
+                  >
+                    <Globe size={16} />
+                    Publicar evento
+                  </Button>
+                )}
+                {mostrarActivar && (
+                  <Button
+                    type="button"
+                    variant="royal"
+                    onClick={() => solicitarActivar()}
+                    disabled={guardando}
+                  >
+                    <Power size={16} />
+                    Activar evento
+                  </Button>
+                )}
                 <Button
-                  type="button"
+                  type="submit"
                   variant="royal"
-                  onClick={solicitarPublicar}
                   disabled={guardando || !formularioValido}
                 >
-                  <Globe size={16} />
-                  Publicar evento
+                  {guardando ? "Guardando..." : "Guardar"}
                 </Button>
-              )}
-              {mostrarActivar && (
                 <Button
                   type="button"
-                  variant="royal"
-                  onClick={() => solicitarActivar()}
+                  variant="secondary"
+                  onClick={cerrarModal}
                   disabled={guardando}
                 >
-                  <Power size={16} />
-                  Activar evento
+                  Cancelar
                 </Button>
-              )}
-              <Button
-                type="submit"
-                variant="royal"
-                disabled={guardando || !formularioValido}
-              >
-                {guardando ? "Guardando..." : "Guardar"}
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={cerrarModal}
-                disabled={guardando}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </form>
+              </div>
+            </form>
           )}
         </Modal>
       )}
