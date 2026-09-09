@@ -1192,6 +1192,7 @@ export default function GestionDonaciones(): React.JSX.Element {
           onClose={() => setHistorialSeleccionada(null)}
           title={`Historial de DON-${historialSeleccionada.id}`}
           sinFondo
+          cerrarConEsc
         >
           <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.98 }}

@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { CalendarDays, Mail, Package, Phone, X } from "lucide-react";
+import FocusTrap from "focus-trap-react";
 import type { Donacion, EstadoDonacion } from "../../../services/donacionesService";
 import { Button, EtiquetaSeccion } from "../../../shared/ui";
 
@@ -22,7 +24,25 @@ export function DonacionDetalleModal({
 }: DonacionDetalleModalProps) {
   const estadoPermanente = esEstadoFinal(donacion.estado);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
+    <FocusTrap
+      focusTrapOptions={{
+        clickOutsideDeactivates: false,
+        escapeDeactivates: false,
+        allowOutsideClick: () => true,
+      }}
+    >
     <div
       className="fixed inset-0 z-[1300] overflow-y-auto"
       role="presentation"
@@ -164,5 +184,6 @@ export function DonacionDetalleModal({
         </div>
       </div>
     </div>
+    </FocusTrap>
   );
 }
