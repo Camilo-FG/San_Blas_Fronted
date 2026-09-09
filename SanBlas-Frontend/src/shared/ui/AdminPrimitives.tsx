@@ -169,7 +169,7 @@ export function AdminTableFooter({
       className={cn(
         "mt-3.5 flex flex-wrap items-center justify-between gap-3 px-1 pt-3.5 text-sm text-text-muted",
         pegadoAbajo &&
-          "fixed right-0 bottom-0 left-0 z-20 mt-0 border-t border-border bg-gray-50/95 px-4 pt-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 lg:left-64 lg:px-8",
+          "fixed right-0 bottom-0 left-0 z-20 mt-0 border-t border-border bg-gray-50/95 px-4 pt-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-[left] duration-[800ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-6 lg:left-[var(--sidebar-width,16rem)] lg:px-8",
         className,
       )}
       {...props}
