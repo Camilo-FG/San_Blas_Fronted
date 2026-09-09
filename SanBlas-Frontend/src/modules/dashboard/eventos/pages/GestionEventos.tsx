@@ -736,7 +736,7 @@ const GestionEventos = () => {
           ))}
         </div>
         <AdminTableFooter pegadoAbajo>
-          <span className="text-sm text-text-muted">
+          <span className="min-w-0 text-sm leading-snug text-text-muted">
             Mostrando{" "}
             <strong className="text-text tabular-nums">
               {primerRegistro}-{ultimoRegistro}
@@ -747,15 +747,16 @@ const GestionEventos = () => {
             </strong>{" "}
             registros
           </span>
-          <AdminPagination className="flex-wrap">
-            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
-              Registros por página
+          <AdminPagination>
+            <label className="mr-1 flex min-w-0 items-center gap-2 text-sm text-text-muted max-sm:mr-0">
+              <span className="max-sm:hidden">Registros por página</span>
+              <span className="sm:hidden">Por página</span>
               <select
                 value={registrosPorPagina}
                 onChange={(event) =>
                   setRegistrosPorPagina(Number(event.target.value))
                 }
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-10 min-w-0 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
                 aria-label="Cantidad de registros por página"
               >
                 {TAMANOS_PAGINA.map((tamano) => (
@@ -765,30 +766,32 @@ const GestionEventos = () => {
                 ))}
               </select>
             </label>
-            <AdminPaginationButton
-              type="button"
-              onClick={() => setPaginaActual((pagina) => Math.max(1, pagina - 1))}
-              disabled={paginaActual <= 1}
-              aria-label="Página anterior"
-            >
-              <ChevronLeft size={16} strokeWidth={2} />
-            </AdminPaginationButton>
-            <span className="text-sm whitespace-nowrap text-text-muted">
-              Página{" "}
-              <strong className="text-text tabular-nums">{paginaActual}</strong>{" "}
-              de{" "}
-              <strong className="text-text tabular-nums">{totalPaginas}</strong>
-            </span>
-            <AdminPaginationButton
-              type="button"
-              onClick={() =>
-                setPaginaActual((pagina) => Math.min(totalPaginas, pagina + 1))
-              }
-              disabled={paginaActual >= totalPaginas}
-              aria-label="Página siguiente"
-            >
-              <ChevronRight size={16} strokeWidth={2} />
-            </AdminPaginationButton>
+            <div className="flex min-w-0 shrink-0 items-center gap-2">
+              <AdminPaginationButton
+                type="button"
+                onClick={() => setPaginaActual((pagina) => Math.max(1, pagina - 1))}
+                disabled={paginaActual <= 1}
+                aria-label="Página anterior"
+              >
+                <ChevronLeft size={16} strokeWidth={2} />
+              </AdminPaginationButton>
+              <span className="text-sm whitespace-nowrap text-text-muted">
+                Página{" "}
+                <strong className="text-text tabular-nums">{paginaActual}</strong>{" "}
+                de{" "}
+                <strong className="text-text tabular-nums">{totalPaginas}</strong>
+              </span>
+              <AdminPaginationButton
+                type="button"
+                onClick={() =>
+                  setPaginaActual((pagina) => Math.min(totalPaginas, pagina + 1))
+                }
+                disabled={paginaActual >= totalPaginas}
+                aria-label="Página siguiente"
+              >
+                <ChevronRight size={16} strokeWidth={2} />
+              </AdminPaginationButton>
+            </div>
           </AdminPagination>
         </AdminTableFooter>
         </>
