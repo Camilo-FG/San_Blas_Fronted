@@ -79,7 +79,10 @@ export function Modal({
         <FocusTrap
           focusTrapOptions={{
             clickOutsideDeactivates: false,
-            escapeDeactivates: false,
+            escapeDeactivates: () => {
+              onClose();
+              return true;
+            },
             allowOutsideClick: () => true,
           }}
         >
@@ -93,7 +96,10 @@ export function Modal({
     <FocusTrap
       focusTrapOptions={{
         clickOutsideDeactivates: false,
-        escapeDeactivates: false,
+        escapeDeactivates: () => {
+          onClose();
+          return true;
+        },
         allowOutsideClick: () => true,
       }}
     >
