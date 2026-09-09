@@ -23,6 +23,11 @@ import { ModalEvento } from "../components/ModalEvento";
 const TAMANOS_PAGINA = [6, 9, 12] as const;
 const TAMANO_PAGINA_INICIAL = 6;
 
+type OrdenEventos = "proximos" | "antiguo-futuro" | "futuro-antiguo";
+
+const fechaHoyCostaRica = () =>
+  new Date().toLocaleDateString("en-CA", { timeZone: "America/Costa_Rica" });
+
 const normalizarTexto = (valor: string) =>
   valor
     .normalize("NFD")
@@ -79,6 +84,7 @@ const EventosPublicPage = () => {
   const [busquedaNombre, setBusquedaNombre] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
+  const [ordenEventos, setOrdenEventos] = useState<OrdenEventos>("proximos");
   const [paginaActual, setPaginaActual] = useState(1);
   const [registrosPorPagina, setRegistrosPorPagina] = useState(TAMANO_PAGINA_INICIAL);
 
@@ -121,10 +127,16 @@ const EventosPublicPage = () => {
   }, [eventoSeleccionado]);
 
   const hayFiltros =
-    Boolean(busquedaNombre.trim()) || Boolean(fechaDesde) || Boolean(fechaHasta);
+    Boolean(busquedaNombre.trim()) ||
+    Boolean(fechaDesde) ||
+    Boolean(fechaHasta) ||
+    ordenEventos === "proximos";
 
   const eventosFiltrados = useMemo(() => {
     const nombre = normalizarTexto(busquedaNombre);
+    const hoy = fechaHoyCostaRica();
+    const masCercanoPrimero =
+      ordenEventos === "proximos" || ordenEventos === "antiguo-futuro";
 
     return eventos
       .filter((evento) => {
@@ -133,18 +145,28 @@ const EventosPublicPage = () => {
         const fechaEvento = extraerFechaCalendario(evento.fechaInicio);
         const coincideDesde = !fechaDesde || fechaEvento >= fechaDesde;
         const coincideHasta = !fechaHasta || fechaEvento <= fechaHasta;
+        const coincideProximos =
+          ordenEventos !== "proximos" || fechaEvento >= hoy;
 
-        return coincideNombre && coincideDesde && coincideHasta;
+        return (
+          coincideNombre &&
+          coincideDesde &&
+          coincideHasta &&
+          coincideProximos
+        );
       })
       .sort((a, b) => {
         const fechaA = extraerFechaCalendario(a.fechaInicio);
         const fechaB = extraerFechaCalendario(b.fechaInicio);
-        if (fechaA !== fechaB) return fechaB.localeCompare(fechaA);
-        const diferenciaHora = minutosHora(b.hora) - minutosHora(a.hora);
-        if (diferenciaHora !== 0) return diferenciaHora;
-        return b.id - a.id;
+        const direccion = masCercanoPrimero ? 1 : -1;
+        if (fechaA !== fechaB) {
+          return direccion * fechaA.localeCompare(fechaB);
+        }
+        const diferenciaHora = minutosHora(a.hora) - minutosHora(b.hora);
+        if (diferenciaHora !== 0) return direccion * diferenciaHora;
+        return direccion * (a.id - b.id);
       });
-  }, [busquedaNombre, eventos, fechaDesde, fechaHasta]);
+  }, [busquedaNombre, eventos, fechaDesde, fechaHasta, ordenEventos]);
 
   const totalPaginas = Math.max(
     1,
@@ -153,7 +175,7 @@ const EventosPublicPage = () => {
 
   useEffect(() => {
     setPaginaActual(1);
-  }, [busquedaNombre, fechaDesde, fechaHasta, registrosPorPagina]);
+  }, [busquedaNombre, fechaDesde, fechaHasta, ordenEventos, registrosPorPagina]);
 
   useEffect(() => {
     setPaginaActual((pagina) => Math.min(pagina, totalPaginas));
@@ -187,7 +209,7 @@ const EventosPublicPage = () => {
       </ScrollReveal>
 
       {!cargando && !error && (
-        <div className="mb-8 grid grid-cols-1 gap-4 rounded-2xl border border-border bg-surface p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] md:grid-cols-[minmax(0,1.4fr)_repeat(2,minmax(0,1fr))]">
+        <div className="mb-8 grid grid-cols-1 gap-4 rounded-2xl border border-border bg-surface p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
           <div>
             <Label htmlFor="filtro-nombre-evento">Buscar por nombre</Label>
             <div className="relative">
@@ -226,6 +248,22 @@ const EventosPublicPage = () => {
               onChange={(event) => setFechaHasta(event.target.value)}
             />
           </div>
+          <div>
+            <Label htmlFor="filtro-orden-evento">Ordenar</Label>
+            <select
+              id="filtro-orden-evento"
+              value={ordenEventos}
+              onChange={(event) =>
+                setOrdenEventos(event.target.value as OrdenEventos)
+              }
+              className="min-h-11 w-full cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+              aria-label="Ordenar eventos"
+            >
+              <option value="proximos">Más próximos</option>
+              <option value="antiguo-futuro">Más antiguo a más futuro</option>
+              <option value="futuro-antiguo">Más futuro a más antiguo</option>
+            </select>
+          </div>
         </div>
       )}
 
@@ -244,9 +282,14 @@ const EventosPublicPage = () => {
 
       {!cargando && !error && eventos.length > 0 && eventosFiltrados.length === 0 && (
         <p className="p-8 text-center text-text-muted">
-          {hayFiltros
-            ? "No se encontraron eventos con esos filtros."
-            : "No hay eventos publicados por el momento."}
+          {ordenEventos === "proximos" &&
+          !busquedaNombre.trim() &&
+          !fechaDesde &&
+          !fechaHasta
+            ? "No hay eventos próximos."
+            : hayFiltros
+              ? "No se encontraron eventos con esos filtros."
+              : "No hay eventos publicados por el momento."}
         </p>
       )}
 

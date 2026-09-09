@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 
 export const useCaptcha = () => {
@@ -13,10 +13,10 @@ export const useCaptcha = () => {
     setCaptchaToken(null);
   };
 
-  const resetCaptcha = () => {
+  const resetCaptcha = useCallback(() => {
     setCaptchaToken(null);
     captchaRef.current?.reset();
-  };
+  }, []);
 
   return {
     captchaRef,

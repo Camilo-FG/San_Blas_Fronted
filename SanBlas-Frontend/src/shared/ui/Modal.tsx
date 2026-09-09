@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import FocusTrap from "focus-trap-react";
 import { motion } from "framer-motion";
@@ -13,6 +13,7 @@ type ModalProps = {
   sinFondo?: boolean;
   overlayClassName?: string;
   cerrarAlClicFuera?: boolean;
+  cerrarConEsc?: boolean;
 };
 
 export function Modal({
@@ -23,9 +24,23 @@ export function Modal({
   sinFondo,
   overlayClassName,
   cerrarAlClicFuera = true,
+  cerrarConEsc = false,
 }: ModalProps) {
   const dialogoRef = useRef<HTMLDivElement>(null);
   useScrollLock(true, dialogoRef);
+
+  useEffect(() => {
+    if (!cerrarConEsc) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [cerrarConEsc, onClose]);
 
   const clasesContenido = sinFondo
     ? "fixed top-1/2 left-1/2 z-[1400] max-h-[90vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-lg border border-border bg-surface p-6 shadow-[0_22px_55px_rgba(6,15,32,0.45)]"
@@ -79,7 +94,10 @@ export function Modal({
         <FocusTrap
           focusTrapOptions={{
             clickOutsideDeactivates: false,
-            escapeDeactivates: false,
+            escapeDeactivates: () => {
+              onClose();
+              return true;
+            },
             allowOutsideClick: () => true,
           }}
         >
@@ -93,7 +111,10 @@ export function Modal({
     <FocusTrap
       focusTrapOptions={{
         clickOutsideDeactivates: false,
-        escapeDeactivates: false,
+        escapeDeactivates: () => {
+          onClose();
+          return true;
+        },
         allowOutsideClick: () => true,
       }}
     >
