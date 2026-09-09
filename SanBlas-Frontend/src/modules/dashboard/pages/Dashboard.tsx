@@ -1,6 +1,6 @@
 import SeoHead from "../../../seo/SeoHead";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import {
   LayoutDashboard,
   FileSpreadsheet,
@@ -116,6 +116,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [barraExpandida, setBarraExpandida] = useState(false);
   const pageInfo = pageTitles[pathname] ?? {
     title: "Panel administrativo",
     subtitle: "Parroquia San Blas",
@@ -140,7 +141,10 @@ function Dashboard() {
   return (
     <>
       <SeoHead page="/login" overrides={{ robots: "noindex, nofollow", title: "Panel Administrativo | Parroquia San Blas", description: "Panel de administración de la Parroquia San Blas de Nicoya." }} />
-      <div className="relative flex min-h-screen flex-col bg-gray-50 lg:flex-row">
+      <div
+        className="relative flex min-h-screen flex-col bg-gray-50 lg:flex-row"
+        style={{ "--sidebar-width": barraExpandida ? "16rem" : "4rem" } as CSSProperties}
+      >
       {/* Mobile top header */}
       <div className="sticky top-0 z-30 flex items-center justify-between bg-brand-blue px-4 py-3 shadow-sm lg:hidden">
         <Link
@@ -178,29 +182,32 @@ function Dashboard() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 z-50 flex h-screen w-64 flex-col justify-between bg-[#0b172a] text-gray-300 transition-transform duration-300 lg:sticky lg:translate-x-0",
-          menuAbierto ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          "fixed top-0 z-50 flex h-screen w-64 shrink-0 flex-col justify-between overflow-hidden bg-[#0b172a] text-gray-300 transition-[width,transform] duration-[800ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] lg:sticky lg:translate-x-0",
+          menuAbierto ? "translate-x-0" : "-translate-x-full",
+          barraExpandida ? "lg:w-64" : "lg:w-16",
         )}
+        onMouseEnter={() => setBarraExpandida(true)}
+        onMouseLeave={() => setBarraExpandida(false)}
         aria-label="Menú del panel administrativo"
       >
         <div>
-          <div className="border-b border-gray-800 p-6">
+          <div className={cn("border-b border-gray-800 p-6", !barraExpandida && "lg:flex lg:h-[84px] lg:items-center lg:justify-center lg:p-0")}>
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-brand-gold bg-brand-blue">
                 <span className="font-heading text-sm font-bold text-brand-gold">SB</span>
               </div>
-              <div className="min-w-0">
-                <span className="block truncate font-heading text-sm font-bold text-white">
+              <div className={cn("min-w-0", !barraExpandida && "lg:hidden")}>
+                <span className="block truncate whitespace-nowrap font-heading text-sm font-bold text-white">
                   San Blas Nicoya
                 </span>
-                <span className="block font-mono text-[9px] tracking-wider text-brand-gold uppercase">
+                <span className="block whitespace-nowrap font-mono text-[9px] tracking-wider text-brand-gold uppercase">
                   Panel de control
                 </span>
               </div>
             </div>
           </div>
 
-          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {navLinks.map((link) => {
               const Icon = link.icon;
 
@@ -214,36 +221,38 @@ function Dashboard() {
                   activeOptions={{ exact: link.to === Rutas.dashboard }}
                 >
                   <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                  <span>{link.label}</span>
+                  <span className={cn("whitespace-nowrap", !barraExpandida && "lg:hidden")}>
+                    {link.label}
+                  </span>
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        <div className="border-t border-gray-800 bg-[#070f1d] p-4 text-xs">
+        <div className={cn("border-t border-gray-800 bg-[#070f1d] px-6 py-4 text-xs", !barraExpandida && "lg:flex lg:h-[99px] lg:items-start lg:justify-center lg:pt-4 lg:px-0")}>
           <div className="mb-3 flex items-center gap-2.5">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-gold font-heading text-[10px] font-bold text-brand-blue uppercase">
               {getUserInitial(user?.email)}
             </div>
-            <div className="min-w-0 overflow-hidden">
-              <p className="truncate text-[11px] font-bold text-white">
+            <div className={cn("min-w-0 overflow-hidden", !barraExpandida && "lg:hidden")}>
+              <p className="truncate whitespace-nowrap text-[11px] font-bold text-white">
                 {getRoleLabel(user?.role)}
               </p>
-              <p className="truncate text-[9px] text-gray-500">{user?.email}</p>
+              <p className="truncate whitespace-nowrap text-[9px] text-gray-500">{user?.email}</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className={cn("grid min-w-56 grid-cols-2 gap-2", !barraExpandida && "lg:hidden")}>
             <Link
               to={Rutas.home}
-              className="w-full rounded bg-white/5 py-1.5 text-center text-[10px] font-semibold text-gray-400 no-underline transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+              className="w-full rounded bg-white/5 py-1.5 text-center text-[10px] font-semibold whitespace-nowrap text-gray-400 no-underline transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
             >
               Ver sitio
             </Link>
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full cursor-pointer rounded border-none bg-red-900/20 py-1.5 text-center text-[10px] font-semibold text-red-400 transition-colors hover:bg-red-900/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+              className="w-full cursor-pointer rounded border-none bg-red-900/20 py-1.5 text-center text-[10px] font-semibold whitespace-nowrap text-red-400 transition-colors hover:bg-red-900/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
             >
               Cerrar sesión
             </button>
