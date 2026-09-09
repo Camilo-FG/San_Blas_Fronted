@@ -13,6 +13,16 @@ import { useToast } from "../../../shared/ui";
 import { useDonacionInsumos } from "../hooks/useDonacionInsumos";
 
 const MAX_DETAIL = 300;
+const MAX_NOMBRE = 25;
+const MAX_APELLIDO = 25;
+
+const soloLetras = (valor: string, permitirEspacio = false) =>
+  valor.replace(
+    permitirEspacio
+      ? /[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g
+      : /[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g,
+    "",
+  );
 
 const inputClass =
   "w-full rounded-2xl border border-border-strong bg-white px-4 py-3.5 text-[0.95rem] text-royal-blue outline-none transition-colors placeholder:text-text-muted/80 focus:border-royal-gold focus:ring-2 focus:ring-royal-gold/25 sm:px-5 sm:py-4 sm:text-base";
@@ -129,6 +139,8 @@ export default function DonacionForm() {
         nuevosErrores.nombre = "El nombre es requerido.";
       } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreTrim)) {
         nuevosErrores.nombre = "El nombre solo puede contener letras.";
+      } else if (nombreTrim.length > MAX_NOMBRE) {
+        nuevosErrores.nombre = `El nombre no puede superar los ${MAX_NOMBRE} caracteres.`;
       }
 
       const primerApellidoTrim = formData.primerApellido.trim();
@@ -137,15 +149,18 @@ export default function DonacionForm() {
       } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/.test(primerApellidoTrim)) {
         nuevosErrores.primerApellido =
           "El primer apellido solo puede contener letras.";
+      } else if (primerApellidoTrim.length > MAX_APELLIDO) {
+        nuevosErrores.primerApellido = `El primer apellido no puede superar los ${MAX_APELLIDO} caracteres.`;
       }
 
       const segundoApellidoTrim = formData.segundoApellido.trim();
-      if (
-        segundoApellidoTrim &&
-        !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/.test(segundoApellidoTrim)
-      ) {
-        nuevosErrores.segundoApellido =
-          "El segundo apellido solo puede contener letras.";
+      if (segundoApellidoTrim) {
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/.test(segundoApellidoTrim)) {
+          nuevosErrores.segundoApellido =
+            "El segundo apellido solo puede contener letras.";
+        } else if (segundoApellidoTrim.length > MAX_APELLIDO) {
+          nuevosErrores.segundoApellido = `El segundo apellido no puede superar los ${MAX_APELLIDO} caracteres.`;
+        }
       }
     }
 
@@ -194,6 +209,15 @@ export default function DonacionForm() {
         : soloNumeros;
     handleChange("telefono", formateado);
   };
+
+  const handleNombre = (value: string) =>
+    handleChange("nombre", soloLetras(value, true).slice(0, MAX_NOMBRE));
+
+  const handlePrimerApellido = (value: string) =>
+    handleChange("primerApellido", soloLetras(value).slice(0, MAX_APELLIDO));
+
+  const handleSegundoApellido = (value: string) =>
+    handleChange("segundoApellido", soloLetras(value).slice(0, MAX_APELLIDO));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -318,7 +342,8 @@ onChange={(e) => {
                 required={!formData.anonimo}
                 placeholder="Ej: Juan"
                 value={formData.nombre}
-                onChange={(e) => handleChange("nombre", e.target.value)}
+                onChange={(e) => handleNombre(e.target.value)}
+                maxLength={MAX_NOMBRE}
                 className={inputClass}
               />
             </Field>
@@ -334,7 +359,8 @@ onChange={(e) => {
                 required={!formData.anonimo}
                 placeholder="Ej: Pérez"
                 value={formData.primerApellido}
-                onChange={(e) => handleChange("primerApellido", e.target.value)}
+                onChange={(e) => handlePrimerApellido(e.target.value)}
+                maxLength={MAX_APELLIDO}
                 className={inputClass}
               />
             </Field>
@@ -349,7 +375,8 @@ onChange={(e) => {
                 type="text"
                 placeholder="Ej: González"
                 value={formData.segundoApellido}
-                onChange={(e) => handleChange("segundoApellido", e.target.value)}
+                onChange={(e) => handleSegundoApellido(e.target.value)}
+                maxLength={MAX_APELLIDO}
                 className={inputClass}
               />
             </Field>
