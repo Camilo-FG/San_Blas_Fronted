@@ -1,11 +1,13 @@
 export {
   obtenerSolicitudesCatequesis,
+  obtenerHistorialCatequesis,
   obtenerSolicitudCatequesisPorId,
   crearSolicitudCatequesis,
   actualizarEstadoSolicitud,
   agregarObservacionAdministrativa,
   exportarInscripcionesCatequesis,
 } from "../../../../services/catequesis/catequesisService";
+export type { HistorialInscripcionCatequesis } from "../../../../services/catequesis/catequesisService";
 
 // Alias para compatibilidad con imports existentes
 export { obtenerSolicitudesCatequesis as getSolicitudesCatequesis } from "../../../../services/catequesis/catequesisService";

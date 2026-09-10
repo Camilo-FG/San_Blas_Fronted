@@ -63,24 +63,23 @@ export const useSolicitudesCatequesis = () => {
     id: number,
     estado: "aprobado" | "rechazado",
     observacion?: string,
-  ) => {
+  ): Promise<{ ok: true } | { ok: false; mensaje: string }> => {
     try {
       setGuardando(true);
       setAccionError("");
 
-      const response = await actualizarEstadoSolicitud(id, estado, observacion);
-
+      await actualizarEstadoSolicitud(id, estado, observacion);
       await cargarSolicitudes();
 
-      return response;
+      return { ok: true };
     } catch (err) {
       console.error(err);
-      if (err instanceof ApiError) {
-        setAccionError(err.message);
-      } else {
-        setAccionError("No se pudo actualizar el estado de la solicitud.");
-      }
-      return null;
+      const mensaje =
+        err instanceof ApiError
+          ? err.message
+          : "No se pudo actualizar el estado de la solicitud.";
+      setAccionError(mensaje);
+      return { ok: false, mensaje };
     } finally {
       setGuardando(false);
     }

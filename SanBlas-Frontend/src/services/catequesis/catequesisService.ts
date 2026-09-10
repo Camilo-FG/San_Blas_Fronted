@@ -36,6 +36,37 @@ export const obtenerSolicitudesCatequesis = async (
   }
 };
 
+export interface HistorialInscripcionCatequesis {
+  id: number;
+  nombreCatequizando: string;
+  centroCatequesis: string;
+  nivelAInscribirse: string;
+  estado: string;
+  fechaSolicitud: string;
+  telefonoEncargada: string;
+  observacionAdministrativa?: string | null;
+  fechaActualizacionEstado?: string | null;
+}
+
+export const obtenerHistorialCatequesis = async (params?: {
+  estado?: string;
+  desde?: string;
+  hasta?: string;
+}): Promise<{
+  total: number;
+  historial: HistorialInscripcionCatequesis[];
+}> => {
+  try {
+    const { data } = await apiClient.get<{
+      total: number;
+      historial: HistorialInscripcionCatequesis[];
+    }>(`${BASE}/historial`, { params });
+    return data;
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
 export const obtenerSolicitudCatequesisPorId = async (
   id: number,
 ): Promise<CatequesisEnrollmentRecord> => {
