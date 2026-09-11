@@ -1,5 +1,14 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Eye, Pencil, Trash2 } from 'lucide-react';
+import {
+    ChevronLeft,
+    ChevronRight,
+    Eye,
+    Mail,
+    Pencil,
+    Phone,
+    Trash2,
+    User,
+} from 'lucide-react';
 import {
     createColumnHelper,
     flexRender,
@@ -16,6 +25,7 @@ import { PerfilUsuarioCard } from '../PerfilUsuarioCard/PerfilUsuarioCard';
 import { useUpdateUser } from '../../hooks/hooksUsuarios/useUpdateUser';
 import { useDeleteUser } from '../../hooks/hooksUsuarios/useDeleteUser';
 import { normalizarTexto } from '../../Utils/normalizarTexto';
+import { AdminRecordCard } from '../../../../shared/components/admin/AdminRecordCard';
 import {
     AdminModule,
     AdminPagination,
@@ -57,6 +67,7 @@ interface UserListProps {
 }
 
 const TAMANOS_PAGINA = [10, 25, 50] as const;
+const ACCENTO_ADMIN = '#003366'; // acento de las tarjetas de usuarios en móvil
 const BOTON_ICONO_TABLA =
     'inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
 const BOTON_ICONO_ELIMINAR =
@@ -239,63 +250,131 @@ export const UserList = ({
                 <ErrorMessage message={error} />
             ) : (
                 <>
-                    <AdminTablePanel>
-                        {/* min-w fuerza el scroll horizontal en móvil sin ocultar la tabla */}
-                        <AdminTable className="min-w-[760px]">
-                            <AdminTableHead>
-                                {table.getHeaderGroups().map((headerGroup) => (
-                                    <AdminTableRow key={headerGroup.id}>
-                                        {headerGroup.headers.map((header) => (
-                                            <AdminTableHeaderCell
-                                                key={header.id}
-                                                className={cn(
-                                                    header.column.getCanSort() && 'cursor-pointer select-none',
-                                                )}
-                                                onClick={header.column.getToggleSortingHandler()}
-                                            >
-                                                <div className="flex items-center justify-between gap-2">
-                                                    {flexRender(
-                                                        header.column.columnDef.header,
-                                                        header.getContext(),
+                    <div className="hidden md:block">
+                        <AdminTablePanel>
+                            <AdminTable>
+                                <AdminTableHead>
+                                    {table.getHeaderGroups().map((headerGroup) => (
+                                        <AdminTableRow key={headerGroup.id}>
+                                            {headerGroup.headers.map((header) => (
+                                                <AdminTableHeaderCell
+                                                    key={header.id}
+                                                    className={cn(
+                                                        header.column.getCanSort() && 'cursor-pointer select-none',
                                                     )}
-                                                    {header.column.getIsSorted() && (
-                                                        <span className="text-xs opacity-60">
-                                                            {header.column.getIsSorted() === 'asc' ? '↑' : '↓'}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </AdminTableHeaderCell>
-                                        ))}
-                                    </AdminTableRow>
-                                ))}
-                            </AdminTableHead>
-                            <tbody>
-                                {table.getRowModel().rows.length > 0 ? (
-                                    table.getRowModel().rows.map((row) => (
-                                        <AdminTableRow key={row.id}>
-                                            {row.getVisibleCells().map((cell) => (
-                                                <AdminTableCell key={cell.id}>
-                                                    {flexRender(
-                                                        cell.column.columnDef.cell,
-                                                        cell.getContext(),
-                                                    )}
-                                                </AdminTableCell>
+                                                    onClick={header.column.getToggleSortingHandler()}
+                                                >
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        {flexRender(
+                                                            header.column.columnDef.header,
+                                                            header.getContext(),
+                                                        )}
+                                                        {header.column.getIsSorted() && (
+                                                            <span className="text-xs opacity-60">
+                                                                {header.column.getIsSorted() === 'asc' ? '↑' : '↓'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </AdminTableHeaderCell>
                                             ))}
                                         </AdminTableRow>
-                                    ))
-                                ) : (
-                                    <AdminTableRow>
-                                        <AdminTableCell
-                                            colSpan={columns.length}
-                                            className="py-10 text-center text-text-muted"
-                                        >
-                                            No se encontraron usuarios
-                                        </AdminTableCell>
-                                    </AdminTableRow>
-                                )}
-                            </tbody>
-                        </AdminTable>
-                    </AdminTablePanel>
+                                    ))}
+                                </AdminTableHead>
+                                <tbody>
+                                    {table.getRowModel().rows.length > 0 ? (
+                                        table.getRowModel().rows.map((row) => (
+                                            <AdminTableRow key={row.id}>
+                                                {row.getVisibleCells().map((cell) => (
+                                                    <AdminTableCell key={cell.id}>
+                                                        {flexRender(
+                                                            cell.column.columnDef.cell,
+                                                            cell.getContext(),
+                                                        )}
+                                                    </AdminTableCell>
+                                                ))}
+                                            </AdminTableRow>
+                                        ))
+                                    ) : (
+                                        <AdminTableRow>
+                                            <AdminTableCell
+                                                colSpan={columns.length}
+                                                className="py-10 text-center text-text-muted"
+                                            >
+                                                No se encontraron usuarios
+                                            </AdminTableCell>
+                                        </AdminTableRow>
+                                    )}
+                                </tbody>
+                            </AdminTable>
+                        </AdminTablePanel>
+                    </div>
+
+                    <div className="flex flex-col gap-2.5 md:hidden">
+                        {table.getRowModel().rows.length === 0 ? (
+                            <p className="m-0 rounded-2xl border border-border-strong bg-surface px-4 py-10 text-center text-sm text-text-muted">
+                                No se encontraron usuarios
+                            </p>
+                        ) : (
+                            table.getRowModel().rows.map((row) => {
+                                const usuario = row.original;
+                                return (
+                                    <AdminRecordCard
+                                        key={usuario.id}
+                                        icon={<User size={20} />}
+                                        accent={ACCENTO_ADMIN}
+                                        code={`USR-${usuario.id}`}
+                                        title={usuario.userName}
+                                        subtitle={etiquetaRol(usuario.role, roles)}
+                                        badges={
+                                            <Badge variant={usuario.state ? 'success' : 'danger'}>
+                                                {usuario.state ? 'Activo' : 'Inactivo'}
+                                            </Badge>
+                                        }
+                                        meta={[
+                                            {
+                                                icon: <Mail size={12} />,
+                                                label: 'Correo',
+                                                value: usuario.email,
+                                            },
+                                            {
+                                                icon: <Phone size={12} />,
+                                                label: 'Teléfono',
+                                                value: usuario.phoneNumber || 'No provisto',
+                                            },
+                                        ]}
+                                        actions={[
+                                            {
+                                                label: 'Ver perfil',
+                                                icon: <Eye size={15} />,
+                                                variant: 'primary',
+                                                onClick: () => setUsuarioSeleccionado(usuario),
+                                            },
+                                            {
+                                                label: 'Editar',
+                                                icon: <Pencil size={15} />,
+                                                variant: 'ghost',
+                                                onClick: () => setUsuarioEditando(usuario),
+                                            },
+                                            ...(!esElUsuarioActual(
+                                                usuario,
+                                                usuarioSesion?.id,
+                                                usuarioSesion?.email,
+                                            )
+                                                ? [
+                                                      {
+                                                          label: 'Eliminar',
+                                                          icon: <Trash2 size={15} />,
+                                                          variant: 'danger' as const,
+                                                          onClick: () => setUsuarioAEliminar(usuario),
+                                                      },
+                                                  ]
+                                                : []),
+                                        ]}
+                                    />
+                                );
+                            })
+                        )}
+                    </div>
 
                     <AdminTableFooter pegadoAbajo>
                         <span className="text-sm text-text-muted">
