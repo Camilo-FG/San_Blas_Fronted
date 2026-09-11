@@ -14,6 +14,7 @@ import {
 } from "../../../services/dashboardService";
 import { ApiError } from "../../../services/apiClient";
 import Rutas from "../../../routes/Rutas";
+import { ErrorMessage } from "../../../shared/ui";
 
 type CardKey = keyof DashboardStats;
 
@@ -71,15 +72,6 @@ const cardsConfig: CardConfig[] = [
     link: Rutas.dashboardUrl.gestionUsuarios,
   },
 ];
-
-const MOCK_STATS: DashboardStats = {
-  solicitudesCatequesis: 24,
-  solicitudesConstancias: 12,
-  registrosSacramentos: 47,
-  donaciones: 18,
-  eventos: 6,
-  usuarios: 9,
-};
 
 function CardSkeleton({ hero }: { hero?: boolean }) {
   return (
@@ -146,7 +138,6 @@ function DashboardHome() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [usandoMock, setUsandoMock] = useState(false);
 
   useEffect(() => {
     const cargarEstadisticas = async () => {
@@ -155,15 +146,13 @@ function DashboardHome() {
         setError(null);
         const data = await obtenerEstadisticasDashboard();
         setStats(data);
-        setUsandoMock(false);
       } catch (err) {
         const mensaje =
           err instanceof ApiError
             ? err.message
             : "No se pudieron cargar las estadísticas del dashboard.";
         setError(mensaje);
-        setStats(MOCK_STATS);
-        setUsandoMock(true);
+        setStats(null);
       } finally {
         setCargando(false);
       }
@@ -205,31 +194,29 @@ function DashboardHome() {
         <div className="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 rounded-full border border-royal-gold/8" />
       </section>
 
-      {error && usandoMock && (
-        <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
-          No se pudo conectar con el backend. Mostrando datos de ejemplo.
+      {error ? (
+        <ErrorMessage message={error} />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+          {cardsConfig.map((card) => {
+            const value = stats?.[card.key] ?? 0;
+
+            const content = <MetricCard card={card} value={value} />;
+
+            return card.link ? (
+              <Link
+                key={card.key}
+                to={card.link}
+                className="text-inherit no-underline"
+              >
+                {content}
+              </Link>
+            ) : (
+              content
+            );
+          })}
         </div>
       )}
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-        {cardsConfig.map((card) => {
-          const value = stats?.[card.key] ?? 0;
-
-          const content = <MetricCard card={card} value={value} />;
-
-          return card.link ? (
-            <Link
-              key={card.key}
-              to={card.link}
-              className="text-inherit no-underline"
-            >
-              {content}
-            </Link>
-          ) : (
-            content
-          );
-        })}
-      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ const dashboardPath = {
   eventos: "eventos",
   gestionLanding: "landing",
   gestionUsuarios: "usuarios",
+  perfil: "perfil",
 };
 
 const Rutas = {
@@ -22,6 +23,7 @@ const Rutas = {
   contacto: "/contacto",
   eventosPublicos: "/eventos",
   login: "/login",
+  recuperarContrasena: "/recuperar-contrasena",
   dashboard: dashboardBase,
 
   dashboardPath,
@@ -34,6 +36,7 @@ const Rutas = {
     eventos: `${dashboardBase}/${dashboardPath.eventos}`,
     gestionLanding: `${dashboardBase}/${dashboardPath.gestionLanding}`,
     gestionUsuarios: `${dashboardBase}/${dashboardPath.gestionUsuarios}`,
+    perfil: `${dashboardBase}/${dashboardPath.perfil}`,
   },
 };
 

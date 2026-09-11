@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Archive,
   CheckCircle,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -13,9 +14,12 @@ import {
   RotateCcw,
   XCircle,
   GraduationCap,
+  Mail,
+  User,
   MapPin,
   Phone,
   Calendar,
+  CalendarDays,
 } from "lucide-react";
 import {
   ColumnDef,
@@ -27,7 +31,7 @@ import {
 
 import { DetalleSolicitudCatequesisModal } from "../components/DetalleSolicitudCatequesisModal";
 import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
-import { obtenerEtiquetaNivelCatequesis } from "../../../catequesis/constants/nivelesCatequesis";
+import { obtenerEtiquetaNivelCatequesis, NIVELES_CATEQUESIS } from "../../../catequesis/constants/nivelesCatequesis";
 import { FILIALES_CATEQUESIS } from "../../../catequesis/constants/filialesCatequesis";
 import { useSolicitudesCatequesis } from "../hooks/useSolicitudesCatequesis";
 import {
@@ -60,10 +64,8 @@ import {
   ConfirmacionAccionModal,
   EmptyState,
   ErrorMessage,
-  Label,
   LineaDoradaTitulo,
   Modal,
-  Select,
   Textarea,
   useToast,
 } from "../../../../shared/ui";
@@ -76,15 +78,6 @@ const rangoFechasValido = (desde: string, hasta: string): boolean => {
   );
 };
 
-const formatearFecha = (fechaStr: string) => {
-  if (!fechaStr) return "—";
-  return new Date(fechaStr).toLocaleDateString("es-CR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
-
 const normalizeText = (value: unknown) =>
   String(value ?? "")
     .normalize("NFD")
@@ -93,6 +86,26 @@ const normalizeText = (value: unknown) =>
     .trim();
 
 const TAMANOS_PAGINA = [7, 10, 25] as const;
+const TAMANOS_PAGINA_SOLICITUDES = [10, 25, 50] as const;
+
+const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
+
+const formatearTelefono = (valor?: string | null) => {
+  const digitos = soloDigitos(String(valor ?? "")).slice(0, 8);
+  if (!digitos) return "";
+  if (digitos.length <= 4) return digitos;
+  return `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
+};
+
+const formatFechaIngreso = (fecha?: string | null) => {
+  if (!fecha) return "—";
+  const date = new Date(fecha.includes("T") ? fecha : `${fecha}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "—";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
 
 const handleSoloLetrasNombre = (valor: string) =>
   valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "").slice(0, 30);
@@ -145,12 +158,26 @@ const getEstadoBadgeVariant = (estado?: string | null): BadgeVariant => {
 };
 
 function GestionSolicitudesCatequesis() {
+  const { showToast } = useToast();
+
+  const [filtroNivel, setFiltroNivel] = useState<"todos" | "Primero" | "Sétimo">(
+    "todos",
+  );
+  const [filtroFilial, setFiltroFilial] = useState<"todos" | string>("todos");
+  const [filtroNombre, setFiltroNombre] = useState("");
+  const [filtroEncargado, setFiltroEncargado] = useState("");
+  const [filtroNivelMenuAbierto, setFiltroNivelMenuAbierto] = useState(false);
+  const [filtroFilialMenuAbierto, setFiltroFilialMenuAbierto] = useState(false);
+  const filtroNivelMenuRef = useRef<HTMLDivElement>(null);
+  const filtroFilialMenuRef = useRef<HTMLDivElement>(null);
+
   const {
     solicitudes,
     cambiarEstado,
     obtenerDetalle,
     exportarExcel,
     cargando,
+    filtrando,
     guardando,
     exportando,
     error,
@@ -161,19 +188,6 @@ function GestionSolicitudesCatequesis() {
     limpiarAccionError,
     limpiarExportError,
   } = useSolicitudesCatequesis();
-  const { showToast } = useToast();
-
-  const [filtroEstado, setFiltroEstado] = useState<
-    "todos" | EstadoInscripcionCatequesis
-  >("todos");
-  const [filtroFilial, setFiltroFilial] = useState<string>("todas");
-  const [filtroEstadoAplicado, setFiltroEstadoAplicado] = useState<
-    "todos" | EstadoInscripcionCatequesis
-  >("todos");
-  const [filtroFilialAplicado, setFiltroFilialAplicado] =
-    useState<string>("todas");
-
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedSolicitud, setSelectedSolicitud] =
     useState<CatequesisEnrollmentRecord | null>(null);
 
@@ -195,11 +209,15 @@ function GestionSolicitudesCatequesis() {
   const [historialSeleccionada, setHistorialSeleccionada] =
     useState<HistorialInscripcionCatequesis | null>(null);
   const [historialNombreInput, setHistorialNombreInput] = useState("");
-  const [historialFilialInput, setHistorialFilialInput] = useState("");
   const [historialFiltros, setHistorialFiltros] = useState({
     nombre: "",
-    filial: "",
   });
+  const [historialFiltroNivel, setHistorialFiltroNivel] = useState<
+    "todos" | "Primero" | "Sétimo"
+  >("todos");
+  const [historialFiltroFilial, setHistorialFiltroFilial] = useState<
+    "todos" | string
+  >("todos");
   const [tipoFiltro, setTipoFiltro] = useState<
     "todos" | "aprobado" | "rechazado"
   >("todos");
@@ -207,104 +225,81 @@ function GestionSolicitudesCatequesis() {
   const [historialFechaHasta, setHistorialFechaHasta] = useState("");
 
   useEffect(() => {
+    const handleClickFuera = (event: MouseEvent) => {
+      const objetivo = event.target as Node;
+      if (
+        filtroNivelMenuRef.current &&
+        !filtroNivelMenuRef.current.contains(objetivo)
+      ) {
+        setFiltroNivelMenuAbierto(false);
+      }
+      if (
+        filtroFilialMenuRef.current &&
+        !filtroFilialMenuRef.current.contains(objetivo)
+      ) {
+        setFiltroFilialMenuAbierto(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setHistorialFiltros({
         nombre: historialNombreInput.trim(),
-        filial: historialFilialInput.trim(),
       });
     }, 400);
     return () => clearTimeout(timer);
-  }, [historialNombreInput, historialFilialInput]);
+  }, [historialNombreInput]);
 
-  useEffect(() => {
-    if (vista !== "historial") return;
-
-    let activo = true;
+  const cargarHistorial = useCallback(async () => {
     setHistorialCargando(true);
     setHistorialError(null);
 
-    obtenerHistorialCatequesis()
-      .then((respuesta) => {
-        if (!activo) return;
-        setHistorial(respuesta.historial);
-        setHistorialPagina(1);
-      })
-      .catch((e: unknown) => {
-        if (!activo) return;
-        setHistorialError(
-          e instanceof ApiError
-            ? e.message
-            : "No se pudo cargar el historial de catequesis.",
-        );
-      })
-      .finally(() => {
-        if (activo) setHistorialCargando(false);
-      });
+    try {
+      const respuesta = await obtenerHistorialCatequesis();
+      setHistorial(respuesta.historial);
+      setHistorialPagina(1);
+    } catch (e: unknown) {
+      setHistorialError(
+        e instanceof ApiError
+          ? e.message
+          : "No se pudo cargar el historial de catequesis.",
+      );
+    } finally {
+      setHistorialCargando(false);
+    }
+  }, []);
 
-    return () => {
-      activo = false;
-    };
-  }, [vista]);
+  useEffect(() => {
+    void cargarHistorial();
+  }, [cargarHistorial]);
 
   useEffect(() => {
     setHistorialPagina(1);
   }, [
     historialFiltros,
     historialRegistrosPorPagina,
+    historialFiltroNivel,
+    historialFiltroFilial,
     tipoFiltro,
     historialFechaDesde,
     historialFechaHasta,
   ]);
 
-  const aplicarFiltros = () => {
-    setFiltroEstadoAplicado(filtroEstado);
-    setFiltroFilialAplicado(filtroFilial);
+  const hayFiltrosActivos =
+    filtroNivel !== "todos" ||
+    filtroFilial !== "todos" ||
+    filtroNombre.trim() !== "" ||
+    filtroEncargado.trim() !== "";
+
+  const limpiarFiltros = () => {
+    setFiltroNivel("todos");
+    setFiltroFilial("todos");
+    setFiltroNombre("");
+    setFiltroEncargado("");
   };
-
-  const filteredSolicitudes = useMemo(() => {
-    const search = searchQuery.toLowerCase().trim();
-
-    return solicitudes.filter((solicitud) => {
-      const nombreCatequizando = `${
-        solicitud.catequizando?.nombre ?? ""
-      } ${solicitud.catequizando?.apellidos ?? ""}`.toLowerCase();
-
-      const nombreEncargado = `${
-        solicitud.encargado?.nombre ?? ""
-      } ${solicitud.encargado?.apellidos ?? ""}`.toLowerCase();
-
-      const telefono = solicitud.encargado?.telefono ?? "";
-      const codigoSolicitud = solicitud.codigoSolicitud ?? "";
-      const estadoNormalizado = normalizarEstado(solicitud.estado);
-      const filial = solicitud.catequesis?.centroCatequesis ?? "";
-
-      if (
-        estadoNormalizado !== "pendiente" &&
-        estadoNormalizado !== "requiere_modificacion"
-      ) {
-        return false;
-      }
-
-      const matchesStatus =
-        filtroEstadoAplicado === "todos" ||
-        estadoNormalizado === filtroEstadoAplicado;
-
-      const matchesFilial =
-        filtroFilialAplicado === "todas" ||
-        filial.localeCompare(filtroFilialAplicado, "es", {
-          sensitivity: "accent",
-        }) === 0;
-
-      const matchesSearch =
-        nombreCatequizando.includes(search) ||
-        nombreEncargado.includes(search) ||
-        codigoSolicitud.toLowerCase().includes(search) ||
-        telefono.toLowerCase().includes(search) ||
-        filial.toLowerCase().includes(search);
-
-      return matchesStatus && matchesFilial && matchesSearch;
-    });
-  }, [solicitudes, filtroEstadoAplicado, filtroFilialAplicado, searchQuery]);
 
   const totalPendientes = useMemo(
     () =>
@@ -316,17 +311,16 @@ function GestionSolicitudesCatequesis() {
 
   const totalAprobadas = useMemo(
     () =>
-      solicitudes.filter((item) => normalizarEstado(item.estado) === "aprobado")
+      historial.filter((item) => normalizarEstado(item.estado) === "aprobado")
         .length,
-    [solicitudes],
+    [historial],
   );
 
   const totalRechazadas = useMemo(
     () =>
-      solicitudes.filter(
-        (item) => normalizarEstado(item.estado) === "rechazado",
-      ).length,
-    [solicitudes],
+      historial.filter((item) => normalizarEstado(item.estado) === "rechazado")
+        .length,
+    [historial],
   );
 
   const closeModal = useCallback(() => {
@@ -368,12 +362,13 @@ function GestionSolicitudesCatequesis() {
       if (resultado.ok) {
         showToast("Solicitud aprobada correctamente", "success");
         closeModal();
+        void cargarHistorial();
         return;
       }
 
       showToast(resultado.mensaje, "error");
     },
-    [cambiarEstado, closeModal, showToast],
+    [cambiarEstado, closeModal, showToast, cargarHistorial],
   );
 
   const rejectSolicitud = useCallback(
@@ -389,26 +384,17 @@ function GestionSolicitudesCatequesis() {
       if (resultado.ok) {
         showToast("Solicitud rechazada correctamente", "error");
         closeModal();
+        void cargarHistorial();
         return;
       }
 
       showToast(resultado.mensaje, "error");
     },
-    [cambiarEstado, rejectionReason, closeModal, showToast],
+    [cambiarEstado, rejectionReason, closeModal, showToast, cargarHistorial],
   );
-
-  const textoResolucion = (item: HistorialInscripcionCatequesis) => {
-    if (item.observacionAdministrativa?.trim()) {
-      return item.observacionAdministrativa.trim();
-    }
-    return normalizarEstado(item.estado) === "aprobado"
-      ? "Sin comentario"
-      : "Sin motivo";
-  };
 
   const historialFiltrado = useMemo(() => {
     const nombreBuscado = normalizeText(historialFiltros.nombre);
-    const filialBuscada = normalizeText(historialFiltros.filial);
 
     return historial
       .filter((item) => {
@@ -419,11 +405,15 @@ function GestionSolicitudesCatequesis() {
         const coincideNombre =
           !nombreBuscado ||
           normalizeText(item.nombreCatequizando).includes(nombreBuscado);
+        const coincideNivel =
+          historialFiltroNivel === "todos" ||
+          normalizeText(item.nivelAInscribirse) ===
+            normalizeText(historialFiltroNivel);
         const coincideFilial =
-          !filialBuscada ||
-          normalizeText(item.centroCatequesis).includes(filialBuscada) ||
-          normalizeText(item.telefonoEncargada).includes(filialBuscada);
-        if (!coincideNombre || !coincideFilial) return false;
+          historialFiltroFilial === "todos" ||
+          normalizeText(item.centroCatequesis) ===
+            normalizeText(historialFiltroFilial);
+        if (!coincideNombre || !coincideNivel || !coincideFilial) return false;
 
         if (rangoFechasValido(historialFechaDesde, historialFechaHasta)) {
           const fechaItem = new Date(item.fechaSolicitud ?? 0).getTime();
@@ -451,6 +441,8 @@ function GestionSolicitudesCatequesis() {
   }, [
     historial,
     historialFiltros,
+    historialFiltroNivel,
+    historialFiltroFilial,
     tipoFiltro,
     historialFechaDesde,
     historialFechaHasta,
@@ -458,14 +450,16 @@ function GestionSolicitudesCatequesis() {
 
   const hayFiltrosHistorialActivos =
     historialNombreInput !== "" ||
-    historialFilialInput !== "" ||
+    historialFiltroNivel !== "todos" ||
+    historialFiltroFilial !== "todos" ||
     tipoFiltro !== "todos" ||
     historialFechaDesde !== "" ||
     historialFechaHasta !== "";
 
   const limpiarFiltrosHistorial = () => {
     setHistorialNombreInput("");
-    setHistorialFilialInput("");
+    setHistorialFiltroNivel("todos");
+    setHistorialFiltroFilial("todos");
     setTipoFiltro("todos");
     setHistorialFechaDesde("");
     setHistorialFechaHasta("");
@@ -491,12 +485,6 @@ function GestionSolicitudesCatequesis() {
   const columns = useMemo<ColumnDef<CatequesisEnrollmentRecord>[]>(
     () => [
       {
-        accessorKey: "codigoSolicitud",
-        header: "ID",
-        cell: ({ row }) =>
-          row.original.codigoSolicitud || `CAT-${row.original.id}`,
-      },
-      {
         id: "catequizando",
         header: "Catequizando",
         cell: ({ row }) => (
@@ -521,9 +509,16 @@ function GestionSolicitudesCatequesis() {
         header: "Filial",
         cell: ({ row }) => (
           <span className="text-text-secondary">
-            {row.original.catequesis?.centroCatequesis || (
-              <span className="text-slate-400 italic">No registrada</span>
-            )}
+            {row.original.catequesis?.centroCatequesis || "—"}
+          </span>
+        ),
+      },
+      {
+        id: "fecha",
+        header: "Fecha de ingreso",
+        cell: ({ row }) => (
+          <span className="tabular-nums text-text-secondary">
+            {formatFechaIngreso(row.original.fechaSolicitud)}
           </span>
         ),
       },
@@ -533,32 +528,19 @@ function GestionSolicitudesCatequesis() {
         cell: ({ row }) => {
           const nombre =
             `${row.original.encargado?.nombre ?? ""} ${row.original.encargado?.apellidos ?? ""}`.trim();
-          const telefono = row.original.encargado?.telefono;
+          const correo = row.original.encargado?.correo?.trim();
 
           return (
-            <div>
-              <span className="font-medium text-text">
-                {nombre || "Sin nombre"}
+            <span className="flex min-w-0 flex-col text-sm leading-snug text-text-secondary">
+              <span className="truncate font-medium text-text">
+                {nombre || "—"}
               </span>
-              <span className="block text-sm text-text-secondary">
-                {telefono || (
-                  <span className="text-slate-400 italic">No registrado</span>
-                )}
+              <span className="truncate text-xs text-text-muted">
+                {correo || "—"}
               </span>
-            </div>
+            </span>
           );
         },
-      },
-      {
-        accessorKey: "fechaSolicitud",
-        header: "Fecha",
-        cell: ({ row }) => (
-          <span className="tabular-nums text-text-secondary">
-            {row.original.fechaSolicitud || (
-              <span className="text-slate-400 italic">No registrada</span>
-            )}
-          </span>
-        ),
       },
       {
         accessorKey: "estado",
@@ -573,22 +555,62 @@ function GestionSolicitudesCatequesis() {
         id: "actions",
         header: "Acciones",
         cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              openModal(row.original);
-            }}
-            aria-label="Ver solicitud"
-            className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-          >
-            <Eye size={17} strokeWidth={1.5} />
-          </button>
+          <span className="inline-flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                openModal(row.original);
+              }}
+              aria-label="Ver solicitud"
+              className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            >
+              <Eye size={17} strokeWidth={1.5} />
+            </button>
+          </span>
         ),
       },
     ],
     [openModal],
+  );
+
+  const filteredSolicitudes = useMemo(
+    () =>
+      solicitudes.filter((solicitud) => {
+        const nombreAlumno =
+          `${solicitud.catequizando?.nombre ?? ""} ${solicitud.catequizando?.apellidos ?? ""}`.trim();
+        const nombreEncargado =
+          `${solicitud.encargado?.nombre ?? ""} ${solicitud.encargado?.apellidos ?? ""}`.trim();
+
+        const coincideNombre =
+          !filtroNombre.trim() ||
+          normalizeText(nombreAlumno).includes(normalizeText(filtroNombre));
+        const coincideEncargado =
+          !filtroEncargado.trim() ||
+          normalizeText(nombreEncargado).includes(
+            normalizeText(filtroEncargado),
+          );
+        const coincideNivel =
+          filtroNivel === "todos" ||
+          normalizeText(solicitud.catequesis?.nivelAInscribirse) ===
+            normalizeText(filtroNivel);
+        const coincideFilial =
+          filtroFilial === "todos" ||
+          normalizeText(solicitud.catequesis?.centroCatequesis) ===
+            normalizeText(filtroFilial);
+
+        return (
+          coincideNombre && coincideEncargado && coincideNivel && coincideFilial
+        );
+      }),
+    [
+      solicitudes,
+      filtroNombre,
+      filtroEncargado,
+      filtroNivel,
+      filtroFilial,
+    ],
   );
 
   const table = useReactTable({
@@ -596,8 +618,10 @@ function GestionSolicitudesCatequesis() {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    autoResetPageIndex: false,
+    getRowId: (row) => String(row.id),
     initialState: {
-      pagination: { pageSize: 7 },
+      pagination: { pageSize: 10 },
     },
   });
 
@@ -611,12 +635,22 @@ function GestionSolicitudesCatequesis() {
     goToNextPage,
   } = usePagination(table);
 
+  const isInitialLoading = cargando && solicitudes.length === 0;
+  const pageSize = table.getState().pagination.pageSize;
+  const primerRegistro =
+    totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const ultimoRegistro = Math.min(currentPage * pageSize, totalItems);
+
   useEffect(() => {
     table.setPageIndex(0);
-  }, [searchQuery, filtroEstadoAplicado, filtroFilialAplicado]);
+  }, [filtroNombre, filtroEncargado, filtroNivel, filtroFilial]);
+
+  useEffect(() => {
+    table.setPageIndex(0);
+  }, [pageSize]);
 
   return (
-    <AdminModule className="gap-6">
+    <AdminModule className="gap-3!">
       {guardando && (
         <p
           className="rounded-xl bg-info-bg px-3.5 py-2.5 text-sm font-semibold text-info"
@@ -703,62 +737,201 @@ function GestionSolicitudesCatequesis() {
         </article>
       </div>
 
-      <AdminToolbar className="flex-col items-stretch">
-        <AdminSearch
-          value={searchQuery}
-          placeholder="Buscar por catequizando, encargado, teléfono o código..."
-          onChange={(e) => setSearchQuery(e.target.value)}
-          aria-label="Buscar matrículas de catequesis"
-        />
-
-        <div className="flex flex-wrap items-end gap-2.5 rounded-2xl border border-slate-100 bg-slate-50 p-2.5">
-          <div className="flex min-w-40 flex-col gap-1.5">
-            <Label className="mb-0 text-[10px] font-black tracking-wide text-slate-400 uppercase">
-              Estado
-            </Label>
-            <Select
-              value={filtroEstado}
-              onChange={(e) =>
-                setFiltroEstado(
-                  e.target.value as "todos" | EstadoInscripcionCatequesis,
-                )
-              }
-            >
-              <option value="todos">Todos</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="requiere_modificacion">
-                Requiere modificación
-              </option>
-            </Select>
-          </div>
-
-          <div className="flex min-w-40 flex-col gap-1.5">
-            <Label className="mb-0 text-[10px] font-black tracking-wide text-slate-400 uppercase">
-              Filial
-            </Label>
-            <Select
-              value={filtroFilial}
-              onChange={(e) => setFiltroFilial(e.target.value)}
-            >
-              <option value="todas">Todas</option>
-              {FILIALES_CATEQUESIS.map((filial) => (
-                <option
-                  key={filial}
-                  value={filial}
-                >
-                  {filial}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          <Button
-            variant="royal"
-            onClick={aplicarFiltros}
+      <AdminToolbar className="p-3!">
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            value={filtroNombre}
+            onChange={(e) =>
+              setFiltroNombre(
+                e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, ""),
+              )
+            }
+            placeholder="Nombre completo"
+            className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            aria-label="Filtrar por nombre completo"
+          />
+          <input
+            type="text"
+            value={filtroEncargado}
+            onChange={(e) =>
+              setFiltroEncargado(handleSoloLetrasNombre(e.target.value))
+            }
+            placeholder="Encargado"
+            className="min-h-11 min-w-[180px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            aria-label="Filtrar por nombre del encargado"
+          />
+          <div
+            className="relative shrink-0"
+            ref={filtroNivelMenuRef}
           >
-            Filtrar
-          </Button>
-
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={filtroNivelMenuAbierto}
+              aria-label="Filtrar por nivel"
+              onClick={() => setFiltroNivelMenuAbierto((prev) => !prev)}
+              className={`flex min-h-11 w-[170px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none ${
+                filtroNivelMenuAbierto
+                  ? "border-blue-400 bg-surface"
+                  : "border-border-strong"
+              }`}
+            >
+              <span>
+                {filtroNivel === "todos"
+                  ? "Nivel"
+                  : obtenerEtiquetaNivelCatequesis(filtroNivel)}
+              </span>
+              <ChevronDown
+                size={16}
+                strokeWidth={2.5}
+                className={`transition-transform duration-200 ${
+                  filtroNivelMenuAbierto ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            {filtroNivelMenuAbierto && (
+              <ul
+                role="listbox"
+                className="absolute top-full left-0 z-50 mt-1.5 w-[170px] overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+              >
+                <li role="option" aria-selected={filtroNivel === "todos"}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFiltroNivel("todos");
+                      setFiltroNivelMenuAbierto(false);
+                    }}
+                    className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
+                      filtroNivel === "todos"
+                        ? "bg-royal-blue/10 text-royal-blue"
+                        : "text-slate-700 hover:bg-royal-blue/5"
+                    }`}
+                  >
+                    Todos
+                  </button>
+                </li>
+                {NIVELES_CATEQUESIS.map((opcion) => {
+                  const activo = filtroNivel === opcion.value;
+                  return (
+                    <li
+                      key={opcion.value}
+                      role="option"
+                      aria-selected={activo}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFiltroNivel(opcion.value);
+                          setFiltroNivelMenuAbierto(false);
+                        }}
+                        className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
+                          activo
+                            ? "bg-royal-blue/10 text-royal-blue"
+                            : "text-slate-700 hover:bg-royal-blue/5"
+                        }`}
+                      >
+                        {opcion.label}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+          <div
+            className="relative shrink-0"
+            ref={filtroFilialMenuRef}
+          >
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={filtroFilialMenuAbierto}
+              aria-label="Filtrar por filial"
+              onClick={() => setFiltroFilialMenuAbierto((prev) => !prev)}
+              className={`flex min-h-11 w-[170px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none ${
+                filtroFilialMenuAbierto
+                  ? "border-blue-400 bg-surface"
+                  : "border-border-strong"
+              }`}
+            >
+              <span className="truncate">
+                {filtroFilial === "todos" ? "Filial" : filtroFilial}
+              </span>
+              <ChevronDown
+                size={16}
+                strokeWidth={2.5}
+                className={`shrink-0 transition-transform duration-200 ${
+                  filtroFilialMenuAbierto ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            {filtroFilialMenuAbierto && (
+              <ul
+                role="listbox"
+                className="absolute top-full left-0 z-50 mt-1.5 max-h-72 w-[170px] overflow-y-auto rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+              >
+                <li role="option" aria-selected={filtroFilial === "todos"}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFiltroFilial("todos");
+                      setFiltroFilialMenuAbierto(false);
+                    }}
+                    className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
+                      filtroFilial === "todos"
+                        ? "bg-royal-blue/10 text-royal-blue"
+                        : "text-slate-700 hover:bg-royal-blue/5"
+                    }`}
+                  >
+                    Todas
+                  </button>
+                </li>
+                {FILIALES_CATEQUESIS.map((filial) => {
+                  const activo = filtroFilial === filial;
+                  return (
+                    <li
+                      key={filial}
+                      role="option"
+                      aria-selected={activo}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFiltroFilial(filial);
+                          setFiltroFilialMenuAbierto(false);
+                        }}
+                        className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
+                          activo
+                            ? "bg-royal-blue/10 text-royal-blue"
+                            : "text-slate-700 hover:bg-royal-blue/5"
+                        }`}
+                      >
+                        {filial}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+          {filtrando && (
+            <Loader2
+              size={18}
+              className="animate-spin text-text-muted"
+              aria-label="Aplicando filtros"
+            />
+          )}
+          <button
+            type="button"
+            onClick={limpiarFiltros}
+            disabled={!hayFiltrosActivos}
+            className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Limpiar filtros de solicitudes"
+          >
+            <RotateCcw size={15} strokeWidth={2} />
+            Limpiar
+          </button>
           <Button
             variant="primary"
             className="shrink-0"
@@ -766,7 +939,7 @@ function GestionSolicitudesCatequesis() {
               limpiarExportError();
               void exportarExcel();
             }}
-            disabled={exportando || cargando}
+            disabled={exportando || isInitialLoading}
           >
             <Download size={16} />
             {exportando ? "Exportando..." : "Exportar a Excel"}
@@ -776,20 +949,34 @@ function GestionSolicitudesCatequesis() {
 
       {exportError && <ErrorMessage message={exportError} />}
 
-      {cargando && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <Loader2 size={32} className="animate-spin text-text-muted" />
-          <p className="m-0 text-sm text-text-secondary">
-            Cargando solicitudes de catequesis...
-          </p>
-        </div>
+      {isInitialLoading && (
+        <p className="py-6 text-center text-sm text-text-muted">
+          Cargando solicitudes...
+        </p>
       )}
 
-      {!cargando && (
+      {!isInitialLoading && filteredSolicitudes.length === 0 && (
+        <p className="py-6 text-center text-sm text-text-muted">
+          {hayFiltrosActivos
+            ? "No se encontraron solicitudes con los filtros seleccionados."
+            : "Actualmente no existen solicitudes registradas."}
+        </p>
+      )}
+
+      {!isInitialLoading && filteredSolicitudes.length > 0 && (
       <>
       <div className="hidden md:block">
         <AdminTablePanel>
-          <AdminTable>
+          <AdminTable className="table-fixed [&_td]:py-2! [&_th]:py-2.5!">
+            <colgroup>
+              <col className="w-[18%]" />
+              <col className="w-[12%]" />
+              <col className="w-[13%]" />
+              <col className="w-[13%]" />
+              <col className="w-[20%]" />
+              <col className="w-[12%]" />
+              <col className="w-[12%]" />
+            </colgroup>
             <AdminTableHead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <AdminTableRow key={headerGroup.id}>
@@ -808,116 +995,125 @@ function GestionSolicitudesCatequesis() {
             </AdminTableHead>
 
             <tbody>
-              {table.getRowModel().rows.length > 0 ? (
-                table.getRowModel().rows.map((row) => (
-                  <AdminTableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <AdminTableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </AdminTableCell>
-                    ))}
-                  </AdminTableRow>
-                ))
-              ) : (
-                <AdminTableRow>
-                  <AdminTableCell
-                    colSpan={columns.length}
-                    className="py-10 text-center text-text-muted"
-                  >
-                    No se encontraron matrículas con los filtros actuales.
-                  </AdminTableCell>
+              {table.getRowModel().rows.map((row) => (
+                <AdminTableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <AdminTableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </AdminTableCell>
+                  ))}
                 </AdminTableRow>
-              )}
+              ))}
             </tbody>
           </AdminTable>
         </AdminTablePanel>
       </div>
 
       <div className="flex flex-col gap-2.5 md:hidden">
-        {table.getRowModel().rows.length > 0 ? (
-          table.getRowModel().rows.map((row) => {
-            const solicitud = row.original;
-            const nombre =
-              `${solicitud.catequizando?.nombre ?? "Sin nombre"} ${solicitud.catequizando?.apellidos ?? ""}`.trim();
-            const codigo = solicitud.codigoSolicitud || `CAT-${solicitud.id}`;
-            const encargado =
-              `${solicitud.encargado?.nombre ?? ""} ${solicitud.encargado?.apellidos ?? ""}`.trim() ||
-              "Sin encargado";
-            const nivel = obtenerEtiquetaNivelCatequesis(
-              solicitud.catequesis?.nivelAInscribirse,
-            );
-            const filial =
-              solicitud.catequesis?.centroCatequesis || "No registrada";
+        {table.getRowModel().rows.map((row) => {
+          const solicitud = row.original;
+          const nombre =
+            `${solicitud.catequizando?.nombre ?? "Sin nombre"} ${solicitud.catequizando?.apellidos ?? ""}`.trim();
 
-            return (
-              <AdminRecordCard
-                key={solicitud.id}
-                icon={<GraduationCap size={20} />}
-                accent="#003366"
-                code={codigo}
-                title={nombre}
-                subtitle={nivel}
-                badges={
-                  <Badge variant={getEstadoBadgeVariant(solicitud.estado)}>
-                    {obtenerTextoEstado(solicitud.estado)}
-                  </Badge>
-                }
-                meta={[
-                  {
-                    icon: <MapPin size={12} />,
-                    label: "Filial",
-                    value: filial,
-                  },
-                  {
-                    icon: <Calendar size={12} />,
-                    label: "Fecha",
-                    value: solicitud.fechaSolicitud || "No registrada",
-                  },
-                  {
-                    icon: <Phone size={12} />,
-                    label: "Encargado",
-                    value: encargado,
-                  },
-                ]}
-                actions={[
-                  {
-                    label: "Ver solicitud",
-                    icon: <Eye size={15} />,
-                    variant: "primary",
-                    onClick: () => openModal(solicitud),
-                  },
-                ]}
-              />
-            );
-          })
-        ) : (
-          <p className="py-10 text-center text-sm text-text-muted">
-            No se encontraron matrículas con los filtros actuales.
-          </p>
-        )}
+          return (
+            <AdminRecordCard
+              key={solicitud.id}
+              icon={<GraduationCap size={20} />}
+              accent="#003366"
+              title={nombre}
+              badges={
+                <Badge variant={getEstadoBadgeVariant(solicitud.estado)}>
+                  {obtenerTextoEstado(solicitud.estado)}
+                </Badge>
+              }
+              meta={[
+                {
+                  icon: <MapPin size={12} />,
+                  label: "Filial",
+                  value:
+                    solicitud.catequesis?.centroCatequesis || "No registrada",
+                },
+                {
+                  icon: <User size={12} />,
+                  label: "Encargado",
+                  value:
+                    `${solicitud.encargado?.nombre ?? ""} ${solicitud.encargado?.apellidos ?? ""}`.trim() ||
+                    "No registrado",
+                },
+                {
+                  icon: <Mail size={12} />,
+                  label: "Correo",
+                  value: solicitud.encargado?.correo?.trim() || "No registrado",
+                },
+                {
+                  icon: <CalendarDays size={12} />,
+                  label: "Fecha de ingreso",
+                  value: formatFechaIngreso(solicitud.fechaSolicitud),
+                },
+              ]}
+              actions={[
+                {
+                  label: "Ver solicitud",
+                  icon: <Eye size={15} />,
+                  variant: "primary",
+                  onClick: () => openModal(solicitud),
+                },
+              ]}
+            />
+          );
+        })}
       </div>
 
       <AdminTableFooter pegadoAbajo>
-        <span>
-          Total de registros:{" "}
-          <strong className="text-royal-blue">{totalItems}</strong>
+        <span className="text-sm text-text-muted">
+          Mostrando{" "}
+          <strong className="text-text tabular-nums">
+            {primerRegistro}-{ultimoRegistro}
+          </strong>{" "}
+          de <strong className="text-text tabular-nums">{totalItems}</strong>{" "}
+          registros
         </span>
         <AdminPagination>
+          <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+            Registros por página
+            <select
+              value={pageSize}
+              onChange={(e) => table.setPageSize(Number(e.target.value))}
+              className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+              aria-label="Cantidad de registros por página"
+            >
+              {TAMANOS_PAGINA_SOLICITUDES.map((tamano) => (
+                <option key={tamano} value={tamano}>
+                  {tamano}
+                </option>
+              ))}
+            </select>
+          </label>
           <AdminPaginationButton
+            type="button"
             onClick={goToPreviousPage}
             disabled={!canPreviousPage}
+            aria-label="Página anterior"
           >
-            ← Anterior
+            <ChevronLeft size={16} strokeWidth={2} />
           </AdminPaginationButton>
-          <span>
-            Página <strong className="text-royal-blue">{currentPage}</strong> de{" "}
-            <strong className="text-royal-blue">{totalPages || 1}</strong>
+          <span className="text-sm whitespace-nowrap text-text-muted">
+            Página{" "}
+            <strong className="text-text tabular-nums">{currentPage}</strong> de{" "}
+            <strong className="text-text tabular-nums">
+              {totalPages || 1}
+            </strong>
           </span>
-          <AdminPaginationButton onClick={goToNextPage} disabled={!canNextPage}>
-            Siguiente →
+          <AdminPaginationButton
+            type="button"
+            onClick={goToNextPage}
+            disabled={!canNextPage}
+            aria-label="Página siguiente"
+          >
+            <ChevronRight size={16} strokeWidth={2} />
           </AdminPaginationButton>
         </AdminPagination>
       </AdminTableFooter>
@@ -1070,15 +1266,46 @@ function GestionSolicitudesCatequesis() {
               className="min-w-[200px] flex-1"
               aria-label="Filtrar historial por nombre"
             />
-            <AdminSearch
-              type="text"
-              placeholder="Filial o teléfono"
-              maxLength={80}
-              value={historialFilialInput}
-              onChange={(e) => setHistorialFilialInput(e.target.value)}
-              className="min-w-[200px] flex-1"
-              aria-label="Filtrar historial por filial o teléfono"
-            />
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-text-muted">
+                Nivel
+              </span>
+              <select
+                value={historialFiltroNivel}
+                onChange={(event) =>
+                  setHistorialFiltroNivel(
+                    event.target.value as "todos" | "Primero" | "Sétimo",
+                  )
+                }
+                className="min-h-10 min-w-[160px] cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                aria-label="Filtrar historial por nivel"
+              >
+                <option value="todos">Todos</option>
+                {NIVELES_CATEQUESIS.map((opcion) => (
+                  <option key={opcion.value} value={opcion.value}>
+                    {opcion.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-text-muted">
+                Filial
+              </span>
+              <select
+                value={historialFiltroFilial}
+                onChange={(event) => setHistorialFiltroFilial(event.target.value)}
+                className="min-h-10 min-w-[160px] cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                aria-label="Filtrar historial por filial"
+              >
+                <option value="todos">Todas</option>
+                {FILIALES_CATEQUESIS.map((filial) => (
+                  <option key={filial} value={filial}>
+                    {filial}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold text-text-muted">
                 Tipo
@@ -1182,25 +1409,21 @@ function GestionSolicitudesCatequesis() {
                     <AdminTable>
                       <AdminTableHead>
                         <AdminTableRow>
-                          <AdminTableHeaderCell>Fecha</AdminTableHeaderCell>
                           <AdminTableHeaderCell>
                             Catequizando
                           </AdminTableHeaderCell>
                           <AdminTableHeaderCell>Filial</AdminTableHeaderCell>
                           <AdminTableHeaderCell>Nivel</AdminTableHeaderCell>
-                          <AdminTableHeaderCell>Estado</AdminTableHeaderCell>
                           <AdminTableHeaderCell>
-                            Resolución
+                            Fecha de solicitud
                           </AdminTableHeaderCell>
+                          <AdminTableHeaderCell>Estado</AdminTableHeaderCell>
                           <AdminTableHeaderCell>Acciones</AdminTableHeaderCell>
                         </AdminTableRow>
                       </AdminTableHead>
                       <tbody>
                         {historialPaginaItems.map((item) => (
                           <AdminTableRow key={item.id}>
-                            <AdminTableCell>
-                              {formatearFecha(item.fechaSolicitud ?? "")}
-                            </AdminTableCell>
                             <AdminTableCell>
                               <span className="font-medium">
                                 {item.nombreCatequizando || "Sin nombre"}
@@ -1219,19 +1442,16 @@ function GestionSolicitudesCatequesis() {
                               )}
                             </AdminTableCell>
                             <AdminTableCell>
+                              <span className="tabular-nums text-text-secondary">
+                                {formatFechaIngreso(item.fechaSolicitud ?? "")}
+                              </span>
+                            </AdminTableCell>
+                            <AdminTableCell>
                               <Badge
                                 variant={getEstadoBadgeVariant(item.estado)}
                               >
                                 {obtenerTextoEstado(item.estado)}
                               </Badge>
-                            </AdminTableCell>
-                            <AdminTableCell>
-                              <span
-                                className="line-clamp-2 block text-sm text-text-secondary"
-                                title={textoResolucion(item)}
-                              >
-                                {textoResolucion(item)}
-                              </span>
                             </AdminTableCell>
                             <AdminTableCell>
                               <button
@@ -1258,7 +1478,6 @@ function GestionSolicitudesCatequesis() {
                       accent="#003366"
                       code={`CAT-${item.id}`}
                       title={item.nombreCatequizando || "Sin nombre"}
-                      subtitle={formatearFecha(item.fechaSolicitud ?? "")}
                       badges={
                         <Badge variant={getEstadoBadgeVariant(item.estado)}>
                           {obtenerTextoEstado(item.estado)}
@@ -1271,14 +1490,14 @@ function GestionSolicitudesCatequesis() {
                           value: item.centroCatequesis || "No registrada",
                         },
                         {
+                          icon: <Calendar size={12} />,
+                          label: "Fecha de solicitud",
+                          value: formatFechaIngreso(item.fechaSolicitud ?? ""),
+                        },
+                        {
                           icon: <Phone size={12} />,
                           label: "Teléfono",
                           value: item.telefonoEncargada || "No registrado",
-                        },
-                        {
-                          icon: <Calendar size={12} />,
-                          label: "Resolución",
-                          value: textoResolucion(item),
                         },
                       ]}
                       actions={[
@@ -1394,7 +1613,7 @@ function GestionSolicitudesCatequesis() {
                   </p>
                   <p className="m-0 text-xs text-text-muted">
                     Fecha de solicitud:{" "}
-                    {formatearFecha(
+                    {formatFechaIngreso(
                       historialSeleccionada.fechaSolicitud ?? "",
                     )}
                   </p>
@@ -1421,7 +1640,7 @@ function GestionSolicitudesCatequesis() {
                   {historialSeleccionada.fechaActualizacionEstado && (
                     <p className="m-0 text-xs text-emerald-700">
                       Aprobado el{" "}
-                      {formatearFecha(
+                      {formatFechaIngreso(
                         historialSeleccionada.fechaActualizacionEstado,
                       )}
                     </p>
@@ -1437,7 +1656,7 @@ function GestionSolicitudesCatequesis() {
                   {historialSeleccionada.fechaActualizacionEstado && (
                     <p className="m-0 text-xs text-red-700">
                       Rechazado el{" "}
-                      {formatearFecha(
+                      {formatFechaIngreso(
                         historialSeleccionada.fechaActualizacionEstado,
                       )}
                     </p>

@@ -64,7 +64,6 @@ export interface EncargadoCatequizandoData {
 export interface PagoCatequesisData {
   metodoPago: string;
   numeroComprobante: string;
-  monto: number;
   comprobanteArchivo: File | string | null;
 }
 
@@ -96,6 +95,7 @@ export interface CatequesisEnrollmentRecord {
     apellidos: string;
     parentesco: string;
     correo: string;
+    telefono?: string;
   };
   encargado: EncargadoCatequizandoData;
   pago: PagoCatequesisData;

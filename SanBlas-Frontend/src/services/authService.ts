@@ -32,3 +32,15 @@ export const login = async (
     handleApiError(error);
   }
 };
+
+export const solicitarRecuperacionContrasena = async (
+  email: string,
+): Promise<void> => {
+  try {
+    await apiClient.post("/auth/recuperar-contrasena", {
+      email: email.trim(),
+    });
+  } catch (error) {
+    handleApiError(error);
+  }
+};

@@ -53,6 +53,13 @@ export const getRoleFromToken = (token: string): string | null => {
   return typeof role === "string" ? role : null;
 };
 
+export const getAccesoPanelFromToken = (token: string): boolean => {
+  const payload = parseJwt(token);
+  if (!payload) return false;
+  if (payload.accesoPanel === true) return true;
+  return getRoleFromToken(token) === "admin";
+};
+
 export const getUserIdFromToken = (token: string): number | null => {
   const payload = parseJwt(token);
   if (!payload) return null;

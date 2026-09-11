@@ -8,6 +8,7 @@ import {
   type Evento,
 } from "../../../services/eventosService";
 import { ModalEvento } from "../../eventos/components/ModalEvento";
+import { LandingLoader } from "./LandingLoader";
 import Rutas from "../../../routes/Rutas";
 import { cn, ScrollReveal } from "../../../shared/ui";
 import {
@@ -205,7 +206,7 @@ export default function EventosCarousel() {
         </ScrollReveal>
 
         {cargando && (
-          <p className="pt-6 text-center text-text-muted">Cargando eventos...</p>
+          <LandingLoader compact />
         )}
 
         {error && (

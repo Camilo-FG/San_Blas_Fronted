@@ -6,7 +6,8 @@ export interface CrearInscripcionBackendRequest {
   };
   datosCatequizando: {
     nombre: string;
-    apellidos: string;
+    primerApellido: string;
+    segundoApellido?: string | null;
     fechaNacimiento: string;
     direccionExacta: string;
   };
@@ -25,30 +26,33 @@ export interface CrearInscripcionBackendRequest {
     portadorEnfermedadCronica: boolean;
     descripcionEnfermedad?: string | null;
   };
-  datosMadre: {
+  datosMadre?: {
     nombre: string;
-    apellidos: string;
+    primerApellido: string;
+    segundoApellido?: string | null;
     direccionExacta: string;
     ciudad: string;
     provincia: string;
     telefono: string;
   };
-  datosPadre: {
+  datosPadre?: {
     nombre: string;
-    apellidos: string;
+    primerApellido: string;
+    segundoApellido?: string | null;
     telefono: string;
   };
   datosPersonaInscribe: {
     nombre: string;
-    apellidos: string;
+    primerApellido: string;
+    segundoApellido?: string | null;
     parentesco: string;
     correo: string;
+    telefono: string;
   };
   datosPago: {
     metodoPago: string;
     numeroComprobanteSinpe: string;
     comprobanteArchivo: string;
-    monto: number;
   };
 }
 
@@ -60,6 +64,8 @@ export interface InscripcionResumenBackend {
   estado: string;
   fechaSolicitud: string;
   telefonoEncargada: string;
+  nombreEncargado?: string;
+  correoEncargado?: string;
 }
 
 export interface InscripcionDetalleBackend {
@@ -72,6 +78,8 @@ export interface InscripcionDetalleBackend {
   observacionAdministrativa?: string | null;
   catequizando: {
     nombre: string;
+    primerApellido?: string;
+    segundoApellido?: string;
     apellidos: string;
     fechaNacimiento: string;
     direccionExacta: string;
@@ -93,6 +101,8 @@ export interface InscripcionDetalleBackend {
   };
   madre: {
     nombre: string;
+    primerApellido?: string;
+    segundoApellido?: string;
     apellidos: string;
     direccionExacta: string;
     ciudad: string;
@@ -101,20 +111,24 @@ export interface InscripcionDetalleBackend {
   };
   padre: {
     nombre: string;
+    primerApellido?: string;
+    segundoApellido?: string;
     apellidos: string;
     telefono: string;
   };
   personaInscribe: {
     nombre: string;
+    primerApellido?: string;
+    segundoApellido?: string;
     apellidos: string;
     parentesco: string;
     correo: string;
+    telefono: string;
   };
   pago: {
     metodoPago: string;
     numeroComprobanteSinpe: string;
     comprobanteArchivo: string;
-    monto: number;
   };
 }
 

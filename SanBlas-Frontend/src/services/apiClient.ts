@@ -51,8 +51,11 @@ apiClient.interceptors.response.use(
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       const url = error.config?.url ?? "";
       const isLoginRequest = url.toLowerCase().includes("/auth/login");
+      const isRecuperarRequest = url
+        .toLowerCase()
+        .includes("/auth/recuperar-contrasena");
 
-      if (!isLoginRequest) {
+      if (!isLoginRequest && !isRecuperarRequest) {
         clearAuthToken();
         const currentPath = window.location.pathname;
         if (!currentPath.startsWith("/login") && !redirigiendoAlLogin) {

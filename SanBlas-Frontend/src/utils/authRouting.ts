@@ -1,5 +1,5 @@
 import { clearAuthToken, getAuthToken } from "../utils/authToken";
-import { getRoleFromToken, isTokenExpired } from "./jwt";
+import { getAccesoPanelFromToken, isTokenExpired } from "./jwt";
 import Rutas from "../routes/Rutas";
 
 export const USER_ALLOWED_PATHS = [
@@ -10,7 +10,7 @@ export const USER_ALLOWED_PATHS = [
 ] as const;
 
 export const isAdminFromToken = (token: string): boolean =>
-  getRoleFromToken(token) === "admin";
+  getAccesoPanelFromToken(token);
 
 export const getValidSessionToken = (): string | null => {
   const token = getAuthToken();

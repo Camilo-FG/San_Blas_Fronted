@@ -10,7 +10,9 @@ import {
 } from "../../../shared/ui";
 import { FILIALES_CATEQUESIS } from "../constants/filialesCatequesis";
 import { NIVELES_CATEQUESIS } from "../constants/nivelesCatequesis";
+import { MONTO_INSCRIPCION_CATEQUESIS } from "../constants/catequesisInformacion";
 import { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
+import { soloLetras } from "../../../shared/utils/formValidation";
 
 interface CatequesisFormProps {
   onSubmit: (data: CatequesisEnrollmentData) => void;
@@ -26,7 +28,8 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
 
   catequizando: {
     nombre: "",
-    apellidos: "",
+    primerApellido: "",
+    segundoApellido: "",
     fechaNacimiento: null,
     direccion: {
       direccionExacta: null,
@@ -50,7 +53,8 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
 
   madreCatequizando: {
     nombre: "",
-    apellidos: "",
+    primerApellido: "",
+    segundoApellido: "",
     direccion: {
       direccionExacta: null,
       ciudad: null,
@@ -61,15 +65,18 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
 
   padreCatequizando: {
     nombre: "",
-    apellidos: "",
+    primerApellido: "",
+    segundoApellido: "",
     telefono: "",
   },
 
   inscripcion: {
     personaQueInscribe: {
       nombre: null,
-      apellido: null,
+      primerApellido: null,
+      segundoApellido: null,
       correo: null,
+      telefono: null,
     },
     parentesco: null,
     pago: {
@@ -87,6 +94,34 @@ const MAX_CHARACTERS = 50;
 const limitarCaracteres = (valor: string): string =>
   valor.slice(0, MAX_CHARACTERS);
 const limitarPalabras = limitarCaracteres;
+const limitarNombre = (valor: string): string =>
+  limitarPalabras(soloLetras(valor));
+
+const calcularEdad = (fecha: string): number | null => {
+  const nacimiento = new Date(`${fecha}T00:00:00`);
+  if (Number.isNaN(nacimiento.getTime())) return null;
+
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mes = hoy.getMonth() - nacimiento.getMonth();
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+    edad -= 1;
+  }
+  return edad;
+};
+
+const mensajeFechaNacimientoCatequizando = (
+  fecha: string | null,
+): string | null => {
+  if (!fecha) return "Digite la fecha de nacimiento.";
+
+  const edad = calcularEdad(fecha);
+  if (edad === null || edad < 5 || edad > 15) {
+    return "La edad del catequizando no aplica. Debe tener entre 5 y 15 años.";
+  }
+
+  return null;
+};
 const limitarTelefono = (valor: string): string =>
   valor.replace(/\D/g, "").slice(0, 8);
 
@@ -97,6 +132,41 @@ const WordCounter = ({ value }: { value: string }) => (
     {contarCaracteres(value)}/{MAX_CHARACTERS} caracteres
   </span>
 );
+
+function CampoApellido({
+  label,
+  required = false,
+  placeholder,
+  value,
+  error,
+  onChange,
+}: {
+  label: string;
+  required?: boolean;
+  placeholder: string;
+  value: string;
+  error?: string;
+  onChange: (valor: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label className="text-xs font-black text-royal-blue">
+        {label}
+        {required ? " *" : ""}
+      </Label>
+      <Input
+        type="text"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(limitarNombre(e.target.value))}
+      />
+      <WordCounter value={value} />
+      {error && (
+        <p className="m-0 text-xs font-extrabold text-red-600">{error}</p>
+      )}
+    </div>
+  );
+}
 
 const fileInputClass = cn(
   "cursor-pointer p-2.5",
@@ -113,6 +183,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [aceptaLineamientos, setAceptaLineamientos] = useState(false);
+  const [tienePadre, setTienePadre] = useState<boolean | null>(null);
+  const [tieneMadre, setTieneMadre] = useState<boolean | null>(null);
 
   const updateForm = (path: string, value: unknown) => {
     setForm((prev) => {
@@ -148,13 +220,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       newErrors.nombreCatequizando = "Digite el nombre del catequizando.";
     }
 
-    if (!form.catequizando.apellidos.trim()) {
-      newErrors.apellidosCatequizando =
-        "Digite los apellidos del catequizando.";
+    if (!form.catequizando.primerApellido.trim()) {
+      newErrors.primerApellidoCatequizando =
+        "Digite el primer apellido del catequizando.";
     }
 
-    if (!form.catequizando.fechaNacimiento) {
-      newErrors.fechaNacimiento = "Digite la fecha de nacimiento.";
+    const errorFechaNacimiento = mensajeFechaNacimientoCatequizando(
+      form.catequizando.fechaNacimiento,
+    );
+    if (errorFechaNacimiento) {
+      newErrors.fechaNacimiento = errorFechaNacimiento;
     }
 
     if (!form.catequizando.direccion.direccionExacta?.trim()) {
@@ -194,9 +269,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         "Digite el nombre de la persona que inscribe.";
     }
 
-    if (!form.inscripcion.personaQueInscribe.apellido?.trim()) {
-      newErrors.apellidoPersonaInscribe =
-        "Digite el apellido de la persona que inscribe.";
+    if (!form.inscripcion.personaQueInscribe.primerApellido?.trim()) {
+      newErrors.primerApellidoPersonaInscribe =
+        "Digite el primer apellido de la persona que inscribe.";
     }
 
     if (!form.inscripcion.parentesco) {
@@ -211,6 +286,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       newErrors.correoPersonaInscribe = "Digite un correo válido.";
     }
 
+    if (
+      !/^\d{8}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
+    ) {
+      newErrors.telefonoPersonaInscribe =
+        "El teléfono debe contener 8 dígitos.";
+    }
+
     if (!form.inscripcion.pago.numeroComprobanteSINPE.trim()) {
       newErrors.numeroComprobanteSINPE =
         "Digite el número de comprobante SINPE.";
@@ -220,30 +302,31 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       newErrors.archivoComprobante = "Debe adjuntar el comprobante de pago.";
     }
 
-    // Datos de la madre/encargada — son obligatorios en el backend
-    if (!form.madreCatequizando.nombre.trim()) {
-      newErrors.nombreMadre = "Digite el nombre de la madre o encargada.";
-    }
+    if (tieneMadre) {
+      if (!form.madreCatequizando.nombre.trim()) {
+        newErrors.nombreMadre = "Digite el nombre de la madre o encargada.";
+      }
 
-    if (!form.madreCatequizando.apellidos.trim()) {
-      newErrors.apellidosMadre =
-        "Digite los apellidos de la madre o encargada.";
-    }
+      if (!form.madreCatequizando.primerApellido.trim()) {
+        newErrors.primerApellidoMadre =
+          "Digite el primer apellido de la madre o encargada.";
+      }
 
-    if (!form.madreCatequizando.direccion.direccionExacta?.trim()) {
-      newErrors.direccionMadre = "Digite la dirección exacta.";
-    }
+      if (!form.madreCatequizando.direccion.direccionExacta?.trim()) {
+        newErrors.direccionMadre = "Digite la dirección exacta.";
+      }
 
-    if (!form.madreCatequizando.direccion.ciudad?.trim()) {
-      newErrors.ciudadMadre = "Digite la ciudad.";
-    }
+      if (!form.madreCatequizando.direccion.ciudad?.trim()) {
+        newErrors.ciudadMadre = "Digite la ciudad.";
+      }
 
-    if (!form.madreCatequizando.direccion.provincia?.trim()) {
-      newErrors.provinciaMadre = "Digite la provincia.";
-    }
+      if (!form.madreCatequizando.direccion.provincia?.trim()) {
+        newErrors.provinciaMadre = "Digite la provincia.";
+      }
 
-    if (!/^\d{8}$/.test(form.madreCatequizando.telefono)) {
-      newErrors.telefonoMadre = "El teléfono debe contener 8 dígitos.";
+      if (!/^\d{8}$/.test(form.madreCatequizando.telefono)) {
+        newErrors.telefonoMadre = "El teléfono debe contener 8 dígitos.";
+      }
     }
 
     if (!aceptaLineamientos) {
@@ -258,6 +341,25 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     const stepErrors: Record<string, string> = {};
 
     if (step === 1) {
+      if (!form.catequizando.nombre.trim()) {
+        stepErrors.nombreCatequizando = "Digite el nombre del catequizando.";
+      }
+      if (!form.catequizando.primerApellido.trim()) {
+        stepErrors.primerApellidoCatequizando =
+          "Digite el primer apellido del catequizando.";
+      }
+      const errorFechaNacimiento = mensajeFechaNacimientoCatequizando(
+        form.catequizando.fechaNacimiento,
+      );
+      if (errorFechaNacimiento) {
+        stepErrors.fechaNacimiento = errorFechaNacimiento;
+      }
+      if (!form.catequizando.direccion.direccionExacta?.trim()) {
+        stepErrors.direccionExacta = "Digite la dirección exacta.";
+      }
+    }
+
+    if (step === 2) {
       if (!form.catequesis.centroCatequesis) {
         stepErrors.centroCatequesis = "Seleccione el centro de catequesis.";
       }
@@ -266,22 +368,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       }
       if (!form.catequesis.feBautismoArchivo) {
         stepErrors.feBautismoArchivo = "Debe adjuntar la fe de bautismo.";
-      }
-    }
-
-    if (step === 2) {
-      if (!form.catequizando.nombre.trim()) {
-        stepErrors.nombreCatequizando = "Digite el nombre del catequizando.";
-      }
-      if (!form.catequizando.apellidos.trim()) {
-        stepErrors.apellidosCatequizando =
-          "Digite los apellidos del catequizando.";
-      }
-      if (!form.catequizando.fechaNacimiento) {
-        stepErrors.fechaNacimiento = "Digite la fecha de nacimiento.";
-      }
-      if (!form.catequizando.direccion.direccionExacta?.trim()) {
-        stepErrors.direccionExacta = "Digite la dirección exacta.";
       }
     }
 
@@ -311,29 +397,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     }
 
     if (step === 5) {
-      if (!form.madreCatequizando.nombre.trim())
-        stepErrors.nombreMadre = "Digite el nombre de la madre o encargada.";
-      if (!form.madreCatequizando.apellidos.trim())
-        stepErrors.apellidosMadre =
-          "Digite los apellidos de la madre o encargada.";
-      if (!form.madreCatequizando.direccion.direccionExacta?.trim())
-        stepErrors.direccionMadre = "Digite la dirección exacta.";
-      if (!form.madreCatequizando.direccion.ciudad?.trim())
-        stepErrors.ciudadMadre = "Digite la ciudad.";
-      if (!form.madreCatequizando.direccion.provincia?.trim())
-        stepErrors.provinciaMadre = "Digite la provincia.";
-      if (!/^\d{8}$/.test(form.madreCatequizando.telefono)) {
-        stepErrors.telefonoMadre = "El teléfono debe contener 8 dígitos.";
-      }
-    }
-
-    if (step === 7) {
       if (!form.inscripcion.personaQueInscribe.nombre?.trim())
         stepErrors.nombrePersonaInscribe =
           "Digite el nombre de la persona que inscribe.";
-      if (!form.inscripcion.personaQueInscribe.apellido?.trim())
-        stepErrors.apellidoPersonaInscribe =
-          "Digite el apellido de la persona que inscribe.";
+      if (!form.inscripcion.personaQueInscribe.primerApellido?.trim())
+        stepErrors.primerApellidoPersonaInscribe =
+          "Digite el primer apellido de la persona que inscribe.";
       if (!form.inscripcion.parentesco)
         stepErrors.parentesco = "Seleccione el parentesco.";
       const correo = form.inscripcion.personaQueInscribe.correo?.trim() ?? "";
@@ -342,6 +411,56 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           "Digite el correo de la persona que inscribe.";
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
         stepErrors.correoPersonaInscribe = "Digite un correo válido.";
+      if (
+        !/^\d{8}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
+      ) {
+        stepErrors.telefonoPersonaInscribe =
+          "El teléfono debe contener 8 dígitos.";
+      }
+    }
+
+    if (step === 6) {
+      if (tieneMadre === null) {
+        stepErrors.tieneMadre =
+          "Indique si la madre es parte del núcleo familiar.";
+      } else if (tieneMadre) {
+        if (!form.madreCatequizando.nombre.trim())
+          stepErrors.nombreMadre = "Digite el nombre de la madre o encargada.";
+        if (!form.madreCatequizando.primerApellido.trim())
+          stepErrors.primerApellidoMadre =
+            "Digite el primer apellido de la madre o encargada.";
+        if (!form.madreCatequizando.direccion.direccionExacta?.trim())
+          stepErrors.direccionMadre = "Digite la dirección exacta.";
+        if (!form.madreCatequizando.direccion.ciudad?.trim())
+          stepErrors.ciudadMadre = "Digite la ciudad.";
+        if (!form.madreCatequizando.direccion.provincia?.trim())
+          stepErrors.provinciaMadre = "Digite la provincia.";
+        if (!/^\d{8}$/.test(form.madreCatequizando.telefono)) {
+          stepErrors.telefonoMadre = "El teléfono debe contener 8 dígitos.";
+        }
+      }
+
+      if (tienePadre === null) {
+        stepErrors.tienePadre =
+          "Indique si el padre es parte del núcleo familiar.";
+      } else if (tienePadre) {
+        if (!form.padreCatequizando.nombre.trim()) {
+          stepErrors.nombrePadre = "Digite el nombre del padre.";
+        }
+        if (!form.padreCatequizando.primerApellido.trim()) {
+          stepErrors.primerApellidoPadre =
+            "Digite el primer apellido del padre.";
+        }
+        if (
+          form.padreCatequizando.telefono &&
+          !/^\d{8}$/.test(form.padreCatequizando.telefono)
+        ) {
+          stepErrors.telefonoPadre = "El teléfono debe contener 8 dígitos.";
+        }
+      }
+    }
+
+    if (step === 7) {
       if (!form.inscripcion.pago.numeroComprobanteSINPE.trim())
         stepErrors.numeroComprobanteSINPE =
           "Digite el número de comprobante SINPE.";
@@ -368,12 +487,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   };
 
   const stepTitles = [
-    "Datos de catequesis",
     "Datos del catequizando",
+    "Datos de catequesis",
     "Datos de bautismo",
     "Adecuación y salud",
-    "Madre o encargada",
-    "Datos del padre",
+    "Datos del encargado",
+    "Datos de los padres (opcional)",
     "Inscripción y pago",
     "Lineamientos",
   ];
@@ -401,7 +520,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       className="mx-auto mt-6 flex w-full max-w-[1100px] flex-col gap-5 px-3.5 sm:mt-10 sm:gap-7 sm:px-5"
       onSubmit={handleSubmit}
     >
-      {currentStep === 1 && (
+      {currentStep === 2 && (
         <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
           <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -413,7 +532,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Paso 1
+              Paso 2
             </span>
           </div>
 
@@ -497,7 +616,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         </section>
       )}
 
-      {currentStep === 2 && (
+      {currentStep === 1 && (
         <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
           <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -509,7 +628,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Paso 2
+              Paso 1
             </span>
           </div>
 
@@ -525,7 +644,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "catequizando.nombre",
-                    limitarPalabras(e.target.value),
+                    limitarNombre(e.target.value),
                   )
                 }
               />
@@ -537,28 +656,24 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               )}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Apellidos *
-              </Label>
-              <Input
-                type="text"
-                placeholder="Ej: Pérez Gómez"
-                value={form.catequizando.apellidos}
-                onChange={(e) =>
-                  updateForm(
-                    "catequizando.apellidos",
-                    limitarPalabras(e.target.value),
-                  )
-                }
-              />
-              <WordCounter value={form.catequizando.apellidos} />
-              {errors.apellidosCatequizando && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.apellidosCatequizando}
-                </p>
-              )}
-            </div>
+            <CampoApellido
+              label="Primer apellido"
+              required
+              placeholder="Ej: Pérez"
+              value={form.catequizando.primerApellido}
+              error={errors.primerApellidoCatequizando}
+              onChange={(valor) =>
+                updateForm("catequizando.primerApellido", valor)
+              }
+            />
+            <CampoApellido
+              label="Segundo apellido"
+              placeholder="Ej: Gómez"
+              value={form.catequizando.segundoApellido}
+              onChange={(valor) =>
+                updateForm("catequizando.segundoApellido", valor)
+              }
+            />
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
@@ -567,9 +682,19 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="date"
                 value={form.catequizando.fechaNacimiento || ""}
-                onChange={(e) =>
-                  updateForm("catequizando.fechaNacimiento", e.target.value)
-                }
+                onChange={(e) => {
+                  const valor = e.target.value;
+                  updateForm("catequizando.fechaNacimiento", valor);
+                  const mensaje = mensajeFechaNacimientoCatequizando(
+                    valor || null,
+                  );
+                  setErrors((prev) => {
+                    const siguiente = { ...prev };
+                    if (mensaje) siguiente.fechaNacimiento = mensaje;
+                    else delete siguiente.fechaNacimiento;
+                    return siguiente;
+                  });
+                }}
               />
               {errors.fechaNacimiento && (
                 <p className="m-0 text-xs font-extrabold text-red-600">
@@ -862,10 +987,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">
-                Datos de la Madre o Encargada
+                Datos del Encargado
               </h2>
               <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
-                Información de contacto de la persona responsable.
+                Información de la persona que inscribe al catequizando.
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
@@ -880,12 +1005,223 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </Label>
               <Input
                 type="text"
+                placeholder="Ej: Ana María"
+                value={form.inscripcion.personaQueInscribe.nombre || ""}
+                onChange={(e) =>
+                  updateForm(
+                    "inscripcion.personaQueInscribe.nombre",
+                    limitarNombre(e.target.value),
+                  )
+                }
+              />
+              <WordCounter
+                value={form.inscripcion.personaQueInscribe.nombre || ""}
+              />
+              {errors.nombrePersonaInscribe && (
+                <p className="m-0 text-xs font-extrabold text-red-600">
+                  {errors.nombrePersonaInscribe}
+                </p>
+              )}
+            </div>
+
+            <CampoApellido
+              label="Primer apellido"
+              required
+              placeholder="Ej: Rodríguez"
+              value={form.inscripcion.personaQueInscribe.primerApellido || ""}
+              error={errors.primerApellidoPersonaInscribe}
+              onChange={(valor) =>
+                updateForm(
+                  "inscripcion.personaQueInscribe.primerApellido",
+                  valor,
+                )
+              }
+            />
+            <CampoApellido
+              label="Segundo apellido"
+              placeholder="Ej: Vargas"
+              value={form.inscripcion.personaQueInscribe.segundoApellido || ""}
+              onChange={(valor) =>
+                updateForm(
+                  "inscripcion.personaQueInscribe.segundoApellido",
+                  valor,
+                )
+              }
+            />
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">
+                Correo electrónico *
+              </Label>
+              <Input
+                type="email"
+                placeholder="Ej: ana.rodriguez@correo.com"
+                value={form.inscripcion.personaQueInscribe.correo || ""}
+                onChange={(e) =>
+                  updateForm(
+                    "inscripcion.personaQueInscribe.correo",
+                    limitarPalabras(e.target.value),
+                  )
+                }
+              />
+              <WordCounter
+                value={form.inscripcion.personaQueInscribe.correo || ""}
+              />
+              {errors.correoPersonaInscribe && (
+                <p className="m-0 text-xs font-extrabold text-red-600">
+                  {errors.correoPersonaInscribe}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">
+                Teléfono *
+              </Label>
+              <Input
+                type="text"
+                placeholder="Ej: 8888-8888"
+                inputMode="numeric"
+                maxLength={8}
+                value={form.inscripcion.personaQueInscribe.telefono || ""}
+                onChange={(e) =>
+                  updateForm(
+                    "inscripcion.personaQueInscribe.telefono",
+                    limitarTelefono(e.target.value),
+                  )
+                }
+              />
+              <WordCounter
+                value={form.inscripcion.personaQueInscribe.telefono || ""}
+              />
+              {errors.telefonoPersonaInscribe && (
+                <p className="m-0 text-xs font-extrabold text-red-600">
+                  {errors.telefonoPersonaInscribe}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">
+                Parentesco *
+              </Label>
+              <Select
+                value={form.inscripcion.parentesco || ""}
+                onChange={(e) =>
+                  updateForm("inscripcion.parentesco", e.target.value)
+                }
+              >
+                <option value="">Seleccione</option>
+                <option value="Madre">Madre</option>
+                <option value="Padre">Padre</option>
+                <option value="Abuelo(a)">Abuelo(a)</option>
+                <option value="Tutor Legal">Tutor Legal</option>
+                <option value="Otro">Otro</option>
+              </Select>
+              {errors.parentesco && (
+                <p className="m-0 text-xs font-extrabold text-red-600">
+                  {errors.parentesco}
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {currentStep === 6 && (
+        <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
+          <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">
+                Datos de los Padres (opcional)
+              </h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
+                Indique si la madre y el padre forman parte del núcleo familiar.
+              </p>
+            </div>
+            <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
+              Paso 6
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-5">
+          <div className="rounded-2xl border border-border-strong bg-surface-muted/40 p-4 sm:p-5">
+          <h3 className="m-0 mb-4 font-heading text-lg font-extrabold text-royal-blue">
+            Datos de la madre
+          </h3>
+          <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <Label className="text-xs font-black text-royal-blue">
+                ¿La madre es parte del núcleo familiar? *
+              </Label>
+              <Select
+                value={
+                  tieneMadre === null ? "" : tieneMadre ? "si" : "no"
+                }
+                onChange={(e) => {
+                  const valor = e.target.value;
+                  if (valor === "") {
+                    setTieneMadre(null);
+                    return;
+                  }
+
+                  const seleccionaSi = valor === "si";
+                  setTieneMadre(seleccionaSi);
+                  setErrors((prev) => {
+                    const siguiente = { ...prev };
+                    delete siguiente.tieneMadre;
+                    delete siguiente.nombreMadre;
+                    delete siguiente.primerApellidoMadre;
+                    delete siguiente.direccionMadre;
+                    delete siguiente.ciudadMadre;
+                    delete siguiente.provinciaMadre;
+                    delete siguiente.telefonoMadre;
+                    return siguiente;
+                  });
+
+                  if (!seleccionaSi) {
+                    setForm((prev) => ({
+                      ...prev,
+                      madreCatequizando: {
+                        nombre: "",
+                        primerApellido: "",
+                        segundoApellido: "",
+                        direccion: {
+                          direccionExacta: null,
+                          ciudad: null,
+                          provincia: null,
+                        },
+                        telefono: "",
+                      },
+                    }));
+                  }
+                }}
+              >
+                <option value="">Seleccione</option>
+                <option value="no">No</option>
+                <option value="si">Sí</option>
+              </Select>
+              {errors.tieneMadre && (
+                <p className="m-0 text-xs font-extrabold text-red-600">
+                  {errors.tieneMadre}
+                </p>
+              )}
+            </div>
+
+            {tieneMadre && (
+              <>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">
+                Nombre *
+              </Label>
+              <Input
+                type="text"
                 placeholder="Ej: María Elena"
                 value={form.madreCatequizando.nombre}
                 onChange={(e) =>
                   updateForm(
                     "madreCatequizando.nombre",
-                    limitarPalabras(e.target.value),
+                    limitarNombre(e.target.value),
                   )
                 }
               />
@@ -897,28 +1233,24 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               )}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Apellidos *
-              </Label>
-              <Input
-                type="text"
-                placeholder="Ej: Rodríguez Vargas"
-                value={form.madreCatequizando.apellidos}
-                onChange={(e) =>
-                  updateForm(
-                    "madreCatequizando.apellidos",
-                    limitarPalabras(e.target.value),
-                  )
-                }
-              />
-              <WordCounter value={form.madreCatequizando.apellidos} />
-              {errors.apellidosMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.apellidosMadre}
-                </p>
-              )}
-            </div>
+            <CampoApellido
+              label="Primer apellido"
+              required
+              placeholder="Ej: Rodríguez"
+              value={form.madreCatequizando.primerApellido}
+              error={errors.primerApellidoMadre}
+              onChange={(valor) =>
+                updateForm("madreCatequizando.primerApellido", valor)
+              }
+            />
+            <CampoApellido
+              label="Segundo apellido"
+              placeholder="Ej: Vargas"
+              value={form.madreCatequizando.segundoApellido}
+              onChange={(valor) =>
+                updateForm("madreCatequizando.segundoApellido", valor)
+              }
+            />
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
@@ -1019,30 +1351,71 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 </p>
               )}
             </div>
+              </>
+            )}
           </div>
-        </section>
-      )}
-
-      {currentStep === 6 && (
-        <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
-          <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">
-                Datos del Padre
-              </h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
-                Información de contacto del padre del catequizando (opcional).
-              </p>
-            </div>
-            <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Paso 6
-            </span>
           </div>
 
+          <div className="rounded-2xl border border-border-strong bg-surface-muted/40 p-4 sm:p-5">
+          <h3 className="m-0 mb-4 font-heading text-lg font-extrabold text-royal-blue">
+            Datos del padre
+          </h3>
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <Label className="text-xs font-black text-royal-blue">
+                ¿El padre es parte del núcleo familiar? *
+              </Label>
+              <Select
+                value={
+                  tienePadre === null ? "" : tienePadre ? "si" : "no"
+                }
+                onChange={(e) => {
+                  const valor = e.target.value;
+                  if (valor === "") {
+                    setTienePadre(null);
+                    return;
+                  }
+
+                  const seleccionaSi = valor === "si";
+                  setTienePadre(seleccionaSi);
+                  setErrors((prev) => {
+                    const siguiente = { ...prev };
+                    delete siguiente.tienePadre;
+                    delete siguiente.nombrePadre;
+                    delete siguiente.primerApellidoPadre;
+                    delete siguiente.telefonoPadre;
+                    return siguiente;
+                  });
+
+                  if (!seleccionaSi) {
+                    setForm((prev) => ({
+                      ...prev,
+                      padreCatequizando: {
+                        nombre: "",
+                        primerApellido: "",
+                        segundoApellido: "",
+                        telefono: "",
+                      },
+                    }));
+                  }
+                }}
+              >
+                <option value="">Seleccione</option>
+                <option value="no">No</option>
+                <option value="si">Sí</option>
+              </Select>
+              {errors.tienePadre && (
+                <p className="m-0 text-xs font-extrabold text-red-600">
+                  {errors.tienePadre}
+                </p>
+              )}
+            </div>
+
+            {tienePadre && (
+              <>
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Nombre
+                Nombre *
               </Label>
               <Input
                 type="text"
@@ -1051,30 +1424,36 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "padreCatequizando.nombre",
-                    limitarPalabras(e.target.value),
+                    limitarNombre(e.target.value),
                   )
                 }
               />
               <WordCounter value={form.padreCatequizando.nombre} />
+              {errors.nombrePadre && (
+                <p className="m-0 text-xs font-extrabold text-red-600">
+                  {errors.nombrePadre}
+                </p>
+              )}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Apellidos
-              </Label>
-              <Input
-                type="text"
-                placeholder="Ej: Rodríguez Vargas"
-                value={form.padreCatequizando.apellidos}
-                onChange={(e) =>
-                  updateForm(
-                    "padreCatequizando.apellidos",
-                    limitarPalabras(e.target.value),
-                  )
-                }
-              />
-              <WordCounter value={form.padreCatequizando.apellidos} />
-            </div>
+            <CampoApellido
+              label="Primer apellido"
+              required
+              placeholder="Ej: Rodríguez"
+              value={form.padreCatequizando.primerApellido}
+              error={errors.primerApellidoPadre}
+              onChange={(valor) =>
+                updateForm("padreCatequizando.primerApellido", valor)
+              }
+            />
+            <CampoApellido
+              label="Segundo apellido"
+              placeholder="Ej: Vargas"
+              value={form.padreCatequizando.segundoApellido}
+              onChange={(valor) =>
+                updateForm("padreCatequizando.segundoApellido", valor)
+              }
+            />
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
@@ -1094,7 +1473,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }
               />
               <WordCounter value={form.padreCatequizando.telefono} />
+              {errors.telefonoPadre && (
+                <p className="m-0 text-xs font-extrabold text-red-600">
+                  {errors.telefonoPadre}
+                </p>
+              )}
             </div>
+              </>
+            )}
+          </div>
+          </div>
           </div>
         </section>
       )}
@@ -1107,7 +1495,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 Inscripción y Pago
               </h2>
               <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
-                Datos de la persona que inscribe y comprobante SINPE.
+                Datos del comprobante SINPE.
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
@@ -1117,6 +1505,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
           <div className={infoBoxClass}>
             <p>
+              El pago de inscripción es de{" "}
+              <strong>{MONTO_INSCRIPCION_CATEQUESIS}</strong>.
+            </p>
+            <p>
               <strong>SINPE Parroquia:</strong> 8878-3025
             </p>
             <p>
@@ -1125,105 +1517,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Nombre de quien inscribe *
-              </Label>
-              <Input
-                type="text"
-                placeholder="Ej: Ana María"
-                value={form.inscripcion.personaQueInscribe.nombre || ""}
-                onChange={(e) =>
-                  updateForm(
-                    "inscripcion.personaQueInscribe.nombre",
-                    limitarPalabras(e.target.value),
-                  )
-                }
-              />
-              <WordCounter
-                value={form.inscripcion.personaQueInscribe.nombre || ""}
-              />
-              {errors.nombrePersonaInscribe && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.nombrePersonaInscribe}
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Apellido de quien inscribe *
-              </Label>
-              <Input
-                type="text"
-                placeholder="Ej: Rodríguez Vargas"
-                value={form.inscripcion.personaQueInscribe.apellido || ""}
-                onChange={(e) =>
-                  updateForm(
-                    "inscripcion.personaQueInscribe.apellido",
-                    limitarPalabras(e.target.value),
-                  )
-                }
-              />
-              <WordCounter
-                value={form.inscripcion.personaQueInscribe.apellido || ""}
-              />
-              {errors.apellidoPersonaInscribe && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.apellidoPersonaInscribe}
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Correo electrónico *
-              </Label>
-              <Input
-                type="email"
-                placeholder="Ej: ana.rodriguez@correo.com"
-                value={form.inscripcion.personaQueInscribe.correo || ""}
-                onChange={(e) =>
-                  updateForm(
-                    "inscripcion.personaQueInscribe.correo",
-                    limitarPalabras(e.target.value),
-                  )
-                }
-              />
-              <WordCounter
-                value={form.inscripcion.personaQueInscribe.correo || ""}
-              />
-              {errors.correoPersonaInscribe && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.correoPersonaInscribe}
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Parentesco *
-              </Label>
-              <Select
-                value={form.inscripcion.parentesco || ""}
-                onChange={(e) =>
-                  updateForm("inscripcion.parentesco", e.target.value)
-                }
-              >
-                <option value="">Seleccione</option>
-                <option value="Madre">Madre</option>
-                <option value="Padre">Padre</option>
-                <option value="Abuelo(a)">Abuelo(a)</option>
-                <option value="Tutor Legal">Tutor Legal</option>
-                <option value="Otro">Otro</option>
-              </Select>
-              {errors.parentesco && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.parentesco}
-                </p>
-              )}
-            </div>
-
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
                 Número de comprobante SINPE *

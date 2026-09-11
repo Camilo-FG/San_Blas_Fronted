@@ -11,6 +11,7 @@ import {
 import Navbar from "../shared/components/Navbar";
 import Footer from "../modules/landing/components/Footer";
 import { PageLoader } from "../shared/ui";
+import LandingLoader from "../modules/landing/components/LandingLoader";
 import Rutas from "./Rutas";
 import { clearAuthToken, getAuthToken } from "../utils/authToken";
 import { isTokenExpired } from "../utils/jwt";
@@ -36,6 +37,9 @@ const CatequesisPage = lazyWithRetry(
   () => import("../modules/catequesis/pages/CatequesisPage"),
 );
 const LoginPage = lazyWithRetry(() => import("../modules/auth/pages/LoginPage"));
+const RecuperarContrasenaPage = lazyWithRetry(
+  () => import("../modules/auth/pages/RecuperarContrasenaPage"),
+);
 const EventosPublicPage = lazyWithRetry(
   () => import("../modules/eventos/pages/EventosPublicPage"),
 );
@@ -63,10 +67,16 @@ const GestionLanding = lazyWithRetry(
 const GestionUsuarios = lazyWithRetry(
   () => import("../modules/Gestión de Usuarios/pages/GestionUsuarios"),
 );
-function withSuspense(Component: React.LazyExoticComponent<() => React.JSX.Element>) {
+const MiPerfil = lazyWithRetry(
+  () => import("../modules/dashboard/pages/MiPerfil"),
+);
+function withSuspense(
+  Component: React.LazyExoticComponent<() => React.JSX.Element>,
+  Fallback: React.ComponentType = PageLoader,
+) {
   return function SuspenseRoute() {
     return (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<Fallback />}>
         <Component />
       </Suspense>
     );
@@ -76,18 +86,22 @@ function withSuspense(Component: React.LazyExoticComponent<() => React.JSX.Eleme
 function RootLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isDashboard = pathname.startsWith(Rutas.dashboard);
+  const isAuthPublica =
+    pathname === Rutas.login ||
+    pathname.startsWith(`${Rutas.login}/`) ||
+    pathname === Rutas.recuperarContrasena;
 
   return (
     <div className="flex min-h-screen flex-col">
-      {!isDashboard && <Navbar />}
+      {!isDashboard && !isAuthPublica && <Navbar />}
 
       <main className="min-w-0 flex-1">
-        <Suspense fallback={<PageLoader />}>
+        <Suspense fallback={isDashboard ? <PageLoader /> : <LandingLoader />}>
           <Outlet />
         </Suspense>
       </main>
 
-      {!isDashboard && <Footer />}
+      {!isDashboard && !isAuthPublica && <Footer />}
     </div>
   );
 }
@@ -99,19 +113,19 @@ const rootRoute = createRootRoute({
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.home,
-  component: withSuspense(Home),
+  component: withSuspense(Home, LandingLoader),
 });
 
 const sobreNosotrosRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.sobreNosotros,
-  component: withSuspense(SobreNosotrosPage),
+  component: withSuspense(SobreNosotrosPage, LandingLoader),
 });
 
 const historiaRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.historia,
-  component: withSuspense(HistoriaPage),
+  component: withSuspense(HistoriaPage, LandingLoader),
 });
 
 const solicitudesSacramentosRoute = createRoute({
@@ -121,19 +135,19 @@ const solicitudesSacramentosRoute = createRoute({
     accessDenied:
       search.accessDenied === "admin" ? ("admin" as const) : undefined,
   }),
-  component: withSuspense(SolicSacramento),
+  component: withSuspense(SolicSacramento, LandingLoader),
 });
 
 const donacionesPublicasRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.donacionesPublicas,
-  component: withSuspense(DonacionesPage),
+  component: withSuspense(DonacionesPage, LandingLoader),
 });
 
 const formsolicitudesCatequesisRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.FormsolicitudesCatequesis,
-  component: withSuspense(CatequesisPage),
+  component: withSuspense(CatequesisPage, LandingLoader),
 });
 
 const loginRoute = createRoute({
@@ -146,11 +160,17 @@ const loginRoute = createRoute({
     const { redirect: redirectTo } = loginRoute.useSearch();
 
     return (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<LandingLoader />}>
         <LoginPage redirectTo={redirectTo} />
       </Suspense>
     );
   },
+});
+
+const recuperarContrasenaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.recuperarContrasena,
+  component: withSuspense(RecuperarContrasenaPage, LandingLoader),
 });
 
 const dashboardRoute = createRoute({
@@ -209,25 +229,25 @@ const donacionesAdminRoute = createRoute({
 const bautizosRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.bautizos,
-  component: withSuspense(BautizosPage),
+  component: withSuspense(BautizosPage, LandingLoader),
 });
 
 const horariosRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.horarios,
-  component: withSuspense(HorariosPage),
+  component: withSuspense(HorariosPage, LandingLoader),
 });
 
 const contactoRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.contacto,
-  component: withSuspense(ContactoPage),
+  component: withSuspense(ContactoPage, LandingLoader),
 });
 
 const eventosPublicosRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.eventosPublicos,
-  component: withSuspense(EventosPublicPage),
+  component: withSuspense(EventosPublicPage, LandingLoader),
 });
 
 const eventosRoute = createRoute({
@@ -248,6 +268,12 @@ const gestionUsuariosRoute = createRoute({
   component: withSuspense(GestionUsuarios),
 });
 
+const perfilRoute = createRoute({
+  getParentRoute: () => dashboardRoute,
+  path: Rutas.dashboardPath.perfil,
+  component: withSuspense(MiPerfil),
+});
+
 const routeTree = rootRoute.addChildren([
   homeRoute,
   sobreNosotrosRoute,
@@ -260,6 +286,7 @@ const routeTree = rootRoute.addChildren([
   horariosRoute,
   eventosPublicosRoute,
   loginRoute,
+  recuperarContrasenaRoute,
   dashboardRoute.addChildren([
     dashboardHomeRoute,
     solicitudesCatequesisRoute,
@@ -269,6 +296,7 @@ const routeTree = rootRoute.addChildren([
     eventosRoute,
     gestionLandingRoute,
     gestionUsuariosRoute,
+    perfilRoute,
   ]),
 ]);
 

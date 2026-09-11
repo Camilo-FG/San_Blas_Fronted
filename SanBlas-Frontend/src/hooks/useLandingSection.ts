@@ -6,7 +6,9 @@ async function fetchLandingSection<T extends Record<string, unknown>>(
   sectionKey: LandingSectionKey,
 ): Promise<T | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/landing/${sectionKey}`);
+  const response = await fetch(
+    `${API_BASE_URL.replace(/\/+$/, "")}/landing/${sectionKey}`,
+  );
     if (!response.ok) return null;
     const payload = (await response.json()) as { data?: T };
     return payload.data ?? null;

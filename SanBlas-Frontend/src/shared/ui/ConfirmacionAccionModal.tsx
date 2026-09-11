@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "./Button";
 import { Modal } from "./Modal";
 import { LineaDoradaTitulo } from "./LineaDoradaTitulo";
@@ -8,7 +9,7 @@ type ConfirmacionAccionModalProps = {
   title: string;
   parteSubrayada: string;
   resto?: string;
-  mensaje: string;
+  mensaje: ReactNode;
   confirmLabel: string;
   pendingLabel: string;
   isPending: boolean;

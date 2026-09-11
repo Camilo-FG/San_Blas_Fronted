@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CatequesisEnrollmentRecord } from "../Types/catequesis";
 import {
   actualizarEstadoSolicitud,
@@ -12,8 +12,10 @@ export const useSolicitudesCatequesis = () => {
   const [solicitudes, setSolicitudesState] = useState<
     CatequesisEnrollmentRecord[]
   >([]);
+  const tieneDatosRef = useRef(false);
 
   const [cargando, setCargando] = useState(true);
+  const [filtrando, setFiltrando] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   const [detalleError, setDetalleError] = useState("");
@@ -22,12 +24,19 @@ export const useSolicitudesCatequesis = () => {
   const [exportError, setExportError] = useState("");
 
   const cargarSolicitudes = useCallback(async () => {
+    const esCargaInicial = !tieneDatosRef.current;
+
     try {
-      setCargando(true);
+      if (esCargaInicial) {
+        setCargando(true);
+      } else {
+        setFiltrando(true);
+      }
       setError("");
 
       const data = await obtenerSolicitudesCatequesis();
       setSolicitudesState(data);
+      tieneDatosRef.current = true;
     } catch (err) {
       console.error(err);
       if (err instanceof ApiError) {
@@ -37,11 +46,12 @@ export const useSolicitudesCatequesis = () => {
       }
     } finally {
       setCargando(false);
+      setFiltrando(false);
     }
   }, []);
 
   useEffect(() => {
-    cargarSolicitudes();
+    void cargarSolicitudes();
   }, [cargarSolicitudes]);
 
   const obtenerDetalle = async (id: number) => {
@@ -113,6 +123,7 @@ export const useSolicitudesCatequesis = () => {
     cambiarEstado,
     exportarExcel,
     cargando,
+    filtrando,
     guardando,
     exportando,
     error,

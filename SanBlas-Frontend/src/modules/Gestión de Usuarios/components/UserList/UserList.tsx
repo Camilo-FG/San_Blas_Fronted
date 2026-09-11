@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Pencil, User, Mail, Phone, Shield } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Eye, Mail, Pencil, Phone, Trash2, User } from 'lucide-react';
 import {
     createColumnHelper,
     flexRender,
@@ -10,12 +10,16 @@ import {
     getPaginationRowModel,
     SortingState,
 } from '@tanstack/react-table';
-import { Usuario, isAdminRole } from '../../../../types/Usuario';
+import { Usuario } from '../../../../types/Usuario';
+import { etiquetaRol, type Rol } from '../../../../types/Rol';
+import { useAuth } from '../../../../context/AuthContext';
 import { usePagination } from '../../../../shared/hooks/usePagination';
 import UpdateUserModal from '../UpdateUserModal/UpdateUserModal';
+import { PerfilUsuarioCard } from '../PerfilUsuarioCard/PerfilUsuarioCard';
 import { useUpdateUser } from '../../hooks/hooksUsuarios/useUpdateUser';
+import { useDeleteUser } from '../../hooks/hooksUsuarios/useDeleteUser';
+import { normalizarTexto } from '../../Utils/normalizarTexto';
 import { AdminRecordCard } from '../../../../shared/components/admin/AdminRecordCard';
-import { AdminRecordDetailSheet } from '../../../../shared/components/admin/AdminRecordDetailSheet';
 import {
     AdminModule,
     AdminPagination,
@@ -31,23 +35,58 @@ import {
     AdminToolbar,
     Badge,
     Button,
+    ConfirmacionAccionModal,
+    Modal,
     cn,
+    useToast,
 } from '../../../../shared/ui';
 
 interface UserListProps {
     users: Usuario[];
+    roles: Rol[];
     onAddUser: () => void;
     onRefetch: () => void;
 }
 
+const TAMANOS_PAGINA = [10, 25, 50] as const;
+const ACCENTO_ADMIN = '#003366';
+const BOTON_ICONO_TABLA =
+    'inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
+const BOTON_ICONO_ELIMINAR =
+    'inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-40';
+
 const columnHelper = createColumnHelper<Usuario>();
 
-export const UserList = ({ users, onAddUser, onRefetch }: UserListProps) => {
+const formatFechaCreacion = (fecha?: string | null) => {
+    if (!fecha) return '—';
+    const date = new Date(fecha.includes('T') ? fecha : `${fecha}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return '—';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+};
+
+const esElUsuarioActual = (
+    usuario: Usuario,
+    actualId: number | null | undefined,
+    actualEmail?: string,
+) => {
+    if (actualId != null && usuario.id === actualId) return true;
+    if (!actualEmail) return false;
+    return usuario.email.toLowerCase() === actualEmail.toLowerCase();
+};
+
+export const UserList = ({ users, roles, onAddUser, onRefetch }: UserListProps) => {
+    const { user: usuarioSesion } = useAuth();
+    const { showToast } = useToast();
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState('');
     const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
     const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
+    const [usuarioAEliminar, setUsuarioAEliminar] = useState<Usuario | null>(null);
     const { actualizarUsuario } = useUpdateUser();
+    const { eliminarUsuario, loading: eliminando } = useDeleteUser();
 
     const sortedUsers = useMemo(() => {
         const recordsLength = users.length;
@@ -63,49 +102,93 @@ export const UserList = ({ users, onAddUser, onRefetch }: UserListProps) => {
             columnHelper.accessor('userName', {
                 header: 'Nombre de Usuario',
                 cell: (info) => (
-                    <span className="font-semibold text-royal-blue">{info.getValue()}</span>
+                    <span className="font-medium text-text">{info.getValue()}</span>
                 ),
             }),
             columnHelper.accessor('email', {
                 header: 'Email',
-                cell: (info) => info.getValue(),
+                cell: (info) => (
+                    <span className="text-text-secondary">{info.getValue()}</span>
+                ),
             }),
             columnHelper.accessor('phoneNumber', {
                 header: 'Teléfono',
-                cell: (info) => info.getValue(),
+                cell: (info) => (
+                    <span className="tabular-nums text-text-secondary">
+                        {info.getValue() || '—'}
+                    </span>
+                ),
             }),
             columnHelper.accessor('role', {
                 header: 'Rol',
-                cell: (info) => (isAdminRole(info.getValue()) ? 'Admin' : 'User'),
+                cell: (info) => (
+                    <span className="text-text-secondary">{etiquetaRol(info.getValue(), roles)}</span>
+                ),
             }),
             columnHelper.accessor('state', {
                 header: 'Estado',
                 cell: (info) => (
-                    <Badge variant={info.getValue() ? 'info' : 'danger'}>
+                    <Badge variant={info.getValue() ? 'success' : 'danger'}>
                         {info.getValue() ? 'Activo' : 'Inactivo'}
                     </Badge>
                 ),
             }),
             columnHelper.accessor('creationDate', {
                 header: 'Fecha de Creación',
-                cell: (info) => new Date(info.getValue()).toLocaleDateString('es-ES'),
+                cell: (info) => (
+                    <span className="tabular-nums text-text-secondary">
+                        {formatFechaCreacion(info.getValue())}
+                    </span>
+                ),
             }),
             columnHelper.display({
                 id: 'acciones',
                 header: 'Acciones',
-                cell: ({ row }) => (
-                    <Button
-                        variant="royal"
-                        className="min-h-9 px-3.5 py-1.5 text-xs"
-                        onClick={() => setUsuarioEditando(row.original)}
-                    >
-                        <Pencil size={14} />
-                        Editar
-                    </Button>
-                ),
+                cell: ({ row }) => {
+                    const usuario = row.original;
+                    const esPropio = esElUsuarioActual(
+                        usuario,
+                        usuarioSesion?.id,
+                        usuarioSesion?.email,
+                    );
+                    return (
+                        <span className="inline-flex items-center gap-0.5">
+                            <button
+                                type="button"
+                                onClick={() => setUsuarioSeleccionado(usuario)}
+                                aria-label="Ver perfil"
+                                className={BOTON_ICONO_TABLA}
+                            >
+                                <Eye size={17} strokeWidth={1.5} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setUsuarioEditando(usuario)}
+                                aria-label="Editar usuario"
+                                className={BOTON_ICONO_TABLA}
+                            >
+                                <Pencil size={17} strokeWidth={1.5} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setUsuarioAEliminar(usuario)}
+                                aria-label="Eliminar usuario"
+                                className={BOTON_ICONO_ELIMINAR}
+                                disabled={esPropio}
+                                title={
+                                    esPropio
+                                        ? 'No puede eliminar su propia cuenta'
+                                        : 'Eliminar usuario'
+                                }
+                            >
+                                <Trash2 size={17} strokeWidth={1.5} />
+                            </button>
+                        </span>
+                    );
+                },
             }),
         ],
-        [],
+        [usuarioSesion?.email, usuarioSesion?.id, roles],
     );
 
     const table = useReactTable({
@@ -113,7 +196,7 @@ export const UserList = ({ users, onAddUser, onRefetch }: UserListProps) => {
         columns,
         state: { sorting, globalFilter },
         initialState: {
-            pagination: { pageSize: 7 },
+            pagination: { pageSize: TAMANOS_PAGINA[0] },
         },
         onSortingChange: setSorting,
         onGlobalFilterChange: setGlobalFilter,
@@ -133,6 +216,14 @@ export const UserList = ({ users, onAddUser, onRefetch }: UserListProps) => {
         goToNextPage,
     } = usePagination(table);
 
+    const pageSize = table.getState().pagination.pageSize;
+    const primerRegistro = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+    const ultimoRegistro = Math.min(currentPage * pageSize, totalItems);
+
+    useEffect(() => {
+        table.setPageIndex(0);
+    }, [globalFilter, pageSize]);
+
     return (
         <AdminModule>
             <AdminToolbar>
@@ -141,8 +232,9 @@ export const UserList = ({ users, onAddUser, onRefetch }: UserListProps) => {
                     value={globalFilter}
                     onChange={(e) => setGlobalFilter(e.target.value)}
                     aria-label="Buscar usuarios"
+                    className="min-w-[200px] flex-1"
                 />
-                <Button variant="primary" onClick={onAddUser}>
+                <Button variant="royal" className="shrink-0" onClick={onAddUser}>
                     + Agregar usuario
                 </Button>
             </AdminToolbar>
@@ -207,146 +299,230 @@ export const UserList = ({ users, onAddUser, onRefetch }: UserListProps) => {
             </div>
 
             <div className="flex flex-col gap-2.5 md:hidden">
-                {table.getRowModel().rows.map((row) => {
-                    const usuario = row.original;
-                    return (
-                        <AdminRecordCard
-                            key={usuario.id}
-                            icon={<User size={20} />}
-                            accent={isAdminRole(usuario.role) ? '#7c3aed' : '#003366'}
-                            code={`USR-${usuario.id}`}
-                            title={usuario.userName}
-                            subtitle={isAdminRole(usuario.role) ? 'Administrador' : 'Usuario'}
-                            badges={
-                                <Badge variant={usuario.state ? 'info' : 'danger'}>
-                                    {usuario.state ? 'Activo' : 'Inactivo'}
-                                </Badge>
-                            }
-                            meta={[
-                                {
-                                    icon: <Mail size={12} />,
-                                    label: 'Correo',
-                                    value: usuario.email,
-                                },
-                                {
-                                    icon: <Phone size={12} />,
-                                    label: 'Teléfono',
-                                    value: usuario.phoneNumber || 'No provisto',
-                                },
-                            ]}
-                            actions={[
-                                {
-                                    label: 'Editar',
-                                    icon: <Pencil size={15} />,
-                                    variant: 'primary',
-                                    onClick: () => setUsuarioEditando(usuario),
-                                },
-                                {
-                                    label: 'Perfil',
-                                    icon: <Shield size={15} />,
-                                    variant: 'ghost',
-                                    onClick: () => setUsuarioSeleccionado(usuario),
-                                },
-                            ]}
-                        />
-                    );
-                })}
+                {table.getRowModel().rows.length === 0 ? (
+                    <p className="m-0 rounded-2xl border border-border-strong bg-surface px-4 py-10 text-center text-sm text-text-muted">
+                        No se encontraron usuarios
+                    </p>
+                ) : (
+                    table.getRowModel().rows.map((row) => {
+                        const usuario = row.original;
+                        return (
+                            <AdminRecordCard
+                                key={usuario.id}
+                                icon={<User size={20} />}
+                                accent={ACCENTO_ADMIN}
+                                code={`USR-${usuario.id}`}
+                                title={usuario.userName}
+                                subtitle={etiquetaRol(usuario.role, roles)}
+                                badges={
+                                    <Badge variant={usuario.state ? 'success' : 'danger'}>
+                                        {usuario.state ? 'Activo' : 'Inactivo'}
+                                    </Badge>
+                                }
+                                meta={[
+                                    {
+                                        icon: <Mail size={12} />,
+                                        label: 'Correo',
+                                        value: usuario.email,
+                                    },
+                                    {
+                                        icon: <Phone size={12} />,
+                                        label: 'Teléfono',
+                                        value: usuario.phoneNumber || 'No provisto',
+                                    },
+                                ]}
+                                actions={[
+                                    {
+                                        label: 'Ver perfil',
+                                        icon: <Eye size={15} />,
+                                        variant: 'primary',
+                                        onClick: () => setUsuarioSeleccionado(usuario),
+                                    },
+                                    {
+                                        label: 'Editar',
+                                        icon: <Pencil size={15} />,
+                                        variant: 'ghost',
+                                        onClick: () => setUsuarioEditando(usuario),
+                                    },
+                                    ...(!esElUsuarioActual(
+                                        usuario,
+                                        usuarioSesion?.id,
+                                        usuarioSesion?.email,
+                                    )
+                                        ? [
+                                              {
+                                                  label: 'Eliminar',
+                                                  icon: <Trash2 size={15} />,
+                                                  variant: 'danger' as const,
+                                                  onClick: () => setUsuarioAEliminar(usuario),
+                                              },
+                                          ]
+                                        : []),
+                                ]}
+                            />
+                        );
+                    })
+                )}
             </div>
 
             <AdminTableFooter pegadoAbajo>
-                <span>
-                    Total de registros: <strong className="text-royal-blue">{totalItems}</strong>
+                <span className="text-sm text-text-muted">
+                    Mostrando{' '}
+                    <strong className="text-text tabular-nums">
+                        {primerRegistro}-{ultimoRegistro}
+                    </strong>{' '}
+                    de <strong className="text-text tabular-nums">{totalItems}</strong>{' '}
+                    registros
                 </span>
                 <AdminPagination>
+                    <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+                        <span className="max-sm:hidden">Registros por página</span>
+                        <span className="sm:hidden">Por página</span>
+                        <select
+                            value={pageSize}
+                            onChange={(e) => table.setPageSize(Number(e.target.value))}
+                            className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                            aria-label="Cantidad de registros por página"
+                        >
+                            {TAMANOS_PAGINA.map((tamano) => (
+                                <option key={tamano} value={tamano}>
+                                    {tamano}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
                     <AdminPaginationButton
+                        type="button"
                         onClick={goToPreviousPage}
                         disabled={!canPreviousPage}
+                        aria-label="Página anterior"
                     >
-                        ← Anterior
+                        <ChevronLeft size={16} strokeWidth={2} />
                     </AdminPaginationButton>
-                    <span>
-                        Página <strong className="text-royal-blue">{currentPage}</strong> de{' '}
-                        <strong className="text-royal-blue">{totalPages}</strong>
+                    <span className="text-sm whitespace-nowrap text-text-muted">
+                        Página{' '}
+                        <strong className="text-text tabular-nums">{currentPage}</strong> de{' '}
+                        <strong className="text-text tabular-nums">{totalPages || 1}</strong>
                     </span>
-                    <AdminPaginationButton onClick={goToNextPage} disabled={!canNextPage}>
-                        Siguiente →
+                    <AdminPaginationButton
+                        type="button"
+                        onClick={goToNextPage}
+                        disabled={!canNextPage}
+                        aria-label="Página siguiente"
+                    >
+                        <ChevronRight size={16} strokeWidth={2} />
                     </AdminPaginationButton>
                 </AdminPagination>
             </AdminTableFooter>
 
-            <AdminRecordDetailSheet
-                open={usuarioSeleccionado !== null}
-                title={usuarioSeleccionado?.userName ?? 'Usuario'}
-                subtitle={usuarioSeleccionado?.email}
-                badges={
-                    usuarioSeleccionado ? (
+            {usuarioSeleccionado && (
+                <Modal
+                    onClose={() => setUsuarioSeleccionado(null)}
+                    title={`Perfil de ${usuarioSeleccionado.userName}`}
+                    className="max-w-2xl p-0"
+                    cerrarAlClicFuera={false}
+                >
+                    <PerfilUsuarioCard
+                        usuario={usuarioSeleccionado}
+                        roles={roles}
+                        titulo="Perfil"
+                        className="border-0 shadow-none"
+                        espacioParaCerrar
+                    />
+                </Modal>
+            )}
+
+            <ConfirmacionAccionModal
+                open={usuarioAEliminar !== null}
+                title="Eliminar usuario"
+                parteSubrayada="Eliminar usuario"
+                mensaje={
+                    usuarioAEliminar ? (
                         <>
-                            <Badge variant="neutral">
-                                {isAdminRole(usuarioSeleccionado.role) ? 'Admin' : 'User'}
-                            </Badge>
-                            <Badge variant={usuarioSeleccionado.state ? 'info' : 'danger'}>
-                                {usuarioSeleccionado.state ? 'Activo' : 'Inactivo'}
-                            </Badge>
+                            ¿Está seguro de eliminar a{' '}
+                            <strong className="font-semibold text-text">
+                                {usuarioAEliminar.userName}
+                            </strong>
+                            ? La cuenta quedará inactiva y dejará de aparecer en
+                            el listado.
                         </>
-                    ) : undefined
+                    ) : (
+                        ''
+                    )
                 }
-                onClose={() => setUsuarioSeleccionado(null)}
-                primaryAction={
-                    usuarioSeleccionado
-                        ? {
-                              label: 'Editar',
-                              icon: <Pencil size={16} />,
-                              onClick: () => {
-                                  setUsuarioEditando(usuarioSeleccionado);
-                                  setUsuarioSeleccionado(null);
-                              },
-                          }
-                        : undefined
-                }
-            >
-                {usuarioSeleccionado && (
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <p className="m-0 text-sm text-slate-600">
-                            <strong className="text-slate-800">Teléfono:</strong>{' '}
-                            {usuarioSeleccionado.phoneNumber || 'No provisto'}
-                        </p>
-                        <p className="m-0 text-sm text-slate-600">
-                            <strong className="text-slate-800">Fecha de creación:</strong>{' '}
-                            {new Date(usuarioSeleccionado.creationDate).toLocaleDateString('es-CR')}
-                        </p>
-                    </div>
-                )}
-            </AdminRecordDetailSheet>
+                confirmLabel="Eliminar"
+                pendingLabel="Eliminando..."
+                isPending={eliminando}
+                onConfirm={() => {
+                    void (async () => {
+                        if (!usuarioAEliminar) return;
+                        const resultado = await eliminarUsuario(usuarioAEliminar.id);
+                        if (resultado.ok) {
+                            showToast('Usuario eliminado correctamente', 'error');
+                            setUsuarioAEliminar(null);
+                            onRefetch();
+                            return;
+                        }
+                        showToast(resultado.mensaje, 'error');
+                    })();
+                }}
+                onCancel={() => {
+                    if (!eliminando) setUsuarioAEliminar(null);
+                }}
+            />
 
             <UpdateUserModal
                 isOpen={usuarioEditando !== null}
                 onClose={() => setUsuarioEditando(null)}
                 onSave={async (data) => {
                     if (!usuarioEditando) return;
+                    const esPropio = esElUsuarioActual(
+                        usuarioEditando,
+                        usuarioSesion?.id,
+                        usuarioSesion?.email,
+                    );
 
-                    const ok = await actualizarUsuario(usuarioEditando.id, {
-                        ...(data.nombre.trim() !== usuarioEditando.userName
-                            ? { userName: data.nombre }
+                    const resultado = await actualizarUsuario(usuarioEditando.id, {
+                        ...(normalizarTexto(data.nombre) !==
+                        normalizarTexto(usuarioEditando.userName)
+                            ? { userName: normalizarTexto(data.nombre) }
                             : {}),
-                        email: data.correo,
-                        phoneNumber: data.telefono,
+                        phoneNumber: normalizarTexto(data.telefono),
                         ...(data.contraseña.trim()
                             ? {
-                                  password: data.contraseña,
-                                  confirmPassword: data.contraseña,
+                                  password: data.contraseña.trim(),
+                                  confirmPassword: data.contraseña.trim(),
                               }
                             : {}),
-                        role: data.rol,
-                        state: data.estado,
+                        ...(esPropio
+                            ? {}
+                            : {
+                                  role: data.rol,
+                                  state: data.estado,
+                              }),
                     });
 
-                    if (ok) {
+                    if (resultado.ok) {
+                        showToast('Usuario actualizado correctamente', 'success');
                         setUsuarioEditando(null);
                         onRefetch();
+                        return;
                     }
+
+                    showToast(resultado.mensaje, 'error');
                 }}
                 usuario={usuarioEditando}
                 users={users}
+                roles={roles}
+                esUsuarioActual={
+                    usuarioEditando
+                        ? esElUsuarioActual(
+                              usuarioEditando,
+                              usuarioSesion?.id,
+                              usuarioSesion?.email,
+                          )
+                        : false
+                }
             />
         </AdminModule>
     );

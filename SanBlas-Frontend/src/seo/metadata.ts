@@ -78,4 +78,10 @@ export const pageMetadata: Record<string, PageMeta> = {
     canonical: SITE + '/login',
     robots: 'noindex, nofollow',
   },
+  [Rutas.recuperarContrasena]: {
+    title: 'Recuperar Contrase\u00f1a | Parroquia San Blas de Nicoya',
+    description: 'Solicite un enlace para restablecer la contrase\u00f1a de su cuenta en la Parroquia San Blas de Nicoya.',
+    canonical: SITE + '/recuperar-contrasena',
+    robots: 'noindex, nofollow',
+  },
 };

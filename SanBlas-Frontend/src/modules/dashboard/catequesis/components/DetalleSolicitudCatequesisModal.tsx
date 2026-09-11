@@ -513,16 +513,6 @@ export function DetalleSolicitudCatequesisModal({
                       label="Número de comprobante"
                       value={valorOGuion(solicitud.pago?.numeroComprobante)}
                     />
-                    <Separador />
-                    <Campo
-                      label="Monto"
-                      value={
-                        solicitud.pago?.monto
-                          ? `₡${solicitud.pago.monto}`
-                          : "—"
-                      }
-                      tabular
-                    />
                   </section>
 
                   <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">

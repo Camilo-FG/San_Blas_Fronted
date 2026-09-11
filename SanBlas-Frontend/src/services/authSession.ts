@@ -1,5 +1,6 @@
 import { clearAuthToken, getAuthToken } from "../utils/authToken";
 import {
+  getAccesoPanelFromToken,
   getEmailFromToken,
   getRoleFromToken,
   getUserIdFromToken,
@@ -10,6 +11,7 @@ export interface AuthUser {
   id: number | null;
   email: string;
   role: string;
+  accesoPanel: boolean;
 }
 
 export const logout = (): void => {
@@ -32,10 +34,14 @@ export const getCurrentUser = (): AuthUser | null => {
   return {
     id: getUserIdFromToken(token),
     email,
-    role: getRoleFromToken(token) ?? "User",
+    role: getRoleFromToken(token) ?? "user",
+    accesoPanel: getAccesoPanelFromToken(token),
   };
 };
 
 export const isAuthenticated = (): boolean => getCurrentUser() !== null;
 
-export const isAdmin = (): boolean => getCurrentUser()?.role === "admin";
+export const isAdmin = (): boolean => {
+  const user = getCurrentUser();
+  return user?.role === "admin" || user?.accesoPanel === true;
+};
