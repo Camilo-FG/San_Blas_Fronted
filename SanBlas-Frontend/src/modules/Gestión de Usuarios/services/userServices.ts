@@ -48,6 +48,44 @@ export const getUsers = async (): Promise<Usuario[]> => {
   return data.map(mapBackendToFrontend);
 };
 
+// respuesta paginada del backend: data + total + pages, la página y el límite usados
+export interface PaginacionUsuarios {
+  data: Usuario[];
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
+}
+
+// consulta paginada con búsqueda server-side; sin `search` devuelve la primera página completa
+export const getUsersPaginados = async (
+  page = 1,
+  limit = 10,
+  search?: string,
+): Promise<PaginacionUsuarios> => {
+  const buscar = search?.trim();
+  const { data } = await apiClient.get<{
+    data: Record<string, unknown>[];
+    total: number;
+    page: number;
+    pages: number;
+    limit: number;
+  }>('/usuario', {
+    params: {
+      page,
+      limit,
+      ...(buscar ? { search: buscar } : {}),
+    },
+  });
+  return {
+    data: data.data.map(mapBackendToFrontend),
+    total: data.total,
+    page: data.page,
+    pages: data.pages,
+    limit: data.limit,
+  };
+};
+
 export const getUserById = async (id: number): Promise<Usuario> => {
   try {
     const { data } = await apiClient.get<Record<string, unknown>>(`/usuario/${id}`);

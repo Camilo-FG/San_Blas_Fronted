@@ -4,6 +4,7 @@ import CreateUserModal from '../components/CreateUserModal/CreateUserModal';
 import CreateRolModal from '../components/CreateRolModal/CreateRolModal';
 import { RolesYPermisos } from '../components/RolesYPermisos/RolesYPermisos';
 import { useGetUserList } from '../hooks/hooksUsuarios/useGetUserList';
+import { useGetUsuariosPaginados } from '../hooks/hooksUsuarios/useGetUsuariosPaginados';
 import { useCreateUser } from '../hooks/hooksUsuarios/useCreateUser';
 import { useGetRoles } from '../hooks/hooksUsuarios/useGetRoles';
 import { useCreateRol } from '../hooks/hooksUsuarios/useCreateRol';
@@ -18,6 +19,21 @@ const PESTANAS: { id: PestanaUsuarios; label: string }[] = [
 
 const GestionUsuarios = () => {
     const { users, loading, error, refetch } = useGetUserList();
+    // la lista paginada para la tabla; la completa sigue usándose para validar duplicados y contar roles
+    const {
+        users: usuariosPagina,
+        total: totalUsuarios,
+        totalPages,
+        loading: cargandoPagina,
+        error: errorPagina,
+        pagina,
+        limite,
+        busqueda,
+        setPagina,
+        setLimite,
+        setBusqueda,
+        refetch: refetchPagina,
+    } = useGetUsuariosPaginados();
     const { roles, loading: cargandoRoles, error: errorRoles, refetch: refetchRoles } = useGetRoles();
     const { crearUsuario, loading: creando } = useCreateUser();
     const { crear: crearRol, loading: creandoRol } = useCreateRol();
@@ -46,7 +62,8 @@ const GestionUsuarios = () => {
         if (resultado.ok) {
             showToast('Usuario creado correctamente', 'success');
             setIsModalOpen(false);
-            refetch();
+            void refetch();
+            void refetchPagina();
             return true;
         }
 
@@ -114,10 +131,23 @@ const GestionUsuarios = () => {
                         <ErrorMessage message={error} />
                     ) : (
                         <UserList
-                            users={users}
+                            users={usuariosPagina}
+                            total={totalUsuarios}
+                            totalPages={totalPages}
                             roles={roles}
                             onAddUser={() => setIsModalOpen(true)}
-                            onRefetch={refetch}
+                            onRefetch={() => {
+                                void refetch();
+                                void refetchPagina();
+                            }}
+                            pagina={pagina}
+                            limite={limite}
+                            busqueda={busqueda}
+                            cargando={cargandoPagina}
+                            error={errorPagina}
+                            setPagina={setPagina}
+                            setLimite={setLimite}
+                            setBusqueda={setBusqueda}
                         />
                     )}
                 </div>

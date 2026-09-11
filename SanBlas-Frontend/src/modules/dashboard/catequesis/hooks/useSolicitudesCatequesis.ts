@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { CatequesisEnrollmentRecord } from "../Types/catequesis";
+import { useCallback, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   actualizarEstadoSolicitud,
   exportarInscripcionesCatequesis,
@@ -8,105 +8,135 @@ import {
 } from "../services/catequesisService";
 import { ApiError } from "../../../../services/apiClient";
 
-export const useSolicitudesCatequesis = () => {
-  const [solicitudes, setSolicitudesState] = useState<
-    CatequesisEnrollmentRecord[]
-  >([]);
-  const tieneDatosRef = useRef(false);
+// Filtros que el backend soporta en GET /inscripciones-catequesis
+export interface SolicitudesCatequesisFiltros {
+  estado?: string;
+  nombre?: string;
+  encargado?: string;
+  q?: string;
+}
 
-  const [cargando, setCargando] = useState(true);
-  const [filtrando, setFiltrando] = useState(false);
-  const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState("");
+// Clave raíz para invalidar la lista cuando muta algún estado
+const QUERY_KEY = ["catequesis-solicitudes"] as const;
+
+type CambiarEstadoVariables = {
+  id: number;
+  estado: "aprobado" | "rechazado";
+  observacion?: string;
+};
+
+export const useSolicitudesCatequesis = (
+  filtros?: SolicitudesCatequesisFiltros,
+) => {
+  const queryClient = useQueryClient();
+
   const [detalleError, setDetalleError] = useState("");
   const [accionError, setAccionError] = useState("");
   const [exportando, setExportando] = useState(false);
   const [exportError, setExportError] = useState("");
 
-  const cargarSolicitudes = useCallback(async () => {
-    const esCargaInicial = !tieneDatosRef.current;
+  // La lista se sirve con React Query: con placeholderData mantenemos los datos
+  // previos mientras llega la respuesta de un nuevo filtro (evita parpadeos)
+  const {
+    data: solicitudes = [],
+    isPending,
+    isFetching,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: ["catequesis-solicitudes", filtros],
+    queryFn: () => obtenerSolicitudesCatequesis(filtros),
+    placeholderData: (previousData) => previousData,
+    refetchOnWindowFocus: false,
+  });
 
-    try {
-      if (esCargaInicial) {
-        setCargando(true);
-      } else {
-        setFiltrando(true);
+  const cargando = isPending;
+  const filtrando = isFetching && !isPending;
+
+  // Errores de carga se normalizan a un string para el consumidor (como antes)
+  let error = "";
+  if (queryError instanceof ApiError) {
+    error = queryError.message;
+  } else if (queryError) {
+    error = "No se pudieron cargar las solicitudes de catequesis.";
+  }
+
+  // Aprobar/rechazar es una mutación React Query; al éxito se invalida la lista
+  // para que vuelva a cargarla sin recargar la página
+  const cambiarEstadoMutation = useMutation({
+    mutationFn: ({
+      id,
+      estado,
+      observacion,
+    }: CambiarEstadoVariables) =>
+      actualizarEstadoSolicitud(id, estado, observacion),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+    },
+    onError: (error: unknown) => {
+      setAccionError(
+        error instanceof ApiError
+          ? error.message
+          : "No se pudo actualizar el estado de la solicitud.",
+      );
+    },
+  });
+
+  const guardando = cambiarEstadoMutation.isPending;
+
+  // Se conserva la firma original para no romper al consumidor: devuelve ok/mensaje
+  const cambiarEstado = useCallback(
+    async (
+      id: number,
+      estado: "aprobado" | "rechazado",
+      observacion?: string,
+    ): Promise<{ ok: true } | { ok: false; mensaje: string }> => {
+      setAccionError("");
+      try {
+        await cambiarEstadoMutation.mutateAsync({
+          id,
+          estado,
+          observacion,
+        });
+        return { ok: true };
+      } catch (error) {
+        const mensaje =
+          error instanceof ApiError
+            ? error.message
+            : "No se pudo actualizar el estado de la solicitud.";
+        return { ok: false, mensaje };
       }
-      setError("");
+    },
+    [cambiarEstadoMutation],
+  );
 
-      const data = await obtenerSolicitudesCatequesis();
-      setSolicitudesState(data);
-      tieneDatosRef.current = true;
-    } catch (err) {
-      console.error(err);
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError("No se pudieron cargar las solicitudes de catequesis.");
-      }
-    } finally {
-      setCargando(false);
-      setFiltrando(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void cargarSolicitudes();
-  }, [cargarSolicitudes]);
-
-  const obtenerDetalle = async (id: number) => {
+  const obtenerDetalle = useCallback(async (id: number) => {
     try {
       setDetalleError("");
       return await obtenerSolicitudCatequesisPorId(id);
-    } catch (err) {
-      console.error(err);
-      if (err instanceof ApiError) {
-        setDetalleError(err.message);
+    } catch (error) {
+      console.error(error);
+      if (error instanceof ApiError) {
+        setDetalleError(error.message);
       } else {
         setDetalleError("No se pudo cargar el detalle de la solicitud.");
       }
       return null;
     }
-  };
+  }, []);
 
-  const cambiarEstado = async (
-    id: number,
-    estado: "aprobado" | "rechazado",
-    observacion?: string,
-  ): Promise<{ ok: true } | { ok: false; mensaje: string }> => {
-    try {
-      setGuardando(true);
-      setAccionError("");
-
-      await actualizarEstadoSolicitud(id, estado, observacion);
-      await cargarSolicitudes();
-
-      return { ok: true };
-    } catch (err) {
-      console.error(err);
-      const mensaje =
-        err instanceof ApiError
-          ? err.message
-          : "No se pudo actualizar el estado de la solicitud.";
-      setAccionError(mensaje);
-      return { ok: false, mensaje };
-    } finally {
-      setGuardando(false);
-    }
-  };
-
-  const exportarExcel = async () => {
+  const exportarExcel = useCallback(async () => {
     try {
       setExportando(true);
       setExportError("");
       await exportarInscripcionesCatequesis("Aprobada");
-    } catch (err) {
-      console.error(err);
-      if (err instanceof ApiError) {
+    } catch (error) {
+      console.error(error);
+      if (error instanceof ApiError) {
         setExportError(
-          err.status === 404
+          error.status === 404
             ? "La exportación no está disponible. Reinicie el backend para cargar los cambios recientes."
-            : err.message,
+            : error.message,
         );
       } else {
         setExportError("No se pudo exportar el archivo de Excel.");
@@ -114,11 +144,11 @@ export const useSolicitudesCatequesis = () => {
     } finally {
       setExportando(false);
     }
-  };
+  }, []);
 
   return {
     solicitudes,
-    cargarSolicitudes,
+    cargarSolicitudes: () => refetch(),
     obtenerDetalle,
     cambiarEstado,
     exportarExcel,
