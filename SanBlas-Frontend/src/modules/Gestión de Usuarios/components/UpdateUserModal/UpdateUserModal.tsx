@@ -1,7 +1,12 @@
 import React, { useEffect } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { Usuario } from '../../../../types/Usuario';
-import { opcionesSelectRol, type Rol } from '../../../../types/Rol';
+import { isAdminRole, type Usuario } from '../../../../types/Usuario';
+import {
+  opcionesSelectRol,
+  ROLES_ASIGNABLES,
+  type Rol,
+} from '../../../../types/Rol';
+import { useAuth } from '../../../../context/AuthContext';
 import {
   Button,
   FieldError,
@@ -59,6 +64,12 @@ const UpdateUserModal: React.FC<Props> = ({
       });
     },
   });
+
+  const { user: usuarioSesion } = useAuth();
+  // solo un admin puede otorgar/editar el rol admin; los demás solo ven el rol usuario
+  const rolesPermitidos = isAdminRole(usuarioSesion?.role ?? '')
+    ? [...ROLES_ASIGNABLES]
+    : [ROLES_ASIGNABLES[ROLES_ASIGNABLES.length - 1]];
 
   useEffect(() => {
     if (usuario && isOpen) {
@@ -278,7 +289,11 @@ const UpdateUserModal: React.FC<Props> = ({
                     onBlur={field.handleBlur}
                     disabled={esUsuarioActual}
                   >
-                    {opcionesSelectRol(roles, field.state.value).map((rol) => (
+                    {opcionesSelectRol(
+                      roles,
+                      field.state.value,
+                      rolesPermitidos,
+                    ).map((rol) => (
                       <option key={rol.clave} value={rol.clave}>
                         {rol.nombre}
                       </option>

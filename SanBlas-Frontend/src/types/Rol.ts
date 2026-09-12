@@ -25,7 +25,14 @@ export const etiquetaRol = (clave: string, roles: Rol[] = []) =>
   roles.find((rol) => rol.clave === clave)?.nombre ??
   (clave === "admin" ? "Administrador" : clave === "user" ? "Usuario" : clave);
 
-export const opcionesSelectRol = (roles: Rol[], claveActual?: string) => {
+// roles que se ofrecen al crear/editar usuarios en el panel (espejo del enum del backend)
+export const ROLES_ASIGNABLES = ["admin", "user"] as const;
+
+export const opcionesSelectRol = (
+  roles: Rol[],
+  claveActual?: string,
+  soloPermitidas?: readonly string[],
+) => {
   const base =
     roles.length > 0
       ? roles.map((rol) => ({ clave: rol.clave, nombre: rol.nombre }))
@@ -34,9 +41,17 @@ export const opcionesSelectRol = (roles: Rol[], claveActual?: string) => {
           { clave: "admin", nombre: "Administrador" },
         ];
 
-  if (claveActual && !base.some((rol) => rol.clave === claveActual)) {
-    return [...base, { clave: claveActual, nombre: etiquetaRol(claveActual, roles) }];
+  // filtra roles custom que vengan de la tabla rol; si no se filtra se muestran todos
+  const filtradas =
+    soloPermitidas && soloPermitidas.length > 0
+      ? base.filter((rol) => soloPermitidas.includes(rol.clave))
+      : base;
+
+  // si el usuario ya tiene un rol fuera del filtro (p. ej. secretario custom),
+  // igual se mantiene visible para no perderlo al editar el resto del perfil
+  if (claveActual && !filtradas.some((rol) => rol.clave === claveActual)) {
+    return [...filtradas, { clave: claveActual, nombre: etiquetaRol(claveActual, roles) }];
   }
 
-  return base;
+  return filtradas;
 };

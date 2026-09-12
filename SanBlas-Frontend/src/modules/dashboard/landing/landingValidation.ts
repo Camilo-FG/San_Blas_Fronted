@@ -66,7 +66,7 @@ function mensajeLongitud(
     return "El título de la tarjeta no puede superar 80 caracteres.";
   }
   if (/^card\d+Texto$/.test(name)) {
-    return "El texto de la tarjeta no puede superar 280 caracteres.";
+    return "El texto de la tarjeta no puede superar 220 caracteres.";
   }
   if (/^bloque\d+Titulo$/.test(name)) {
     return "El título del bloque no puede superar 80 caracteres.";
@@ -89,7 +89,7 @@ function mensajeLongitud(
     titleHighlight: "El título destacado no puede superar 80 caracteres.",
     description: "La descripción no puede superar 300 caracteres.",
     eyebrow: "La etiqueta no puede superar 40 caracteres.",
-    lead: "La descripción no puede superar 400 caracteres.",
+    lead: "La descripción no puede superar 300 caracteres.",
     origenes: "El párrafo de orígenes no puede superar 800 caracteres.",
     restauraciones:
       "El párrafo de restauraciones no puede superar 800 caracteres.",

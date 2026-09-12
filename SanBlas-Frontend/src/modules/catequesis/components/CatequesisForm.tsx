@@ -91,6 +91,10 @@ const infoBoxClass =
   "mb-4 rounded-2xl border border-royal-gold/40 bg-royal-gold/10 p-3.5 text-sm leading-relaxed text-gray-600 sm:p-4";
 const MAX_CHARACTERS = 50;
 
+// Rango de edad válido para catequesis infantil (Primer y Sétimo nivel).
+const EDAD_MINIMA_CATEQUIZANDO = 7;
+const EDAD_MAXIMA_CATEQUIZANDO = 8;
+
 const limitarCaracteres = (valor: string): string =>
   valor.slice(0, MAX_CHARACTERS);
 const limitarPalabras = limitarCaracteres;
@@ -110,14 +114,20 @@ const calcularEdad = (fecha: string): number | null => {
   return edad;
 };
 
+// Mensaje específico cuando la edad del catequizando no encaja en el rango 7-8.
+// Incluye la edad calculada cuando existe para orientar mejor al usuario.
 const mensajeFechaNacimientoCatequizando = (
   fecha: string | null,
 ): string | null => {
   if (!fecha) return "Digite la fecha de nacimiento.";
 
   const edad = calcularEdad(fecha);
-  if (edad === null || edad < 5 || edad > 15) {
-    return "La edad del catequizando no aplica. Debe tener entre 5 y 15 años.";
+  if (edad === null) {
+    return "La edad del catequizando no aplica. Debe tener entre 7 y 8 años.";
+  }
+
+  if (edad < EDAD_MINIMA_CATEQUIZANDO || edad > EDAD_MAXIMA_CATEQUIZANDO) {
+    return `La edad del catequizando es ${edad} años y no aplica. Debe tener entre ${EDAD_MINIMA_CATEQUIZANDO} y ${EDAD_MAXIMA_CATEQUIZANDO} años.`;
   }
 
   return null;
@@ -1606,7 +1616,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) => setAceptaLineamientos(e.target.checked)}
               />
               <span className="text-sm text-gray-600">
-                Confirmo que he leído y acepto los lineamientos de catequesis.
+                Estoy de acuerdo con los lineamientos establecidos
               </span>
             </label>
 

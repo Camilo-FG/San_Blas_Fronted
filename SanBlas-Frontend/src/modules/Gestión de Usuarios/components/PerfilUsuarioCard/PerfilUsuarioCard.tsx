@@ -1,7 +1,11 @@
-import { Mail, Shield, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertOctagon, Loader2, Mail, Shield, User } from "lucide-react";
 import type { Usuario } from "../../../../types/Usuario";
 import { etiquetaRol, type Rol } from "../../../../types/Rol";
-import { Badge, cn } from "../../../../shared/ui";
+import { useAuth } from "../../../../context/AuthContext";
+import { useToast } from "../../../../shared/ui";
+import { Badge, Button, Card, cn } from "../../../../shared/ui";
+import { useUpdateUser } from "../../hooks/hooksUsuarios/useUpdateUser";
 
 const formatFechaCreacion = (fecha?: string | null) => {
   if (!fecha) return "—";
@@ -19,6 +23,8 @@ type PerfilUsuarioCardProps = {
   titulo?: string;
   className?: string;
   espacioParaCerrar?: boolean;
+  // el padre se entera cuando se desactiva la cuenta para refrescar el listado
+  onEstadoCambiado?: (activo: boolean) => void;
 };
 
 export function PerfilUsuarioCard({
@@ -27,11 +33,29 @@ export function PerfilUsuarioCard({
   titulo = "Perfil",
   className,
   espacioParaCerrar = false,
+  onEstadoCambiado,
 }: PerfilUsuarioCardProps) {
+  const { user: usuarioSesion } = useAuth();
+  const { showToast } = useToast();
+  const { actualizarUsuario, loading: desactivando } = useUpdateUser();
+  const [activo, setActivo] = useState(usuario.state);
+  const [confirmando, setConfirmando] = useState(false);
+
+  // si cambia el usuario mostrado (modal que reutiliza el componente) reseteamos el estado
+  useEffect(() => {
+    setActivo(usuario.state);
+    setConfirmando(false);
+  }, [usuario.id, usuario.state]);
+
   const nombre = usuario.userName || usuario.email || "Usuario";
   const correo = usuario.email || "—";
   const rol = etiquetaRol(usuario.role, roles);
-  const activo = usuario.state;
+
+  // comparamos id y email porque el del modal viene del listado y el de sesión de otra fuente
+  const esUsuarioActual =
+    (usuarioSesion?.id != null && usuario.id === usuarioSesion.id) ||
+    (usuarioSesion?.email != null &&
+      usuario.email.toLowerCase() === usuarioSesion.email.toLowerCase());
 
   const campos = [
     { etiqueta: "Nombre", valor: nombre },
@@ -44,13 +68,21 @@ export function PerfilUsuarioCard({
     },
   ];
 
+  const confirmarDesactivacion = async () => {
+    const resultado = await actualizarUsuario(usuario.id, { state: false });
+    if (resultado.ok) {
+      setActivo(false);
+      setConfirmando(false);
+      showToast("Cuenta desactivada correctamente", "success");
+      onEstadoCambiado?.(false);
+      return;
+    }
+    showToast(resultado.mensaje, "error");
+    setConfirmando(false);
+  };
+
   return (
-    <section
-      className={cn(
-        "overflow-hidden rounded-2xl border border-border-strong bg-surface shadow-sm",
-        className,
-      )}
-    >
+    <Card className={cn("p-0", className)}>
       <div
         className={cn(
           "flex flex-col gap-4 border-b border-border-strong px-5 py-5 sm:flex-row sm:items-center sm:gap-5",
@@ -101,6 +133,67 @@ export function PerfilUsuarioCard({
           </div>
         ))}
       </dl>
-    </section>
+
+      <div className="border-t border-border-strong bg-danger-bg/40 px-5 py-4">
+        {esUsuarioActual ? (
+          <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary">
+            <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
+            No puede desactivar su propia cuenta desde aquí.
+          </p>
+        ) : !activo ? (
+          <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary">
+            <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
+            Esta cuenta está inactiva y no aparece en el listado.
+          </p>
+        ) : !confirmando ? (
+          <div>
+            <div className="flex items-start gap-2.5">
+              <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
+              <div>
+                <p className="m-0 text-sm font-bold text-danger">Zona de peligro</p>
+                <p className="m-0 mt-0.5 text-xs leading-relaxed text-text-secondary">
+                  Al desactivar la cuenta, {nombre} perderá el acceso y dejará de
+                  aparecer en el listado de usuarios.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="danger"
+              className="mt-3 shrink-0 self-start"
+              onClick={() => setConfirmando(true)}
+              disabled={desactivando}
+            >
+              Desactivar cuenta
+            </Button>
+          </div>
+        ) : (
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+            <p className="m-0 flex-1 text-sm leading-relaxed text-text-secondary">
+              ¿Confirmar la desactivación de <strong>{nombre}</strong>? Esta
+              acción no se puede deshacer.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="danger"
+                onClick={() => void confirmarDesactivacion()}
+                disabled={desactivando}
+              >
+                {desactivando ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : null}
+                {desactivando ? "Desactivando..." : "Sí, desactivar"}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setConfirmando(false)}
+                disabled={desactivando}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
   );
 }

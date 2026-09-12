@@ -45,6 +45,7 @@ import type {
 } from "../Types/catequesis";
 
 import { usePagination } from "../../../../shared/hooks/usePagination";
+import { useDebouncedValue } from "../../../../shared/hooks/useDebouncedValue";
 import {
   AdminModule,
   AdminPagination,
@@ -164,12 +165,29 @@ function GestionSolicitudesCatequesis() {
     "todos",
   );
   const [filtroFilial, setFiltroFilial] = useState<"todos" | string>("todos");
-  const [filtroNombre, setFiltroNombre] = useState("");
+  const [filtroTextoLibre, setFiltroTextoLibre] = useState("");
   const [filtroEncargado, setFiltroEncargado] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState<
+    "todos" | "pendiente" | "aprobado" | "rechazado"
+  >("todos");
   const [filtroNivelMenuAbierto, setFiltroNivelMenuAbierto] = useState(false);
   const [filtroFilialMenuAbierto, setFiltroFilialMenuAbierto] = useState(false);
   const filtroNivelMenuRef = useRef<HTMLDivElement>(null);
   const filtroFilialMenuRef = useRef<HTMLDivElement>(null);
+
+  // Debounce para no pegarle al backend en cada tecla del texto libre y del encargado
+  const debouncedQ = useDebouncedValue(filtroTextoLibre.trim(), 400);
+  const debouncedEncargado = useDebouncedValue(filtroEncargado.trim(), 400);
+
+  // Filtros que el backend soporta (estado, encargado, q); nivel y filial se filtran en memoria
+  const filtros = useMemo(
+    () => ({
+      estado: filtroEstado === "todos" ? undefined : filtroEstado,
+      encargado: debouncedEncargado || undefined,
+      q: debouncedQ || undefined,
+    }),
+    [filtroEstado, debouncedEncargado, debouncedQ],
+  );
 
   const {
     solicitudes,
@@ -187,7 +205,7 @@ function GestionSolicitudesCatequesis() {
     limpiarDetalleError,
     limpiarAccionError,
     limpiarExportError,
-  } = useSolicitudesCatequesis();
+  } = useSolicitudesCatequesis(filtros);
   const [selectedSolicitud, setSelectedSolicitud] =
     useState<CatequesisEnrollmentRecord | null>(null);
 
@@ -289,15 +307,17 @@ function GestionSolicitudesCatequesis() {
   ]);
 
   const hayFiltrosActivos =
+    filtroEstado !== "todos" ||
     filtroNivel !== "todos" ||
     filtroFilial !== "todos" ||
-    filtroNombre.trim() !== "" ||
+    filtroTextoLibre.trim() !== "" ||
     filtroEncargado.trim() !== "";
 
   const limpiarFiltros = () => {
+    setFiltroEstado("todos");
     setFiltroNivel("todos");
     setFiltroFilial("todos");
-    setFiltroNombre("");
+    setFiltroTextoLibre("");
     setFiltroEncargado("");
   };
 
@@ -575,22 +595,10 @@ function GestionSolicitudesCatequesis() {
     [openModal],
   );
 
+  // Nivel y filial no los soporta el backend, por eso se siguen filtrando en memoria
   const filteredSolicitudes = useMemo(
     () =>
       solicitudes.filter((solicitud) => {
-        const nombreAlumno =
-          `${solicitud.catequizando?.nombre ?? ""} ${solicitud.catequizando?.apellidos ?? ""}`.trim();
-        const nombreEncargado =
-          `${solicitud.encargado?.nombre ?? ""} ${solicitud.encargado?.apellidos ?? ""}`.trim();
-
-        const coincideNombre =
-          !filtroNombre.trim() ||
-          normalizeText(nombreAlumno).includes(normalizeText(filtroNombre));
-        const coincideEncargado =
-          !filtroEncargado.trim() ||
-          normalizeText(nombreEncargado).includes(
-            normalizeText(filtroEncargado),
-          );
         const coincideNivel =
           filtroNivel === "todos" ||
           normalizeText(solicitud.catequesis?.nivelAInscribirse) ===
@@ -600,17 +608,9 @@ function GestionSolicitudesCatequesis() {
           normalizeText(solicitud.catequesis?.centroCatequesis) ===
             normalizeText(filtroFilial);
 
-        return (
-          coincideNombre && coincideEncargado && coincideNivel && coincideFilial
-        );
+        return coincideNivel && coincideFilial;
       }),
-    [
-      solicitudes,
-      filtroNombre,
-      filtroEncargado,
-      filtroNivel,
-      filtroFilial,
-    ],
+    [solicitudes, filtroNivel, filtroFilial],
   );
 
   const table = useReactTable({
@@ -643,7 +643,7 @@ function GestionSolicitudesCatequesis() {
 
   useEffect(() => {
     table.setPageIndex(0);
-  }, [filtroNombre, filtroEncargado, filtroNivel, filtroFilial]);
+  }, [filtroTextoLibre, filtroEncargado, filtroEstado, filtroNivel, filtroFilial]);
 
   useEffect(() => {
     table.setPageIndex(0);
@@ -739,17 +739,33 @@ function GestionSolicitudesCatequesis() {
 
       <AdminToolbar className="p-3!">
         <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="text"
-            value={filtroNombre}
-            onChange={(e) =>
-              setFiltroNombre(
-                e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, ""),
+          <select
+            value={filtroEstado}
+            onChange={(event) =>
+              setFiltroEstado(
+                event.target.value as
+                  | "todos"
+                  | "pendiente"
+                  | "aprobado"
+                  | "rechazado",
               )
             }
-            placeholder="Nombre completo"
+            className="min-h-11 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            aria-label="Filtrar por estado"
+          >
+            <option value="todos">Todos los estados</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="aprobado">Aprobada</option>
+            <option value="rechazado">Rechazada</option>
+          </select>
+          <input
+            type="text"
+            value={filtroTextoLibre}
+            onChange={(e) => setFiltroTextoLibre(e.target.value)}
+            maxLength={60}
+            placeholder="Buscar en alumno o contacto"
             className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
-            aria-label="Filtrar por nombre completo"
+            aria-label="Buscar en alumno o contacto (nombre o teléfono)"
           />
           <input
             type="text"
@@ -757,7 +773,7 @@ function GestionSolicitudesCatequesis() {
             onChange={(e) =>
               setFiltroEncargado(handleSoloLetrasNombre(e.target.value))
             }
-            placeholder="Encargado"
+            placeholder="Nombre del encargado"
             className="min-h-11 min-w-[180px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
             aria-label="Filtrar por nombre del encargado"
           />

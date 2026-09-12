@@ -1,7 +1,12 @@
 import React, { useEffect } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { Usuario } from '../../../../types/Usuario';
-import { opcionesSelectRol, type Rol } from '../../../../types/Rol';
+import { isAdminRole, type Usuario } from '../../../../types/Usuario';
+import {
+  opcionesSelectRol,
+  ROLES_ASIGNABLES,
+  type Rol,
+} from '../../../../types/Rol';
+import { useAuth } from '../../../../context/AuthContext';
 import {
   Button,
   FieldError,
@@ -53,7 +58,7 @@ const CreateUserModal: React.FC<Props> = ({
       telefono: '',
       contraseña: '',
       confirmarContraseña: '',
-      rol: 'user',
+      rol: '',
     },
     onSubmit: async ({ value }) => {
       const ok = await onSave({
@@ -69,6 +74,12 @@ const CreateUserModal: React.FC<Props> = ({
       }
     },
   });
+
+  const { user: usuarioSesion } = useAuth();
+  // solo un admin puede otorgar el rol admin; el resto solo puede crear usuarios normales
+  const rolesPermitidos = isAdminRole(usuarioSesion?.role ?? '')
+    ? [...ROLES_ASIGNABLES]
+    : [ROLES_ASIGNABLES[ROLES_ASIGNABLES.length - 1]];
 
   useEffect(() => {
     if (!isOpen) {
@@ -143,6 +154,12 @@ const CreateUserModal: React.FC<Props> = ({
     const v = value.trim();
     if (!v) return 'Confirme la contraseña.';
     if (v !== form.getFieldValue('contraseña').trim()) return 'Las contraseñas no coinciden.';
+    return undefined;
+  };
+
+  // el rol es obligatorio y ya no se asigna 'user' por defecto; se bloquea el submit si queda vacío
+  const validarRol = (value: string) => {
+    if (!value) return 'Seleccione un rol para el usuario.';
     return undefined;
   };
 
@@ -331,23 +348,38 @@ const CreateUserModal: React.FC<Props> = ({
             )}
           </form.Field>
 
-          <form.Field name="rol">
+          <form.Field
+            name="rol"
+            validators={{
+              onBlur: ({ value }) => validarRol(value),
+              onSubmit: ({ value }) => validarRol(value),
+            }}
+          >
             {(field) => (
               <div>
-                <Label htmlFor="rol">Rol de Usuario</Label>
+                <Label htmlFor="rol" required>
+                  Rol de Usuario
+                </Label>
                 <Select
                   id="rol"
                   value={field.state.value}
+                  hasError={field.state.meta.errors.length > 0}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
                   disabled={guardando}
                 >
-                  {opcionesSelectRol(roles, field.state.value).map((rol) => (
+                  <option value="">Seleccione un rol</option>
+                  {opcionesSelectRol(
+                    roles,
+                    field.state.value,
+                    rolesPermitidos,
+                  ).map((rol) => (
                     <option key={rol.clave} value={rol.clave}>
                       {rol.nombre}
                     </option>
                   ))}
                 </Select>
+                <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
               </div>
             )}
           </form.Field>
