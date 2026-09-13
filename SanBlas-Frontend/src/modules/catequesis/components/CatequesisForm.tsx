@@ -139,10 +139,15 @@ const limitarTelefono = (valor: string): string =>
 
 const contarCaracteres = (valor: string): number => valor.length;
 
-const WordCounter = ({ value, max = MAX_CHARACTERS }: { value: string; max?: number }) => (
-  <span className="text-right text-[0.72rem] font-medium text-text-muted">
-    {contarCaracteres(value)}/{max} caracteres
-  </span>
+const WordCounter = ({ value, max = MAX_CHARACTERS, error }: { value: string; max?: number; error?: string }) => (
+  <div className="flex items-center justify-between gap-2">
+    {error && (
+      <p className="m-0 text-xs font-extrabold text-red-600">{error}</p>
+    )}
+    <span className="ml-auto text-right text-[0.72rem] font-medium text-text-muted">
+      {contarCaracteres(value)}/{max} caracteres
+    </span>
+  </div>
 );
 
 function CampoApellido({
@@ -173,10 +178,7 @@ function CampoApellido({
         maxLength={MAX_CHARACTERS_NOMBRE}
         onChange={(e) => onChange(limitarNombre(e.target.value))}
       />
-      <WordCounter value={value} max={MAX_CHARACTERS_NOMBRE} />
-      {error && (
-        <p className="m-0 text-xs font-extrabold text-red-600">{error}</p>
-      )}
+      <WordCounter value={value} max={MAX_CHARACTERS_NOMBRE} error={error} />
     </div>
   );
 }
@@ -665,12 +667,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.catequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
-              {errors.nombreCatequizando && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.nombreCatequizando}
-                </p>
-              )}
+              <WordCounter value={form.catequizando.nombre} max={MAX_CHARACTERS_NOMBRE} error={errors.nombreCatequizando} />
             </div>
 
             <CampoApellido
@@ -737,12 +734,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.catequizando.direccion.direccionExacta || ""}
+                error={errors.direccionExacta}
               />
-              {errors.direccionExacta && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.direccionExacta}
-                </p>
-              )}
             </div>
           </div>
         </section>
@@ -780,12 +773,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.catequizando.bautismo.parroquia || ""} />
-              {errors.parroquiaBautismo && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.parroquiaBautismo}
-                </p>
-              )}
+              <WordCounter value={form.catequizando.bautismo.parroquia || ""} error={errors.parroquiaBautismo} />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -926,12 +914,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   value={
                     form.catequizando.adecuacion.descripcionAdecuacion || ""
                   }
+                  error={errors.descripcionAdecuacion}
                 />
-                {errors.descripcionAdecuacion && (
-                  <p className="m-0 text-xs font-extrabold text-red-600">
-                    {errors.descripcionAdecuacion}
-                  </p>
-                )}
               </div>
             )}
 
@@ -987,12 +971,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   value={
                     form.catequizando.condicionSalud.descripcionEnfermedad || ""
                   }
+                  error={errors.descripcionEnfermedad}
                 />
-                {errors.descripcionEnfermedad && (
-                  <p className="m-0 text-xs font-extrabold text-red-600">
-                    {errors.descripcionEnfermedad}
-                  </p>
-                )}
               </div>
             )}
           </div>
@@ -1035,12 +1015,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <WordCounter
                 value={form.inscripcion.personaQueInscribe.nombre || ""}
                 max={MAX_CHARACTERS_NOMBRE}
+                error={errors.nombrePersonaInscribe}
               />
-              {errors.nombrePersonaInscribe && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.nombrePersonaInscribe}
-                </p>
-              )}
             </div>
 
             <CampoApellido
@@ -1087,12 +1063,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.inscripcion.personaQueInscribe.correo || ""}
+                error={errors.correoPersonaInscribe}
               />
-              {errors.correoPersonaInscribe && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.correoPersonaInscribe}
-                </p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -1114,12 +1086,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.inscripcion.personaQueInscribe.telefono || ""}
+                error={errors.telefonoPersonaInscribe}
               />
-              {errors.telefonoPersonaInscribe && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.telefonoPersonaInscribe}
-                </p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -1291,12 +1259,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.madreCatequizando.direccion.direccionExacta || ""}
+                error={errors.direccionMadre}
               />
-              {errors.direccionMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.direccionMadre}
-                </p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -1316,12 +1280,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.madreCatequizando.direccion.ciudad || ""}
+                error={errors.ciudadMadre}
               />
-              {errors.ciudadMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.ciudadMadre}
-                </p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -1341,12 +1301,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.madreCatequizando.direccion.provincia || ""}
+                error={errors.provinciaMadre}
               />
-              {errors.provinciaMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.provinciaMadre}
-                </p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -1366,12 +1322,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.madreCatequizando.telefono} />
-              {errors.telefonoMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.telefonoMadre}
-                </p>
-              )}
+              <WordCounter value={form.madreCatequizando.telefono} error={errors.telefonoMadre} />
             </div>
               </>
             )}
@@ -1495,12 +1446,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.padreCatequizando.telefono} />
-              {errors.telefonoPadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.telefonoPadre}
-                </p>
-              )}
+              <WordCounter value={form.padreCatequizando.telefono} error={errors.telefonoPadre} />
             </div>
               </>
             )}
@@ -1557,12 +1503,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.inscripcion.pago.numeroComprobanteSINPE}
+                error={errors.numeroComprobanteSINPE}
               />
-              {errors.numeroComprobanteSINPE && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.numeroComprobanteSINPE}
-                </p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5 md:col-span-2">
