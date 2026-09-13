@@ -163,7 +163,7 @@ function CampoApellido({
     <div className="flex flex-col gap-1.5">
       <Label className="text-xs font-black text-royal-blue">
         {label}
-        {required ? " *" : ""}
+        {required ? <span className="text-red-500"> *</span> : ""}
       </Label>
       <Input
         type="text"
@@ -414,6 +414,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       if (!form.inscripcion.personaQueInscribe.primerApellido?.trim())
         stepErrors.primerApellidoPersonaInscribe =
           "Digite el primer apellido de la persona que inscribe.";
+      if (!form.inscripcion.personaQueInscribe.segundoApellido?.trim())
+        stepErrors.segundoApellidoPersonaInscribe =
+          "Digite el segundo apellido de la persona que inscribe.";
       if (!form.inscripcion.parentesco)
         stepErrors.parentesco = "Seleccione el parentesco.";
       const correo = form.inscripcion.personaQueInscribe.correo?.trim() ?? "";
@@ -550,7 +553,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Centro de catequesis *
+                Centro de catequesis<span className="text-red-500"> *</span>
               </Label>
               <Select
                 value={form.catequesis.centroCatequesis || ""}
@@ -577,7 +580,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Nivel a inscribirse *
+                Nivel a inscribirse<span className="text-red-500"> *</span>
               </Label>
               <Select
                 value={form.catequesis.nivelAInscribirse || ""}
@@ -604,7 +607,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5 md:col-span-2">
               <Label className="text-xs font-black text-royal-blue">
-                Adjuntar fe de bautismo *
+                Adjuntar fe de bautismo<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="file"
@@ -646,7 +649,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Nombre *
+                Nombre<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -688,7 +691,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Fecha de nacimiento *
+                Fecha de nacimiento<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="date"
@@ -716,7 +719,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Dirección exacta *
+                Dirección exacta<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -761,7 +764,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Parroquia *
+                Parroquia<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -869,7 +872,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                ¿Requiere adecuación en el centro educativo? *
+                ¿Requiere adecuación en el centro educativo?<span className="text-red-500"> *</span>
               </Label>
               <Select
                 value={
@@ -902,7 +905,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             {form.catequizando.adecuacion.requiereAdecuacionCentroEducativo && (
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs font-black text-royal-blue">
-                  Descripción de la adecuación *
+                  Descripción de la adecuación<span className="text-red-500"> *</span>
                 </Label>
                 <Textarea
                   placeholder="Ej: Requiere apoyo adicional para actividades de lectura."
@@ -931,7 +934,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                ¿Es portador de enfermedad crónica? *
+                ¿Es portador de enfermedad crónica?<span className="text-red-500"> *</span>
               </Label>
               <Select
                 value={
@@ -963,7 +966,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             {form.catequizando.condicionSalud.portadorEnfermedadCronica && (
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs font-black text-royal-blue">
-                  Descripción de enfermedad *
+                  Descripción de enfermedad<span className="text-red-500"> *</span>
                 </Label>
                 <Textarea
                   placeholder="Ej: Alergia a la penicilina."
@@ -1012,7 +1015,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Nombre *
+                Nombre<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -1050,8 +1053,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
             <CampoApellido
               label="Segundo apellido"
+              required
               placeholder="Ej: Vargas"
               value={form.inscripcion.personaQueInscribe.segundoApellido || ""}
+              error={errors.segundoApellidoPersonaInscribe}
               onChange={(valor) =>
                 updateForm(
                   "inscripcion.personaQueInscribe.segundoApellido",
@@ -1062,7 +1067,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Correo electrónico *
+                Correo electrónico<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="email"
@@ -1087,7 +1092,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Teléfono *
+                Teléfono<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -1114,7 +1119,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Parentesco *
+                Parentesco<span className="text-red-500"> *</span>
               </Label>
               <Select
                 value={form.inscripcion.parentesco || ""}
@@ -1163,7 +1168,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5 md:col-span-2">
               <Label className="text-xs font-black text-royal-blue">
-                ¿La madre es parte del núcleo familiar? *
+                ¿La madre es parte del núcleo familiar?<span className="text-red-500"> *</span>
               </Label>
               <Select
                 value={
@@ -1223,7 +1228,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <>
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Nombre *
+                Nombre<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -1265,7 +1270,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Dirección exacta *
+                Dirección exacta<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -1290,7 +1295,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Ciudad *
+                Ciudad<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -1315,7 +1320,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Provincia *
+                Provincia<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -1340,7 +1345,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Teléfono *
+                Teléfono<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -1374,7 +1379,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5 md:col-span-2">
               <Label className="text-xs font-black text-royal-blue">
-                ¿El padre es parte del núcleo familiar? *
+                ¿El padre es parte del núcleo familiar?<span className="text-red-500"> *</span>
               </Label>
               <Select
                 value={
@@ -1426,7 +1431,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <>
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Nombre *
+                Nombre<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -1530,7 +1535,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Número de comprobante SINPE *
+                Número de comprobante SINPE<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -1555,7 +1560,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5 md:col-span-2">
               <Label className="text-xs font-black text-royal-blue">
-                Archivo del comprobante *
+                Archivo del comprobante<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="file"
