@@ -11,6 +11,7 @@ import {
 } from "../../solicSacramento/components/SubidaImagen";
 import { HeroPreview } from "./HeroPreview";
 import { HistoriaPreview } from "./HistoriaPreview";
+import { HorariosPreview } from "./HorariosPreview";
 import { SobreNosotrosPreview } from "./SobreNosotrosPreview";
 
 interface LandingSectionModalProps {
@@ -70,7 +71,8 @@ export default function LandingSectionModal({
   const esHero = sectionKey === "hero";
   const esSobreNosotros = sectionKey === "sobre-nosotros";
   const esHistoria = sectionKey === "historia";
-  const tieneVisor = esHero || esSobreNosotros || esHistoria;
+  const esHorarios = sectionKey === "horarios";
+  const tieneVisor = esHero || esSobreNosotros || esHistoria || esHorarios;
   const imagenPreview =
     archivosImagen.imageUrl?.preview ||
     values.imageUrl ||
@@ -84,6 +86,14 @@ export default function LandingSectionModal({
     titulo: values[`card${index}Titulo`] ?? "",
     texto: values[`card${index}Texto`] ?? "",
   }));
+  // bloques del volante pa la vista previa (lee los campos del formulario tal cual están)
+  const bloquesHorarios = [1, 2, 3, 4].map((index) => ({
+    titulo: values[`bloque${index}Titulo`] ?? "",
+    filas: values[`bloque${index}Filas`] ?? "",
+  }));
+  // fondo del volante: si adjuntó una nueva se previsualiza esa, si no la guardada o la por defecto
+  const imagenHorariosPreview =
+    archivosImagen.imageUrl?.preview || values.imageUrl || "";
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -113,7 +123,7 @@ export default function LandingSectionModal({
     const fieldId = `landing-field-${field.name}`;
     const errorId = `${fieldId}-error`;
     const mensajeError = errores[field.name];
-    const esObligatorio = field.type !== "image";
+    const esObligatorio = field.type !== "image" && field.required !== false;
 
     if (field.type === "image") {
       const archivoCampo = archivosImagen[field.name] ?? null;
@@ -224,6 +234,20 @@ export default function LandingSectionModal({
           videoUrl={values.videoUrl ?? ""}
           headerImageSrc={headerHistoriaPreview}
           quoteImageSrc={quoteHistoriaPreview}
+          ampliadas={ampliadas}
+        />
+      );
+    }
+
+    if (esHorarios) {
+      return (
+        <HorariosPreview
+          title={values.title ?? ""}
+          subtitle={values.subtitle ?? ""}
+          titleHighlight={values.titleHighlight ?? ""}
+          intro={values.intro ?? ""}
+          imageUrl={imagenHorariosPreview}
+          bloques={bloquesHorarios}
           ampliadas={ampliadas}
         />
       );
@@ -420,7 +444,7 @@ export default function LandingSectionModal({
                 className={`relative w-full overflow-hidden rounded-2xl outline-none ${
                   esHero
                     ? "aspect-video max-w-6xl bg-royal-blue"
-                    : esHistoria
+                    : esHistoria || esHorarios
                       ? "h-[min(86vh,920px)] max-w-6xl bg-surface"
                       : "aspect-[16/11] max-w-6xl bg-surface"
                 }`}
@@ -431,7 +455,9 @@ export default function LandingSectionModal({
                     ? "Vista previa ampliada del hero"
                     : esHistoria
                       ? "Vista previa ampliada de Historia y legado"
-                      : "Vista previa ampliada de Sobre nosotros"
+                      : esHorarios
+                        ? "Vista previa ampliada de Horarios"
+                        : "Vista previa ampliada de Sobre nosotros"
                 }
                 initial={reducirMovimiento ? false : { opacity: 0, scale: 0.94, y: 18 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}

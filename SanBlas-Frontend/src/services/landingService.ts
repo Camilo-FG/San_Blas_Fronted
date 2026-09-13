@@ -75,7 +75,9 @@ export const actualizarSeccionLanding = async <T = Record<string, unknown>>(
     }
 
     if (
-      (sectionKey === "hero" || sectionKey === "sobre-nosotros") &&
+      (sectionKey === "hero" ||
+        sectionKey === "sobre-nosotros" ||
+        sectionKey === "horarios") &&
       archivo
     ) {
       const formData = new FormData();

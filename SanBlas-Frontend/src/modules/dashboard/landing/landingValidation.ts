@@ -5,7 +5,7 @@
  */
 import { normalizarYoutubeEmbed } from "../../landing/historiaContent";
 import type { LandingSectionKey } from "../../../services/landingService";
-import { LANDING_SECTIONS } from "./landingSectionConfig";
+import { dividirFilaHorario, LANDING_SECTIONS } from "./landingSectionConfig";
 
 export const TELEFONO_LANDING_REGEX = /^[\d+\s()-]{7,40}$/;
 export const YOUTUBE_EMBED_REGEX =
@@ -49,10 +49,13 @@ function mensajeRequerido(sectionKey: LandingSectionKey, name: string): string {
   if (/^bloque\d+Items$/.test(name)) {
     return "Cada bloque debe incluir al menos un horario.";
   }
+  if (/^bloque\d+Filas$/.test(name)) {
+    return "Cada fila debe usar el formato Día :: hora1, hora2.";
+  }
   if (name === "subtitle") {
-    return sectionKey === "historia"
-      ? "El subtítulo es obligatorio."
-      : "El encabezado es obligatorio.";
+    if (sectionKey === "historia") return "El subtítulo es obligatorio.";
+    if (sectionKey === "horarios") return "El subtítulo es obligatorio.";
+    return "El encabezado es obligatorio.";
   }
   return MENSAJES_REQUERIDO[name] ?? "Este campo es obligatorio.";
 }
@@ -77,10 +80,15 @@ function mensajeLongitud(
   if (name === "requisitos") {
     return "Cada requisito no puede superar 200 caracteres.";
   }
+  if (/^bloque\d+Filas$/.test(name)) {
+    return "Cada hora no puede superar 120 caracteres.";
+  }
   if (name === "subtitle") {
-    return sectionKey === "historia"
-      ? "El subtítulo no puede superar 160 caracteres."
-      : "El encabezado no puede superar 40 caracteres.";
+    if (sectionKey === "historia")
+      return "El subtítulo no puede superar 160 caracteres.";
+    if (sectionKey === "horarios")
+      return "El subtítulo no puede superar 80 caracteres.";
+    return "El encabezado no puede superar 40 caracteres.";
   }
 
   const mensajes: Record<string, string> = {
@@ -137,6 +145,14 @@ export function validarFormularioLanding(
 
   for (const field of config.fields) {
     if (field.type === "image") continue;
+    // los bloques de horarios se validan aparte (bloque 1 obligatorio, 2-4 opcionales)
+    if (sectionKey === "horarios" && /^bloque\d+(Titulo|Filas)$/.test(field.name)) {
+      continue;
+    }
+    // los opcionales vacíos no se validan
+    if (field.required === false && !(values[field.name] ?? "").trim()) {
+      continue;
+    }
 
     const valor = (values[field.name] ?? "").trim();
 
@@ -194,6 +210,65 @@ export function validarFormularioLanding(
     }
   }
 
+  // valida los bloques de horarios (filas "Día :: hora1, hora2", bloque 1 obligatorio)
+  if (sectionKey === "horarios") {
+    for (let index = 1; index <= 4; index += 1) {
+      const campoTitulo = `bloque${index}Titulo`;
+      const campoFilas = `bloque${index}Filas`;
+      const titulo = (values[campoTitulo] ?? "").trim();
+      const lineas = (values[campoFilas] ?? "")
+        .split("\n")
+        .map((linea) => linea.trim())
+        .filter(Boolean);
+      const obligatorio = index === 1;
+      if (!titulo && lineas.length === 0) {
+        if (obligatorio) {
+          errores[campoTitulo] = "El título del bloque es obligatorio.";
+          errores[campoFilas] = "Cada bloque debe incluir al menos una fila.";
+        }
+        continue;
+      }
+      if (!titulo) {
+        errores[campoTitulo] = "El título del bloque es obligatorio.";
+      } else if (titulo.length > 80) {
+        errores[campoTitulo] =
+          "El título del bloque no puede superar 80 caracteres.";
+      }
+      if (lineas.length === 0) {
+        errores[campoFilas] = "Cada bloque debe incluir al menos una fila.";
+        continue;
+      }
+      if (lineas.length > 10) {
+        errores[campoFilas] =
+          "Cada bloque puede incluir máximo 10 filas.";
+        continue;
+      }
+      for (const linea of lineas) {
+        const fila = dividirFilaHorario(linea);
+        if (!fila) {
+          errores[campoFilas] =
+            "Cada fila debe usar el formato Día :: hora1, hora2.";
+          break;
+        }
+        if (fila.dia.length > 80) {
+          errores[campoFilas] =
+            "El día no puede superar 80 caracteres.";
+          break;
+        }
+        if (fila.horas.length > 10) {
+          errores[campoFilas] =
+            "Cada fila puede incluir máximo 10 horas.";
+          break;
+        }
+        if (fila.horas.some((hora) => hora.length > 120)) {
+          errores[campoFilas] =
+            "Cada hora no puede superar 120 caracteres.";
+          break;
+        }
+      }
+    }
+  }
+
   return errores;
 }
 
@@ -214,11 +289,17 @@ export function mapearErroresLanding(
       continue;
     }
 
-    const bloque = clave.match(/^bloques\.(\d+)\.(titulo|items)$/);
+    const fila = clave.match(/^bloques\.(\d+)\.filas\.(\d+)\.(dia|horas)$/);
+    if (fila) {
+      out[`bloque${Number(fila[1]) + 1}Filas`] = msg;
+      continue;
+    }
+
+    const bloque = clave.match(/^bloques\.(\d+)\.(titulo|items|filas)$/);
     if (bloque) {
       const indice = Number(bloque[1]) + 1;
       out[
-        bloque[2] === "titulo" ? `bloque${indice}Titulo` : `bloque${indice}Items`
+        bloque[2] === "titulo" ? `bloque${indice}Titulo` : `bloque${indice}Filas`
       ] = msg;
       continue;
     }
