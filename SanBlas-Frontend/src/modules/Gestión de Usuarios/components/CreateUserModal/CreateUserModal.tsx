@@ -35,8 +35,35 @@ interface Props {
   guardando?: boolean;
 }
 
-const REGEX_PASSWORD =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+// saca la lista de reglas que todavía le faltan (misma regla fuerte del backend: @Matches + @MinLength(8) del RegisterDto)
+const obtenerReglasFaltantes = (v: string): string[] => {
+  const faltantes: string[] = [];
+  if (v.length < 8) faltantes.push('mínimo 8 caracteres');
+  if (!/[a-z]/.test(v)) faltantes.push('una minúscula');
+  if (!/[A-Z]/.test(v)) faltantes.push('una mayúscula');
+  if (!/\d/.test(v)) faltantes.push('un número');
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(v))
+    faltantes.push('un carácter especial');
+  return faltantes;
+};
+
+// calcula la fortaleza de 0 a 5 según cuántas reglas cumple (pa la barrita visual)
+const calcularFortaleza = (v: string): number => {
+  let puntos = 0;
+  if (v.length >= 8) puntos += 1;
+  if (/[a-z]/.test(v)) puntos += 1;
+  if (/[A-Z]/.test(v)) puntos += 1;
+  if (/\d/.test(v)) puntos += 1;
+  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(v)) puntos += 1;
+  return puntos;
+};
+
+// textos y colores de la barrita según el puntaje
+const describirFortaleza = (puntos: number): { texto: string; clase: string } => {
+  if (puntos <= 2) return { texto: 'Débil', clase: 'bg-red-500' };
+  if (puntos <= 4) return { texto: 'Media', clase: 'bg-amber-500' };
+  return { texto: 'Fuerte', clase: 'bg-emerald-500' };
+};
 
 const mensajeErrorCampo = (errors: unknown[]) => {
   const first = errors[0];
@@ -140,12 +167,14 @@ const CreateUserModal: React.FC<Props> = ({
     return undefined;
   };
 
+  // valida el formato de la contraseña regla por regla (misma regla que el backend con @Matches)
   const validarContraseña = (value: string) => {
     const v = value.trim();
     if (!v) return 'La contraseña es requerida.';
     if (v.length > 64) return 'La contraseña no puede superar 64 caracteres.';
-    if (!REGEX_PASSWORD.test(v)) {
-      return 'Debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.';
+    const faltantes = obtenerReglasFaltantes(v);
+    if (faltantes.length > 0) {
+      return `Falta: ${faltantes.join(', ')}.`; // le dice exactamente qué regla le falta
     }
     return undefined;
   };
@@ -278,11 +307,17 @@ const CreateUserModal: React.FC<Props> = ({
             <form.Field
               name="contraseña"
               validators={{
+                onChange: ({ value }) => validarContraseña(value), // valida en tiempo real mientras escribe
                 onBlur: ({ value }) => validarContraseña(value),
                 onSubmit: ({ value }) => validarContraseña(value),
               }}
             >
-              {(field) => (
+              {(field) => {
+              // puntaje y etiqueta pa la ayuda visual de fortaleza
+              const valor = field.state.value.trim();
+              const puntos = valor ? calcularFortaleza(valor) : 0;
+              const fortaleza = describirFortaleza(puntos);
+              return (
                 <div>
                   <Label htmlFor="nueva-contrasena-usuario" required>
                     Contraseña
@@ -306,18 +341,33 @@ const CreateUserModal: React.FC<Props> = ({
                     maxLength={64}
                     disabled={guardando}
                   />
+                  {valor ? ( // solo muestra la barrita si ya escribió algo
+                    <div className="mt-2 flex items-center gap-2" aria-live="polite">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong">
+                        <div
+                          className={`h-full rounded-full transition-all ${fortaleza.clase}`}
+                          style={{ width: `${(puntos / 5) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-semibold text-text-muted">
+                        {fortaleza.texto}
+                      </span>
+                    </div>
+                  ) : null}
                   <p className="mt-1 text-xs text-text-muted">
                     Incluya mayúscula, minúscula, número y carácter especial.
                   </p>
                   <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
                 </div>
-              )}
+              );
+            }}
             </form.Field>
           </div>
 
           <form.Field
             name="confirmarContraseña"
             validators={{
+              onChange: ({ value }) => validarConfirmacion(value), // valida en tiempo real si coincide
               onBlur: ({ value }) => validarConfirmacion(value),
               onSubmit: ({ value }) => validarConfirmacion(value),
             }}

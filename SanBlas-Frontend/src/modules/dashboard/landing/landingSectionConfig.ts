@@ -4,6 +4,7 @@ import {
   HISTORIA_DEFAULT,
   normalizarYoutubeEmbed,
 } from "../../landing/historiaContent";
+import { HORARIOS_DEFAULT } from "../../landing/horariosContent";
 
 /**
  * Longitudes y formatos alineados con los DTOs del backend
@@ -21,7 +22,27 @@ export interface LandingFieldConfig {
   hint?: string;
   rows?: number;
   format?: LandingFieldFormat;
+  required?: boolean; // si es false el campo es opcional (por defecto todos son obligatorios)
 }
+
+export interface FilaHorario {
+  dia: string;
+  horas: string[];
+}
+
+// parte "Día :: hora1, hora2" en {dia, horas} o null si no cumple el formato (pa validar y guardar)
+export const dividirFilaHorario = (linea: string): FilaHorario | null => {
+  const corte = linea.indexOf("::");
+  if (corte <= 0) return null;
+  const dia = linea.slice(0, corte).trim();
+  const horas = linea
+    .slice(corte + 2)
+    .split(",")
+    .map((hora) => hora.trim())
+    .filter(Boolean);
+  if (!dia || horas.length === 0) return null;
+  return { dia, horas };
+};
 
 export interface LandingSectionConfig {
   key: LandingSectionKey;
@@ -225,18 +246,53 @@ export const LANDING_SECTIONS: LandingSectionConfig[] = [
   {
     key: "horarios",
     label: "Página de horarios",
-    description: "Bloques de horarios parroquiales.",
+    description: "Título y bloques de horarios estilo volante de misa.",
     fields: [
-      { name: "title", label: "Título", type: "text", maxLength: 80 },
-      { name: "intro", label: "Introducción", type: "textarea", maxLength: 220, rows: 3 },
-      { name: "bloque1Titulo", label: "Bloque 1 — Título", type: "text", maxLength: 80 },
-      { name: "bloque1Items", label: "Bloque 1 — Horarios", type: "lines", maxLength: 200, rows: 4 },
-      { name: "bloque2Titulo", label: "Bloque 2 — Título", type: "text", maxLength: 80 },
-      { name: "bloque2Items", label: "Bloque 2 — Horarios", type: "lines", maxLength: 200, rows: 4 },
-      { name: "bloque3Titulo", label: "Bloque 3 — Título", type: "text", maxLength: 80 },
-      { name: "bloque3Items", label: "Bloque 3 — Horarios", type: "lines", maxLength: 200, rows: 4 },
-      { name: "bloque4Titulo", label: "Bloque 4 — Título", type: "text", maxLength: 80 },
-      { name: "bloque4Items", label: "Bloque 4 — Horarios", type: "lines", maxLength: 200, rows: 4 },
+      { name: "title", label: "Título (Horarios)", type: "text", maxLength: 80, placeholder: HORARIOS_DEFAULT.title },
+      { name: "subtitle", label: "Subtítulo (de la Santa)", type: "text", maxLength: 80, placeholder: HORARIOS_DEFAULT.subtitle },
+      { name: "titleHighlight", label: "Título destacado dorado (Misa)", type: "text", maxLength: 80, placeholder: HORARIOS_DEFAULT.titleHighlight },
+      { name: "intro", label: "Introducción", type: "textarea", maxLength: 220, rows: 3, placeholder: HORARIOS_DEFAULT.intro },
+      {
+        name: "imageUrl",
+        label: "Imagen de fondo",
+        type: "image",
+        hint: "Adjunte JPG, PNG o WEBP (máx. 5 MB). Se sube a Cloudinary. Si no adjunta una, se usa la imagen por defecto.",
+      },
+      { name: "bloque1Titulo", label: "Bloque 1 — Título (Entre semana)", type: "text", maxLength: 80 },
+      {
+        name: "bloque1Filas",
+        label: "Bloque 1 — Filas",
+        type: "lines",
+        rows: 5,
+        hint: "Una fila por línea con el formato Día :: hora1, hora2 (ej. Domingo :: 07:00 AM, 05:00 PM).",
+      },
+      { name: "bloque2Titulo", label: "Bloque 2 — Título (Misa dominical)", type: "text", maxLength: 80, required: false },
+      {
+        name: "bloque2Filas",
+        label: "Bloque 2 — Filas",
+        type: "lines",
+        rows: 5,
+        required: false,
+        hint: "Una fila por línea con el formato Día :: hora1, hora2.",
+      },
+      { name: "bloque3Titulo", label: "Bloque 3 — Título", type: "text", maxLength: 80, required: false },
+      {
+        name: "bloque3Filas",
+        label: "Bloque 3 — Filas",
+        type: "lines",
+        rows: 5,
+        required: false,
+        hint: "Una fila por línea con el formato Día :: hora1, hora2.",
+      },
+      { name: "bloque4Titulo", label: "Bloque 4 — Título", type: "text", maxLength: 80, required: false },
+      {
+        name: "bloque4Filas",
+        label: "Bloque 4 — Filas",
+        type: "lines",
+        rows: 5,
+        required: false,
+        hint: "Una fila por línea con el formato Día :: hora1, hora2.",
+      },
     ],
   },
   {
@@ -300,12 +356,43 @@ export const sectionDataToForm = (
   }
 
   if (key === "horarios") {
-    form.title = String(data.title ?? "");
-    form.intro = String(data.intro ?? "");
-    const bloques = (data.bloques as Array<{ titulo?: string; items?: string[] }>) ?? [];
+    // igual que el hero: si no hay datos guardados, los inputs salen con los valores por defecto del volante
+    form.title = String(data.title ?? HORARIOS_DEFAULT.title);
+    form.subtitle = String(data.subtitle ?? HORARIOS_DEFAULT.subtitle);
+    form.titleHighlight = String(
+      data.titleHighlight ?? HORARIOS_DEFAULT.titleHighlight,
+    );
+    form.intro = String(data.intro ?? HORARIOS_DEFAULT.intro);
+    form.imageUrl = String(data.imageUrl ?? "");
+    const bloques =
+      (Array.isArray(data.bloques) && data.bloques.length > 0
+        ? data.bloques
+        : HORARIOS_DEFAULT.bloques) as Array<{
+        titulo?: unknown;
+        filas?: unknown;
+        items?: unknown;
+      }>;
     for (let i = 0; i < 4; i += 1) {
       form[`bloque${i + 1}Titulo`] = String(bloques[i]?.titulo ?? "");
-      form[`bloque${i + 1}Items`] = (bloques[i]?.items ?? []).join("\n");
+      const filas = bloques[i]?.filas;
+      if (Array.isArray(filas)) {
+        form[`bloque${i + 1}Filas`] = filas
+          .map((fila) => {
+            if (!fila || typeof fila !== "object") return "";
+            const f = fila as { dia?: unknown; horas?: unknown };
+            const dia = String(f.dia ?? "").trim();
+            const horas = Array.isArray(f.horas)
+              ? f.horas.map((h) => String(h ?? "").trim()).filter(Boolean)
+              : [];
+            if (!dia && horas.length === 0) return "";
+            return `${dia} :: ${horas.join(", ")}`;
+          })
+          .filter(Boolean)
+          .join("\n");
+      } else {
+        // forma vieja (items "Día: horas"): se muestra tal cual pa que el admin la convierta al guardar
+        form[`bloque${i + 1}Filas`] = ((bloques[i]?.items as string[]) ?? []).join("\n");
+      }
     }
     return form;
   }
@@ -401,14 +488,32 @@ export const formToSectionData = (
   }
 
   if (key === "horarios") {
-    return {
+    // solo manda los bloques con título y al menos una fila válida (el validador exige el bloque 1)
+    const bloques: Array<{ titulo: string; filas: FilaHorario[] }> = [];
+    for (let index = 1; index <= 4; index += 1) {
+      const titulo = (form[`bloque${index}Titulo`] ?? "").trim();
+      const filas = (form[`bloque${index}Filas`] ?? "")
+        .split("\n")
+        .map((linea) => linea.trim())
+        .filter(Boolean)
+        .map((linea) => dividirFilaHorario(linea))
+        .filter((fila): fila is FilaHorario => fila !== null);
+      if (titulo && filas.length > 0) bloques.push({ titulo, filas });
+    }
+    const payload: Record<string, unknown> = {
       title: form.title,
+      subtitle: form.subtitle,
+      titleHighlight: form.titleHighlight,
       intro: form.intro,
-      bloques: [1, 2, 3, 4].map((index) => ({
-        titulo: form[`bloque${index}Titulo`],
-        items: lines(form[`bloque${index}Items`]),
-      })),
+      bloques,
     };
+    // la imagen de fondo se maneja igual que en el hero (Cloudinary o eliminar)
+    if (form.imageUrl.trim()) {
+      payload.imageUrl = form.imageUrl.trim();
+    } else {
+      payload.eliminarImagen = true;
+    }
+    return payload;
   }
 
   if (key === "contacto") {

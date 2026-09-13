@@ -1,0 +1,104 @@
+import { dividirFilaHorario } from "./landingSectionConfig";
+
+interface HorariosPreviewProps {
+  title: string;
+  subtitle: string;
+  titleHighlight: string;
+  intro: string;
+  imageUrl: string;
+  bloques: Array<{ titulo: string; filas: string }>;
+  ampliadas?: boolean;
+}
+
+// miniatura del volante pa la vista previa del editor (lee los mismos campos del formulario)
+export function HorariosPreview({
+  title,
+  subtitle,
+  titleHighlight,
+  intro,
+  imageUrl,
+  bloques,
+  ampliadas = false,
+}: HorariosPreviewProps) {
+  const lista = bloques
+    .map((bloque) => ({
+      titulo: bloque.titulo.trim(),
+      filas: bloque.filas
+        .split("\n")
+        .map((linea) => linea.trim())
+        .filter(Boolean)
+        .map((linea) => dividirFilaHorario(linea))
+        .filter((fila) => fila !== null),
+    }))
+    .filter((bloque) => bloque.titulo || bloque.filas.length > 0)
+    .slice(0, 4);
+  // misma imagen que la página (la del formulario o la por defecto)
+  const fondo = imageUrl.trim() || "/horarios-fondo.jpg";
+
+  return (
+    <div
+      className={`flex h-full flex-col overflow-y-auto bg-[#f7f1e3] ${
+        ampliadas ? "p-6" : "p-4"
+      }`}
+    >
+      <div className="overflow-hidden rounded-2xl border border-[#e7dcc3] bg-[#fffdf7] shadow-sm">
+        <div
+          className="relative px-4 pt-6 pb-5 text-center"
+          style={{
+            backgroundImage: `url(${fondo})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center top",
+          }}
+        >
+          <div aria-hidden="true" className="absolute inset-0 bg-[#fffdf7]/75" />
+          <div className="relative">
+            <p className="m-0 font-heading text-3xl font-extrabold text-royal-blue">
+              {title || "Horarios"}
+            </p>
+            <p className="m-0 mt-0.5 font-heading text-lg font-bold text-royal-blue">
+              {subtitle}{" "}
+              <span className="text-2xl text-royal-gold italic">
+                {titleHighlight}
+              </span>
+            </p>
+            {intro ? (
+              <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-text-muted">
+                {intro}
+              </p>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex flex-col gap-4 px-4 pb-5">
+          {lista.map((bloque) => (
+            <section key={bloque.titulo || "bloque"}>
+              <div className="flex items-center gap-2">
+                <span aria-hidden="true" className="h-px flex-1 bg-royal-gold/50" />
+                <h4 className="m-0 text-[11px] font-extrabold tracking-[0.18em] text-royal-gold uppercase">
+                  {bloque.titulo}
+                </h4>
+                <span aria-hidden="true" className="h-px flex-1 bg-royal-gold/50" />
+              </div>
+              <ul className="m-0 mt-2 flex list-none flex-col gap-2 p-0">
+                {bloque.filas.map((fila) => (
+                  <li
+                    key={`${fila.dia}-${fila.horas.join("|")}`}
+                    className="flex items-center justify-between gap-3"
+                  >
+                    <span className="inline-flex w-fit items-center rounded-full bg-[#f0e7d2] px-3 py-1 text-xs font-bold text-royal-blue">
+                      {fila.dia}
+                    </span>
+                    <span className="flex flex-col text-right text-xs font-bold text-royal-blue">
+                      {fila.horas.map((hora) => (
+                        <span key={hora}>{hora}</span>
+                      ))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

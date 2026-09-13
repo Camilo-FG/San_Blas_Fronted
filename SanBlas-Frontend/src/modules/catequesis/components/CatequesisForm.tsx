@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (no deja picar dos veces)
 import {
   Button,
   cn,
@@ -1703,7 +1704,14 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             className="w-full uppercase tracking-widest shadow-[0_14px_28px_rgba(0,51,102,0.18)] hover:-translate-y-0.5 hover:bg-royal-gold hover:text-royal-blue hover:shadow-[0_16px_30px_rgba(212,175,55,0.25)] sm:w-auto"
             disabled={loading}
           >
-            {loading ? "Enviando inscripción..." : "Enviar inscripción"}
+            {loading ? ( // muestra spinner y bloquea el botón mientras se envía
+              <span className="inline-flex items-center gap-2">
+                <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+                Enviando inscripción...
+              </span>
+            ) : (
+              "Enviar inscripción"
+            )}
           </Button>
         )}
       </div>
@@ -1739,7 +1747,14 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onClick={confirmSubmit}
                 disabled={loading}
               >
-                Confirmar y enviar
+                {loading ? ( // mismo spinner en el modal de confirmar
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+                    Enviando...
+                  </span>
+                ) : (
+                  "Confirmar y enviar"
+                )}
               </Button>
             </div>
           </div>
