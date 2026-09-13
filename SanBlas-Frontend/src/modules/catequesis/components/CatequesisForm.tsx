@@ -91,6 +91,7 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
 const infoBoxClass =
   "mb-4 rounded-2xl border border-royal-gold/40 bg-royal-gold/10 p-3.5 text-sm leading-relaxed text-gray-600 sm:p-4";
 const MAX_CHARACTERS = 50;
+const MAX_CHARACTERS_NOMBRE = 20;
 
 // Rango de edad válido para catequesis infantil (Primer y Sétimo nivel).
 const EDAD_MINIMA_CATEQUIZANDO = 7;
@@ -100,7 +101,7 @@ const limitarCaracteres = (valor: string): string =>
   valor.slice(0, MAX_CHARACTERS);
 const limitarPalabras = limitarCaracteres;
 const limitarNombre = (valor: string): string =>
-  limitarPalabras(soloLetras(valor));
+  soloLetras(valor).slice(0, MAX_CHARACTERS_NOMBRE);
 
 const calcularEdad = (fecha: string): number | null => {
   const nacimiento = new Date(`${fecha}T00:00:00`);
@@ -169,6 +170,7 @@ function CampoApellido({
         type="text"
         placeholder={placeholder}
         value={value}
+        maxLength={MAX_CHARACTERS_NOMBRE}
         onChange={(e) => onChange(limitarNombre(e.target.value))}
       />
       <WordCounter value={value} />
@@ -655,6 +657,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 type="text"
                 placeholder="Ej: Carlos Emanuel"
                 value={form.catequizando.nombre}
+                maxLength={MAX_CHARACTERS_NOMBRE}
                 onChange={(e) =>
                   updateForm(
                     "catequizando.nombre",
@@ -1021,6 +1024,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 type="text"
                 placeholder="Ej: Ana María"
                 value={form.inscripcion.personaQueInscribe.nombre || ""}
+                maxLength={MAX_CHARACTERS_NOMBRE}
                 onChange={(e) =>
                   updateForm(
                     "inscripcion.personaQueInscribe.nombre",
@@ -1234,6 +1238,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 type="text"
                 placeholder="Ej: María Elena"
                 value={form.madreCatequizando.nombre}
+                maxLength={MAX_CHARACTERS_NOMBRE}
                 onChange={(e) =>
                   updateForm(
                     "madreCatequizando.nombre",
@@ -1437,6 +1442,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 type="text"
                 placeholder="Ej: Juan Carlos"
                 value={form.padreCatequizando.nombre}
+                maxLength={MAX_CHARACTERS_NOMBRE}
                 onChange={(e) =>
                   updateForm(
                     "padreCatequizando.nombre",
