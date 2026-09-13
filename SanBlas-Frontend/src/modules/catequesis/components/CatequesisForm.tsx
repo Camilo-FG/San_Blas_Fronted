@@ -142,7 +142,7 @@ const contarCaracteres = (valor: string): number => valor.length;
 const WordCounter = ({ value, max = MAX_CHARACTERS, error }: { value: string; max?: number; error?: string }) => (
   <div className="flex items-center justify-between gap-2">
     {error && (
-      <p className="m-0 text-xs font-extrabold text-red-600">{error}</p>
+      <p className="m-0 text-xs font-medium text-red-600">⚠ {error}</p>
     )}
     <span className="ml-auto text-right text-[0.72rem] font-medium text-text-muted">
       {contarCaracteres(value)}/{max} caracteres
@@ -576,8 +576,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 ))}
               </Select>
               {errors.centroCatequesis && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.centroCatequesis}
+                <p className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.centroCatequesis}
                 </p>
               )}
             </div>
@@ -603,8 +603,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 ))}
               </Select>
               {errors.nivelAInscribirse && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.nivelAInscribirse}
+                <p className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.nivelAInscribirse}
                 </p>
               )}
             </div>
@@ -625,8 +625,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }
               />
               {errors.feBautismoArchivo && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.feBautismoArchivo}
+                <p className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.feBautismoArchivo}
                 </p>
               )}
             </div>
@@ -711,8 +711,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }}
               />
               {errors.fechaNacimiento && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.fechaNacimiento}
+                <p className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.fechaNacimiento}
                 </p>
               )}
             </div>
@@ -887,8 +887,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 <option value="si">Sí</option>
               </Select>
               {errors.requiereAdecuacion && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.requiereAdecuacion}
+                <p className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.requiereAdecuacion}
                 </p>
               )}
             </div>
@@ -944,8 +944,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 <option value="si">Sí</option>
               </Select>
               {errors.portadorEnfermedad && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.portadorEnfermedad}
+                <p className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.portadorEnfermedad}
                 </p>
               )}
             </div>
@@ -1108,8 +1108,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 <option value="Otro">Otro</option>
               </Select>
               {errors.parentesco && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.parentesco}
+                <p className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.parentesco}
                 </p>
               )}
             </div>
@@ -1191,8 +1191,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 <option value="si">Sí</option>
               </Select>
               {errors.tieneMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.tieneMadre}
+                <p className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.tieneMadre}
                 </p>
               )}
             </div>
@@ -1217,7 +1217,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter value={form.madreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
               {errors.nombreMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
+                <p className="m-0 text-xs font-medium text-red-600">
                   {errors.nombreMadre}
                 </p>
               )}
@@ -1378,8 +1378,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 <option value="si">Sí</option>
               </Select>
               {errors.tienePadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.tienePadre}
+                <p className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.tienePadre}
                 </p>
               )}
             </div>
@@ -1404,7 +1404,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter value={form.padreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
               {errors.nombrePadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
+                <p className="m-0 text-xs font-medium text-red-600">
                   {errors.nombrePadre}
                 </p>
               )}
@@ -1523,8 +1523,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }
               />
               {errors.archivoComprobante && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.archivoComprobante}
+                <p className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.archivoComprobante}
                 </p>
               )}
             </div>
@@ -1576,8 +1576,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             </label>
 
             {errors.lineamientos && (
-              <p className="m-0 text-xs font-extrabold text-red-600">
-                {errors.lineamientos}
+              <p className="m-0 text-xs font-medium text-red-600">
+                ⚠ {errors.lineamientos}
               </p>
             )}
           </div>
