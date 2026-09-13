@@ -139,9 +139,9 @@ const limitarTelefono = (valor: string): string =>
 
 const contarCaracteres = (valor: string): number => valor.length;
 
-const WordCounter = ({ value }: { value: string }) => (
+const WordCounter = ({ value, max = MAX_CHARACTERS }: { value: string; max?: number }) => (
   <span className="text-right text-[0.72rem] font-medium text-text-muted">
-    {contarCaracteres(value)}/{MAX_CHARACTERS} caracteres
+    {contarCaracteres(value)}/{max} caracteres
   </span>
 );
 
@@ -173,7 +173,7 @@ function CampoApellido({
         maxLength={MAX_CHARACTERS_NOMBRE}
         onChange={(e) => onChange(limitarNombre(e.target.value))}
       />
-      <WordCounter value={value} />
+      <WordCounter value={value} max={MAX_CHARACTERS_NOMBRE} />
       {error && (
         <p className="m-0 text-xs font-extrabold text-red-600">{error}</p>
       )}
@@ -665,7 +665,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.catequizando.nombre} />
+              <WordCounter value={form.catequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
               {errors.nombreCatequizando && (
                 <p className="m-0 text-xs font-extrabold text-red-600">
                   {errors.nombreCatequizando}
@@ -1034,6 +1034,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.inscripcion.personaQueInscribe.nombre || ""}
+                max={MAX_CHARACTERS_NOMBRE}
               />
               {errors.nombrePersonaInscribe && (
                 <p className="m-0 text-xs font-extrabold text-red-600">
@@ -1246,7 +1247,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.madreCatequizando.nombre} />
+              <WordCounter value={form.madreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
               {errors.nombreMadre && (
                 <p className="m-0 text-xs font-extrabold text-red-600">
                   {errors.nombreMadre}
@@ -1450,7 +1451,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.padreCatequizando.nombre} />
+              <WordCounter value={form.padreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
               {errors.nombrePadre && (
                 <p className="m-0 text-xs font-extrabold text-red-600">
                   {errors.nombrePadre}
