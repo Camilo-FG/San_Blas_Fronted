@@ -130,8 +130,17 @@ const UpdateUserModal: React.FC<Props> = ({
   const validarContraseña = (value: string) => {
     const v = value.trim();
     if (!v) return undefined;
-    if (v.length < 8) return 'La contraseña debe tener mínimo 8 caracteres.';
     if (v.length > 64) return 'La contraseña no puede superar 64 caracteres.';
+    const faltantes: string[] = [];
+    if (v.length < 8) faltantes.push('mínimo 8 caracteres');
+    if (!/[a-z]/.test(v)) faltantes.push('una minúscula');
+    if (!/[A-Z]/.test(v)) faltantes.push('una mayúscula');
+    if (!/\d/.test(v)) faltantes.push('un número');
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(v))
+      faltantes.push('un carácter especial');
+    if (faltantes.length > 0) {
+      return `Falta: ${faltantes.join(', ')}.`; // le dice exactamente qué regla le falta
+    }
     return undefined;
   };
 
@@ -235,34 +244,66 @@ const UpdateUserModal: React.FC<Props> = ({
             <form.Field
               name="contraseña"
               validators={{
+                onChange: ({ value }) => validarContraseña(value),
                 onBlur: ({ value }) => validarContraseña(value),
                 onSubmit: ({ value }) => validarContraseña(value),
               }}
             >
-              {(field) => (
-                <div>
-                  <Label htmlFor="u-contraseña">
-                    Nueva contraseña
-                    <span className="ml-1.5 font-normal text-text-muted">
-                      ({field.state.value.length}/64)
-                    </span>
-                  </Label>
-                  <Input
-                    id="u-contraseña"
-                    type="password"
-                    placeholder="Dejar vacío para no cambiar"
-                    value={field.state.value}
-                    hasError={field.state.meta.errors.length > 0}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={() => {
-                      field.handleChange(field.state.value.trim());
-                      field.handleBlur();
-                    }}
-                    maxLength={64}
-                  />
-                  <FieldError message={field.state.meta.errors[0]} />
-                </div>
-              )}
+              {(field) => {
+                const valor = field.state.value.trim();
+                let puntos = 0;
+                if (valor.length >= 8) puntos += 1;
+                if (/[a-z]/.test(valor)) puntos += 1;
+                if (/[A-Z]/.test(valor)) puntos += 1;
+                if (/\d/.test(valor)) puntos += 1;
+                if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(valor)) puntos += 1;
+                const fortaleza =
+                  puntos <= 2
+                    ? { texto: 'Débil', clase: 'bg-red-500' }
+                    : puntos <= 4
+                      ? { texto: 'Media', clase: 'bg-amber-500' }
+                      : { texto: 'Fuerte', clase: 'bg-emerald-500' };
+                return (
+                  <div>
+                    <Label htmlFor="u-contraseña">
+                      Nueva contraseña
+                      <span className="ml-1.5 font-normal text-text-muted">
+                        ({field.state.value.length}/64)
+                      </span>
+                    </Label>
+                    <Input
+                      id="u-contraseña"
+                      type="password"
+                      placeholder="Dejar vacío para no cambiar"
+                      value={field.state.value}
+                      hasError={field.state.meta.errors.length > 0}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={() => {
+                        field.handleChange(field.state.value.trim());
+                        field.handleBlur();
+                      }}
+                      maxLength={64}
+                    />
+                    {valor ? (
+                      <div className="mt-2 flex items-center gap-2" aria-live="polite">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong">
+                          <div
+                            className={`h-full rounded-full transition-all ${fortaleza.clase}`}
+                            style={{ width: `${(puntos / 5) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-semibold text-text-muted">
+                          {fortaleza.texto}
+                        </span>
+                      </div>
+                    ) : null}
+                    <p className="mt-1 text-xs text-text-muted">
+                      Incluya mayúscula, minúscula, número y carácter especial.
+                    </p>
+                    <FieldError message={field.state.meta.errors[0]} />
+                  </div>
+                );
+              }}
             </form.Field>
           </div>
 
