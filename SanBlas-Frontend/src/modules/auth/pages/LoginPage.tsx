@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import { ApiError } from "../../../services/apiClient";
 import Rutas from "../../../routes/Rutas";
@@ -20,6 +21,7 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const reducirMovimiento = useReducedMotion();
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -55,21 +57,64 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
   return (
     <>
       <SeoHead page="/login" />
-      <section className="flex min-h-[calc(100vh-160px)] items-center justify-center bg-gradient-to-b from-surface-muted to-slate-100 px-4 py-8">
-      <div className="w-full max-w-[420px] rounded-2xl border border-border bg-surface p-8 shadow-[0_12px_30px_rgba(0,51,102,0.08)]">
-        <p className="mb-2 text-xs font-extrabold tracking-[0.12em] text-royal-gold uppercase">
+      <section className="relative isolate flex min-h-screen items-center justify-center overflow-hidden px-4 py-8 pt-24 md:pt-8">
+      <motion.img
+        src="/hero.webp"
+        alt=""
+        className="absolute inset-0 -z-20 size-full object-cover object-center blur-md"
+        initial={reducirMovimiento ? false : { opacity: 0, scale: 1.02 }}
+        animate={reducirMovimiento ? undefined : { opacity: 1, scale: 1.1 }}
+        transition={{
+          opacity: { duration: 0.9, ease: "easeOut" },
+          scale: { duration: 18, ease: "linear" },
+        }}
+      />
+      <motion.div
+        className="absolute inset-0 -z-10 bg-gradient-to-br from-royal-blue/92 via-royal-blue/78 to-royal-blue/70"
+        initial={reducirMovimiento ? false : { opacity: 0 }}
+        animate={reducirMovimiento ? undefined : { opacity: 1 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+      />
+      <div className="pointer-events-none absolute -top-24 -right-20 h-80 w-80 rounded-full border border-royal-gold/25 motion-safe:animate-login-drift" />
+      <div className="pointer-events-none absolute top-1/3 -right-10 h-48 w-48 rounded-full border border-royal-gold/15 motion-safe:animate-login-drift [animation-delay:1.4s]" />
+      <div className="pointer-events-none absolute -bottom-24 -left-16 h-96 w-96 rounded-full border border-white/10 motion-safe:animate-login-drift [animation-delay:2.2s]" />
+      <div className="pointer-events-none absolute bottom-16 left-1/4 h-32 w-32 rounded-full border border-royal-gold/20 motion-safe:animate-login-drift [animation-delay:0.6s]" />
+
+      <div className="absolute top-5 left-4 z-10 md:top-1/2 md:left-6 md:-translate-y-1/2">
+        <motion.div
+          initial={reducirMovimiento ? false : { opacity: 0, x: -22 }}
+          animate={reducirMovimiento ? undefined : { opacity: 1, x: 0 }}
+          transition={{ duration: 0.55, ease: "easeOut", delay: 0.18 }}
+        >
+          <Link
+            to={Rutas.home}
+            className="flex max-w-[150px] flex-col items-start gap-1.5 rounded-xl bg-royal-gold px-3.5 py-3 text-sm font-bold text-royal-blue no-underline shadow-[0_8px_20px_rgba(0,0,0,0.22)] transition-all duration-200 hover:-translate-x-0.5 hover:bg-royal-gold-light focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+          >
+            <ArrowLeft size={18} />
+            Volver al inicio
+          </Link>
+        </motion.div>
+      </div>
+      <motion.div
+        className="relative w-full max-w-[560px] rounded-2xl border border-white/20 bg-surface px-8 py-10 shadow-[0_24px_50px_rgba(0,20,40,0.28)] sm:px-12 sm:py-12"
+        initial={reducirMovimiento ? false : { opacity: 0, y: 28 }}
+        animate={reducirMovimiento ? undefined : { opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
+      >
+        <span className="absolute inset-x-8 top-0 h-1 rounded-b-full bg-royal-gold sm:inset-x-12" />
+        <p className="mb-3 text-xs font-extrabold tracking-[0.12em] text-royal-gold uppercase sm:text-sm">
           Acceso a la parroquia
         </p>
-        <h1 className="mb-2 font-heading text-[1.75rem] text-royal-blue">
+        <h1 className="mb-3 font-heading text-[2rem] text-royal-blue sm:text-[2.35rem]">
           Iniciar sesión
         </h1>
-        <p className="mb-6 text-[0.95rem] text-text-muted">
+        <p className="mb-8 text-base leading-relaxed text-text-muted">
           Administradores acceden al panel. Usuarios regulares pueden enviar
           solicitudes de constancia y catequesis.
         </p>
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-4 flex flex-col gap-1.5">
+          <div className="mb-5 flex flex-col gap-2">
             <Label htmlFor="email" className="text-royal-blue">
               Correo electrónico
             </Label>
@@ -80,10 +125,11 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              className="min-h-12 px-4 py-3 text-base"
             />
           </div>
 
-          <div className="mb-4 flex flex-col gap-1.5">
+          <div className="mb-5 flex flex-col gap-2">
             <Label htmlFor="password" className="text-royal-blue">
               Contraseña
             </Label>
@@ -95,7 +141,7 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="pr-11"
+                className="min-h-12 px-4 py-3 pr-12 text-base"
               />
               <button
                 type="button"
@@ -110,14 +156,20 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+            <Link
+              to={Rutas.recuperarContrasena}
+              className="self-end text-sm font-semibold text-royal-blue no-underline transition-colors hover:text-royal-gold hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
 
-          <FieldError message={error} className="mb-4" />
+          <FieldError message={error} className="mb-5" />
 
           <Button
             type="submit"
             variant="royal"
-            className="w-full"
+            className="w-full min-h-12 text-base"
             disabled={loading}
           >
             {loading ? "Ingresando..." : "Ingresar"}
@@ -126,11 +178,11 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
 
         <Link
           to={Rutas.home}
-          className="mt-4 inline-block text-sm text-royal-blue no-underline hover:underline"
+          className="mt-5 inline-block text-base text-royal-blue no-underline transition-colors hover:text-royal-gold hover:underline"
         >
           Volver al inicio
         </Link>
-      </div>
+      </motion.div>
     </section>
     </>
   );

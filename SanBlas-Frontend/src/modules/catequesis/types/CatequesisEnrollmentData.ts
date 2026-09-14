@@ -18,7 +18,8 @@ export interface CondicionSaludCatequizando {
 
 export interface CatequizandoData {
   nombre: string;
-  apellidos: string;
+  primerApellido: string;
+  segundoApellido: string;
   fechaNacimiento: string | null;
   direccion: {
     direccionExacta: string | null;
@@ -37,7 +38,8 @@ export interface CatequizandoData {
 /* Tipo usado internamente por el formulario de inscripción. */
 export interface MadreCatequizandoData {
   nombre: string;
-  apellidos: string;
+  primerApellido: string;
+  segundoApellido: string;
   direccion: {
     direccionExacta: string | null;
     ciudad: string | null;
@@ -48,7 +50,8 @@ export interface MadreCatequizandoData {
 
 export interface PadreCatequizandoData {
   nombre: string;
-  apellidos: string;
+  primerApellido: string;
+  segundoApellido: string;
   telefono: string;
 }
 
@@ -61,8 +64,10 @@ export interface PagoInscripcionCatequesis {
 export interface InscripcionData {
   personaQueInscribe: {
     nombre: string | null;
-    apellido: string | null;
+    primerApellido: string | null;
+    segundoApellido: string | null;
     correo: string | null;
+    telefono: string | null;
   };
   parentesco: string | null;
   pago: PagoInscripcionCatequesis;
@@ -93,7 +98,6 @@ export interface EncargadoCatequesisData {
 export interface PagoCatequesisData {
   metodoPago: string;
   numeroComprobante: string;
-  monto: number;
   comprobanteArchivo: File | string | null;
 }
 

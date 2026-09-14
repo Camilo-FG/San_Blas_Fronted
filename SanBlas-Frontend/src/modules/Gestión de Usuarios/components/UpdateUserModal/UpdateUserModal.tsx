@@ -1,6 +1,12 @@
 import React, { useEffect } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { Usuario } from '../../../../types/Usuario';
+import { isAdminRole, type Usuario } from '../../../../types/Usuario';
+import {
+  opcionesSelectRol,
+  ROLES_ASIGNABLES,
+  type Rol,
+} from '../../../../types/Rol';
+import { useAuth } from '../../../../context/AuthContext';
 import {
   Button,
   FieldError,
@@ -9,6 +15,7 @@ import {
   Modal,
   Select,
 } from '../../../../shared/ui';
+import { normalizarTexto } from '../../Utils/normalizarTexto';
 
 interface Props {
   isOpen: boolean;
@@ -16,6 +23,8 @@ interface Props {
   onSave: (data: UpdateUserData) => void;
   usuario: Usuario | null;
   users: Usuario[];
+  roles: Rol[];
+  esUsuarioActual?: boolean;
 }
 
 export interface UpdateUserData {
@@ -23,24 +32,44 @@ export interface UpdateUserData {
   correo: string;
   telefono: string;
   contraseña: string;
-  rol: 'user' | 'admin';
+  rol: string;
   estado: boolean;
 }
 
-const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, users }) => {
+const UpdateUserModal: React.FC<Props> = ({
+  isOpen,
+  onClose,
+  onSave,
+  usuario,
+  users,
+  roles,
+  esUsuarioActual = false,
+}) => {
   const form = useForm({
     defaultValues: {
       nombre: '',
       correo: '',
       telefono: '',
       contraseña: '',
-      rol: 'user' as 'user' | 'admin',
+      rol: 'user',
       estado: true,
     },
     onSubmit: async ({ value }) => {
-      onSave(value);
+      onSave({
+        ...value,
+        nombre: normalizarTexto(value.nombre),
+        correo: normalizarTexto(value.correo),
+        telefono: normalizarTexto(value.telefono),
+        contraseña: value.contraseña.trim(),
+      });
     },
   });
+
+  const { user: usuarioSesion } = useAuth();
+  // solo un admin puede otorgar/editar el rol admin; los demás solo ven el rol usuario
+  const rolesPermitidos = isAdminRole(usuarioSesion?.role ?? '')
+    ? [...ROLES_ASIGNABLES]
+    : [ROLES_ASIGNABLES[ROLES_ASIGNABLES.length - 1]];
 
   useEffect(() => {
     if (usuario && isOpen) {
@@ -48,7 +77,7 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
       form.setFieldValue('correo', usuario.email);
       form.setFieldValue('telefono', usuario.phoneNumber);
       form.setFieldValue('contraseña', '');
-      form.setFieldValue('rol', usuario.role === 'admin' ? 'admin' : 'user');
+      form.setFieldValue('rol', usuario.role);
       form.setFieldValue('estado', usuario.state);
     }
   }, [usuario, isOpen]);
@@ -70,15 +99,72 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
       : soloNumeros;
   };
 
+  const normalizarFormulario = () => {
+    const valores = form.state.values;
+    form.setFieldValue('nombre', normalizarTexto(valores.nombre));
+    form.setFieldValue('correo', normalizarTexto(valores.correo));
+    form.setFieldValue('telefono', normalizarTexto(valores.telefono));
+    form.setFieldValue('contraseña', valores.contraseña.trim());
+  };
+
+  const validarNombre = (value: string) => {
+    const v = normalizarTexto(value);
+    if (!v) return 'El nombre es requerido.';
+    if (usuario && v === normalizarTexto(usuario.userName)) return undefined;
+    if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
+    if (v.length > 100) return 'El nombre no puede superar los 100 caracteres.';
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v)) return 'El nombre solo puede contener letras.';
+    return undefined;
+  };
+
+  const validarCorreo = (value: string) => {
+    const v = normalizarTexto(value);
+    if (!v) return 'El correo es requerido.';
+    if (!validateEmail(v)) return 'Solo se permiten dominios .com, .es o .org';
+    if (
+      users.some(
+        (u) => u.email.toLowerCase() === v.toLowerCase() && u.id !== usuario?.id,
+      )
+    ) {
+      return 'Ya existe una cuenta con este correo.';
+    }
+    return undefined;
+  };
+
+  const validarTelefono = (value: string) => {
+    const v = normalizarTexto(value);
+    if (!v) return 'El teléfono es requerido.';
+    if (!validatePhone(v)) return 'El formato debe ser 8888-8888.';
+    return undefined;
+  };
+
+  const validarContraseña = (value: string) => {
+    const v = value.trim();
+    if (!v) return undefined;
+    if (v.length > 64) return 'La contraseña no puede superar 64 caracteres.';
+    const faltantes: string[] = [];
+    if (v.length < 8) faltantes.push('mínimo 8 caracteres');
+    if (!/[a-z]/.test(v)) faltantes.push('una minúscula');
+    if (!/[A-Z]/.test(v)) faltantes.push('una mayúscula');
+    if (!/\d/.test(v)) faltantes.push('un número');
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(v))
+      faltantes.push('un carácter especial');
+    if (faltantes.length > 0) {
+      return `Falta: ${faltantes.join(', ')}.`; // le dice exactamente qué regla le falta
+    }
+    return undefined;
+  };
+
   return (
-    <Modal onClose={onClose} title="Editar usuario">
-      <h2 className="mb-4 pr-10 text-lg font-bold tracking-wide text-royal-blue uppercase">
+    <Modal onClose={onClose} title="Editar usuario" cerrarAlClicFuera={false}>
+      <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue">
         Editar usuario
-      </h2>
+      </h3>
 
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          normalizarFormulario();
           form.handleSubmit();
         }}
       >
@@ -86,15 +172,8 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
           <form.Field
             name="nombre"
             validators={{
-              onBlur: ({ value }) => {
-                const v = value.trim();
-                if (!v) return 'El nombre es requerido.';
-                if (usuario && v === usuario.userName.trim()) return undefined;
-                if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
-                if (v.length > 100) return 'El nombre no puede superar los 100 caracteres.';
-                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v)) return 'El nombre solo puede contener letras.';
-                return undefined;
-              },
+              onBlur: ({ value }) => validarNombre(value),
+              onSubmit: ({ value }) => validarNombre(value),
             }}
           >
             {(field) => (
@@ -107,7 +186,10 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
                   value={field.state.value}
                   hasError={field.state.meta.errors.length > 0}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
+                  onBlur={() => {
+                    field.handleChange(normalizarTexto(field.state.value));
+                    field.handleBlur();
+                  }}
                 />
                 <FieldError message={field.state.meta.errors[0]} />
               </div>
@@ -117,14 +199,8 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
           <form.Field
             name="correo"
             validators={{
-              onBlur: ({ value }) => {
-                const v = value.trim();
-                if (!v) return 'El correo es requerido.';
-                if (!validateEmail(v)) return 'Solo se permiten dominios .com, .es o .org';
-                if (users.some((u) => u.email.toLowerCase() === v.toLowerCase() && u.id !== usuario?.id))
-                  return 'Ya existe una cuenta con este correo.';
-                return undefined;
-              },
+              onBlur: ({ value }) => validarCorreo(value),
+              onSubmit: ({ value }) => validarCorreo(value),
             }}
           >
             {(field) => (
@@ -137,7 +213,10 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
                   value={field.state.value}
                   hasError={field.state.meta.errors.length > 0}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
+                  onBlur={() => {
+                    field.handleChange(normalizarTexto(field.state.value));
+                    field.handleBlur();
+                  }}
                 />
                 <FieldError message={field.state.meta.errors[0]} />
               </div>
@@ -148,11 +227,8 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
             <form.Field
               name="telefono"
               validators={{
-                onBlur: ({ value }) => {
-                  if (!value) return 'El teléfono es requerido.';
-                  if (!validatePhone(value)) return 'El formato debe ser 8888-8888.';
-                  return undefined;
-                },
+                onBlur: ({ value }) => validarTelefono(value),
+                onSubmit: ({ value }) => validarTelefono(value),
               }}
             >
               {(field) => (
@@ -165,7 +241,10 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
                     value={field.state.value}
                     hasError={field.state.meta.errors.length > 0}
                     onChange={(e) => field.handleChange(formatTelefono(e.target.value))}
-                    onBlur={field.handleBlur}
+                    onBlur={() => {
+                      field.handleChange(normalizarTexto(field.state.value));
+                      field.handleBlur();
+                    }}
                     maxLength={9}
                   />
                   <FieldError message={field.state.meta.errors[0]} />
@@ -176,36 +255,66 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
             <form.Field
               name="contraseña"
               validators={{
-                onBlur: ({ value }) => {
-                  const v = value.trim();
-                  if (!v) return undefined;
-                  if (v.length < 8) return 'La contraseña debe tener mínimo 8 caracteres.';
-                  if (v.length > 64) return 'La contraseña no puede superar 64 caracteres.';
-                  return undefined;
-                },
+                onChange: ({ value }) => validarContraseña(value),
+                onBlur: ({ value }) => validarContraseña(value),
+                onSubmit: ({ value }) => validarContraseña(value),
               }}
             >
-              {(field) => (
-                <div>
-                  <Label htmlFor="u-contraseña">
-                    Nueva contraseña
-                    <span className="ml-1.5 font-normal text-slate-400">
-                      ({field.state.value.length}/64)
-                    </span>
-                  </Label>
-                  <Input
-                    id="u-contraseña"
-                    type="password"
-                    placeholder="Dejar vacío para no cambiar"
-                    value={field.state.value}
-                    hasError={field.state.meta.errors.length > 0}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    maxLength={64}
-                  />
-                  <FieldError message={field.state.meta.errors[0]} />
-                </div>
-              )}
+              {(field) => {
+                const valor = field.state.value.trim();
+                let puntos = 0;
+                if (valor.length >= 8) puntos += 1;
+                if (/[a-z]/.test(valor)) puntos += 1;
+                if (/[A-Z]/.test(valor)) puntos += 1;
+                if (/\d/.test(valor)) puntos += 1;
+                if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(valor)) puntos += 1;
+                const fortaleza =
+                  puntos <= 2
+                    ? { texto: 'Débil', clase: 'bg-red-500' }
+                    : puntos <= 4
+                      ? { texto: 'Media', clase: 'bg-amber-500' }
+                      : { texto: 'Fuerte', clase: 'bg-emerald-500' };
+                return (
+                  <div>
+                    <Label htmlFor="u-contraseña">
+                      Nueva contraseña
+                      <span className="ml-1.5 font-normal text-text-muted">
+                        ({field.state.value.length}/64)
+                      </span>
+                    </Label>
+                    <Input
+                      id="u-contraseña"
+                      type="password"
+                      placeholder="Dejar vacío para no cambiar"
+                      value={field.state.value}
+                      hasError={field.state.meta.errors.length > 0}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={() => {
+                        field.handleChange(field.state.value.trim());
+                        field.handleBlur();
+                      }}
+                      maxLength={64}
+                    />
+                    {valor ? (
+                      <div className="mt-2 flex items-center gap-2" aria-live="polite">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong">
+                          <div
+                            className={`h-full rounded-full transition-all ${fortaleza.clase}`}
+                            style={{ width: `${(puntos / 5) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-semibold text-text-muted">
+                          {fortaleza.texto}
+                        </span>
+                      </div>
+                    ) : null}
+                    <p className="mt-1 text-xs text-text-muted">
+                      Incluya mayúscula, minúscula, número y carácter especial.
+                    </p>
+                    <FieldError message={field.state.meta.errors[0]} />
+                  </div>
+                );
+              }}
             </form.Field>
           </div>
 
@@ -217,12 +326,25 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
                   <Select
                     id="u-rol"
                     value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value as 'user' | 'admin')}
+                    onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
+                    disabled={esUsuarioActual}
                   >
-                    <option value="user">Usuario Regular</option>
-                    <option value="admin">Administrador</option>
+                    {opcionesSelectRol(
+                      roles,
+                      field.state.value,
+                      rolesPermitidos,
+                    ).map((rol) => (
+                      <option key={rol.clave} value={rol.clave}>
+                        {rol.nombre}
+                      </option>
+                    ))}
                   </Select>
+                  {esUsuarioActual && (
+                    <p className="mt-1.5 text-xs text-text-muted">
+                      No puede cambiar su propio rol.
+                    </p>
+                  )}
                 </div>
               )}
             </form.Field>
@@ -236,22 +358,28 @@ const UpdateUserModal: React.FC<Props> = ({ isOpen, onClose, onSave, usuario, us
                     value={field.state.value ? 'active' : 'inactive'}
                     onChange={(e) => field.handleChange(e.target.value === 'active')}
                     onBlur={field.handleBlur}
+                    disabled={esUsuarioActual}
                   >
                     <option value="active">Activo</option>
                     <option value="inactive">Inactivo</option>
                   </Select>
+                  {esUsuarioActual && (
+                    <p className="mt-1.5 text-xs text-text-muted">
+                      No puede inactivar su propia cuenta.
+                    </p>
+                  )}
                 </div>
               )}
             </form.Field>
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col-reverse gap-2 border-t border-border-strong pt-4 sm:flex-row sm:justify-end">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
+        <div className="mt-6 flex flex-col gap-2 border-t border-border-strong pt-4 sm:flex-row sm:justify-end">
           <Button type="submit" variant="royal">
             Guardar cambios
+          </Button>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
           </Button>
         </div>
       </form>

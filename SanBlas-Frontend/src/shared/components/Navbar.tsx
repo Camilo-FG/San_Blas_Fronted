@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, LogOut, User } from "lucide-react";
 import Rutas from "../../routes/Rutas";
 import { useAuth } from "../../context/AuthContext";
+import { etiquetaRol } from "../../types/Rol";
 import { cn } from "../ui/cn";
 
 const LOGO_URL = "/logo.png";
@@ -105,7 +106,7 @@ function Navbar() {
     navigate({ to: Rutas.login });
   };
 
-  const userRoleLabel = isAdmin ? "Administrador" : "Usuario";
+  const userRoleLabel = etiquetaRol(user?.role ?? "user");
 
   return (
     <header className="sticky top-0 z-[1000] w-full border-b-2 border-royal-gold bg-royal-blue">
@@ -145,6 +146,14 @@ function Navbar() {
             onClick={cerrarMenu}
           >
             Historia
+          </Link>
+
+          <Link
+            to={Rutas.horarios}
+            className={navLinkClass}
+            onClick={cerrarMenu}
+          >
+            Horarios
           </Link>
 
           <div
@@ -212,14 +221,6 @@ function Navbar() {
                   onClick={cerrarMenu}
                 >
                   Bautizos
-                </Link>
-
-                <Link
-                  to={Rutas.horarios}
-                  className={submenuLinkClass}
-                  onClick={cerrarMenu}
-                >
-                  Horarios
                 </Link>
 
                 <Link
@@ -365,6 +366,14 @@ function Navbar() {
               Historia
             </Link>
 
+            <Link
+              to={Rutas.horarios}
+              className="block w-full cursor-pointer border-b border-white/12 border-l-0 border-r-0 border-t-0 bg-transparent py-[13px] text-left font-serif text-[17px] italic text-white no-underline transition-colors hover:text-royal-gold"
+              onClick={cerrarMenu}
+            >
+              Horarios
+            </Link>
+
             <div className="border-b border-white/12 pb-2.5">
               <button
                 type="button"
@@ -415,14 +424,6 @@ function Navbar() {
                     onClick={cerrarMenu}
                   >
                     Bautizos
-                  </Link>
-
-                  <Link
-                    to={Rutas.horarios}
-                    className="py-[7px] text-[13px] font-bold uppercase text-white/82 no-underline transition-colors hover:text-royal-gold"
-                    onClick={cerrarMenu}
-                  >
-                    Horarios
                   </Link>
 
                   <Link

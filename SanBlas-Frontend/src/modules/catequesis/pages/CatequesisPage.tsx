@@ -5,7 +5,17 @@ import { crearSolicitudCatequesis } from "../../../services/catequesis/catequesi
 import { ApiError } from "../../../services/apiClient";
 import type { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
 import SeoHead from "../../../seo/SeoHead";
-import { Button } from "../../../shared/ui";
+import { Badge, Button, Card, ErrorMessage } from "../../../shared/ui";
+import { formatearFechaCalendario } from "../../../shared/utils/fechas";
+
+// solo lo no sensible pa la tarjeta (nombre, centro, nivel, estado y fechas, nada de direcciones ni teléfonos)
+interface ResumenSolicitudEnviada {
+  nombreAlumno: string;
+  centro: string;
+  nivel: string;
+  estado: string;
+  fechaEnvio: string;
+}
 
 const CatequesisPage = () => {
   const [loading, setLoading] = useState(false);
@@ -13,6 +23,9 @@ const CatequesisPage = () => {
     "info",
   );
   const [submitted, setSubmitted] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState<string | null>(null); // pa mostrar el error sin usar alert
+  // vive solo en memoria (se limpia con "Hacer otra inscripción", no se guarda ni se muestra en consola)
+  const [resumen, setResumen] = useState<ResumenSolicitudEnviada | null>(null);
 
   useEffect(() => {
     const syncSectionWithHash = () => {
@@ -26,19 +39,33 @@ const CatequesisPage = () => {
     return () => window.removeEventListener("hashchange", syncSectionWithHash);
   }, []);
 
+  // manda la solicitud al backend (con archivos usa FormData en el service)
   const handleSubmit = async (data: CatequesisEnrollmentData) => {
     setLoading(true);
+    setErrorEnvio(null);
 
     try {
-      await crearSolicitudCatequesis(data);
-      setSubmitted(true);
+      const respuesta = await crearSolicitudCatequesis(data);
+      // arma el resumen solo con lo del POST (sin id y sin datos privados como dirección o teléfonos)
+      const nombreAlumno =
+        `${data.catequizando.nombre ?? ""} ${data.catequizando.primerApellido ?? ""} ${data.catequizando.segundoApellido ?? ""}`
+          .replace(/\s+/g, " ")
+          .trim() || "—";
+      setResumen({
+        nombreAlumno,
+        centro: data.catequesis.centroCatequesis ?? "—",
+        nivel: data.catequesis.nivelAInscribirse ?? "—",
+        estado: respuesta?.estado ?? "Pendiente",
+        fechaEnvio:
+          respuesta?.fechaSolicitud ?? new Date().toISOString(),
+      });
+      setSubmitted(true); // el backend la guarda en Pendiente, el form se limpia al desmontarse
     } catch (error) {
-      console.error("Error al enviar la solicitud:", error);
-
+      // traduce el error con ApiError en vez de alert pelado
       if (error instanceof ApiError) {
-        alert(error.message);
+        setErrorEnvio(error.message);
       } else {
-        alert("Ocurrió un error al enviar la solicitud.");
+        setErrorEnvio("Ocurrió un error al enviar la solicitud.");
       }
     } finally {
       setLoading(false);
@@ -117,16 +144,69 @@ const CatequesisPage = () => {
               <h2 className="m-0 mt-6 font-heading text-2xl font-extrabold text-royal-blue sm:text-[30px]">
                 ¡Inscripción enviada con éxito!
               </h2>
+              <Badge variant="warning" className="mt-4 text-sm">
+                Estado: {resumen?.estado ?? "Pendiente"}
+              </Badge>
               <p className="m-0 mt-3 max-w-[560px] text-base leading-relaxed text-text-secondary">
                 Recibimos la inscripción a catequesis. Pronto revisaremos la
                 información y nos pondremos en contacto contigo.
               </p>
+              {resumen ? ( // tarjeta centrada con lo del POST (sin datos privados)
+                <Card className="mt-6 w-full max-w-[560px] text-left" accent>
+                  <dl className="m-0 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <dt className="text-xs font-bold tracking-wide text-text-muted uppercase">
+                        Alumno
+                      </dt>
+                      <dd className="m-0 mt-1 text-base font-semibold text-royal-blue">
+                        {resumen.nombreAlumno}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-bold tracking-wide text-text-muted uppercase">
+                        Nivel
+                      </dt>
+                      <dd className="m-0 mt-1 text-base font-semibold text-royal-blue">
+                        {resumen.nivel}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-bold tracking-wide text-text-muted uppercase">
+                        Centro
+                      </dt>
+                      <dd className="m-0 mt-1 text-base text-text-secondary">
+                        {resumen.centro}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs font-bold tracking-wide text-text-muted uppercase">
+                        Fecha de envío
+                      </dt>
+                      <dd className="m-0 mt-1 text-base text-text-secondary">
+                        {resumen.fechaEnvio
+                          ? formatearFechaCalendario(resumen.fechaEnvio)
+                          : "—"}
+                      </dd>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <dt className="text-xs font-bold tracking-wide text-text-muted uppercase">
+                        Revisión
+                      </dt>
+                      <dd className="m-0 mt-1 text-sm text-text-secondary">
+                        Pendiente de revisión por el catequista.
+                      </dd>
+                    </div>
+                  </dl>
+                </Card>
+              ) : null}
               <Button
                 type="button"
                 variant="royal"
                 className="mt-6 min-h-12 px-5 shadow-[0_8px_18px_rgba(0,51,102,0.18)]"
                 onClick={() => {
                   setSubmitted(false);
+                  setResumen(null); // borra el resumen de memoria pa no dejar datos en pantalla
+                  setErrorEnvio(null); // limpia todo pa empezar de cero
                   setActiveSection("matricula");
                 }}
               >
@@ -136,10 +216,12 @@ const CatequesisPage = () => {
           ) : activeSection === "info" ? (
             <CatequesisInfoSection />
           ) : (
-            <CatequesisForm
-              loading={loading}
-              onSubmit={handleSubmit}
-            />
+            <>
+              {errorEnvio ? ( // error visible sin recargar, con opción de reintentar enviando de nuevo
+                <ErrorMessage message={errorEnvio} />
+              ) : null}
+              <CatequesisForm loading={loading} onSubmit={handleSubmit} />
+            </>
           )}
         </div>
       </main>

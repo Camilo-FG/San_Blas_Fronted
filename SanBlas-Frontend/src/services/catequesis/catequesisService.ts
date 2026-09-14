@@ -21,16 +21,55 @@ const tieneArchivosReales = (formData: CatequesisEnrollmentData): boolean =>
   formData.catequesis.feBautismoArchivo instanceof File &&
   formData.inscripcion.pago.archivoComprobante instanceof File;
 
-export const obtenerSolicitudesCatequesis = async (
-  estado?: string,
-): Promise<CatequesisEnrollmentRecord[]> => {
+export const obtenerSolicitudesCatequesis = async (filtros?: {
+  estado?: string;
+  nombre?: string;
+  encargado?: string;
+  q?: string;
+}): Promise<CatequesisEnrollmentRecord[]> => {
   try {
-    const params = estado ? { estado } : undefined;
+    const params = {
+      ...(filtros?.estado ? { estado: filtros.estado } : {}),
+      ...(filtros?.nombre ? { nombre: filtros.nombre } : {}),
+      ...(filtros?.encargado ? { encargado: filtros.encargado } : {}),
+      ...(filtros?.q ? { q: filtros.q } : {}),
+    };
     const { data } = await apiClient.get<InscripcionResumenBackend[]>(BASE, {
-      params,
+      params: Object.keys(params).length ? params : undefined,
     });
 
     return data.map(mapResumenToEnrollmentRecord);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export interface HistorialInscripcionCatequesis {
+  id: number;
+  nombreCatequizando: string;
+  centroCatequesis: string;
+  nivelAInscribirse: string;
+  estado: string;
+  fechaSolicitud: string;
+  telefonoEncargada: string;
+  observacionAdministrativa?: string | null;
+  fechaActualizacionEstado?: string | null;
+}
+
+export const obtenerHistorialCatequesis = async (params?: {
+  estado?: string;
+  desde?: string;
+  hasta?: string;
+}): Promise<{
+  total: number;
+  historial: HistorialInscripcionCatequesis[];
+}> => {
+  try {
+    const { data } = await apiClient.get<{
+      total: number;
+      historial: HistorialInscripcionCatequesis[];
+    }>(`${BASE}/historial`, { params });
+    return data;
   } catch (error) {
     handleApiError(error);
   }

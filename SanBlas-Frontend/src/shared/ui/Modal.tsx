@@ -54,6 +54,7 @@ export function Modal({
       role="dialog"
       aria-modal="true"
       aria-label={title}
+      tabIndex={-1}
       initial={false}
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
@@ -88,7 +89,7 @@ export function Modal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          onClick={onClose}
+          onClick={cerrarAlClicFuera ? onClose : undefined}
           role="presentation"
         />
         <FocusTrap
@@ -99,6 +100,8 @@ export function Modal({
               return true;
             },
             allowOutsideClick: () => true,
+            initialFocus: () => dialogoRef.current ?? false,
+            fallbackFocus: () => dialogoRef.current ?? document.body,
           }}
         >
           <div>{contenido}</div>
@@ -116,6 +119,8 @@ export function Modal({
           return true;
         },
         allowOutsideClick: () => true,
+        initialFocus: () => dialogoRef.current ?? false,
+        fallbackFocus: () => dialogoRef.current ?? document.body,
       }}
     >
       <div

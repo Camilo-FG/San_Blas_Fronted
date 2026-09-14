@@ -24,14 +24,16 @@ export function Label({ className, children, required, ...props }: LabelProps) {
 export function FieldError({
   message,
   className,
+  id,
 }: {
   message?: string | null;
   className?: string;
+  id?: string;
 }) {
   if (!message) return null;
 
   return (
-    <p className={cn("mt-1.5 text-sm text-danger", className)} role="alert">
+    <p id={id} className={cn("mt-1.5 text-sm text-danger", className)} role="alert">
       {message}
     </p>
   );

@@ -1,6 +1,13 @@
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, animate, motion, useMotionValue, type PanInfo } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
@@ -137,14 +144,23 @@ const SERVICES: ServiceItem[] = [
 ];
 
 const carouselButtonClass =
-  "flex w-full cursor-pointer items-center justify-center rounded-[14px] border-none bg-[rgba(23,37,84,0.08)] px-4 py-[13px] text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#172554] no-underline transition-all hover:-translate-y-0.5 hover:bg-[#172554] hover:text-white focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(183,131,47,0.45)] focus-visible:outline-offset-[3px] max-[420px]:px-3.5 max-[420px]:py-3 max-[420px]:text-[10px]";
+  "relative z-[1] flex w-full cursor-pointer items-center justify-center rounded-[14px] border-none bg-[rgba(23,37,84,0.08)] px-4 py-[13px] text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#172554] no-underline transition-all hover:-translate-y-0.5 hover:bg-[#172554] hover:text-white focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(183,131,47,0.45)] focus-visible:outline-offset-[3px] max-[420px]:px-3.5 max-[420px]:py-3 max-[420px]:text-[10px]";
+
+const TRANSICION_CARRUSEL = {
+  type: "tween" as const,
+  duration: 0.62,
+  ease: [0.22, 1, 0.36, 1] as const,
+};
 
 export default function ServiciosCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cardsToShow, setCardsToShow] = useState(3);
+  const [anchoVista, setAnchoVista] = useState(0);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(
     null,
   );
+  const pistaRef = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
 
   useEffect(() => {
     const mqMobile = window.matchMedia("(max-width: 639px)");
@@ -172,27 +188,84 @@ export default function ServiciosCarousel() {
     };
   }, []);
 
+  const maxIndex = useMemo(
+    () => Math.max(0, SERVICES.length - cardsToShow),
+    [cardsToShow],
+  );
+
+  const anchoPaso = cardsToShow > 0 ? anchoVista / cardsToShow : 0;
+
+  useLayoutEffect(() => {
+    const pista = pistaRef.current;
+    if (!pista) return;
+
+    const medir = () => setAnchoVista(pista.clientWidth);
+    medir();
+
+    const observador = new ResizeObserver(medir);
+    observador.observe(pista);
+    return () => observador.disconnect();
+  }, []);
+
   useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setSelectedService(null);
-      }
+    setCurrentIndex((prev) => Math.min(prev, maxIndex));
+  }, [maxIndex]);
+
+  useEffect(() => {
+    if (anchoPaso <= 0) return;
+    const control = animate(x, -currentIndex * anchoPaso, TRANSICION_CARRUSEL);
+    return () => control.stop();
+  }, [anchoPaso, currentIndex, x]);
+
+  const irAIndice = useCallback(
+    (indice: number) => {
+      setCurrentIndex(Math.max(0, Math.min(maxIndex, indice)));
+    },
+    [maxIndex],
+  );
+
+  const handleNext = useCallback(() => {
+    irAIndice(currentIndex + 1);
+  }, [currentIndex, irAIndice]);
+
+  const handlePrev = useCallback(() => {
+    irAIndice(currentIndex - 1);
+  }, [currentIndex, irAIndice]);
+
+  useEffect(() => {
+    if (!selectedService) return;
+
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedService(null);
     };
 
     window.addEventListener("keydown", handleEscape);
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [selectedService]);
 
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, []);
+  const handleDragEnd = useCallback(
+    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      if (anchoPaso <= 0) return;
 
-  const maxIndex = Math.max(0, SERVICES.length - cardsToShow);
+      const proyectado = x.get() + info.velocity.x * 0.32;
+      const indice = Math.round(-proyectado / anchoPaso);
+      irAIndice(indice);
 
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
-  };
-
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
-  };
+      if (Math.max(0, Math.min(maxIndex, indice)) === currentIndex) {
+        animate(x, -currentIndex * anchoPaso, {
+          ...TRANSICION_CARRUSEL,
+          duration: 0.48,
+        });
+      }
+    },
+    [anchoPaso, currentIndex, irAIndice, maxIndex, x],
+  );
 
   return (
     <section className="border-y border-[#f0f0f0] bg-surface py-24 max-[900px]:py-[76px] max-sm:py-[60px]">
@@ -201,7 +274,7 @@ export default function ServiciosCarousel() {
           <span className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.25em] text-[#b7832f] max-sm:text-[10px] max-sm:tracking-[0.18em]">
             Guías y Sacramentos
           </span>
-          <h2 className="m-0 font-serif text-[clamp(30px,4vw,42px)] leading-[1.15] text-[#172554] max-sm:text-[30px] max-[420px]:text-[27px]">
+          <h2 className="m-0 font-heading text-[clamp(30px,4vw,42px)] leading-[1.15] text-royal-blue">
             Servicios Ofrecidos
           </h2>
           <p className="mt-3 text-[15px] leading-[1.7] text-text-secondary max-sm:text-[13px] max-sm:leading-[1.6]">
@@ -211,19 +284,22 @@ export default function ServiciosCarousel() {
         </ScrollReveal>
 
         <ScrollReveal className="relative px-7 max-[900px]:px-[22px] max-sm:px-0" delay={0.08}>
-          <div className="overflow-hidden">
+          <div ref={pistaRef} className="overflow-hidden touch-pan-y">
             <motion.div
-              className="flex"
-              animate={{
-                x: `-${currentIndex * (100 / SERVICES.length)}%`,
+              className="flex touch-pan-y will-change-transform"
+              drag={maxIndex > 0 && !selectedService ? "x" : false}
+              dragConstraints={{
+                left: -maxIndex * anchoPaso,
+                right: 0,
               }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-              }}
+              dragElastic={0.12}
+              dragMomentum={false}
+              dragDirectionLock
+              onDragEnd={handleDragEnd}
               style={{
+                x,
                 width: `${(SERVICES.length / cardsToShow) * 100}%`,
+                touchAction: "pan-y",
               }}
             >
               {SERVICES.map((service) => {
@@ -242,6 +318,7 @@ export default function ServiciosCarousel() {
                         <img
                           src={service.image}
                           alt={service.title}
+                          draggable={false}
                           className="size-full object-cover transition-transform duration-700 group-hover:scale-[1.08]"
                           width={400}
                           height={176}
@@ -276,6 +353,7 @@ export default function ServiciosCarousel() {
                         <Link
                           to={service.linkTo}
                           className={carouselButtonClass}
+                          onPointerDown={(event) => event.stopPropagation()}
                         >
                           {service.buttonLabel}
                         </Link>
@@ -283,6 +361,7 @@ export default function ServiciosCarousel() {
                         <button
                           type="button"
                           className={carouselButtonClass}
+                          onPointerDown={(event) => event.stopPropagation()}
                           onClick={() => setSelectedService(service)}
                         >
                           {service.buttonLabel}
@@ -299,7 +378,7 @@ export default function ServiciosCarousel() {
             <>
               <button
                 type="button"
-                className="absolute left-0 top-1/2 z-[5] flex size-[42px] -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-[#172554] transition-all hover:text-[#b7832f] hover:shadow-[0_10px_24px_rgba(0,0,0,0.12)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(183,131,47,0.45)] focus-visible:outline-offset-[3px] max-sm:hidden"
+                className="absolute left-0 top-1/2 z-[5] flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-border-strong bg-surface text-royal-blue shadow-[0_8px_20px_rgba(15,23,42,0.08)] transition-all hover:scale-[1.04] hover:bg-royal-blue hover:text-white max-md:size-[38px] max-sm:hidden"
                 onClick={handlePrev}
                 aria-label="Ver servicios anteriores"
               >
@@ -308,7 +387,7 @@ export default function ServiciosCarousel() {
 
               <button
                 type="button"
-                className="absolute right-0 top-1/2 z-[5] flex size-[42px] -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-[#172554] transition-all hover:text-[#b7832f] hover:shadow-[0_10px_24px_rgba(0,0,0,0.12)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(183,131,47,0.45)] focus-visible:outline-offset-[3px] max-sm:hidden"
+                className="absolute right-0 top-1/2 z-[5] flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-border-strong bg-surface text-royal-blue shadow-[0_8px_20px_rgba(15,23,42,0.08)] transition-all hover:scale-[1.04] hover:bg-royal-blue hover:text-white max-md:size-[38px] max-sm:hidden"
                 onClick={handleNext}
                 aria-label="Ver siguientes servicios"
               >
@@ -319,19 +398,19 @@ export default function ServiciosCarousel() {
         </ScrollReveal>
 
         {maxIndex > 0 && (
-          <div className="mt-8 flex justify-center gap-2 max-sm:mt-[26px]">
+          <div className="mt-7 flex justify-center gap-2">
             {Array.from({ length: maxIndex + 1 }).map((_, index) => (
               <button
                 key={index}
                 type="button"
                 aria-label={`Ir al grupo de servicios ${index + 1}`}
                 className={cn(
-                  "h-2 cursor-pointer rounded-full border-none transition-all focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(183,131,47,0.45)] focus-visible:outline-offset-[3px]",
+                  "size-2 cursor-pointer rounded-full border-none p-0 transition-all",
                   currentIndex === index
-                    ? "w-7 bg-[#b7832f]"
-                    : "w-2 bg-gray-300",
+                    ? "scale-125 bg-royal-blue"
+                    : "bg-slate-300",
                 )}
-                onClick={() => setCurrentIndex(index)}
+                onClick={() => irAIndice(index)}
               />
             ))}
           </div>

@@ -1,4 +1,5 @@
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "./Button";
 import { Modal } from "./Modal";
 import { LineaDoradaTitulo } from "./LineaDoradaTitulo";
@@ -8,12 +9,15 @@ type ConfirmacionAccionModalProps = {
   title: string;
   parteSubrayada: string;
   resto?: string;
-  mensaje: string;
+  mensaje: ReactNode;
   confirmLabel: string;
   pendingLabel: string;
   isPending: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  // opcionales para acciones destructivas (p. ej. eliminar): icono de advertencia y botón rojo
+  iconoAdvertencia?: boolean;
+  confirmVariant?: "danger" | "royal";
 };
 
 export function ConfirmacionAccionModal({
@@ -27,8 +31,12 @@ export function ConfirmacionAccionModal({
   isPending,
   onConfirm,
   onCancel,
+  iconoAdvertencia = false,
+  confirmVariant = "royal",
 }: ConfirmacionAccionModalProps) {
   if (!open) return null;
+
+  const esDestructivo = confirmVariant === "danger";
 
   return (
     <Modal
@@ -38,6 +46,13 @@ export function ConfirmacionAccionModal({
       cerrarAlClicFuera={false}
     >
       <div className="flex min-h-44 flex-col">
+        {iconoAdvertencia && (
+          <div className="flex shrink-0 items-center justify-center pt-4">
+            <span className="inline-flex size-12 items-center justify-center rounded-full bg-danger-bg text-danger">
+              <AlertTriangle size={24} aria-hidden="true" />
+            </span>
+          </div>
+        )}
         <LineaDoradaTitulo
           parteSubrayada={parteSubrayada}
           resto={resto}
@@ -49,8 +64,12 @@ export function ConfirmacionAccionModal({
         </div>
         <div className="flex shrink-0 justify-end gap-2">
           <Button
-            variant="royal"
-            className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+            variant={confirmVariant}
+            className={
+              esDestructivo
+                ? "rounded-lg! duration-400 ease-in-out"
+                : "rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+            }
             onClick={onConfirm}
             disabled={isPending}
           >

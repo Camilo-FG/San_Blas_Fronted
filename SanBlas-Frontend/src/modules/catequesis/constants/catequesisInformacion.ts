@@ -2,9 +2,11 @@ export const CATEQUESIS_INTRO = {
   titulo: "¿Qué es la catequesis de niños y jóvenes?",
   descripcion:
     "La catequesis es un proceso de iniciación y maduración en la fe mediante el cual la Iglesia acompaña a niños y jóvenes para que conozcan a Jesucristo, celebren los sacramentos, vivan el Evangelio y participen activamente en la comunidad cristiana. Su finalidad es formar discípulos misioneros, integrando el conocimiento de la fe, la celebración de los sacramentos, la vida moral, la oración y el compromiso con la misión de la Iglesia.",
-  notaCenacat:
+    notaCenacat:
     "El Centro Nacional de Catequesis (CENACAT) de Costa Rica divide el proceso formativo en ocho niveles continuos, agrupados en etapas infantil y juvenil.",
 };
+
+export const MONTO_INSCRIPCION_CATEQUESIS = "₡5.000";
 
 export const CATEQUESIS_NIVELES_INFANTILES = [
   {

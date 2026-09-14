@@ -40,6 +40,10 @@
   --animate-modal-simple-fade: modal-simple-fade 0.2s ease;
   --animate-drawer-slide-in: drawer-slide-in 0.28s ease;
   --animate-drawer-slide-up: drawer-slide-up 0.28s ease;
+  --animate-landing-spin: landing-spin 0.9s linear infinite;
+  --animate-landing-pulse-ring: landing-pulse-ring 1.8s ease-in-out infinite;
+  --animate-landing-bar: landing-bar 1.5s ease-in-out infinite;
+  --animate-login-drift: login-drift 9s ease-in-out infinite;
 
   @keyframes drawer-slide-in {
     from {
@@ -88,6 +92,48 @@
     }
     50% {
       opacity: 0.55;
+    }
+  }
+
+  @keyframes landing-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes landing-pulse-ring {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.5;
+    }
+    50% {
+      transform: scale(1.18);
+      opacity: 0.16;
+    }
+  }
+
+  @keyframes landing-bar {
+    0%,
+    100% {
+      transform: scaleX(0.5);
+      opacity: 0.4;
+    }
+    50% {
+      transform: scaleX(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes login-drift {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.9;
+    }
+    50% {
+      transform: translate(10px, -12px) scale(1.04);
+      opacity: 0.4;
     }
   }
 }

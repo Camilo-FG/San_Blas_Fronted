@@ -90,6 +90,10 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
     title: "Gestión de usuarios",
     subtitle: "Administre cuentas, roles y accesos del sistema.",
   },
+  [Rutas.dashboardUrl.perfil]: {
+    title: "Mi perfil",
+    subtitle: "Consulte los datos de la cuenta con la que inició sesión.",
+  },
 };
 
 const menuItemBaseClassName =
@@ -192,7 +196,12 @@ function Dashboard() {
       >
         <div>
           <div className={cn("border-b border-gray-800 p-6", !barraExpandida && "lg:flex lg:h-[84px] lg:items-center lg:justify-center lg:p-0")}>
-            <div className="flex items-center gap-2.5">
+            <Link
+              to={Rutas.home}
+              aria-label="Ir al sitio de la parroquia"
+              className="flex items-center gap-2.5 no-underline transition-opacity hover:opacity-90"
+              onClick={() => setMenuAbierto(false)}
+            >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-brand-gold bg-brand-blue">
                 <span className="font-heading text-sm font-bold text-brand-gold">SB</span>
               </div>
@@ -204,7 +213,7 @@ function Dashboard() {
                   Panel de control
                 </span>
               </div>
-            </div>
+            </Link>
           </div>
 
           <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -231,7 +240,14 @@ function Dashboard() {
         </div>
 
         <div className={cn("border-t border-gray-800 bg-[#070f1d] px-6 py-4 text-xs", !barraExpandida && "lg:flex lg:h-[99px] lg:items-start lg:justify-center lg:pt-4 lg:px-0")}>
-          <div className="mb-3 flex items-center gap-2.5">
+          <Link
+            to={Rutas.dashboardUrl.perfil}
+            className={cn(
+              "mb-3 flex items-center gap-2.5 rounded-lg p-1.5 no-underline transition-colors hover:bg-white/5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+              pathname === Rutas.dashboardUrl.perfil && "bg-white/5",
+            )}
+            aria-label="Ver mi perfil"
+          >
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-gold font-heading text-[10px] font-bold text-brand-blue uppercase">
               {getUserInitial(user?.email)}
             </div>
@@ -241,7 +257,7 @@ function Dashboard() {
               </p>
               <p className="truncate whitespace-nowrap text-[9px] text-gray-500">{user?.email}</p>
             </div>
-          </div>
+          </Link>
           <div className={cn("grid min-w-56 grid-cols-2 gap-2", !barraExpandida && "lg:hidden")}>
             <Link
               to={Rutas.home}
