@@ -1,14 +1,24 @@
 import { useEffect, useState } from "react";
 import CatequesisForm from "../components/CatequesisForm";
 import CatequesisInfoSection from "../components/CatequesisInfoSection";
-import { crearSolicitudCatequesis } from "../../../services/catequesis/catequesisService";
+import {
+  crearSolicitudCatequesis,
+  consultarSolicitudesPorCorreo,
+} from "../../../services/catequesis/catequesisService";
 import { ApiError } from "../../../services/apiClient";
 import type { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
+import type { CatequesisEnrollmentRecord } from "../../dashboard/catequesis/Types/catequesis";
 import SeoHead from "../../../seo/SeoHead";
-import { Badge, Button, Card, ErrorMessage } from "../../../shared/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  ErrorMessage,
+  Input,
+  Label,
+} from "../../../shared/ui";
 import { formatearFechaCalendario } from "../../../shared/utils/fechas";
 
-// solo lo no sensible pa la tarjeta (nombre, centro, nivel, estado y fechas, nada de direcciones ni teléfonos)
 interface ResumenSolicitudEnviada {
   nombreAlumno: string;
   centro: string;
@@ -17,21 +27,65 @@ interface ResumenSolicitudEnviada {
   fechaEnvio: string;
 }
 
+const normalizarEstado = (estado?: string | null): string => {
+  if (!estado) return "pendiente";
+  const e = estado.trim().toLowerCase();
+  if (e === "aprobado" || e === "aprobada") return "aprobado";
+  if (e === "rechazado" || e === "rechazada") return "rechazado";
+  if (e === "requiere_modificacion") return "requiere_modificacion";
+  return "pendiente";
+};
+
+const getEstadoBadgeVariant = (
+  estado?: string | null,
+): "success" | "danger" | "warning" | "info" => {
+  switch (normalizarEstado(estado)) {
+    case "aprobado":
+      return "success";
+    case "rechazado":
+      return "danger";
+    case "requiere_modificacion":
+      return "info";
+    default:
+      return "warning";
+  }
+};
+
+const getEstadoMensaje = (estado?: string | null): string => {
+  switch (normalizarEstado(estado)) {
+    case "aprobado":
+      return "Tu inscripción fue aprobada. Ya puedes asistir a catequesis.";
+    case "rechazado":
+      return "Tu inscripción fue rechazada. Revisa el motivo adjunto.";
+    case "requiere_modificacion":
+      return "Se solicitaron modificaciones. Podés editar y reenviar tu inscripción.";
+    default:
+      return "Tu inscripción está pendiente de revisión por el catequista.";
+  }
+};
+
+type Section = "info" | "matricula" | "consultar";
+
 const CatequesisPage = () => {
   const [loading, setLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState<"info" | "matricula">(
-    "info",
-  );
+  const [activeSection, setActiveSection] = useState<Section>("info");
   const [submitted, setSubmitted] = useState(false);
-  const [errorEnvio, setErrorEnvio] = useState<string | null>(null); // pa mostrar el error sin usar alert
-  // vive solo en memoria (se limpia con "Hacer otra inscripción", no se guarda ni se muestra en consola)
+  const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [resumen, setResumen] = useState<ResumenSolicitudEnviada | null>(null);
+
+  const [correoConsulta, setCorreoConsulta] = useState("");
+  const [consultando, setConsultando] = useState(false);
+  const [errorConsulta, setErrorConsulta] = useState<string | null>(null);
+  const [resultadosConsulta, setResultadosConsulta] = useState<
+    CatequesisEnrollmentRecord[]
+  >([]);
 
   useEffect(() => {
     const syncSectionWithHash = () => {
-      setActiveSection(
-        window.location.hash === "#matricula" ? "matricula" : "info",
-      );
+      const hash = window.location.hash;
+      if (hash === "#matricula") setActiveSection("matricula");
+      else if (hash === "#consultar") setActiveSection("consultar");
+      else setActiveSection("info");
     };
 
     syncSectionWithHash();
@@ -39,14 +93,12 @@ const CatequesisPage = () => {
     return () => window.removeEventListener("hashchange", syncSectionWithHash);
   }, []);
 
-  // manda la solicitud al backend (con archivos usa FormData en el service)
   const handleSubmit = async (data: CatequesisEnrollmentData) => {
     setLoading(true);
     setErrorEnvio(null);
 
     try {
       const respuesta = await crearSolicitudCatequesis(data);
-      // arma el resumen solo con lo del POST (sin id y sin datos privados como dirección o teléfonos)
       const nombreAlumno =
         `${data.catequizando.nombre ?? ""} ${data.catequizando.primerApellido ?? ""} ${data.catequizando.segundoApellido ?? ""}`
           .replace(/\s+/g, " ")
@@ -59,9 +111,8 @@ const CatequesisPage = () => {
         fechaEnvio:
           respuesta?.fechaSolicitud ?? new Date().toISOString(),
       });
-      setSubmitted(true); // el backend la guarda en Pendiente, el form se limpia al desmontarse
+      setSubmitted(true);
     } catch (error) {
-      // traduce el error con ApiError en vez de alert pelado
       if (error instanceof ApiError) {
         setErrorEnvio(error.message);
       } else {
@@ -71,6 +122,49 @@ const CatequesisPage = () => {
       setLoading(false);
     }
   };
+
+  const handleConsultar = async () => {
+    if (!correoConsulta.trim()) return;
+    setConsultando(true);
+    setErrorConsulta(null);
+    setResultadosConsulta([]);
+
+    try {
+      const resultados = await consultarSolicitudesPorCorreo(
+        correoConsulta.trim(),
+      );
+      setResultadosConsulta(resultados);
+      if (resultados.length === 0) {
+        setErrorConsulta(
+          "No se encontraron solicitudes asociadas a ese correo.",
+        );
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrorConsulta(error.message);
+      } else {
+        setErrorConsulta("Ocurrió un error al consultar las solicitudes.");
+      }
+    } finally {
+      setConsultando(false);
+    }
+  };
+
+  const cambiarSeccion = (seccion: Section) => {
+    setActiveSection(seccion);
+    const hashes: Record<Section, string> = {
+      info: "#informacion",
+      matricula: "#matricula",
+      consultar: "#consultar",
+    };
+    window.history.replaceState(null, "", hashes[seccion]);
+  };
+
+  const tabs: { id: Section; label: string }[] = [
+    { id: "info", label: "Información sobre catequesis" },
+    { id: "matricula", label: "Matricular catequesis" },
+    { id: "consultar", label: "Consultar estado" },
+  ];
 
   return (
     <>
@@ -85,42 +179,26 @@ const CatequesisPage = () => {
               Matrícula a Catequesis
             </h1>
             <div
-              className="mt-5 grid grid-cols-1 gap-2 rounded-2xl bg-surface-muted p-1.5 sm:grid-cols-2"
+              className="mt-5 grid grid-cols-1 gap-2 rounded-2xl bg-surface-muted p-1.5 sm:grid-cols-3"
               role="tablist"
               aria-label="Secciones de catequesis"
             >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeSection === "info"}
-                onClick={() => {
-                  setActiveSection("info");
-                  window.history.replaceState(null, "", "#informacion");
-                }}
-                className={`min-h-11 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 ${
-                  activeSection === "info"
-                    ? "bg-royal-blue text-white shadow-sm"
-                    : "text-text-secondary hover:bg-surface hover:text-royal-blue"
-                }`}
-              >
-                Información sobre catequesis
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeSection === "matricula"}
-                onClick={() => {
-                  setActiveSection("matricula");
-                  window.history.replaceState(null, "", "#matricula");
-                }}
-                className={`min-h-11 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 ${
-                  activeSection === "matricula"
-                    ? "bg-royal-blue text-white shadow-sm"
-                    : "text-text-secondary hover:bg-surface hover:text-royal-blue"
-                }`}
-              >
-                Matricular catequesis
-              </button>
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeSection === tab.id}
+                  onClick={() => cambiarSeccion(tab.id)}
+                  className={`min-h-11 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 ${
+                    activeSection === tab.id
+                      ? "bg-royal-blue text-white shadow-sm"
+                      : "text-text-secondary hover:bg-surface hover:text-royal-blue"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </header>
 
@@ -151,7 +229,7 @@ const CatequesisPage = () => {
                 Recibimos la inscripción a catequesis. Pronto revisaremos la
                 información y nos pondremos en contacto contigo.
               </p>
-              {resumen ? ( // tarjeta centrada con lo del POST (sin datos privados)
+              {resumen ? (
                 <Card className="mt-6 w-full max-w-[560px] text-left" accent>
                   <dl className="m-0 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
@@ -205,8 +283,8 @@ const CatequesisPage = () => {
                 className="mt-6 min-h-12 px-5 shadow-[0_8px_18px_rgba(0,51,102,0.18)]"
                 onClick={() => {
                   setSubmitted(false);
-                  setResumen(null); // borra el resumen de memoria pa no dejar datos en pantalla
-                  setErrorEnvio(null); // limpia todo pa empezar de cero
+                  setResumen(null);
+                  setErrorEnvio(null);
                   setActiveSection("matricula");
                 }}
               >
@@ -215,13 +293,139 @@ const CatequesisPage = () => {
             </section>
           ) : activeSection === "info" ? (
             <CatequesisInfoSection />
-          ) : (
+          ) : activeSection === "matricula" ? (
             <>
-              {errorEnvio ? ( // error visible sin recargar, con opción de reintentar enviando de nuevo
+              {errorEnvio ? (
                 <ErrorMessage message={errorEnvio} />
               ) : null}
               <CatequesisForm loading={loading} onSubmit={handleSubmit} />
             </>
+          ) : (
+            <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
+              <h2 className="m-0 mb-2 font-heading text-xl font-extrabold text-royal-blue sm:text-2xl">
+                Consultar estado de inscripción
+              </h2>
+              <p className="m-0 mb-6 text-sm text-text-secondary">
+                Ingresá el correo electrónico con el que se realizó la
+                inscripción para ver el estado de tu solicitud.
+              </p>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <div className="flex-1">
+                  <Label htmlFor="correo-consulta">
+                    Correo electrónico *
+                  </Label>
+                  <Input
+                    id="correo-consulta"
+                    type="email"
+                    placeholder="correo@ejemplo.com"
+                    value={correoConsulta}
+                    onChange={(e) => setCorreoConsulta(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleConsultar();
+                    }}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="royal"
+                  className="min-h-11 px-6"
+                  disabled={consultando || !correoConsulta.trim()}
+                  onClick={handleConsultar}
+                >
+                  {consultando ? "Consultando..." : "Consultar"}
+                </Button>
+              </div>
+
+              {errorConsulta && (
+                <div className="mt-4">
+                  <ErrorMessage message={errorConsulta} />
+                </div>
+              )}
+
+              {resultadosConsulta.length > 0 && (
+                <div className="mt-6 flex flex-col gap-4">
+                  {resultadosConsulta.map((solicitud) => (
+                    <Card
+                      key={solicitud.id}
+                      className="w-full"
+                      accent
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-bold text-text-muted">
+                              Solicitud #{solicitud.id}
+                            </span>
+                            <Badge
+                              variant={getEstadoBadgeVariant(
+                                solicitud.estado,
+                              )}
+                            >
+                              {solicitud.estado}
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+                            <div>
+                              <span className="font-semibold text-text-muted">
+                                Alumno:{" "}
+                              </span>
+                              <span className="text-text">
+                                {solicitud.catequizando?.nombre ?? "—"}{" "}
+                                {solicitud.catequizando?.apellidos ?? ""}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-text-muted">
+                                Centro:{" "}
+                              </span>
+                              <span className="text-text">
+                                {solicitud.catequesis?.centroCatequesis ?? "—"}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-text-muted">
+                                Nivel:{" "}
+                              </span>
+                              <span className="text-text">
+                                {solicitud.catequesis?.nivelAInscribirse ?? "—"}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-text-muted">
+                                Fecha:{" "}
+                              </span>
+                              <span className="text-text">
+                                {solicitud.fechaSolicitud
+                                  ? formatearFechaCalendario(
+                                      solicitud.fechaSolicitud,
+                                    )
+                                  : "—"}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="m-0 mt-1 text-sm text-text-secondary">
+                            {getEstadoMensaje(solicitud.estado)}
+                          </p>
+                          {(normalizarEstado(solicitud.estado) ===
+                            "rechazado" ||
+                            normalizarEstado(solicitud.estado) ===
+                              "requiere_modificacion") &&
+                            solicitud.observacionAdministrativa && (
+                              <div className="mt-1 rounded-lg border border-border bg-surface-muted p-3 text-sm text-text-secondary">
+                                <span className="font-semibold text-text-muted">
+                                  Observación:{" "}
+                                </span>
+                                {solicitud.observacionAdministrativa}
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </section>
           )}
         </div>
       </main>

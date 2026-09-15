@@ -157,6 +157,21 @@ export const agregarObservacionAdministrativa = async (
   return actualizarEstadoSolicitud(id, estado, observacion);
 };
 
+export const consultarSolicitudesPorCorreo = async (
+  correo: string,
+): Promise<CatequesisEnrollmentRecord[]> => {
+  try {
+    const { data } = await apiClient.get<{
+      inscripciones: InscripcionResumenBackend[];
+      total: number;
+    }>(`${BASE}/consulta`, { params: { correo } });
+
+    return (data.inscripciones ?? []).map(mapResumenToEnrollmentRecord);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
 const extraerNombreArchivo = (contentDisposition?: string): string | null => {
   if (!contentDisposition) return null;
 

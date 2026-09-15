@@ -29,9 +29,13 @@ const GestionUsuarios = () => {
         pagina,
         limite,
         busqueda,
+        filtros,
+        filtrosActivos,
         setPagina,
         setLimite,
         setBusqueda,
+        aplicarFiltros,
+        limpiarFiltros,
         refetch: refetchPagina,
     } = useGetUsuariosPaginados();
     const { roles, loading: cargandoRoles, error: errorRoles, refetch: refetchRoles } = useGetRoles();
@@ -143,11 +147,15 @@ const GestionUsuarios = () => {
                             pagina={pagina}
                             limite={limite}
                             busqueda={busqueda}
+                            filtros={filtros}
+                            filtrosActivos={filtrosActivos}
                             cargando={cargandoPagina}
                             error={errorPagina}
                             setPagina={setPagina}
                             setLimite={setLimite}
                             setBusqueda={setBusqueda}
+                            aplicarFiltros={aplicarFiltros}
+                            limpiarFiltros={limpiarFiltros}
                         />
                     )}
                 </div>
