@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { AlertOctagon, Loader2, Mail, Shield, User } from "lucide-react";
 import type { Usuario } from "../../../../types/Usuario";
 import { etiquetaRol, type Rol } from "../../../../types/Rol";
 import { useAuth } from "../../../../context/AuthContext";
 import { useToast } from "../../../../shared/ui";
-import { Badge, Button, Card, cn } from "../../../../shared/ui";
+import { Badge, Button, Card, ConfirmacionAccionModal, cn } from "../../../../shared/ui";
 import { useUpdateUser } from "../../hooks/hooksUsuarios/useUpdateUser";
+import { clearAuthToken } from "../../../../utils/authToken";
 
 const formatFechaCreacion = (fecha?: string | null) => {
   if (!fecha) return "—";
@@ -23,7 +25,6 @@ type PerfilUsuarioCardProps = {
   titulo?: string;
   className?: string;
   espacioParaCerrar?: boolean;
-  // el padre se entera cuando se desactiva la cuenta para refrescar el listado
   onEstadoCambiado?: (activo: boolean) => void;
 };
 
@@ -35,13 +36,14 @@ export function PerfilUsuarioCard({
   espacioParaCerrar = false,
   onEstadoCambiado,
 }: PerfilUsuarioCardProps) {
-  const { user: usuarioSesion } = useAuth();
+  const { user: usuarioSesion, logout } = useAuth();
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const { actualizarUsuario, loading: desactivando } = useUpdateUser();
   const [activo, setActivo] = useState(usuario.state);
   const [confirmando, setConfirmando] = useState(false);
+  const [abrirModalSelf, setAbrirModalSelf] = useState(false);
 
-  // si cambia el usuario mostrado (modal que reutiliza el componente) reseteamos el estado
   useEffect(() => {
     setActivo(usuario.state);
     setConfirmando(false);
@@ -51,7 +53,6 @@ export function PerfilUsuarioCard({
   const correo = usuario.email || "—";
   const rol = etiquetaRol(usuario.role, roles);
 
-  // comparamos id y email porque el del modal viene del listado y el de sesión de otra fuente
   const esUsuarioActual =
     (usuarioSesion?.id != null && usuario.id === usuarioSesion.id) ||
     (usuarioSesion?.email != null &&
@@ -73,12 +74,20 @@ export function PerfilUsuarioCard({
     if (resultado.ok) {
       setActivo(false);
       setConfirmando(false);
+      setAbrirModalSelf(false);
       showToast("Cuenta desactivada correctamente", "success");
       onEstadoCambiado?.(false);
+
+      if (esUsuarioActual) {
+        clearAuthToken();
+        logout();
+        navigate({ to: "/login" });
+      }
       return;
     }
     showToast(resultado.mensaje, "error");
     setConfirmando(false);
+    setAbrirModalSelf(false);
   };
 
   return (
@@ -136,10 +145,33 @@ export function PerfilUsuarioCard({
 
       <div className="border-t border-border-strong bg-danger-bg/40 px-5 py-4">
         {esUsuarioActual ? (
-          <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary">
-            <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
-            No puede desactivar su propia cuenta desde aquí.
-          </p>
+          !activo ? (
+            <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary">
+              <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
+              Tu cuenta está inactiva.
+            </p>
+          ) : (
+            <div>
+              <div className="flex items-start gap-2.5">
+                <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
+                <div>
+                  <p className="m-0 text-sm font-bold text-danger">Zona de peligro</p>
+                  <p className="m-0 mt-0.5 text-xs leading-relaxed text-text-secondary">
+                    Al desactivar tu cuenta perderás el acceso y cerraremos tu
+                    sesión automáticamente.
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="danger"
+                className="mt-3 shrink-0 self-start"
+                onClick={() => setAbrirModalSelf(true)}
+                disabled={desactivando}
+              >
+                Desactivar mi cuenta
+              </Button>
+            </div>
+          )
         ) : !activo ? (
           <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary">
             <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
@@ -194,6 +226,22 @@ export function PerfilUsuarioCard({
           </div>
         )}
       </div>
+
+      <ConfirmacionAccionModal
+        open={abrirModalSelf}
+        title="Desactivar mi cuenta"
+        parteSubrayada="desactivar tu cuenta"
+        iconoAdvertencia
+        confirmVariant="danger"
+        mensaje="Esta acción cerrará tu sesión automáticamente y perderás acceso a la plataforma. ¿Estás seguro?"
+        confirmLabel="Sí, desactivar"
+        pendingLabel="Desactivando..."
+        isPending={desactivando}
+        onConfirm={() => void confirmarDesactivacion()}
+        onCancel={() => {
+          if (!desactivando) setAbrirModalSelf(false);
+        }}
+      />
     </Card>
   );
 }

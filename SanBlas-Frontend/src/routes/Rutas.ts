@@ -23,6 +23,7 @@ const Rutas = {
   contacto: "/contacto",
   eventosPublicos: "/eventos",
   login: "/login",
+  registro: "/registro",
   recuperarContrasena: "/recuperar-contrasena",
   dashboard: dashboardBase,
 
