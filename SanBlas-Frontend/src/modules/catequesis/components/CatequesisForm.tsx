@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (no deja picar dos veces)
 import {
   Button,
@@ -142,7 +142,7 @@ const contarCaracteres = (valor: string): number => valor.length;
 const WordCounter = ({ value, max = MAX_CHARACTERS, error }: { value: string; max?: number; error?: string }) => (
   <div className="flex items-center justify-between gap-2">
     {error && (
-      <p className="m-0 text-xs font-medium text-red-600">⚠ {error}</p>
+      <p data-field-error className="m-0 text-xs font-medium text-red-600">⚠ {error}</p>
     )}
     <span className="ml-auto text-right text-[0.72rem] font-medium text-text-muted">
       {contarCaracteres(value)}/{max} caracteres
@@ -190,6 +190,8 @@ const fileInputClass = cn(
 );
 
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
+  const stepIndicatorRef = useRef<HTMLDivElement>(null);
+  const isFirstStep = useRef(true);
   const [form, setForm] = useState<CatequesisEnrollmentData>(
     getInitialFormState(),
   );
@@ -200,6 +202,14 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const [aceptaLineamientos, setAceptaLineamientos] = useState(false);
   const [tienePadre, setTienePadre] = useState<boolean | null>(null);
   const [tieneMadre, setTieneMadre] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (isFirstStep.current) {
+      isFirstStep.current = false;
+      return;
+    }
+    stepIndicatorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [currentStep]);
 
   const updateForm = (path: string, value: unknown) => {
     setForm((prev) => {
@@ -515,12 +525,20 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     "Lineamientos",
   ];
 
+  const scrollToFirstError = () => {
+    requestAnimationFrame(() => {
+      const firstError = document.querySelector("[data-field-error]");
+      firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     for (let step = 1; step <= 8; step++) {
       if (!validateStep(step)) {
         setCurrentStep(step);
+        scrollToFirstError();
         return;
       }
     }
@@ -576,7 +594,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 ))}
               </Select>
               {errors.centroCatequesis && (
-                <p className="m-0 text-xs font-medium text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.centroCatequesis}
                 </p>
               )}
@@ -603,7 +621,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 ))}
               </Select>
               {errors.nivelAInscribirse && (
-                <p className="m-0 text-xs font-medium text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.nivelAInscribirse}
                 </p>
               )}
@@ -625,7 +643,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }
               />
               {errors.feBautismoArchivo && (
-                <p className="m-0 text-xs font-medium text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.feBautismoArchivo}
                 </p>
               )}
@@ -711,7 +729,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }}
               />
               {errors.fechaNacimiento && (
-                <p className="m-0 text-xs font-medium text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.fechaNacimiento}
                 </p>
               )}
@@ -887,7 +905,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 <option value="si">Sí</option>
               </Select>
               {errors.requiereAdecuacion && (
-                <p className="m-0 text-xs font-medium text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.requiereAdecuacion}
                 </p>
               )}
@@ -944,7 +962,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 <option value="si">Sí</option>
               </Select>
               {errors.portadorEnfermedad && (
-                <p className="m-0 text-xs font-medium text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.portadorEnfermedad}
                 </p>
               )}
@@ -1108,7 +1126,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 <option value="Otro">Otro</option>
               </Select>
               {errors.parentesco && (
-                <p className="m-0 text-xs font-medium text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.parentesco}
                 </p>
               )}
@@ -1191,7 +1209,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 <option value="si">Sí</option>
               </Select>
               {errors.tieneMadre && (
-                <p className="m-0 text-xs font-medium text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.tieneMadre}
                 </p>
               )}
@@ -1217,7 +1235,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter value={form.madreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
               {errors.nombreMadre && (
-                <p className="m-0 text-xs font-medium text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   {errors.nombreMadre}
                 </p>
               )}
@@ -1378,7 +1396,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 <option value="si">Sí</option>
               </Select>
               {errors.tienePadre && (
-                <p className="m-0 text-xs font-medium text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.tienePadre}
                 </p>
               )}
@@ -1404,7 +1422,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter value={form.padreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
               {errors.nombrePadre && (
-                <p className="m-0 text-xs font-medium text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   {errors.nombrePadre}
                 </p>
               )}
@@ -1523,7 +1541,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }
               />
               {errors.archivoComprobante && (
-                <p className="m-0 text-xs font-medium text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.archivoComprobante}
                 </p>
               )}
@@ -1576,7 +1594,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             </label>
 
             {errors.lineamientos && (
-              <p className="m-0 text-xs font-medium text-red-600">
+              <p data-field-error className="m-0 text-xs font-medium text-red-600">
                 ⚠ {errors.lineamientos}
               </p>
             )}
@@ -1584,7 +1602,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         </section>
       )}
 
-      <div className="order-first rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
+      <div ref={stepIndicatorRef} className="order-first rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <span className="text-xs font-black tracking-wider text-royal-blue uppercase">
             Paso {currentStep} de {stepTitles.length}
