@@ -666,6 +666,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm("catequesis.centroCatequesis", e.target.value)
                 }
+                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
               >
                 <option value="">Seleccione</option>
                 {FILIALES_CATEQUESIS.map((filial) => (
@@ -693,6 +694,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm("catequesis.nivelAInscribirse", e.target.value)
                 }
+                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
               >
                 <option value="">Seleccione</option>
                 {NIVELES_CATEQUESIS.map((nivel) => (
@@ -799,6 +801,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </Label>
               <Input
                 type="date"
+                className="date-field"
                 value={form.catequizando.fechaNacimiento || ""}
                 onChange={(e) => {
                   const valor = e.target.value;
@@ -886,6 +889,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </Label>
               <Input
                 type="date"
+                className="date-field"
                 value={form.catequizando.bautismo.fecha || ""}
                 onChange={(e) =>
                   updateForm("catequizando.bautismo.fecha", e.target.value)
@@ -985,6 +989,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     e.target.value === "si",
                   )
                 }
+                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
               >
                 <option value="">Seleccione</option>
                 <option value="no">No</option>
@@ -1042,6 +1047,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     e.target.value === "si",
                   )
                 }
+                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
               >
                 <option value="">Seleccione</option>
                 <option value="no">No</option>
@@ -1203,6 +1209,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm("inscripcion.parentesco", e.target.value)
                 }
+                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
               >
                 <option value="">Seleccione</option>
                 <option value="Madre">Madre</option>
@@ -1289,6 +1296,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     }));
                   }
                 }}
+                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
               >
                 <option value="">Seleccione</option>
                 <option value="no">No</option>
@@ -1476,6 +1484,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     }));
                   }
                 }}
+                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
               >
                 <option value="">Seleccione</option>
                 <option value="no">No</option>
