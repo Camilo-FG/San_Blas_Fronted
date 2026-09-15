@@ -211,6 +211,73 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     stepIndicatorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [currentStep]);
 
+  const clearError = (key: string) => {
+    setErrors((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const pathToErrorKey: Record<string, string> = {
+    "catequizando.nombre": "nombreCatequizando",
+    "catequizando.primerApellido": "primerApellidoCatequizando",
+    "catequizando.segundoApellido": "segundoApellidoCatequizando",
+    "catequizando.fechaNacimiento": "fechaNacimiento",
+    "catequizando.direccion.direccionExacta": "direccionExacta",
+    "catequesis.centroCatequesis": "centroCatequesis",
+    "catequesis.nivelAInscribirse": "nivelAInscribirse",
+    "catequesis.feBautismoArchivo": "feBautismoArchivo",
+    "catequizando.bautismo.parroquia": "parroquiaBautismo",
+    "catequizando.adecuacion.requiereAdecuacionCentroEducativo": "requiereAdecuacion",
+    "catequizando.adecuacion.descripcionAdecuacion": "descripcionAdecuacion",
+    "catequizando.condicionSalud.portadorEnfermedadCronica": "portadorEnfermedad",
+    "catequizando.condicionSalud.descripcionEnfermedad": "descripcionEnfermedad",
+    "inscripcion.personaQueInscribe.nombre": "nombrePersonaInscribe",
+    "inscripcion.personaQueInscribe.primerApellido": "primerApellidoPersonaInscribe",
+    "inscripcion.personaQueInscribe.segundoApellido": "segundoApellidoPersonaInscribe",
+    "inscripcion.personaQueInscribe.correo": "correoPersonaInscribe",
+    "inscripcion.personaQueInscribe.telefono": "telefonoPersonaInscribe",
+    "inscripcion.parentesco": "parentesco",
+    "madreCatequizando.nombre": "nombreMadre",
+    "madreCatequizando.primerApellido": "primerApellidoMadre",
+    "madreCatequizando.direccion.direccionExacta": "direccionMadre",
+    "madreCatequizando.direccion.ciudad": "ciudadMadre",
+    "madreCatequizando.direccion.provincia": "provinciaMadre",
+    "madreCatequizando.telefono": "telefonoMadre",
+    "padreCatequizando.nombre": "nombrePadre",
+    "padreCatequizando.primerApellido": "primerApellidoPadre",
+    "padreCatequizando.telefono": "telefonoPadre",
+    "inscripcion.pago.numeroComprobanteSINPE": "numeroComprobanteSINPE",
+  };
+
+  const requiredMessages: Record<string, string> = {
+    nombreCatequizando: "Digite el nombre del catequizando.",
+    primerApellidoCatequizando: "Digite el primer apellido del catequizando.",
+    direccionExacta: "Digite la dirección exacta.",
+    centroCatequesis: "Seleccione el centro de catequesis.",
+    nivelAInscribirse: "Seleccione el nivel a inscribirse.",
+    feBautismoArchivo: "Debe adjuntar la fe de bautismo.",
+    parroquiaBautismo: "Digite la parroquia de bautismo.",
+    nombrePersonaInscribe: "Digite el nombre de la persona que inscribe.",
+    primerApellidoPersonaInscribe: "Digite el primer apellido de la persona que inscribe.",
+    segundoApellidoPersonaInscribe: "Digite el segundo apellido de la persona que inscribe.",
+    parentesco: "Seleccione el parentesco.",
+    correoPersonaInscribe: "Digite el correo de la persona que inscribe.",
+    telefonoPersonaInscribe: "El teléfono debe contener 8 dígitos.",
+    nombreMadre: "Digite el nombre de la madre o encargada.",
+    primerApellidoMadre: "Digite el primer apellido de la madre o encargada.",
+    direccionMadre: "Digite la dirección exacta.",
+    ciudadMadre: "Digite la ciudad.",
+    provinciaMadre: "Digite la provincia.",
+    telefonoMadre: "El teléfono debe contener 8 dígitos.",
+    nombrePadre: "Digite el nombre del padre.",
+    primerApellidoPadre: "Digite el primer apellido del padre.",
+    telefonoPadre: "El teléfono debe contener 8 dígitos.",
+    numeroComprobanteSINPE: "Digite el número de comprobante SINPE.",
+  };
+
   const updateForm = (path: string, value: unknown) => {
     setForm((prev) => {
       const copy = structuredClone(prev) as any;
@@ -224,6 +291,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       current[keys[keys.length - 1]] = value;
       return copy;
     });
+
+    const trimmed = typeof value === "string" ? value.trim() : value;
+    const errorKey = pathToErrorKey[path];
+    if (!errorKey) return;
+
+    if (trimmed && trimmed !== "") {
+      clearError(errorKey);
+    } else if (requiredMessages[errorKey]) {
+      setErrors((prev) => ({ ...prev, [errorKey]: requiredMessages[errorKey] }));
+    }
   };
 
   const validate = () => {
@@ -1588,7 +1665,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 type="checkbox"
                 className="mt-0.5 h-4 w-4 shrink-0 accent-royal-blue"
                 checked={aceptaLineamientos}
-                onChange={(e) => setAceptaLineamientos(e.target.checked)}
+                onChange={(e) => {
+                  setAceptaLineamientos(e.target.checked);
+                  if (e.target.checked) clearError("lineamientos");
+                }}
               />
               <span className="text-sm text-gray-600">
                 Estoy de acuerdo con los lineamientos establecidos
