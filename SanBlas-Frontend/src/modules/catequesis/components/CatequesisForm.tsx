@@ -507,6 +507,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const handleNext = () => {
     if (validateStep(currentStep)) {
       setCurrentStep((step) => Math.min(step + 1, 8));
+    } else {
+      scrollToFirstError();
     }
   };
 
