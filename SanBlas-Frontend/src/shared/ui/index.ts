@@ -12,6 +12,7 @@ export { EtiquetaSeccion } from "./EtiquetaSeccion";
 export { ConfirmacionAccionModal } from "./ConfirmacionAccionModal";
 export { resaltarCoincidencia } from "./resaltarCoincidencia";
 export { Select } from "./Select";
+export { CustomSelect, type CustomSelectOption } from "./CustomSelect";
 export { Textarea } from "./Textarea";
 export { ToastProvider, useToast } from "./Toast";
 export {

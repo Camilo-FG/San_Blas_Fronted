@@ -3,10 +3,10 @@ import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (
 import {
   Button,
   cn,
+  CustomSelect,
   Input,
   Label,
   Modal,
-  Select,
   Textarea,
 } from "../../../shared/ui";
 import { FILIALES_CATEQUESIS } from "../constants/filialesCatequesis";
@@ -661,23 +661,17 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Label className="text-xs font-black text-royal-blue">
                 Centro de catequesis<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={form.catequesis.centroCatequesis || ""}
-                onChange={(e) =>
-                  updateForm("catequesis.centroCatequesis", e.target.value)
+                onChange={(valor) =>
+                  updateForm("catequesis.centroCatequesis", valor || null)
                 }
-                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
-              >
-                <option value="">Seleccione</option>
-                {FILIALES_CATEQUESIS.map((filial) => (
-                  <option
-                    key={filial}
-                    value={filial}
-                  >
-                    {filial}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  { label: "Seleccione", value: "" },
+                  ...FILIALES_CATEQUESIS.map((f) => ({ label: f, value: f })),
+                ]}
+                hasError={!!errors.centroCatequesis}
+              />
               {errors.centroCatequesis && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.centroCatequesis}
@@ -689,23 +683,17 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Label className="text-xs font-black text-royal-blue">
                 Nivel a inscribirse<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={form.catequesis.nivelAInscribirse || ""}
-                onChange={(e) =>
-                  updateForm("catequesis.nivelAInscribirse", e.target.value)
+                onChange={(valor) =>
+                  updateForm("catequesis.nivelAInscribirse", valor || null)
                 }
-                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
-              >
-                <option value="">Seleccione</option>
-                {NIVELES_CATEQUESIS.map((nivel) => (
-                  <option
-                    key={nivel.value}
-                    value={nivel.value}
-                  >
-                    {nivel.label}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  { label: "Seleccione", value: "" },
+                  ...NIVELES_CATEQUESIS.map((n) => ({ label: n.label, value: n.value })),
+                ]}
+                hasError={!!errors.nivelAInscribirse}
+              />
               {errors.nivelAInscribirse && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.nivelAInscribirse}
@@ -973,7 +961,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Label className="text-xs font-black text-royal-blue">
                 ¿Requiere adecuación en el centro educativo?<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={
                   form.catequizando.adecuacion
                     .requiereAdecuacionCentroEducativo === null
@@ -983,18 +971,19 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                       ? "si"
                       : "no"
                 }
-                onChange={(e) =>
+                onChange={(valor) =>
                   updateForm(
                     "catequizando.adecuacion.requiereAdecuacionCentroEducativo",
-                    e.target.value === "si",
+                    valor === "si",
                   )
                 }
-                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
-              >
-                <option value="">Seleccione</option>
-                <option value="no">No</option>
-                <option value="si">Sí</option>
-              </Select>
+                options={[
+                  { label: "Seleccione", value: "" },
+                  { label: "No", value: "no" },
+                  { label: "Sí", value: "si" },
+                ]}
+                hasError={!!errors.requiereAdecuacion}
+              />
               {errors.requiereAdecuacion && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.requiereAdecuacion}
@@ -1032,7 +1021,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Label className="text-xs font-black text-royal-blue">
                 ¿Es portador de enfermedad crónica?<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={
                   form.catequizando.condicionSalud.portadorEnfermedadCronica ===
                   null
@@ -1041,18 +1030,19 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                       ? "si"
                       : "no"
                 }
-                onChange={(e) =>
+                onChange={(valor) =>
                   updateForm(
                     "catequizando.condicionSalud.portadorEnfermedadCronica",
-                    e.target.value === "si",
+                    valor === "si",
                   )
                 }
-                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
-              >
-                <option value="">Seleccione</option>
-                <option value="no">No</option>
-                <option value="si">Sí</option>
-              </Select>
+                options={[
+                  { label: "Seleccione", value: "" },
+                  { label: "No", value: "no" },
+                  { label: "Sí", value: "si" },
+                ]}
+                hasError={!!errors.portadorEnfermedadCronica}
+              />
               {errors.portadorEnfermedad && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.portadorEnfermedad}
@@ -1204,20 +1194,21 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Label className="text-xs font-black text-royal-blue">
                 Parentesco<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={form.inscripcion.parentesco || ""}
-                onChange={(e) =>
-                  updateForm("inscripcion.parentesco", e.target.value)
+                onChange={(valor) =>
+                  updateForm("inscripcion.parentesco", valor || null)
                 }
-                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
-              >
-                <option value="">Seleccione</option>
-                <option value="Madre">Madre</option>
-                <option value="Padre">Padre</option>
-                <option value="Abuelo(a)">Abuelo(a)</option>
-                <option value="Tutor Legal">Tutor Legal</option>
-                <option value="Otro">Otro</option>
-              </Select>
+                options={[
+                  { label: "Seleccione", value: "" },
+                  { label: "Madre", value: "Madre" },
+                  { label: "Padre", value: "Padre" },
+                  { label: "Abuelo(a)", value: "Abuelo(a)" },
+                  { label: "Tutor Legal", value: "Tutor Legal" },
+                  { label: "Otro", value: "Otro" },
+                ]}
+                hasError={!!errors.parentesco}
+              />
               {errors.parentesco && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.parentesco}
@@ -1254,12 +1245,11 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Label className="text-xs font-black text-royal-blue">
                 ¿La madre es parte del núcleo familiar?<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={
                   tieneMadre === null ? "" : tieneMadre ? "si" : "no"
                 }
-                onChange={(e) => {
-                  const valor = e.target.value;
+                onChange={(valor) => {
                   if (valor === "") {
                     setTieneMadre(null);
                     return;
@@ -1296,12 +1286,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     }));
                   }
                 }}
-                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
-              >
-                <option value="">Seleccione</option>
-                <option value="no">No</option>
-                <option value="si">Sí</option>
-              </Select>
+                options={[
+                  { label: "Seleccione", value: "" },
+                  { label: "No", value: "no" },
+                  { label: "Sí", value: "si" },
+                ]}
+                hasError={!!errors.tieneMadre}
+              />
               {errors.tieneMadre && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.tieneMadre}
@@ -1450,12 +1441,11 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Label className="text-xs font-black text-royal-blue">
                 ¿El padre es parte del núcleo familiar?<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={
                   tienePadre === null ? "" : tienePadre ? "si" : "no"
                 }
-                onChange={(e) => {
-                  const valor = e.target.value;
+                onChange={(valor) => {
                   if (valor === "") {
                     setTienePadre(null);
                     return;
@@ -1484,12 +1474,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     }));
                   }
                 }}
-                className="cursor-pointer hover:bg-slate-200 transition-colors duration-150 ease-out"
-              >
-                <option value="">Seleccione</option>
-                <option value="no">No</option>
-                <option value="si">Sí</option>
-              </Select>
+                options={[
+                  { label: "Seleccione", value: "" },
+                  { label: "No", value: "no" },
+                  { label: "Sí", value: "si" },
+                ]}
+                hasError={!!errors.tienePadre}
+              />
               {errors.tienePadre && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.tienePadre}
