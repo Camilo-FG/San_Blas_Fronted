@@ -255,6 +255,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const requiredMessages: Record<string, string> = {
     nombreCatequizando: "Digite el nombre del catequizando.",
     primerApellidoCatequizando: "Digite el primer apellido del catequizando.",
+    segundoApellidoCatequizando: "Digite el segundo apellido del catequizando.",
     direccionExacta: "Digite la dirección exacta.",
     centroCatequesis: "Seleccione el centro de catequesis.",
     nivelAInscribirse: "Seleccione el nivel a inscribirse.",
@@ -449,6 +450,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       if (!form.catequizando.primerApellido.trim()) {
         stepErrors.primerApellidoCatequizando =
           "Digite el primer apellido del catequizando.";
+      }
+      if (!form.catequizando.segundoApellido.trim()) {
+        stepErrors.segundoApellidoCatequizando =
+          "Digite el segundo apellido del catequizando.";
       }
       const errorFechaNacimiento = mensajeFechaNacimientoCatequizando(
         form.catequizando.fechaNacimiento,
@@ -779,8 +784,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
             <CampoApellido
               label="Segundo apellido"
+              required
               placeholder="Ej: Gómez"
               value={form.catequizando.segundoApellido}
+              error={errors.segundoApellidoCatequizando}
               onChange={(valor) =>
                 updateForm("catequizando.segundoApellido", valor)
               }
