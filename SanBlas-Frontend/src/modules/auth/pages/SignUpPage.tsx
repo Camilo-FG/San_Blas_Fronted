@@ -48,12 +48,12 @@ const SignUpPage = () => {
 
     if (
       !password ||
-      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/.test(
+      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(
         password,
       )
     ) {
       errs.password =
-        "Mínimo 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.";
+        "Mínimo 8 caracteres, una mayúscula, una minúscula y un número.";
     }
 
     if (password !== confirmPassword) {
