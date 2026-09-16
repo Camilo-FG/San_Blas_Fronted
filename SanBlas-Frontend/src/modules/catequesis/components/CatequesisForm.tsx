@@ -190,8 +190,6 @@ const fileInputClass = cn(
 );
 
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
-  const stepIndicatorRef = useRef<HTMLDivElement>(null);
-  const isFirstStep = useRef(true);
   const [form, setForm] = useState<CatequesisEnrollmentData>(
     getInitialFormState(),
   );
@@ -202,14 +200,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const [aceptaLineamientos, setAceptaLineamientos] = useState(false);
   const [tienePadre, setTienePadre] = useState<boolean | null>(null);
   const [tieneMadre, setTieneMadre] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (isFirstStep.current) {
-      isFirstStep.current = false;
-      return;
-    }
-    stepIndicatorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [currentStep]);
 
   const clearError = (key: string) => {
     setErrors((prev) => {
@@ -589,8 +579,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const handleNext = () => {
     if (validateStep(currentStep)) {
       setCurrentStep((step) => Math.min(step + 1, 8));
-    } else {
-      scrollToFirstError();
     }
   };
 
@@ -609,20 +597,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     "Lineamientos",
   ];
 
-  const scrollToFirstError = () => {
-    requestAnimationFrame(() => {
-      const firstError = document.querySelector("[data-field-error]");
-      firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     for (let step = 1; step <= 8; step++) {
       if (!validateStep(step)) {
         setCurrentStep(step);
-        scrollToFirstError();
         return;
       }
     }
@@ -1691,7 +1671,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         </section>
       )}
 
-      <div ref={stepIndicatorRef} className="order-first rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
+      <div className="order-first rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <span className="text-xs font-black tracking-wider text-royal-blue uppercase">
             Paso {currentStep} de {stepTitles.length}
