@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (no deja picar dos veces)
 import {
   Button,
@@ -1005,32 +1006,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               )}
             </div>
 
-            {form.catequizando.adecuacion.requiereAdecuacionCentroEducativo && (
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-black text-royal-blue">
-                  Descripción de la adecuación<span className="text-red-500"> *</span>
-                </Label>
-                <Textarea
-                  placeholder="Ej: Requiere apoyo adicional para actividades de lectura."
-                  value={
-                    form.catequizando.adecuacion.descripcionAdecuacion || ""
-                  }
-                  onChange={(e) =>
-                    updateForm(
-                      "catequizando.adecuacion.descripcionAdecuacion",
-                      limitarPalabras(e.target.value),
-                    )
-                  }
-                />
-                <WordCounter
-                  value={
-                    form.catequizando.adecuacion.descripcionAdecuacion || ""
-                  }
-                  error={errors.descripcionAdecuacion}
-                />
-              </div>
-            )}
-
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
                 ¿Es portador de enfermedad crónica?<span className="text-red-500"> *</span>
@@ -1062,31 +1037,69 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 </p>
               )}
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 pt-4 sm:gap-5 md:grid-cols-2">
+            {form.catequizando.adecuacion.requiereAdecuacionCentroEducativo && (
+              <motion.div
+                layout="position"
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs font-black text-royal-blue">
+                    Descripción de la adecuación<span className="text-red-500"> *</span>
+                  </Label>
+                  <Textarea
+                    placeholder="Ej: Requiere apoyo adicional para actividades de lectura."
+                    value={
+                      form.catequizando.adecuacion.descripcionAdecuacion || ""
+                    }
+                    onChange={(e) =>
+                      updateForm(
+                        "catequizando.adecuacion.descripcionAdecuacion",
+                        limitarPalabras(e.target.value),
+                      )
+                    }
+                  />
+                  <WordCounter
+                    value={
+                      form.catequizando.adecuacion.descripcionAdecuacion || ""
+                    }
+                    error={errors.descripcionAdecuacion}
+                  />
+                </div>
+              </motion.div>
+            )}
 
             {form.catequizando.condicionSalud.portadorEnfermedadCronica && (
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-black text-royal-blue">
-                  Descripción de enfermedad<span className="text-red-500"> *</span>
-                </Label>
-                <Textarea
-                  placeholder="Ej: Alergia a la penicilina."
-                  value={
-                    form.catequizando.condicionSalud.descripcionEnfermedad || ""
-                  }
-                  onChange={(e) =>
-                    updateForm(
-                      "catequizando.condicionSalud.descripcionEnfermedad",
-                      limitarPalabras(e.target.value),
-                    )
-                  }
-                />
-                <WordCounter
-                  value={
-                    form.catequizando.condicionSalud.descripcionEnfermedad || ""
-                  }
-                  error={errors.descripcionEnfermedad}
-                />
-              </div>
+              <motion.div
+                layout="position"
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs font-black text-royal-blue">
+                    Descripción de enfermedad<span className="text-red-500"> *</span>
+                  </Label>
+                  <Textarea
+                    placeholder="Ej: Alergia a la penicilina."
+                    value={
+                      form.catequizando.condicionSalud.descripcionEnfermedad || ""
+                    }
+                    onChange={(e) =>
+                      updateForm(
+                        "catequizando.condicionSalud.descripcionEnfermedad",
+                        limitarPalabras(e.target.value),
+                      )
+                    }
+                  />
+                  <WordCounter
+                    value={
+                      form.catequizando.condicionSalud.descripcionEnfermedad || ""
+                    }
+                    error={errors.descripcionEnfermedad}
+                  />
+                </div>
+              </motion.div>
             )}
           </div>
         </section>
