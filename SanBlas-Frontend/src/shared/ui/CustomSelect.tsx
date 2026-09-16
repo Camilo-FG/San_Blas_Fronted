@@ -195,7 +195,7 @@ export function CustomSelect({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-            className="absolute top-full left-0 z-50 mt-1.5 max-h-60 w-full overflow-auto rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+            className="absolute top-full left-0 z-[9999] mt-1.5 max-h-60 w-full overflow-auto rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
           >
             {options.map((option) => {
               const activo = value === option.value;
