@@ -1707,7 +1707,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             {stepTitles[currentStep - 1]}
           </span>
         </div>
-        <div className="mb-5 h-2 overflow-hidden rounded-full bg-surface-muted">
+        <div className="mb-5 h-2 overflow-hidden rounded-full bg-gray-300">
           <div
             className="h-full rounded-full bg-royal-blue transition-[width] duration-300"
             style={{ width: `${(currentStep / stepTitles.length) * 100}%` }}
