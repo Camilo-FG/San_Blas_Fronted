@@ -190,6 +190,7 @@ const fileInputClass = cn(
 );
 
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
+  const progressBarRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState<CatequesisEnrollmentData>(
     getInitialFormState(),
   );
@@ -200,6 +201,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const [aceptaLineamientos, setAceptaLineamientos] = useState(false);
   const [tienePadre, setTienePadre] = useState<boolean | null>(null);
   const [tieneMadre, setTieneMadre] = useState<boolean | null>(null);
+
+  const scrollToProgressBar = () => {
+    requestAnimationFrame(() => {
+      if (progressBarRef.current) {
+        const rect = progressBarRef.current.getBoundingClientRect();
+        const y = rect.top + window.scrollY - 100;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      }
+    });
+  };
 
   const clearError = (key: string) => {
     setErrors((prev) => {
@@ -579,11 +590,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const handleNext = () => {
     if (validateStep(currentStep)) {
       setCurrentStep((step) => Math.min(step + 1, 8));
+      scrollToProgressBar();
     }
   };
 
   const handlePrevious = () => {
     setCurrentStep((step) => Math.max(step - 1, 1));
+    scrollToProgressBar();
   };
 
   const stepTitles = [
@@ -1671,7 +1684,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         </section>
       )}
 
-      <div className="order-first rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
+      <div ref={progressBarRef} className="order-first rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <span className="text-xs font-black tracking-wider text-royal-blue uppercase">
             Paso {currentStep} de {stepTitles.length}
