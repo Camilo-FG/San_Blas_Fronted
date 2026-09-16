@@ -100,6 +100,8 @@ const EDAD_MAXIMA_CATEQUIZANDO = 8;
 const limitarCaracteres = (valor: string): string =>
   valor.slice(0, MAX_CHARACTERS);
 const limitarPalabras = limitarCaracteres;
+const limitarDireccion = (valor: string): string =>
+  valor.replace(/[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ0-9\s,.\-#]/g, "").slice(0, 250);
 const limitarNombre = (valor: string): string =>
   soloLetras(valor).slice(0, MAX_CHARACTERS_NOMBRE);
 
@@ -830,16 +832,18 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="text"
                 placeholder="Ej: 200 m norte de la iglesia, casa azul"
+                maxLength={250}
                 value={form.catequizando.direccion.direccionExacta || ""}
                 onChange={(e) =>
                   updateForm(
                     "catequizando.direccion.direccionExacta",
-                    limitarPalabras(e.target.value),
+                    limitarDireccion(e.target.value),
                   )
                 }
               />
               <WordCounter
                 value={form.catequizando.direccion.direccionExacta || ""}
+                max={250}
                 error={errors.direccionExacta}
               />
             </div>
@@ -1360,16 +1364,18 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="text"
                 placeholder="Ej: 200 m norte de la iglesia, casa azul"
+                maxLength={250}
                 value={form.madreCatequizando.direccion.direccionExacta || ""}
                 onChange={(e) =>
                   updateForm(
                     "madreCatequizando.direccion.direccionExacta",
-                    limitarPalabras(e.target.value),
+                    limitarDireccion(e.target.value),
                   )
                 }
               />
               <WordCounter
                 value={form.madreCatequizando.direccion.direccionExacta || ""}
+                max={250}
                 error={errors.direccionMadre}
               />
             </div>
