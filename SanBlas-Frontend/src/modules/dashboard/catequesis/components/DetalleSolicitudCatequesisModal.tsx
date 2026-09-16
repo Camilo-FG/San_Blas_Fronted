@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { obtenerEtiquetaNivelCatequesis } from "../../../catequesis/constants/nivelesCatequesis";
+import { formatearFechaEnvio } from "../../../../shared/utils/fechas";
 import { resolveUploadedFileUrl } from "../../../../utils/files";
 import {
   Button,
@@ -331,7 +332,7 @@ export function DetalleSolicitudCatequesisModal({
                     />
                     <Campo
                       label="Fecha de ingreso"
-                      value={valorOGuion(solicitud.fechaSolicitud)}
+                      value={formatearFechaEnvio(solicitud.fechaSolicitud)}
                       tabular
                       icon={
                         <CalendarDays
