@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-=======
-import { useEffect, useState } from "react";
->>>>>>> 004338f14b6f6b171eefadda9a154a001c0be986
 import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (no deja picar dos veces)
 import {
   Button,
@@ -794,18 +790,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   manejarSeleccionFeBautismo(e.target.files?.[0] || null)
                 }
               />
-<<<<<<< HEAD
-              {errors.feBautismoArchivo && (
-                <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  ⚠ {errors.feBautismoArchivo}
-=======
               <p className="m-0 text-xs font-medium text-text-muted">
                 Fotografía de la constancia de bautismo. Máximo 5 MB.
               </p>
               {(errorArchivoFeBautismo || errors.feBautismoArchivo) && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errorArchivoFeBautismo || errors.feBautismoArchivo}
->>>>>>> 004338f14b6f6b171eefadda9a154a001c0be986
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errorArchivoFeBautismo || errors.feBautismoArchivo}
                 </p>
               )}
               {vistaPreviaFeBautismo &&
