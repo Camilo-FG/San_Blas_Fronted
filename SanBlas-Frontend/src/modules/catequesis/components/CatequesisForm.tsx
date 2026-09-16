@@ -674,7 +674,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   updateForm("catequesis.centroCatequesis", valor || null)
                 }
                 options={[
-                  { label: "Seleccione", value: "" },
                   ...FILIALES_CATEQUESIS.map((f) => ({ label: f, value: f })),
                 ]}
                 hasError={!!errors.centroCatequesis}
@@ -696,7 +695,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   updateForm("catequesis.nivelAInscribirse", valor || null)
                 }
                 options={[
-                  { label: "Seleccione", value: "" },
                   ...NIVELES_CATEQUESIS.map((n) => ({ label: n.label, value: n.value })),
                 ]}
                 hasError={!!errors.nivelAInscribirse}
@@ -985,7 +983,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
                 options={[
-                  { label: "Seleccione", value: "" },
                   { label: "No", value: "no" },
                   { label: "Sí", value: "si" },
                 ]}
@@ -1044,7 +1041,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
                 options={[
-                  { label: "Seleccione", value: "" },
                   { label: "No", value: "no" },
                   { label: "Sí", value: "si" },
                 ]}
@@ -1207,7 +1203,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   updateForm("inscripcion.parentesco", valor || null)
                 }
                 options={[
-                  { label: "Seleccione", value: "" },
                   { label: "Madre", value: "Madre" },
                   { label: "Padre", value: "Padre" },
                   { label: "Abuelo(a)", value: "Abuelo(a)" },
@@ -1294,7 +1289,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   }
                 }}
                 options={[
-                  { label: "Seleccione", value: "" },
                   { label: "No", value: "no" },
                   { label: "Sí", value: "si" },
                 ]}
@@ -1482,7 +1476,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   }
                 }}
                 options={[
-                  { label: "Seleccione", value: "" },
                   { label: "No", value: "no" },
                   { label: "Sí", value: "si" },
                 ]}

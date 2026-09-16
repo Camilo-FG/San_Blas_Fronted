@@ -18,6 +18,10 @@ type CustomSelectProps = {
   disabled?: boolean;
 };
 
+const OPTION_HEIGHT = 40;
+const DROPDOWN_PADDING = 8;
+const GAP = 6;
+
 export function CustomSelect({
   value,
   onChange,
@@ -29,11 +33,24 @@ export function CustomSelect({
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const [focusIndex, setFocusIndex] = useState(-1);
+  const [maxHeight, setMaxHeight] = useState<number>(240);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
   const selected = options.find((o) => o.value === value);
+
+  const calcMaxHeight = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const triggerBottom = rect.bottom + window.scrollY;
+    const viewportBottom = window.scrollY + window.innerHeight;
+    const footer = document.querySelector("footer");
+    const footerTop = footer ? footer.getBoundingClientRect().top + window.scrollY : viewportBottom;
+    const available = footerTop - triggerBottom - GAP;
+    const fullHeight = options.length * OPTION_HEIGHT + DROPDOWN_PADDING * 2;
+    setMaxHeight(Math.min(fullHeight, Math.max(available, OPTION_HEIGHT * 2)));
+  }, [options.length]);
 
   const closeAndRefocus = useCallback(() => {
     setOpen(false);
@@ -78,6 +95,7 @@ export function CustomSelect({
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
       if (!open) {
+        calcMaxHeight();
         setOpen(true);
         const idx = options.findIndex((o) => o.value === value);
         setFocusIndex(idx >= 0 ? idx : 0);
@@ -97,6 +115,7 @@ export function CustomSelect({
       if (open && focusIndex >= 0) {
         selectOption(options[focusIndex].value);
       } else {
+        calcMaxHeight();
         setOpen(true);
         const idx = options.findIndex((o) => o.value === value);
         setFocusIndex(idx >= 0 ? idx : 0);
@@ -159,6 +178,7 @@ export function CustomSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => {
+          if (!open) calcMaxHeight();
           setOpen((prev) => !prev);
           if (!open) {
             const idx = options.findIndex((o) => o.value === value);
@@ -195,7 +215,8 @@ export function CustomSelect({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-            className="absolute top-full left-0 z-[9999] mt-1.5 max-h-60 w-full overflow-auto rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+            className="absolute top-full left-0 z-[9999] mt-1.5 w-full overflow-auto rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+            style={{ maxHeight }}
           >
             {options.map((option) => {
               const activo = value === option.value;
