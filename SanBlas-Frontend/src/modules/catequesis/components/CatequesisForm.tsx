@@ -134,8 +134,13 @@ const mensajeFechaNacimientoCatequizando = (
 
   return null;
 };
-const limitarTelefono = (valor: string): string =>
-  valor.replace(/\D/g, "").slice(0, 8);
+const limitarTelefono = (valor: string): string => {
+  const digits = valor.replace(/\D/g, "").slice(0, 8);
+  if (digits.length > 4) {
+    return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  }
+  return digits;
+};
 
 const contarCaracteres = (valor: string): number => valor.length;
 
@@ -402,7 +407,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     }
 
     if (
-      !/^\d{8}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
+      !/^\d{4}-\d{4}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
     ) {
       newErrors.telefonoPersonaInscribe =
         "El teléfono debe contener 8 dígitos.";
@@ -439,7 +444,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         newErrors.provinciaMadre = "Digite la provincia.";
       }
 
-      if (!/^\d{8}$/.test(form.madreCatequizando.telefono)) {
+      if (!/^\d{4}-\d{4}$/.test(form.madreCatequizando.telefono)) {
         newErrors.telefonoMadre = "El teléfono debe contener 8 dígitos.";
       }
     }
@@ -534,7 +539,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
         stepErrors.correoPersonaInscribe = "Digite un correo válido.";
       if (
-        !/^\d{8}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
+        !/^\d{4}-\d{4}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
       ) {
         stepErrors.telefonoPersonaInscribe =
           "El teléfono debe contener 8 dígitos.";
@@ -557,7 +562,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           stepErrors.ciudadMadre = "Digite la ciudad.";
         if (!form.madreCatequizando.direccion.provincia?.trim())
           stepErrors.provinciaMadre = "Digite la provincia.";
-        if (!/^\d{8}$/.test(form.madreCatequizando.telefono)) {
+        if (!/^\d{4}-\d{4}$/.test(form.madreCatequizando.telefono)) {
           stepErrors.telefonoMadre = "El teléfono debe contener 8 dígitos.";
         }
       }
@@ -575,7 +580,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         }
         if (
           form.padreCatequizando.telefono &&
-          !/^\d{8}$/.test(form.padreCatequizando.telefono)
+          !/^\d{4}-\d{4}$/.test(form.padreCatequizando.telefono)
         ) {
           stepErrors.telefonoPadre = "El teléfono debe contener 8 dígitos.";
         }
@@ -1178,8 +1183,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="text"
                 placeholder="Ej: 8888-8888"
-                inputMode="numeric"
-                maxLength={8}
+                maxLength={9}
                 value={form.inscripcion.personaQueInscribe.telefono || ""}
                 onChange={(e) =>
                   updateForm(
@@ -1188,10 +1192,11 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter
-                value={form.inscripcion.personaQueInscribe.telefono || ""}
-                error={errors.telefonoPersonaInscribe}
-              />
+              {errors.telefonoPersonaInscribe && (
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.telefonoPersonaInscribe}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -1418,8 +1423,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="text"
                 placeholder="Ej: 8888-8888"
-                inputMode="numeric"
-                maxLength={8}
+                maxLength={9}
                 value={form.madreCatequizando.telefono}
                 onChange={(e) =>
                   updateForm(
@@ -1428,7 +1432,11 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.madreCatequizando.telefono} error={errors.telefonoMadre} />
+              {errors.telefonoMadre && (
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.telefonoMadre}
+                </p>
+              )}
             </div>
               </>
             )}
@@ -1542,8 +1550,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="text"
                 placeholder="Ej: 8888-8888"
-                inputMode="numeric"
-                maxLength={8}
+                maxLength={9}
                 value={form.padreCatequizando.telefono}
                 onChange={(e) =>
                   updateForm(
@@ -1552,7 +1559,11 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.padreCatequizando.telefono} error={errors.telefonoPadre} />
+              {errors.telefonoPadre && (
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.telefonoPadre}
+                </p>
+              )}
             </div>
               </>
             )}
