@@ -212,6 +212,17 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     });
   };
 
+  const scrollToFirstError = () => {
+    requestAnimationFrame(() => {
+      const firstError = document.querySelector("[data-field-error]");
+      if (firstError) {
+        const rect = firstError.getBoundingClientRect();
+        const y = rect.top + window.scrollY - 200;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      }
+    });
+  };
+
   const clearError = (key: string) => {
     setErrors((prev) => {
       if (!(key in prev)) return prev;
@@ -591,6 +602,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     if (validateStep(currentStep)) {
       setCurrentStep((step) => Math.min(step + 1, 8));
       scrollToProgressBar();
+    } else {
+      scrollToFirstError();
     }
   };
 
@@ -616,6 +629,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     for (let step = 1; step <= 8; step++) {
       if (!validateStep(step)) {
         setCurrentStep(step);
+        scrollToFirstError();
         return;
       }
     }
