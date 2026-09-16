@@ -44,6 +44,32 @@ export const formatearHoraLocal = (fecha: string) => {
   });
 };
 
+export const formatearFechaEnvio = (fecha: string): string => {
+  if (!fecha) return "—";
+  const calendario = extraerFechaCalendario(fecha);
+  if (!calendario) return "—";
+
+  if (!fecha.includes("T")) {
+    return formatearFechaCalendario(calendario);
+  }
+
+  const date = new Date(fecha);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  const fechaCr = date.toLocaleDateString("es-CR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: ZONA_COSTA_RICA,
+  });
+  const hora = date.toLocaleTimeString("es-CR", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: ZONA_COSTA_RICA,
+  });
+  return `${fechaCr}, ${hora}`;
+};
+
 export const formatearHoraEvento = (hora?: string | null) => {
   if (!hora) return "";
   const match = String(hora).trim().match(/^(\d{1,2}):(\d{2})/);

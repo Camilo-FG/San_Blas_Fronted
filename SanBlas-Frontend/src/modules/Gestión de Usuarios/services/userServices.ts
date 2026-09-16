@@ -62,6 +62,8 @@ export const getUsersPaginados = async (
   page = 1,
   limit = 10,
   search?: string,
+  role?: string,
+  state?: string,
 ): Promise<PaginacionUsuarios> => {
   const buscar = search?.trim();
   const { data } = await apiClient.get<{
@@ -75,6 +77,8 @@ export const getUsersPaginados = async (
       page,
       limit,
       ...(buscar ? { search: buscar } : {}),
+      ...(role ? { role } : {}),
+      ...(state ? { state } : {}),
     },
   });
   return {

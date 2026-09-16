@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+=======
+import { useEffect, useState } from "react";
+>>>>>>> 004338f14b6f6b171eefadda9a154a001c0be986
 import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (no deja picar dos veces)
 import {
   Button,
@@ -197,6 +201,19 @@ const fileInputClass = cn(
   "hover:file:bg-royal-gold hover:file:text-royal-blue",
 );
 
+// Límite de tamaño para la fe de bautismo (5 MB, igual que el backend).
+const MAX_TAMANO_FE_BAUTISMO = 5 * 1024 * 1024;
+
+const validarArchivoFeBautismo = (file: File): string | null => {
+  if (!file.type.startsWith("image/")) {
+    return "La fe de bautismo debe ser una imagen (JPG, PNG u otro formato de imagen).";
+  }
+  if (file.size > MAX_TAMANO_FE_BAUTISMO) {
+    return "La imagen no debe superar los 5 MB.";
+  }
+  return null;
+};
+
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const progressBarRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState<CatequesisEnrollmentData>(
@@ -209,6 +226,21 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const [aceptaLineamientos, setAceptaLineamientos] = useState(false);
   const [tienePadre, setTienePadre] = useState<boolean | null>(null);
   const [tieneMadre, setTieneMadre] = useState<boolean | null>(null);
+  const [errorArchivoFeBautismo, setErrorArchivoFeBautismo] = useState<
+    string | null
+  >(null);
+  const [vistaPreviaFeBautismo, setVistaPreviaFeBautismo] = useState<
+    string | null
+  >(null);
+  const [feBautismoInputKey, setFeBautismoInputKey] = useState(0);
+
+  useEffect(() => {
+    return () => {
+      if (vistaPreviaFeBautismo) {
+        URL.revokeObjectURL(vistaPreviaFeBautismo);
+      }
+    };
+  }, [vistaPreviaFeBautismo]);
 
   const scrollToProgressBar = () => {
     requestAnimationFrame(() => {
@@ -650,6 +682,40 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     onSubmit(form);
   };
 
+  const manejarSeleccionFeBautismo = (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    const mensajeError = validarArchivoFeBautismo(file);
+    if (mensajeError) {
+      setErrorArchivoFeBautismo(mensajeError);
+      updateForm("catequesis.feBautismoArchivo", null);
+      if (vistaPreviaFeBautismo) {
+        URL.revokeObjectURL(vistaPreviaFeBautismo);
+        setVistaPreviaFeBautismo(null);
+      }
+      setFeBautismoInputKey((key) => key + 1);
+      return;
+    }
+
+    setErrorArchivoFeBautismo(null);
+    updateForm("catequesis.feBautismoArchivo", file);
+    setErrors((prev) => {
+      const siguiente = { ...prev };
+      delete siguiente.feBautismoArchivo;
+      return siguiente;
+    });
+    setVistaPreviaFeBautismo(URL.createObjectURL(file));
+  };
+
+  const quitarFeBautismo = () => {
+    updateForm("catequesis.feBautismoArchivo", null);
+    setErrorArchivoFeBautismo(null);
+    setVistaPreviaFeBautismo(null);
+    setFeBautismoInputKey((key) => key + 1);
+  };
+
   return (
     <form
       className="mx-auto mt-6 flex w-full max-w-[1100px] flex-col gap-5 px-3.5 sm:mt-10 sm:gap-7 sm:px-5"
@@ -720,20 +786,55 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 Adjuntar fe de bautismo<span className="text-red-500"> *</span>
               </Label>
               <Input
+                key={feBautismoInputKey}
                 type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
+                accept="image/*"
                 className={fileInputClass}
                 onChange={(e) =>
-                  updateForm(
-                    "catequesis.feBautismoArchivo",
-                    e.target.files?.[0] || null,
-                  )
+                  manejarSeleccionFeBautismo(e.target.files?.[0] || null)
                 }
               />
+<<<<<<< HEAD
               {errors.feBautismoArchivo && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   ⚠ {errors.feBautismoArchivo}
+=======
+              <p className="m-0 text-xs font-medium text-text-muted">
+                Fotografía de la constancia de bautismo. Máximo 5 MB.
+              </p>
+              {(errorArchivoFeBautismo || errors.feBautismoArchivo) && (
+                <p className="m-0 text-xs font-extrabold text-red-600">
+                  {errorArchivoFeBautismo || errors.feBautismoArchivo}
+>>>>>>> 004338f14b6f6b171eefadda9a154a001c0be986
                 </p>
+              )}
+              {vistaPreviaFeBautismo &&
+                form.catequesis.feBautismoArchivo instanceof File && (
+                <div className="mt-1 flex items-center gap-3 rounded-xl border border-border bg-white p-2.5 sm:max-w-md">
+                  <img
+                    src={vistaPreviaFeBautismo}
+                    alt="Vista previa de la fe de bautismo"
+                    className="h-20 w-16 shrink-0 rounded-lg border border-border object-cover shadow-sm"
+                  />
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <p className="truncate text-xs font-bold text-royal-blue">
+                      {form.catequesis.feBautismoArchivo.name}
+                    </p>
+                    <p className="m-0 text-[0.72rem] text-text-muted">
+                      {(form.catequesis.feBautismoArchivo.size / 1024).toFixed(
+                        0,
+                      )}{" "}
+                      KB
+                    </p>
+                    <button
+                      type="button"
+                      onClick={quitarFeBautismo}
+                      className="cursor-pointer self-start rounded-lg border-0 bg-transparent p-0 text-xs font-extrabold text-red-600 transition-colors hover:text-red-700 hover:underline"
+                    >
+                      Quitar archivo
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
