@@ -49,7 +49,7 @@ export function Modal({
   const contenido = (
     <div
       ref={dialogoRef}
-      className={cn(clasesContenido, className)}
+      className={cn(clasesContenido, className, "focus:outline-none")}
       onClick={(event) => event.stopPropagation()}
       role="dialog"
       aria-modal="true"

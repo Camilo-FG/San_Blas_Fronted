@@ -93,9 +93,9 @@ export function Textarea({
       rows={filasIniciales}
       value={value}
       className={cn(
-        "w-full rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+        "w-full rounded-xl border-2 bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
         autoExpand ? "resize-y" : "min-h-28",
-        hasError ? "border-red-400 bg-danger-bg" : "border-border-strong",
+        hasError ? "border-red-400 bg-danger-bg" : "border-gray-300",
         className,
       )}
       onChange={handleChange}

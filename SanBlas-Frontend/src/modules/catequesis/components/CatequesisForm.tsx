@@ -1,12 +1,17 @@
+<<<<<<< HEAD
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+=======
 import { useEffect, useState } from "react";
+>>>>>>> 004338f14b6f6b171eefadda9a154a001c0be986
 import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (no deja picar dos veces)
 import {
   Button,
   cn,
+  CustomSelect,
   Input,
   Label,
   Modal,
-  Select,
   Textarea,
 } from "../../../shared/ui";
 import { FILIALES_CATEQUESIS } from "../constants/filialesCatequesis";
@@ -91,6 +96,7 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
 const infoBoxClass =
   "mb-4 rounded-2xl border border-royal-gold/40 bg-royal-gold/10 p-3.5 text-sm leading-relaxed text-gray-600 sm:p-4";
 const MAX_CHARACTERS = 50;
+const MAX_CHARACTERS_NOMBRE = 20;
 
 // Rango de edad válido para catequesis infantil (Primer y Sétimo nivel).
 const EDAD_MINIMA_CATEQUIZANDO = 7;
@@ -99,8 +105,10 @@ const EDAD_MAXIMA_CATEQUIZANDO = 8;
 const limitarCaracteres = (valor: string): string =>
   valor.slice(0, MAX_CHARACTERS);
 const limitarPalabras = limitarCaracteres;
+const limitarDireccion = (valor: string): string =>
+  valor.replace(/[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ0-9\s,.\-#]/g, "").slice(0, 250);
 const limitarNombre = (valor: string): string =>
-  limitarPalabras(soloLetras(valor));
+  soloLetras(valor).slice(0, MAX_CHARACTERS_NOMBRE);
 
 const calcularEdad = (fecha: string): number | null => {
   const nacimiento = new Date(`${fecha}T00:00:00`);
@@ -133,15 +141,25 @@ const mensajeFechaNacimientoCatequizando = (
 
   return null;
 };
-const limitarTelefono = (valor: string): string =>
-  valor.replace(/\D/g, "").slice(0, 8);
+const limitarTelefono = (valor: string): string => {
+  const digits = valor.replace(/\D/g, "").slice(0, 8);
+  if (digits.length > 4) {
+    return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  }
+  return digits;
+};
 
 const contarCaracteres = (valor: string): number => valor.length;
 
-const WordCounter = ({ value }: { value: string }) => (
-  <span className="text-right text-[0.72rem] font-medium text-text-muted">
-    {contarCaracteres(value)}/{MAX_CHARACTERS} caracteres
-  </span>
+const WordCounter = ({ value, max = MAX_CHARACTERS, error }: { value: string; max?: number; error?: string }) => (
+  <div className="flex items-center justify-between gap-2">
+    {error && (
+      <p data-field-error className="m-0 text-xs font-medium text-red-600">⚠ {error}</p>
+    )}
+    <span className="ml-auto text-right text-[0.72rem] font-medium text-text-muted">
+      {contarCaracteres(value)}/{max} caracteres
+    </span>
+  </div>
 );
 
 function CampoApellido({
@@ -163,18 +181,16 @@ function CampoApellido({
     <div className="flex flex-col gap-1.5">
       <Label className="text-xs font-black text-royal-blue">
         {label}
-        {required ? " *" : ""}
+        {required ? <span className="text-red-500"> *</span> : ""}
       </Label>
       <Input
         type="text"
         placeholder={placeholder}
         value={value}
+        maxLength={MAX_CHARACTERS_NOMBRE}
         onChange={(e) => onChange(limitarNombre(e.target.value))}
       />
-      <WordCounter value={value} />
-      {error && (
-        <p className="m-0 text-xs font-extrabold text-red-600">{error}</p>
-      )}
+      <WordCounter value={value} max={MAX_CHARACTERS_NOMBRE} error={error} />
     </div>
   );
 }
@@ -199,6 +215,7 @@ const validarArchivoFeBautismo = (file: File): string | null => {
 };
 
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
+  const progressBarRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState<CatequesisEnrollmentData>(
     getInitialFormState(),
   );
@@ -225,6 +242,95 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     };
   }, [vistaPreviaFeBautismo]);
 
+  const scrollToProgressBar = () => {
+    requestAnimationFrame(() => {
+      if (progressBarRef.current) {
+        const rect = progressBarRef.current.getBoundingClientRect();
+        const y = rect.top + window.scrollY - 100;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      }
+    });
+  };
+
+  const scrollToFirstError = () => {
+    requestAnimationFrame(() => {
+      const firstError = document.querySelector("[data-field-error]");
+      if (firstError) {
+        const rect = firstError.getBoundingClientRect();
+        const y = rect.top + window.scrollY - 200;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      }
+    });
+  };
+
+  const clearError = (key: string) => {
+    setErrors((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const pathToErrorKey: Record<string, string> = {
+    "catequizando.nombre": "nombreCatequizando",
+    "catequizando.primerApellido": "primerApellidoCatequizando",
+    "catequizando.segundoApellido": "segundoApellidoCatequizando",
+    "catequizando.fechaNacimiento": "fechaNacimiento",
+    "catequizando.direccion.direccionExacta": "direccionExacta",
+    "catequesis.centroCatequesis": "centroCatequesis",
+    "catequesis.nivelAInscribirse": "nivelAInscribirse",
+    "catequesis.feBautismoArchivo": "feBautismoArchivo",
+    "catequizando.bautismo.parroquia": "parroquiaBautismo",
+    "catequizando.adecuacion.requiereAdecuacionCentroEducativo": "requiereAdecuacion",
+    "catequizando.adecuacion.descripcionAdecuacion": "descripcionAdecuacion",
+    "catequizando.condicionSalud.portadorEnfermedadCronica": "portadorEnfermedad",
+    "catequizando.condicionSalud.descripcionEnfermedad": "descripcionEnfermedad",
+    "inscripcion.personaQueInscribe.nombre": "nombrePersonaInscribe",
+    "inscripcion.personaQueInscribe.primerApellido": "primerApellidoPersonaInscribe",
+    "inscripcion.personaQueInscribe.segundoApellido": "segundoApellidoPersonaInscribe",
+    "inscripcion.personaQueInscribe.correo": "correoPersonaInscribe",
+    "inscripcion.personaQueInscribe.telefono": "telefonoPersonaInscribe",
+    "inscripcion.parentesco": "parentesco",
+    "madreCatequizando.nombre": "nombreMadre",
+    "madreCatequizando.primerApellido": "primerApellidoMadre",
+    "madreCatequizando.direccion.direccionExacta": "direccionMadre",
+    "madreCatequizando.direccion.ciudad": "ciudadMadre",
+    "madreCatequizando.direccion.provincia": "provinciaMadre",
+    "madreCatequizando.telefono": "telefonoMadre",
+    "padreCatequizando.nombre": "nombrePadre",
+    "padreCatequizando.primerApellido": "primerApellidoPadre",
+    "padreCatequizando.telefono": "telefonoPadre",
+    "inscripcion.pago.numeroComprobanteSINPE": "numeroComprobanteSINPE",
+  };
+
+  const requiredMessages: Record<string, string> = {
+    nombreCatequizando: "Digite el nombre del catequizando.",
+    primerApellidoCatequizando: "Digite el primer apellido del catequizando.",
+    segundoApellidoCatequizando: "Digite el segundo apellido del catequizando.",
+    direccionExacta: "Digite la dirección exacta.",
+    centroCatequesis: "Seleccione el centro de catequesis.",
+    nivelAInscribirse: "Seleccione el nivel a inscribirse.",
+    feBautismoArchivo: "Debe adjuntar la fe de bautismo.",
+    parroquiaBautismo: "Digite la parroquia de bautismo.",
+    nombrePersonaInscribe: "Digite el nombre de la persona que inscribe.",
+    primerApellidoPersonaInscribe: "Digite el primer apellido de la persona que inscribe.",
+    segundoApellidoPersonaInscribe: "Digite el segundo apellido de la persona que inscribe.",
+    parentesco: "Seleccione el parentesco.",
+    correoPersonaInscribe: "Digite el correo de la persona que inscribe.",
+    telefonoPersonaInscribe: "El teléfono debe contener 8 dígitos.",
+    nombreMadre: "Digite el nombre de la madre o encargada.",
+    primerApellidoMadre: "Digite el primer apellido de la madre o encargada.",
+    direccionMadre: "Digite la dirección exacta.",
+    ciudadMadre: "Digite la ciudad.",
+    provinciaMadre: "Digite la provincia.",
+    telefonoMadre: "El teléfono debe contener 8 dígitos.",
+    nombrePadre: "Digite el nombre del padre.",
+    primerApellidoPadre: "Digite el primer apellido del padre.",
+    telefonoPadre: "El teléfono debe contener 8 dígitos.",
+    numeroComprobanteSINPE: "Digite el número de comprobante SINPE.",
+  };
+
   const updateForm = (path: string, value: unknown) => {
     setForm((prev) => {
       const copy = structuredClone(prev) as any;
@@ -238,6 +344,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       current[keys[keys.length - 1]] = value;
       return copy;
     });
+
+    const trimmed = typeof value === "string" ? value.trim() : value;
+    const errorKey = pathToErrorKey[path];
+    if (!errorKey) return;
+
+    if (trimmed && trimmed !== "") {
+      clearError(errorKey);
+    } else if (requiredMessages[errorKey]) {
+      setErrors((prev) => ({ ...prev, [errorKey]: requiredMessages[errorKey] }));
+    }
   };
 
   const validate = () => {
@@ -326,7 +442,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     }
 
     if (
-      !/^\d{8}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
+      !/^\d{4}-\d{4}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
     ) {
       newErrors.telefonoPersonaInscribe =
         "El teléfono debe contener 8 dígitos.";
@@ -363,7 +479,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         newErrors.provinciaMadre = "Digite la provincia.";
       }
 
-      if (!/^\d{8}$/.test(form.madreCatequizando.telefono)) {
+      if (!/^\d{4}-\d{4}$/.test(form.madreCatequizando.telefono)) {
         newErrors.telefonoMadre = "El teléfono debe contener 8 dígitos.";
       }
     }
@@ -386,6 +502,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       if (!form.catequizando.primerApellido.trim()) {
         stepErrors.primerApellidoCatequizando =
           "Digite el primer apellido del catequizando.";
+      }
+      if (!form.catequizando.segundoApellido.trim()) {
+        stepErrors.segundoApellidoCatequizando =
+          "Digite el segundo apellido del catequizando.";
       }
       const errorFechaNacimiento = mensajeFechaNacimientoCatequizando(
         form.catequizando.fechaNacimiento,
@@ -442,6 +562,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       if (!form.inscripcion.personaQueInscribe.primerApellido?.trim())
         stepErrors.primerApellidoPersonaInscribe =
           "Digite el primer apellido de la persona que inscribe.";
+      if (!form.inscripcion.personaQueInscribe.segundoApellido?.trim())
+        stepErrors.segundoApellidoPersonaInscribe =
+          "Digite el segundo apellido de la persona que inscribe.";
       if (!form.inscripcion.parentesco)
         stepErrors.parentesco = "Seleccione el parentesco.";
       const correo = form.inscripcion.personaQueInscribe.correo?.trim() ?? "";
@@ -451,7 +574,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
         stepErrors.correoPersonaInscribe = "Digite un correo válido.";
       if (
-        !/^\d{8}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
+        !/^\d{4}-\d{4}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
       ) {
         stepErrors.telefonoPersonaInscribe =
           "El teléfono debe contener 8 dígitos.";
@@ -474,7 +597,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           stepErrors.ciudadMadre = "Digite la ciudad.";
         if (!form.madreCatequizando.direccion.provincia?.trim())
           stepErrors.provinciaMadre = "Digite la provincia.";
-        if (!/^\d{8}$/.test(form.madreCatequizando.telefono)) {
+        if (!/^\d{4}-\d{4}$/.test(form.madreCatequizando.telefono)) {
           stepErrors.telefonoMadre = "El teléfono debe contener 8 dígitos.";
         }
       }
@@ -492,7 +615,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         }
         if (
           form.padreCatequizando.telefono &&
-          !/^\d{8}$/.test(form.padreCatequizando.telefono)
+          !/^\d{4}-\d{4}$/.test(form.padreCatequizando.telefono)
         ) {
           stepErrors.telefonoPadre = "El teléfono debe contener 8 dígitos.";
         }
@@ -518,11 +641,15 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const handleNext = () => {
     if (validateStep(currentStep)) {
       setCurrentStep((step) => Math.min(step + 1, 8));
+      scrollToProgressBar();
+    } else {
+      scrollToFirstError();
     }
   };
 
   const handlePrevious = () => {
     setCurrentStep((step) => Math.max(step - 1, 1));
+    scrollToProgressBar();
   };
 
   const stepTitles = [
@@ -542,6 +669,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     for (let step = 1; step <= 8; step++) {
       if (!validateStep(step)) {
         setCurrentStep(step);
+        scrollToFirstError();
         return;
       }
     }
@@ -612,61 +740,50 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Centro de catequesis *
+                Centro de catequesis<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={form.catequesis.centroCatequesis || ""}
-                onChange={(e) =>
-                  updateForm("catequesis.centroCatequesis", e.target.value)
+                onChange={(valor) =>
+                  updateForm("catequesis.centroCatequesis", valor || null)
                 }
-              >
-                <option value="">Seleccione</option>
-                {FILIALES_CATEQUESIS.map((filial) => (
-                  <option
-                    key={filial}
-                    value={filial}
-                  >
-                    {filial}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  ...FILIALES_CATEQUESIS.map((f) => ({ label: f, value: f })),
+                ]}
+                hasError={!!errors.centroCatequesis}
+                maxVisibleOptions={5}
+              />
               {errors.centroCatequesis && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.centroCatequesis}
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.centroCatequesis}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Nivel a inscribirse *
+                Nivel a inscribirse<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={form.catequesis.nivelAInscribirse || ""}
-                onChange={(e) =>
-                  updateForm("catequesis.nivelAInscribirse", e.target.value)
+                onChange={(valor) =>
+                  updateForm("catequesis.nivelAInscribirse", valor || null)
                 }
-              >
-                <option value="">Seleccione</option>
-                {NIVELES_CATEQUESIS.map((nivel) => (
-                  <option
-                    key={nivel.value}
-                    value={nivel.value}
-                  >
-                    {nivel.label}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  ...NIVELES_CATEQUESIS.map((n) => ({ label: n.label, value: n.value })),
+                ]}
+                hasError={!!errors.nivelAInscribirse}
+              />
               {errors.nivelAInscribirse && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.nivelAInscribirse}
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.nivelAInscribirse}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5 md:col-span-2">
               <Label className="text-xs font-black text-royal-blue">
-                Adjuntar fe de bautismo *
+                Adjuntar fe de bautismo<span className="text-red-500"> *</span>
               </Label>
               <Input
                 key={feBautismoInputKey}
@@ -677,12 +794,18 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   manejarSeleccionFeBautismo(e.target.files?.[0] || null)
                 }
               />
+<<<<<<< HEAD
+              {errors.feBautismoArchivo && (
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.feBautismoArchivo}
+=======
               <p className="m-0 text-xs font-medium text-text-muted">
                 Fotografía de la constancia de bautismo. Máximo 5 MB.
               </p>
               {(errorArchivoFeBautismo || errors.feBautismoArchivo) && (
                 <p className="m-0 text-xs font-extrabold text-red-600">
                   {errorArchivoFeBautismo || errors.feBautismoArchivo}
+>>>>>>> 004338f14b6f6b171eefadda9a154a001c0be986
                 </p>
               )}
               {vistaPreviaFeBautismo &&
@@ -737,12 +860,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Nombre *
+                Nombre<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
                 placeholder="Ej: Carlos Emanuel"
                 value={form.catequizando.nombre}
+                maxLength={MAX_CHARACTERS_NOMBRE}
                 onChange={(e) =>
                   updateForm(
                     "catequizando.nombre",
@@ -750,12 +874,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.catequizando.nombre} />
-              {errors.nombreCatequizando && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.nombreCatequizando}
-                </p>
-              )}
+              <WordCounter value={form.catequizando.nombre} max={MAX_CHARACTERS_NOMBRE} error={errors.nombreCatequizando} />
             </div>
 
             <CampoApellido
@@ -770,8 +889,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
             <CampoApellido
               label="Segundo apellido"
+              required
               placeholder="Ej: Gómez"
               value={form.catequizando.segundoApellido}
+              error={errors.segundoApellidoCatequizando}
               onChange={(valor) =>
                 updateForm("catequizando.segundoApellido", valor)
               }
@@ -779,10 +900,11 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Fecha de nacimiento *
+                Fecha de nacimiento<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="date"
+                className="date-field"
                 value={form.catequizando.fechaNacimiento || ""}
                 onChange={(e) => {
                   const valor = e.target.value;
@@ -799,35 +921,33 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }}
               />
               {errors.fechaNacimiento && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.fechaNacimiento}
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.fechaNacimiento}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Dirección exacta *
+                Dirección exacta<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
                 placeholder="Ej: 200 m norte de la iglesia, casa azul"
+                maxLength={250}
                 value={form.catequizando.direccion.direccionExacta || ""}
                 onChange={(e) =>
                   updateForm(
                     "catequizando.direccion.direccionExacta",
-                    limitarPalabras(e.target.value),
+                    limitarDireccion(e.target.value),
                   )
                 }
               />
               <WordCounter
                 value={form.catequizando.direccion.direccionExacta || ""}
+                max={250}
+                error={errors.direccionExacta}
               />
-              {errors.direccionExacta && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.direccionExacta}
-                </p>
-              )}
             </div>
           </div>
         </section>
@@ -852,7 +972,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Parroquia *
+                Parroquia<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -865,12 +985,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.catequizando.bautismo.parroquia || ""} />
-              {errors.parroquiaBautismo && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.parroquiaBautismo}
-                </p>
-              )}
+              <WordCounter value={form.catequizando.bautismo.parroquia || ""} error={errors.parroquiaBautismo} />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -879,6 +994,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </Label>
               <Input
                 type="date"
+                className="date-field"
                 value={form.catequizando.bautismo.fecha || ""}
                 onChange={(e) =>
                   updateForm("catequizando.bautismo.fecha", e.target.value)
@@ -960,9 +1076,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                ¿Requiere adecuación en el centro educativo? *
+                ¿Requiere adecuación en el centro educativo?<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={
                   form.catequizando.adecuacion
                     .requiereAdecuacionCentroEducativo === null
@@ -972,59 +1088,30 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                       ? "si"
                       : "no"
                 }
-                onChange={(e) =>
+                onChange={(valor) =>
                   updateForm(
                     "catequizando.adecuacion.requiereAdecuacionCentroEducativo",
-                    e.target.value === "si",
+                    valor === "si",
                   )
                 }
-              >
-                <option value="">Seleccione</option>
-                <option value="no">No</option>
-                <option value="si">Sí</option>
-              </Select>
+                options={[
+                  { label: "No", value: "no" },
+                  { label: "Sí", value: "si" },
+                ]}
+                hasError={!!errors.requiereAdecuacion}
+              />
               {errors.requiereAdecuacion && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.requiereAdecuacion}
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.requiereAdecuacion}
                 </p>
               )}
             </div>
 
-            {form.catequizando.adecuacion.requiereAdecuacionCentroEducativo && (
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-black text-royal-blue">
-                  Descripción de la adecuación *
-                </Label>
-                <Textarea
-                  placeholder="Ej: Requiere apoyo adicional para actividades de lectura."
-                  value={
-                    form.catequizando.adecuacion.descripcionAdecuacion || ""
-                  }
-                  onChange={(e) =>
-                    updateForm(
-                      "catequizando.adecuacion.descripcionAdecuacion",
-                      limitarPalabras(e.target.value),
-                    )
-                  }
-                />
-                <WordCounter
-                  value={
-                    form.catequizando.adecuacion.descripcionAdecuacion || ""
-                  }
-                />
-                {errors.descripcionAdecuacion && (
-                  <p className="m-0 text-xs font-extrabold text-red-600">
-                    {errors.descripcionAdecuacion}
-                  </p>
-                )}
-              </div>
-            )}
-
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                ¿Es portador de enfermedad crónica? *
+                ¿Es portador de enfermedad crónica?<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={
                   form.catequizando.condicionSalud.portadorEnfermedadCronica ===
                   null
@@ -1033,52 +1120,87 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                       ? "si"
                       : "no"
                 }
-                onChange={(e) =>
+                onChange={(valor) =>
                   updateForm(
                     "catequizando.condicionSalud.portadorEnfermedadCronica",
-                    e.target.value === "si",
+                    valor === "si",
                   )
                 }
-              >
-                <option value="">Seleccione</option>
-                <option value="no">No</option>
-                <option value="si">Sí</option>
-              </Select>
+                options={[
+                  { label: "No", value: "no" },
+                  { label: "Sí", value: "si" },
+                ]}
+                hasError={!!errors.portadorEnfermedadCronica}
+              />
               {errors.portadorEnfermedad && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.portadorEnfermedad}
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.portadorEnfermedad}
                 </p>
               )}
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 pt-4 sm:gap-5 md:grid-cols-2">
+            {form.catequizando.adecuacion.requiereAdecuacionCentroEducativo && (
+              <motion.div
+                layout="position"
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs font-black text-royal-blue">
+                    Descripción de la adecuación<span className="text-red-500"> *</span>
+                  </Label>
+                  <Textarea
+                    placeholder="Ej: Requiere apoyo adicional para actividades de lectura."
+                    value={
+                      form.catequizando.adecuacion.descripcionAdecuacion || ""
+                    }
+                    onChange={(e) =>
+                      updateForm(
+                        "catequizando.adecuacion.descripcionAdecuacion",
+                        limitarPalabras(e.target.value),
+                      )
+                    }
+                  />
+                  <WordCounter
+                    value={
+                      form.catequizando.adecuacion.descripcionAdecuacion || ""
+                    }
+                    error={errors.descripcionAdecuacion}
+                  />
+                </div>
+              </motion.div>
+            )}
 
             {form.catequizando.condicionSalud.portadorEnfermedadCronica && (
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-black text-royal-blue">
-                  Descripción de enfermedad *
-                </Label>
-                <Textarea
-                  placeholder="Ej: Alergia a la penicilina."
-                  value={
-                    form.catequizando.condicionSalud.descripcionEnfermedad || ""
-                  }
-                  onChange={(e) =>
-                    updateForm(
-                      "catequizando.condicionSalud.descripcionEnfermedad",
-                      limitarPalabras(e.target.value),
-                    )
-                  }
-                />
-                <WordCounter
-                  value={
-                    form.catequizando.condicionSalud.descripcionEnfermedad || ""
-                  }
-                />
-                {errors.descripcionEnfermedad && (
-                  <p className="m-0 text-xs font-extrabold text-red-600">
-                    {errors.descripcionEnfermedad}
-                  </p>
-                )}
-              </div>
+              <motion.div
+                layout="position"
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs font-black text-royal-blue">
+                    Descripción de enfermedad<span className="text-red-500"> *</span>
+                  </Label>
+                  <Textarea
+                    placeholder="Ej: Alergia a la penicilina."
+                    value={
+                      form.catequizando.condicionSalud.descripcionEnfermedad || ""
+                    }
+                    onChange={(e) =>
+                      updateForm(
+                        "catequizando.condicionSalud.descripcionEnfermedad",
+                        limitarPalabras(e.target.value),
+                      )
+                    }
+                  />
+                  <WordCounter
+                    value={
+                      form.catequizando.condicionSalud.descripcionEnfermedad || ""
+                    }
+                    error={errors.descripcionEnfermedad}
+                  />
+                </div>
+              </motion.div>
             )}
           </div>
         </section>
@@ -1103,12 +1225,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Nombre *
+                Nombre<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
                 placeholder="Ej: Ana María"
                 value={form.inscripcion.personaQueInscribe.nombre || ""}
+                maxLength={MAX_CHARACTERS_NOMBRE}
                 onChange={(e) =>
                   updateForm(
                     "inscripcion.personaQueInscribe.nombre",
@@ -1118,12 +1241,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.inscripcion.personaQueInscribe.nombre || ""}
+                max={MAX_CHARACTERS_NOMBRE}
+                error={errors.nombrePersonaInscribe}
               />
-              {errors.nombrePersonaInscribe && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.nombrePersonaInscribe}
-                </p>
-              )}
             </div>
 
             <CampoApellido
@@ -1141,8 +1261,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
             <CampoApellido
               label="Segundo apellido"
+              required
               placeholder="Ej: Vargas"
               value={form.inscripcion.personaQueInscribe.segundoApellido || ""}
+              error={errors.segundoApellidoPersonaInscribe}
               onChange={(valor) =>
                 updateForm(
                   "inscripcion.personaQueInscribe.segundoApellido",
@@ -1153,7 +1275,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Correo electrónico *
+                Correo electrónico<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="email"
@@ -1168,23 +1290,18 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.inscripcion.personaQueInscribe.correo || ""}
+                error={errors.correoPersonaInscribe}
               />
-              {errors.correoPersonaInscribe && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.correoPersonaInscribe}
-                </p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Teléfono *
+                Teléfono<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
                 placeholder="Ej: 8888-8888"
-                inputMode="numeric"
-                maxLength={8}
+                maxLength={9}
                 value={form.inscripcion.personaQueInscribe.telefono || ""}
                 onChange={(e) =>
                   updateForm(
@@ -1193,36 +1310,35 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter
-                value={form.inscripcion.personaQueInscribe.telefono || ""}
-              />
               {errors.telefonoPersonaInscribe && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.telefonoPersonaInscribe}
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.telefonoPersonaInscribe}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Parentesco *
+                Parentesco<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={form.inscripcion.parentesco || ""}
-                onChange={(e) =>
-                  updateForm("inscripcion.parentesco", e.target.value)
+                onChange={(valor) =>
+                  updateForm("inscripcion.parentesco", valor || null)
                 }
-              >
-                <option value="">Seleccione</option>
-                <option value="Madre">Madre</option>
-                <option value="Padre">Padre</option>
-                <option value="Abuelo(a)">Abuelo(a)</option>
-                <option value="Tutor Legal">Tutor Legal</option>
-                <option value="Otro">Otro</option>
-              </Select>
+                options={[
+                  { label: "Madre", value: "Madre" },
+                  { label: "Padre", value: "Padre" },
+                  { label: "Abuelo(a)", value: "Abuelo(a)" },
+                  { label: "Tutor Legal", value: "Tutor Legal" },
+                  { label: "Otro", value: "Otro" },
+                ]}
+                hasError={!!errors.parentesco}
+                maxVisibleOptions={3}
+              />
               {errors.parentesco && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.parentesco}
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.parentesco}
                 </p>
               )}
             </div>
@@ -1254,14 +1370,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5 md:col-span-2">
               <Label className="text-xs font-black text-royal-blue">
-                ¿La madre es parte del núcleo familiar? *
+                ¿La madre es parte del núcleo familiar?<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={
                   tieneMadre === null ? "" : tieneMadre ? "si" : "no"
                 }
-                onChange={(e) => {
-                  const valor = e.target.value;
+                onChange={(valor) => {
                   if (valor === "") {
                     setTieneMadre(null);
                     return;
@@ -1298,14 +1413,15 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     }));
                   }
                 }}
-              >
-                <option value="">Seleccione</option>
-                <option value="no">No</option>
-                <option value="si">Sí</option>
-              </Select>
+                options={[
+                  { label: "No", value: "no" },
+                  { label: "Sí", value: "si" },
+                ]}
+                hasError={!!errors.tieneMadre}
+              />
               {errors.tieneMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.tieneMadre}
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.tieneMadre}
                 </p>
               )}
             </div>
@@ -1314,12 +1430,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <>
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Nombre *
+                Nombre<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
                 placeholder="Ej: María Elena"
                 value={form.madreCatequizando.nombre}
+                maxLength={MAX_CHARACTERS_NOMBRE}
                 onChange={(e) =>
                   updateForm(
                     "madreCatequizando.nombre",
@@ -1327,9 +1444,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.madreCatequizando.nombre} />
+              <WordCounter value={form.madreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
               {errors.nombreMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   {errors.nombreMadre}
                 </p>
               )}
@@ -1356,32 +1473,30 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Dirección exacta *
+                Dirección exacta<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
                 placeholder="Ej: 200 m norte de la iglesia, casa azul"
+                maxLength={250}
                 value={form.madreCatequizando.direccion.direccionExacta || ""}
                 onChange={(e) =>
                   updateForm(
                     "madreCatequizando.direccion.direccionExacta",
-                    limitarPalabras(e.target.value),
+                    limitarDireccion(e.target.value),
                   )
                 }
               />
               <WordCounter
                 value={form.madreCatequizando.direccion.direccionExacta || ""}
+                max={250}
+                error={errors.direccionMadre}
               />
-              {errors.direccionMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.direccionMadre}
-                </p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Ciudad *
+                Ciudad<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -1396,17 +1511,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.madreCatequizando.direccion.ciudad || ""}
+                error={errors.ciudadMadre}
               />
-              {errors.ciudadMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.ciudadMadre}
-                </p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Provincia *
+                Provincia<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -1421,23 +1532,18 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.madreCatequizando.direccion.provincia || ""}
+                error={errors.provinciaMadre}
               />
-              {errors.provinciaMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.provinciaMadre}
-                </p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Teléfono *
+                Teléfono<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
                 placeholder="Ej: 8888-8888"
-                inputMode="numeric"
-                maxLength={8}
+                maxLength={9}
                 value={form.madreCatequizando.telefono}
                 onChange={(e) =>
                   updateForm(
@@ -1446,10 +1552,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.madreCatequizando.telefono} />
               {errors.telefonoMadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.telefonoMadre}
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.telefonoMadre}
                 </p>
               )}
             </div>
@@ -1465,14 +1570,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5 md:col-span-2">
               <Label className="text-xs font-black text-royal-blue">
-                ¿El padre es parte del núcleo familiar? *
+                ¿El padre es parte del núcleo familiar?<span className="text-red-500"> *</span>
               </Label>
-              <Select
+              <CustomSelect
                 value={
                   tienePadre === null ? "" : tienePadre ? "si" : "no"
                 }
-                onChange={(e) => {
-                  const valor = e.target.value;
+                onChange={(valor) => {
                   if (valor === "") {
                     setTienePadre(null);
                     return;
@@ -1501,14 +1605,15 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     }));
                   }
                 }}
-              >
-                <option value="">Seleccione</option>
-                <option value="no">No</option>
-                <option value="si">Sí</option>
-              </Select>
+                options={[
+                  { label: "No", value: "no" },
+                  { label: "Sí", value: "si" },
+                ]}
+                hasError={!!errors.tienePadre}
+              />
               {errors.tienePadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.tienePadre}
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.tienePadre}
                 </p>
               )}
             </div>
@@ -1517,12 +1622,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <>
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Nombre *
+                Nombre<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
                 placeholder="Ej: Juan Carlos"
                 value={form.padreCatequizando.nombre}
+                maxLength={MAX_CHARACTERS_NOMBRE}
                 onChange={(e) =>
                   updateForm(
                     "padreCatequizando.nombre",
@@ -1530,9 +1636,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.padreCatequizando.nombre} />
+              <WordCounter value={form.padreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
               {errors.nombrePadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
                   {errors.nombrePadre}
                 </p>
               )}
@@ -1564,8 +1670,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="text"
                 placeholder="Ej: 8888-8888"
-                inputMode="numeric"
-                maxLength={8}
+                maxLength={9}
                 value={form.padreCatequizando.telefono}
                 onChange={(e) =>
                   updateForm(
@@ -1574,10 +1679,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.padreCatequizando.telefono} />
               {errors.telefonoPadre && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.telefonoPadre}
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.telefonoPadre}
                 </p>
               )}
             </div>
@@ -1621,7 +1725,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Número de comprobante SINPE *
+                Número de comprobante SINPE<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
@@ -1636,17 +1740,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.inscripcion.pago.numeroComprobanteSINPE}
+                error={errors.numeroComprobanteSINPE}
               />
-              {errors.numeroComprobanteSINPE && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.numeroComprobanteSINPE}
-                </p>
-              )}
             </div>
 
             <div className="flex flex-col gap-1.5 md:col-span-2">
               <Label className="text-xs font-black text-royal-blue">
-                Archivo del comprobante *
+                Archivo del comprobante<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="file"
@@ -1660,8 +1760,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }
               />
               {errors.archivoComprobante && (
-                <p className="m-0 text-xs font-extrabold text-red-600">
-                  {errors.archivoComprobante}
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.archivoComprobante}
                 </p>
               )}
             </div>
@@ -1705,7 +1805,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 type="checkbox"
                 className="mt-0.5 h-4 w-4 shrink-0 accent-royal-blue"
                 checked={aceptaLineamientos}
-                onChange={(e) => setAceptaLineamientos(e.target.checked)}
+                onChange={(e) => {
+                  setAceptaLineamientos(e.target.checked);
+                  if (e.target.checked) clearError("lineamientos");
+                }}
               />
               <span className="text-sm text-gray-600">
                 Estoy de acuerdo con los lineamientos establecidos
@@ -1713,15 +1816,15 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             </label>
 
             {errors.lineamientos && (
-              <p className="m-0 text-xs font-extrabold text-red-600">
-                {errors.lineamientos}
+              <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                ⚠ {errors.lineamientos}
               </p>
             )}
           </div>
         </section>
       )}
 
-      <div className="order-first rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
+      <div ref={progressBarRef} className="order-first rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <span className="text-xs font-black tracking-wider text-royal-blue uppercase">
             Paso {currentStep} de {stepTitles.length}
@@ -1730,7 +1833,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             {stepTitles[currentStep - 1]}
           </span>
         </div>
-        <div className="mb-5 h-2 overflow-hidden rounded-full bg-surface-muted">
+        <div className="mb-5 h-2 overflow-hidden rounded-full bg-gray-300">
           <div
             className="h-full rounded-full bg-royal-blue transition-[width] duration-300"
             style={{ width: `${(currentStep / stepTitles.length) * 100}%` }}
