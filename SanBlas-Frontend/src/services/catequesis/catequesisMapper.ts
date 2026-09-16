@@ -166,7 +166,7 @@ export const mapResumenToEnrollmentRecord = (
     id: resumen.id,
     codigoSolicitud: `CAT-${resumen.id}`,
     estado: mapEstadoBackendToFrontend(resumen.estado),
-    fechaSolicitud: resumen.fechaSolicitud.split("T")[0],
+    fechaSolicitud: resumen.fechaSolicitud,
     catequesis: {
       centroCatequesis: resumen.centroCatequesis,
       nivelAInscribirse: resumen.nivelAInscribirse,

@@ -17,7 +17,7 @@ import {
   Input,
   Label,
 } from "../../../shared/ui";
-import { formatearFechaCalendario } from "../../../shared/utils/fechas";
+import { formatearFechaEnvio } from "../../../shared/utils/fechas";
 
 interface ResumenSolicitudEnviada {
   nombreAlumno: string;
@@ -261,9 +261,7 @@ const CatequesisPage = () => {
                         Fecha de envío
                       </dt>
                       <dd className="m-0 mt-1 text-base text-text-secondary">
-                        {resumen.fechaEnvio
-                          ? formatearFechaCalendario(resumen.fechaEnvio)
-                          : "—"}
+                        {formatearFechaEnvio(resumen.fechaEnvio)}
                       </dd>
                     </div>
                     <div className="sm:col-span-2">
@@ -393,14 +391,12 @@ const CatequesisPage = () => {
                             </div>
                             <div>
                               <span className="font-semibold text-text-muted">
-                                Fecha:{" "}
+                                Fecha de envío:{" "}
                               </span>
                               <span className="text-text">
-                                {solicitud.fechaSolicitud
-                                  ? formatearFechaCalendario(
-                                      solicitud.fechaSolicitud,
-                                    )
-                                  : "—"}
+                                {formatearFechaEnvio(
+                                  solicitud.fechaSolicitud,
+                                )}
                               </span>
                             </div>
                           </div>
