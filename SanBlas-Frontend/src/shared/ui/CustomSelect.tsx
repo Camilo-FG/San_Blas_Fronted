@@ -16,6 +16,7 @@ type CustomSelectProps = {
   className?: string;
   hasError?: boolean;
   disabled?: boolean;
+  maxVisibleOptions?: number;
 };
 
 const OPTION_HEIGHT = 40;
@@ -30,6 +31,7 @@ export function CustomSelect({
   className,
   hasError,
   disabled,
+  maxVisibleOptions,
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const [focusIndex, setFocusIndex] = useState(-1);
@@ -49,8 +51,11 @@ export function CustomSelect({
     const footerTop = footer ? footer.getBoundingClientRect().top + window.scrollY : viewportBottom;
     const available = footerTop - triggerBottom - GAP;
     const fullHeight = options.length * OPTION_HEIGHT + DROPDOWN_PADDING * 2;
-    setMaxHeight(Math.min(fullHeight, Math.max(available, OPTION_HEIGHT * 2)));
-  }, [options.length]);
+    const cappedHeight = maxVisibleOptions
+      ? maxVisibleOptions * OPTION_HEIGHT + DROPDOWN_PADDING * 2
+      : fullHeight;
+    setMaxHeight(Math.min(cappedHeight, Math.max(available, OPTION_HEIGHT * 2)));
+  }, [options.length, maxVisibleOptions]);
 
   const closeAndRefocus = useCallback(() => {
     setOpen(false);

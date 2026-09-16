@@ -677,6 +677,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   ...FILIALES_CATEQUESIS.map((f) => ({ label: f, value: f })),
                 ]}
                 hasError={!!errors.centroCatequesis}
+                maxVisibleOptions={5}
               />
               {errors.centroCatequesis && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
@@ -1210,6 +1211,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   { label: "Otro", value: "Otro" },
                 ]}
                 hasError={!!errors.parentesco}
+                maxVisibleOptions={3}
               />
               {errors.parentesco && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
