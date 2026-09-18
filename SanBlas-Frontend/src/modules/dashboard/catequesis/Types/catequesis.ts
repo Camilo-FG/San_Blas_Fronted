@@ -85,6 +85,7 @@ export interface CatequesisEnrollmentRecord {
   codigoSolicitud?: string;
   estado: EstadoInscripcionCatequesis;
   fechaSolicitud: string;
+  fechaActualizacionEstado?: string | null;
 
   catequesis: CatequesisData;
   catequizando: CatequizandoData;

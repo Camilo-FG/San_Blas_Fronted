@@ -21,7 +21,7 @@ const QUERY_KEY = ["catequesis-solicitudes"] as const;
 
 type CambiarEstadoVariables = {
   id: number;
-  estado: "aprobado" | "rechazado";
+  estado: "aprobado" | "rechazado" | "requiere_modificacion";
   observacion?: string;
 };
 
@@ -88,7 +88,7 @@ export const useSolicitudesCatequesis = (
   const cambiarEstado = useCallback(
     async (
       id: number,
-      estado: "aprobado" | "rechazado",
+      estado: "aprobado" | "rechazado" | "requiere_modificacion",
       observacion?: string,
     ): Promise<{ ok: true } | { ok: false; mensaje: string }> => {
       setAccionError("");
