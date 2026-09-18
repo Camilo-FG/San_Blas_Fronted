@@ -213,6 +213,10 @@ function GestionSolicitudesCatequesis() {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isConfirmRejectOpen, setIsConfirmRejectOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [isModificacionModalOpen, setIsModificacionModalOpen] = useState(false);
+  const [isConfirmModificacionOpen, setIsConfirmModificacionOpen] =
+    useState(false);
+  const [modificacionReason, setModificacionReason] = useState("");
   const [vista, setVista] = useState<"solicitudes" | "historial">(
     "solicitudes",
   );
@@ -349,6 +353,9 @@ function GestionSolicitudesCatequesis() {
     setIsRejectModalOpen(false);
     setIsConfirmRejectOpen(false);
     setRejectionReason("");
+    setIsModificacionModalOpen(false);
+    setIsConfirmModificacionOpen(false);
+    setModificacionReason("");
     limpiarDetalleError();
     limpiarAccionError();
   }, [limpiarDetalleError, limpiarAccionError]);
@@ -361,6 +368,9 @@ function GestionSolicitudesCatequesis() {
       setIsRejectModalOpen(false);
       setIsConfirmRejectOpen(false);
       setRejectionReason("");
+      setIsModificacionModalOpen(false);
+      setIsConfirmModificacionOpen(false);
+      setModificacionReason("");
     },
     [obtenerDetalle],
   );
@@ -370,6 +380,34 @@ function GestionSolicitudesCatequesis() {
     setIsConfirmRejectOpen(false);
     setRejectionReason("");
   }, []);
+
+  const cerrarModificacion = useCallback(() => {
+    setIsModificacionModalOpen(false);
+    setIsConfirmModificacionOpen(false);
+    setModificacionReason("");
+  }, []);
+
+  const solicitarModificacion = useCallback(
+    async (id: number) => {
+      if (!modificacionReason.trim()) return;
+
+      const resultado = await cambiarEstado(
+        id,
+        "requiere_modificacion",
+        modificacionReason.trim(),
+      );
+
+      if (resultado.ok) {
+        showToast("Modificación solicitada correctamente", "success");
+        closeModal();
+        void cargarHistorial();
+        return;
+      }
+
+      showToast(resultado.mensaje, "error");
+    },
+    [cambiarEstado, modificacionReason, closeModal, showToast, cargarHistorial],
+  );
 
   const approveSolicitud = useCallback(
     async (id: number) => {
@@ -1142,12 +1180,19 @@ function GestionSolicitudesCatequesis() {
           detalleError={detalleError}
           accionError={accionError}
           guardando={guardando}
-          cerrarConEsc={!isApproveModalOpen && !isRejectModalOpen}
+          cerrarConEsc={
+            !isApproveModalOpen && !isRejectModalOpen && !isModificacionModalOpen
+          }
           onApprove={() => setIsApproveModalOpen(true)}
           onRechazar={() => {
             setRejectionReason("");
             setIsConfirmRejectOpen(false);
             setIsRejectModalOpen(true);
+          }}
+          onSolicitarModificacion={() => {
+            setModificacionReason("");
+            setIsConfirmModificacionOpen(false);
+            setIsModificacionModalOpen(true);
           }}
           onClose={closeModal}
         />
@@ -1237,6 +1282,105 @@ function GestionSolicitudesCatequesis() {
                     variant="secondary"
                     className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
                     onClick={cerrarRechazo}
+                    disabled={guardando}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </Modal>
+      )}
+
+      {isModificacionModalOpen && selectedSolicitud && (
+        <Modal
+          onClose={
+            isConfirmModificacionOpen
+              ? () => setIsConfirmModificacionOpen(false)
+              : cerrarModificacion
+          }
+          title={
+            isConfirmModificacionOpen
+              ? "Confirmar solicitud de modificación"
+              : "Solicitar modificación"
+          }
+          sinFondo
+          overlayClassName={
+            isConfirmModificacionOpen
+              ? "fixed inset-0 z-[1350] backdrop-blur-[6px]"
+              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+          }
+        >
+          <motion.div
+            key={isConfirmModificacionOpen ? "confirmar" : "formulario"}
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {isConfirmModificacionOpen ? (
+              <div className="flex min-h-44 flex-col">
+                <LineaDoradaTitulo parteSubrayada="Solicitar modificación" />
+                <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
+                  <p className="text-sm leading-relaxed text-text-secondary">
+                    ¿Seguro/a que quieres solicitar modificaciones a esta
+                    solicitud de catequesis? El encargado deberá corregir la
+                    información indicada antes de que pueda ser aprobada.
+                  </p>
+                </div>
+                <div className="flex shrink-0 justify-end gap-2">
+                  <Button
+                    variant="royal"
+                    className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                    onClick={() => void solicitarModificacion(selectedSolicitud.id)}
+                    disabled={guardando}
+                  >
+                    {guardando ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Solicitando...
+                      </>
+                    ) : (
+                      "Solicitar modificación"
+                    )}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
+                    onClick={() => setIsConfirmModificacionOpen(false)}
+                    disabled={guardando}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex min-h-44 flex-col gap-4">
+                <LineaDoradaTitulo parteSubrayada="Solicitar modificación" />
+                <p className="text-sm text-text-secondary">
+                  Indique qué datos debe corregir el encargado. Este comentario
+                  quedará registrado en la solicitud.
+                </p>
+                <Textarea
+                  value={modificacionReason}
+                  onChange={(e) => setModificacionReason(e.target.value)}
+                  placeholder="Ej: Corregir el nombre del catequizando, adjuntar copia legible de la fe de bautismo o verificar el comprobante de pago."
+                  rows={3}
+                  className="min-h-20"
+                />
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    variant="royal"
+                    className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+                    onClick={() => setIsConfirmModificacionOpen(true)}
+                    disabled={!modificacionReason.trim()}
+                  >
+                    Continuar
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
+                    onClick={cerrarModificacion}
                     disabled={guardando}
                   >
                     Cancelar

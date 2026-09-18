@@ -74,6 +74,7 @@ export interface InscripcionDetalleBackend {
   nivelAInscribirse: string;
   estado: string;
   fechaSolicitud: string;
+  fechaActualizacionEstado?: string | null;
   feBautismoArchivo: string;
   observacionAdministrativa?: string | null;
   catequizando: {

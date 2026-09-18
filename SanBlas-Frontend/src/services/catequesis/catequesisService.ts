@@ -131,7 +131,7 @@ export const crearSolicitudCatequesis = async (
 
 export const actualizarEstadoSolicitud = async (
   id: number,
-  estado: "aprobado" | "rechazado" | "pendiente",
+  estado: "aprobado" | "rechazado" | "pendiente" | "requiere_modificacion",
   observacion?: string,
 ): Promise<ActualizarEstadoBackendResponse> => {
   try {

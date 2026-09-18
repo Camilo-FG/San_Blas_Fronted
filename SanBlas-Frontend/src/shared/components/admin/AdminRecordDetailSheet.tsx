@@ -16,6 +16,7 @@ interface AdminRecordDetailSheetProps {
   hideHeader?: boolean;
   onClose: () => void;
   cerrarAlClicFuera?: boolean;
+  cerrarConEsc?: boolean;
 }
 
 export function AdminRecordDetailSheet({
@@ -29,6 +30,7 @@ export function AdminRecordDetailSheet({
   hideHeader = false,
   onClose,
   cerrarAlClicFuera = true,
+  cerrarConEsc = true,
 }: AdminRecordDetailSheetProps) {
   const titleId = useId();
 
@@ -36,7 +38,7 @@ export function AdminRecordDetailSheet({
     if (!open) return;
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (cerrarConEsc && event.key === "Escape") onClose();
     };
 
     document.addEventListener("keydown", handleEscape);
@@ -46,7 +48,7 @@ export function AdminRecordDetailSheet({
       document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = "";
     };
-  }, [open, onClose]);
+  }, [open, onClose, cerrarConEsc]);
 
   if (!open) return null;
 
