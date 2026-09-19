@@ -5,8 +5,10 @@ import {
   HandHeart,
   Heart,
   ScrollText,
+  Settings,
   Users,
   Calendar,
+  Lock,
 } from "lucide-react";
 import {
   obtenerEstadisticasDashboard,
@@ -15,6 +17,8 @@ import {
 import { ApiError } from "../../../services/apiClient";
 import Rutas from "../../../routes/Rutas";
 import { ErrorMessage } from "../../../shared/ui";
+import { useAuth } from "../../../context/AuthContext";
+import { isAdminRole } from "../../../types/Usuario";
 
 type CardKey = keyof DashboardStats;
 
@@ -26,6 +30,14 @@ interface CardConfig {
   link?: string;
   hero?: boolean;
 }
+
+// tarjeta de acceso al CMS del landing (no tiene métrica, va aparte de las stats)
+const LANDING_CARD = {
+  icon: Settings,
+  label: "Gestión del landing",
+  description: "Edite los textos, imágenes y secciones del sitio público.",
+  link: Rutas.dashboardUrl.gestionLanding,
+};
 
 const cardsConfig: CardConfig[] = [
   {
@@ -135,9 +147,11 @@ function MetricCard({ card, value }: { card: CardConfig; value: number }) {
 }
 
 function DashboardHome() {
+  const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const esAdmin = isAdminRole(user?.role ?? "");
 
   useEffect(() => {
     const cargarEstadisticas = async () => {
@@ -216,6 +230,41 @@ function DashboardHome() {
             );
           })}
         </div>
+      )}
+
+      {/* acceso al CMS del landing: solo administradores */}
+      {esAdmin && (
+        <Link
+          to={LANDING_CARD.link}
+          className="group block text-inherit no-underline"
+        >
+          <article className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <span
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0f766e14] text-[#0f766e] ring-1 ring-inset ring-[#0f766e33]"
+              >
+                <LANDING_CARD.icon size={20} strokeWidth={1.75} />
+              </span>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="m-0 text-base font-bold text-royal-blue">
+                    {LANDING_CARD.label}
+                  </h3>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
+                    <Lock size={11} aria-hidden="true" />
+                    Acceso restringido
+                  </span>
+                </div>
+                <p className="m-0 mt-1 text-sm text-text-muted">
+                  {LANDING_CARD.description}
+                </p>
+              </div>
+            </div>
+            <span className="text-sm font-bold text-royal-blue transition-transform group-hover:translate-x-1">
+              Ir al CMS →
+            </span>
+          </article>
+        </Link>
       )}
     </div>
   );
