@@ -722,6 +722,54 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       className="mx-auto mt-6 flex w-full max-w-[1100px] flex-col gap-5 px-3.5 sm:mt-10 sm:gap-7 sm:px-5"
       onSubmit={handleSubmit}
     >
+      <div ref={progressBarRef} className="rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <span className="text-xs font-black tracking-wider text-royal-blue uppercase">
+            Paso {currentStep} de {stepTitles.length}
+          </span>
+          <span className="text-right text-xs font-semibold text-text-muted">
+            {stepTitles[currentStep - 1]}
+          </span>
+        </div>
+        <div className="mb-5 h-2 overflow-hidden rounded-full bg-gray-300">
+          <div
+            className="h-full rounded-full bg-royal-blue transition-[width] duration-300"
+            style={{ width: `${(currentStep / stepTitles.length) * 100}%` }}
+          />
+        </div>
+        <div
+          className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8"
+          role="tablist"
+          aria-label="Ir a un paso del formulario"
+        >
+          {stepTitles.map((title, index) => {
+            const step = index + 1;
+            const isActive = currentStep === step;
+
+            return (
+              <button
+                key={title}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-label={`Ir al paso ${step}: ${title}`}
+                onClick={() => setCurrentStep(step)}
+                disabled={loading}
+                className={cn(
+                  "min-h-9 rounded-lg border px-2 py-1.5 text-[0.68rem] font-bold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 disabled:cursor-not-allowed disabled:opacity-60",
+                  isActive
+                    ? "border-royal-blue bg-royal-blue text-white"
+                    : "border-border-strong bg-surface-muted text-text-secondary hover:border-royal-blue hover:text-royal-blue",
+                )}
+              >
+                <span className="block">Paso {step}</span>
+                <span className="block truncate font-medium">{title}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {currentStep === 2 && (
         <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
           <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
@@ -1820,54 +1868,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           </div>
         </section>
       )}
-
-      <div ref={progressBarRef} className="order-first rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <span className="text-xs font-black tracking-wider text-royal-blue uppercase">
-            Paso {currentStep} de {stepTitles.length}
-          </span>
-          <span className="text-right text-xs font-semibold text-text-muted">
-            {stepTitles[currentStep - 1]}
-          </span>
-        </div>
-        <div className="mb-5 h-2 overflow-hidden rounded-full bg-gray-300">
-          <div
-            className="h-full rounded-full bg-royal-blue transition-[width] duration-300"
-            style={{ width: `${(currentStep / stepTitles.length) * 100}%` }}
-          />
-        </div>
-        <div
-          className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8"
-          role="tablist"
-          aria-label="Ir a un paso del formulario"
-        >
-          {stepTitles.map((title, index) => {
-            const step = index + 1;
-            const isActive = currentStep === step;
-
-            return (
-              <button
-                key={title}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                aria-label={`Ir al paso ${step}: ${title}`}
-                onClick={() => setCurrentStep(step)}
-                disabled={loading}
-                className={cn(
-                  "min-h-9 rounded-lg border px-2 py-1.5 text-[0.68rem] font-bold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 disabled:cursor-not-allowed disabled:opacity-60",
-                  isActive
-                    ? "border-royal-blue bg-royal-blue text-white"
-                    : "border-border-strong bg-surface-muted text-text-secondary hover:border-royal-blue hover:text-royal-blue",
-                )}
-              >
-                <span className="block">Paso {step}</span>
-                <span className="block truncate font-medium">{title}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
         <Button
