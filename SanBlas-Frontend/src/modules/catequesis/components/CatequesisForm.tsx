@@ -517,14 +517,14 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       if (!form.catequizando.direccion.direccionExacta?.trim()) {
         stepErrors.direccionExacta = "Digite la dirección exacta.";
       }
+      if (!form.catequesis.nivelAInscribirse) {
+        stepErrors.nivelAInscribirse = "Seleccione el nivel a inscribirse.";
+      }
     }
 
     if (step === 2) {
       if (!form.catequesis.centroCatequesis) {
         stepErrors.centroCatequesis = "Seleccione el centro de catequesis.";
-      }
-      if (!form.catequesis.nivelAInscribirse) {
-        stepErrors.nivelAInscribirse = "Seleccione el nivel a inscribirse.";
       }
       if (!form.catequesis.feBautismoArchivo) {
         stepErrors.feBautismoArchivo = "Debe adjuntar la fe de bautismo.";
@@ -809,27 +809,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               )}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Nivel a inscribirse<span className="text-red-500"> *</span>
-              </Label>
-              <CustomSelect
-                value={form.catequesis.nivelAInscribirse || ""}
-                onChange={(valor) =>
-                  updateForm("catequesis.nivelAInscribirse", valor || null)
-                }
-                options={[
-                  ...NIVELES_CATEQUESIS.map((n) => ({ label: n.label, value: n.value })),
-                ]}
-                hasError={!!errors.nivelAInscribirse}
-              />
-              {errors.nivelAInscribirse && (
-                <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  ⚠ {errors.nivelAInscribirse}
-                </p>
-              )}
-            </div>
-
             <div className="flex flex-col gap-1.5 md:col-span-2">
               <Label className="text-xs font-black text-royal-blue">
                 Adjuntar fe de bautismo<span className="text-red-500"> *</span>
@@ -991,6 +970,27 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 max={250}
                 error={errors.direccionExacta}
               />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">
+                Nivel a inscribirse<span className="text-red-500"> *</span>
+              </Label>
+              <CustomSelect
+                value={form.catequesis.nivelAInscribirse || ""}
+                onChange={(valor) =>
+                  updateForm("catequesis.nivelAInscribirse", valor || null)
+                }
+                options={[
+                  ...NIVELES_CATEQUESIS.map((n) => ({ label: n.label, value: n.value })),
+                ]}
+                hasError={!!errors.nivelAInscribirse}
+              />
+              {errors.nivelAInscribirse && (
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.nivelAInscribirse}
+                </p>
+              )}
             </div>
           </div>
         </section>
