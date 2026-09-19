@@ -37,7 +37,6 @@ const CatequesisPage = lazyWithRetry(
   () => import("../modules/catequesis/pages/CatequesisPage"),
 );
 const LoginPage = lazyWithRetry(() => import("../modules/auth/pages/LoginPage"));
-const SignUpPage = lazyWithRetry(() => import("../modules/auth/pages/SignUpPage"));
 const RecuperarContrasenaPage = lazyWithRetry(
   () => import("../modules/auth/pages/RecuperarContrasenaPage"),
 );
@@ -90,8 +89,6 @@ function RootLayout() {
   const isAuthPublica =
     pathname === Rutas.login ||
     pathname.startsWith(`${Rutas.login}/`) ||
-    pathname === Rutas.registro ||
-    pathname.startsWith(`${Rutas.registro}/`) ||
     pathname === Rutas.recuperarContrasena;
 
   return (
@@ -168,12 +165,6 @@ const loginRoute = createRoute({
       </Suspense>
     );
   },
-});
-
-const registroRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: Rutas.registro,
-  component: withSuspense(SignUpPage, LandingLoader),
 });
 
 const recuperarContrasenaRoute = createRoute({
@@ -295,7 +286,6 @@ const routeTree = rootRoute.addChildren([
   horariosRoute,
   eventosPublicosRoute,
   loginRoute,
-  registroRoute,
   recuperarContrasenaRoute,
   dashboardRoute.addChildren([
     dashboardHomeRoute,

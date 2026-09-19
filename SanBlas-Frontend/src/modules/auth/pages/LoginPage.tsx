@@ -182,15 +182,6 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
         >
           Volver al inicio
         </Link>
-        <p className="mt-3 text-center text-base text-text-muted">
-          ¿No tenés cuenta?{" "}
-          <Link
-            to={Rutas.registro}
-            className="font-semibold text-royal-blue no-underline transition-colors hover:text-royal-gold hover:underline"
-          >
-            Crear cuenta
-          </Link>
-        </p>
       </motion.div>
     </section>
     </>

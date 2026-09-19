@@ -33,32 +33,6 @@ export const login = async (
   }
 };
 
-export const register = async (data: {
-  nombre: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  telefono: string;
-}): Promise<AuthUser> => {
-  try {
-    const { data: response } = await apiClient.post<LoginResponse>(
-      "/auth/register",
-      {
-        nombre: data.nombre.trim(),
-        email: data.email.trim(),
-        password: data.password,
-        confirmPassword: data.confirmPassword,
-        telefono: data.telefono.trim(),
-      },
-    );
-
-    setAuthToken(response.accessToken);
-    return getCurrentUser()!;
-  } catch (error) {
-    handleApiError(error);
-  }
-};
-
 export const solicitarRecuperacionContrasena = async (
   email: string,
 ): Promise<void> => {

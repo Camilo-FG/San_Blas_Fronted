@@ -6,7 +6,6 @@ export const USER_ALLOWED_PATHS = [
   Rutas.SolicitudesSacramentos,
   Rutas.FormsolicitudesCatequesis,
   Rutas.login,
-  Rutas.registro,
   Rutas.home,
 ] as const;
 
@@ -28,12 +27,7 @@ export const isAuthenticatedAdmin = (): boolean => {
 };
 
 export const isUserRouteAllowed = (pathname: string): boolean => {
-  if (
-    pathname === Rutas.home ||
-    pathname.startsWith(Rutas.login) ||
-    pathname.startsWith(Rutas.registro)
-  )
-    return true;
+  if (pathname === Rutas.home || pathname.startsWith(Rutas.login)) return true;
   return (
     pathname === Rutas.SolicitudesSacramentos ||
     pathname === Rutas.FormsolicitudesCatequesis
