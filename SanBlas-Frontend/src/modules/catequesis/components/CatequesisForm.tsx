@@ -93,6 +93,7 @@ const infoBoxClass =
   "mb-4 rounded-2xl border border-royal-gold/40 bg-royal-gold/10 p-3.5 text-sm leading-relaxed text-gray-600 sm:p-4";
 const MAX_CHARACTERS = 50;
 const MAX_CHARACTERS_NOMBRE = 20;
+const MAX_CHARACTERS_DESCRIPCION = 300;
 
 // Rango de edad válido para catequesis infantil (Primer y Sétimo nivel).
 const EDAD_MINIMA_CATEQUIZANDO = 7;
@@ -103,6 +104,10 @@ const limitarCaracteres = (valor: string): string =>
 const limitarPalabras = limitarCaracteres;
 const limitarDireccion = (valor: string): string =>
   valor.replace(/[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ0-9\s,.\-#]/g, "").slice(0, 250);
+const limitarDescripcion = (valor: string): string =>
+  valor.replace(/[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ0-9\s,.\-#()/\u00A0]/g, "").slice(0, MAX_CHARACTERS_DESCRIPCION);
+const limitarCorreo = (valor: string): string =>
+  valor.replace(/[^a-zA-Z0-9@._+-]/g, "").slice(0, 50);
 const limitarNombre = (valor: string): string =>
   soloLetras(valor).slice(0, MAX_CHARACTERS_NOMBRE);
 
@@ -1148,7 +1153,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     onChange={(e) =>
                       updateForm(
                         "catequizando.adecuacion.descripcionAdecuacion",
-                        limitarPalabras(e.target.value),
+                        limitarDescripcion(e.target.value),
                       )
                     }
                   />
@@ -1156,6 +1161,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     value={
                       form.catequizando.adecuacion.descripcionAdecuacion || ""
                     }
+                    max={MAX_CHARACTERS_DESCRIPCION}
                     error={errors.descripcionAdecuacion}
                   />
                 </div>
@@ -1179,7 +1185,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     onChange={(e) =>
                       updateForm(
                         "catequizando.condicionSalud.descripcionEnfermedad",
-                        limitarPalabras(e.target.value),
+                        limitarDescripcion(e.target.value),
                       )
                     }
                   />
@@ -1187,6 +1193,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     value={
                       form.catequizando.condicionSalud.descripcionEnfermedad || ""
                     }
+                    max={MAX_CHARACTERS_DESCRIPCION}
                     error={errors.descripcionEnfermedad}
                   />
                 </div>
@@ -1274,7 +1281,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "inscripcion.personaQueInscribe.correo",
-                    limitarPalabras(e.target.value),
+                    limitarCorreo(e.target.value),
                   )
                 }
               />
