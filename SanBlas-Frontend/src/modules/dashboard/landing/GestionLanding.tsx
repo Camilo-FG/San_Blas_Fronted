@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { Edit3 } from "lucide-react";
+import { Edit3, RotateCcw } from "lucide-react";
 import {
   actualizarSeccionLanding,
   obtenerSeccionesLanding,
+  restablecerSeccionesLanding,
   type LandingSectionKey,
   type LandingSectionResponse,
 } from "../../../services/landingService";
 import { ApiError } from "../../../services/apiClient";
 import LandingSectionModal from "./LandingSectionModal";
+import RestablecerLandingMenu from "./RestablecerLandingMenu";
 import {
   formToSectionData,
   LANDING_SECTIONS,
@@ -17,7 +19,13 @@ import {
   mapearErroresLanding,
   validarFormularioLanding,
 } from "./landingValidation";
-import { Button, ErrorMessage, PageLoader, useToast } from "../../../shared/ui";
+import {
+  Button,
+  ConfirmacionAccionModal,
+  ErrorMessage,
+  PageLoader,
+  useToast,
+} from "../../../shared/ui";
 import type { ArchivoImagen } from "../../solicSacramento/components/SubidaImagen";
 
 function GestionLanding() {
@@ -32,6 +40,10 @@ function GestionLanding() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [erroresCampo, setErroresCampo] = useState<Record<string, string>>({});
+  // sección pendiente de confirmar para restablecer desde su card
+  const [seccionARestablecer, setSeccionARestablecer] =
+    useState<LandingSectionKey | null>(null);
+  const [restableciendo, setRestableciendo] = useState(false);
 
   const activeConfig = LANDING_SECTIONS.find((item) => item.key === editingKey);
 
@@ -95,6 +107,39 @@ function GestionLanding() {
     });
   };
 
+  // reemplaza en el estado las secciones que el backend devolvió tras el reset
+  const aplicarRestablecidas = (actualizadas: LandingSectionResponse[]) => {
+    setSections((current) => {
+      const mapa = new Map(current.map((s) => [s.sectionKey, s]));
+      for (const item of actualizadas) mapa.set(item.sectionKey, item);
+      return Array.from(mapa.values());
+    });
+  };
+
+  const restablecerSeccion = async () => {
+    if (!seccionARestablecer) return;
+    try {
+      setRestableciendo(true);
+      const actualizadas = await restablecerSeccionesLanding([
+        seccionARestablecer,
+      ]);
+      aplicarRestablecidas(actualizadas);
+      const label = LANDING_SECTIONS.find(
+        (s) => s.key === seccionARestablecer,
+      )?.label;
+      showToast(`${label ?? "La sección"} se restableció correctamente`, "success");
+      setSeccionARestablecer(null);
+    } catch (err) {
+      const texto =
+        err instanceof ApiError
+          ? err.message
+          : "No se pudo restablecer la sección.";
+      showToast(texto, "error");
+    } finally {
+      setRestableciendo(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!editingKey) return;
 
@@ -112,7 +157,14 @@ function GestionLanding() {
       const payload = formToSectionData(editingKey, formValues);
       const archivos: Record<string, File | undefined> = {};
       for (const [nombre, archivo] of Object.entries(archivosImagen)) {
-        if (archivo?.file) archivos[nombre] = archivo.file;
+        if (!archivo?.file) continue;
+        // las imágenes de servicios viajan como archivoServicioN pa el backend
+        const matchServicio = /^servicio(\d+)Imagen$/.exec(nombre);
+        if (matchServicio) {
+          archivos[`archivoServicio${matchServicio[1]}`] = archivo.file;
+          continue;
+        }
+        archivos[nombre] = archivo.file;
       }
       const updated = await actualizarSeccionLanding(
         editingKey,
@@ -161,10 +213,19 @@ function GestionLanding() {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="m-0 text-sm leading-relaxed text-text-muted">
-        Seleccione una sección para editar textos e imágenes. Los cambios se
-        reflejan en el sitio público.
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <p className="m-0 text-sm leading-relaxed text-text-muted">
+          Seleccione una sección para editar textos e imágenes. Los cambios se
+          reflejan en el sitio público.
+        </p>
+        <RestablecerLandingMenu
+          onRestablecido={(keys) => {
+            // recarga completa pa traer los defaults frescos de todas las marcadas
+            void keys;
+            cargarSecciones();
+          }}
+        />
+      </div>
 
       {error && !editingKey && <ErrorMessage message={error} />}
 
@@ -191,18 +252,46 @@ function GestionLanding() {
               <p className="m-0 text-xs text-slate-400">
                 Última actualización: {updatedAt}
               </p>
-              <Button
-                variant="royal"
-                className="w-full"
-                onClick={() => abrirEditor(section.key)}
-              >
-                <Edit3 size={16} />
-                Personalizar
-              </Button>
+              <div className="mt-auto flex gap-2">
+                <Button
+                  variant="royal"
+                  className="flex-1"
+                  onClick={() => abrirEditor(section.key)}
+                >
+                  <Edit3 size={16} />
+                  Personalizar
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setSeccionARestablecer(section.key)}
+                  aria-label={`Restablecer ${section.label}`}
+                >
+                  <RotateCcw size={16} />
+                  Restablecer
+                </Button>
+              </div>
             </article>
           );
         })}
       </div>
+
+      <ConfirmacionAccionModal
+        open={Boolean(seccionARestablecer)}
+        title="Restablecer sección"
+        parteSubrayada="Restablecer"
+        resto=" sección"
+        iconoAdvertencia
+        confirmVariant="danger"
+        confirmLabel="Restablecer"
+        pendingLabel="Restableciendo..."
+        isPending={restableciendo}
+        mensaje={`Se restablecerá "${
+          LANDING_SECTIONS.find((s) => s.key === seccionARestablecer)?.label ??
+          ""
+        }" a su configuración original. Esta acción no se puede deshacer.`}
+        onConfirm={restablecerSeccion}
+        onCancel={() => setSeccionARestablecer(null)}
+      />
 
       {activeConfig && editingKey && (
         <LandingSectionModal

@@ -314,6 +314,44 @@ export const LANDING_SECTIONS: LandingSectionConfig[] = [
       { name: "solicitud", label: "Texto de solicitud", type: "textarea", maxLength: 300, rows: 4 },
     ],
   },
+  {
+    key: "servicios",
+    label: "Inicio — Servicios",
+    description: "Carrusel de servicios ofrecidos en la página de inicio.",
+    fields: [
+      { name: "eyebrow", label: "Etiqueta superior", type: "text", maxLength: 40 },
+      { name: "title", label: "Título", type: "text", maxLength: 80 },
+      { name: "intro", label: "Introducción", type: "textarea", maxLength: 260, rows: 3 },
+      ...Array.from({ length: 5 }, (_, i) => {
+        const n = i + 1;
+        return [
+          { name: `servicio${n}Titulo`, label: `Servicio ${n} — Título`, type: "text" as FieldType, maxLength: 80, required: false },
+          { name: `servicio${n}Descripcion`, label: `Servicio ${n} — Descripción`, type: "textarea" as FieldType, maxLength: 300, rows: 3, required: false },
+          { name: `servicio${n}Categoria`, label: `Servicio ${n} — Categoría`, type: "text" as FieldType, maxLength: 60, required: false },
+          { name: `servicio${n}Boton`, label: `Servicio ${n} — Texto del botón`, type: "text" as FieldType, maxLength: 40, required: false },
+          { name: `servicio${n}Enlace`, label: `Servicio ${n} — Enlace interno (ej. /bautizos)`, type: "text" as FieldType, maxLength: 200, required: false },
+          {
+            name: `servicio${n}Imagen`,
+            label: `Servicio ${n} — Imagen`,
+            type: "image" as FieldType,
+            hint: "Adjunte JPG, PNG o WEBP (máx. 5 MB). Se sube a Cloudinary.",
+          },
+        ];
+      }).flat(),
+    ],
+  },
+  {
+    key: "donaciones",
+    label: "Página de donaciones",
+    description: "Datos bancarios y de SINPE mostrados en la página de donaciones.",
+    fields: [
+      { name: "title", label: "Título", type: "text", maxLength: 80 },
+      { name: "intro", label: "Introducción", type: "textarea", maxLength: 300, rows: 3 },
+      { name: "sinpe", label: "SINPE Móvil", type: "text", maxLength: 40, format: "phone" },
+      { name: "cuentaBancaria", label: "Cuenta bancaria (IBAN)", type: "text", maxLength: 60 },
+      { name: "banco", label: "Banco", type: "text", maxLength: 80 },
+    ],
+  },
 ];
 
 export const sectionDataToForm = (
@@ -415,6 +453,37 @@ export const sectionDataToForm = (
     form.charlas = String(data.charlas ?? "");
     form.solicitud = String(data.solicitud ?? "");
     form.requisitos = ((data.requisitos as string[]) ?? []).join("\n");
+    return form;
+  }
+
+  if (key === "servicios") {
+    form.eyebrow = String(data.eyebrow ?? "");
+    form.title = String(data.title ?? "");
+    form.intro = String(data.intro ?? "");
+    const items = (data.items as Array<Record<string, unknown>>) ?? [];
+    for (let i = 0; i < 5; i += 1) {
+      const n = i + 1;
+      const item = items[i] ?? {};
+      form[`servicio${n}Titulo`] = String(item.title ?? "");
+      form[`servicio${n}Descripcion`] = String(item.description ?? "");
+      form[`servicio${n}Categoria`] = String(item.category ?? "");
+      form[`servicio${n}Boton`] = String(item.buttonLabel ?? "");
+      form[`servicio${n}Enlace`] = String(item.linkTo ?? "");
+      form[`servicio${n}Imagen`] = String(item.imageUrl ?? "");
+      // detalle del modal: no se edita en el CMS pero se conserva al guardar
+      form[`servicio${n}Detalle`] = item.modalDetails
+        ? JSON.stringify(item.modalDetails)
+        : "";
+    }
+    return form;
+  }
+
+  if (key === "donaciones") {
+    form.title = String(data.title ?? "");
+    form.intro = String(data.intro ?? "");
+    form.sinpe = String(data.sinpe ?? "");
+    form.cuentaBancaria = String(data.cuentaBancaria ?? "");
+    form.banco = String(data.banco ?? "");
     return form;
   }
 
@@ -536,6 +605,50 @@ export const formToSectionData = (
       charlas: form.charlas,
       solicitud: form.solicitud,
       requisitos: lines(form.requisitos),
+    };
+  }
+
+  if (key === "servicios") {
+    // solo los servicios con título se envían (los vacíos se descartan)
+    const items: Array<Record<string, unknown>> = [];
+    for (let i = 1; i <= 5; i += 1) {
+      const title = (form[`servicio${i}Titulo`] ?? "").trim();
+      if (!title) continue;
+      const item: Record<string, unknown> = {
+        title,
+        description: (form[`servicio${i}Descripcion`] ?? "").trim(),
+        category: (form[`servicio${i}Categoria`] ?? "").trim(),
+        buttonLabel: (form[`servicio${i}Boton`] ?? "").trim(),
+      };
+      const enlace = (form[`servicio${i}Enlace`] ?? "").trim();
+      if (enlace) item.linkTo = enlace;
+      const imagen = (form[`servicio${i}Imagen`] ?? "").trim();
+      if (imagen) item.imageUrl = imagen;
+      const detalle = (form[`servicio${i}Detalle`] ?? "").trim();
+      if (detalle) {
+        try {
+          item.modalDetails = JSON.parse(detalle);
+        } catch {
+          // si el detalle guardado viene corrupto simplemente se omite
+        }
+      }
+      items.push(item);
+    }
+    return {
+      eyebrow: form.eyebrow,
+      title: form.title,
+      intro: form.intro,
+      items,
+    };
+  }
+
+  if (key === "donaciones") {
+    return {
+      title: form.title,
+      intro: form.intro,
+      sinpe: form.sinpe,
+      cuentaBancaria: form.cuentaBancaria,
+      banco: form.banco,
     };
   }
 

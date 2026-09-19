@@ -11,19 +11,19 @@ import { AnimatePresence, animate, motion, useMotionValue, type PanInfo } from "
 import {
   ChevronLeft,
   ChevronRight,
-  BookOpen,
-  FileCheck,
-  Waves,
-  Flame,
-  FolderHeart,
   Clock,
   PhoneCall,
   MapPin,
   X,
 } from "lucide-react";
 
-import Rutas from "../../../routes/Rutas";
 import { cn, ScrollReveal } from "../../../shared/ui";
+import { useLandingSection } from "../../../hooks/useLandingSection";
+import {
+  iconoServicio,
+  SERVICIOS_DEFAULT,
+  type ServicioItem as ServicioGuardado,
+} from "../serviciosContent";
 
 interface ServiceItem {
   id: string;
@@ -43,106 +43,20 @@ interface ServiceItem {
   };
 }
 
-const SERVICES: ServiceItem[] = [
-  {
-    id: "catequesis",
-    title: "Inscripción a Catequesis",
-    description:
-      "Inicie la formación en la fe y preparación sacramental para niños y jóvenes.",
-    image:
-      "https://images.unsplash.com/photo-1543157145-f78c636d023d?auto=format&fit=crop&q=75&w=400",
-    category: "Formación de Fe",
-    icon: BookOpen,
-    buttonLabel: "Iniciar Inscripción",
-    linkTo: Rutas.FormsolicitudesCatequesis,
-  },
-  {
-    id: "constancia",
-    title: "Solicitud de Constancia",
-    description:
-      "Solicite constancias de Bautismo, Comunión, Confirmación o Matrimonio.",
-    image:
-      "https://images.unsplash.com/photo-1478147427282-58a87a120781?auto=format&fit=crop&q=80&w=400",
-    category: "Archivo Parroquial",
-    icon: FileCheck,
-    buttonLabel: "Solicitar Constancia",
-    linkTo: Rutas.SolicitudesSacramentos,
-  },
-  {
-    id: "bautismo",
-    title: "Preparación Bautizos",
-    description:
-      "Conozca los requisitos, charlas prebautismales y fechas disponibles para bautizos.",
-    image:
-      "https://images.unsplash.com/photo-1510022011102-315f696ce29f?auto=format&fit=crop&q=80&w=400",
-    category: "Sacramentos",
-    icon: Waves,
-    buttonLabel: "Ver Más Información",
-    modalDetails: {
-      subtitle: "Sacramento de Iniciación Cristiana",
-      description:
-        "El bautismo incorpora a la persona a la Iglesia y la hace renacer como hijo de Dios.",
-      schedule:
-        "Sábados del mes a las 10:00 a. m., con coordinación previa en la oficina parroquial.",
-      requirements: [
-        "Copia del certificado de nacimiento.",
-        "Copia de cédula de ambos padres.",
-        "Copia de cédula de los padrinos.",
-        "Constancia de charla prebautismal.",
-      ],
-      contact: "Oficina Parroquial San Blas. Teléfono: 2685-5010.",
-    },
-  },
-  {
-    id: "matrimonios",
-    title: "Sacramento de Matrimonio",
-    description:
-      "Información para apertura de expediente matrimonial, charlas y coordinación de fechas.",
-    image:
-      "https://images.unsplash.com/photo-1460364155650-811c77f06245?auto=format&fit=crop&q=80&w=400",
-    category: "Ministerio Familiar",
-    icon: FolderHeart,
-    buttonLabel: "Ver Más Información",
-    modalDetails: {
-      subtitle: "Compromiso de Amor ante el Altar",
-      description:
-        "La parroquia brinda acompañamiento y guía para el proceso matrimonial.",
-      schedule:
-        "Fechas a coordinar con la oficina parroquial según disponibilidad del templo.",
-      requirements: [
-        "Iniciar el trámite con anticipación.",
-        "Certificados de bautismo recientes.",
-        "Copia de cédula de los contrayentes.",
-        "Asistencia a charlas matrimoniales.",
-      ],
-      contact: "Oficina Parroquial San Blas. Teléfono: 2685-5010.",
-    },
-  },
-  {
-    id: "retiro",
-    title: "Retiros Espirituales",
-    description:
-      "Jornadas de oración, reflexión y crecimiento espiritual para la comunidad parroquial.",
-    image:
-      "https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?auto=format&fit=crop&q=80&w=400",
-    category: "Vida Interior",
-    icon: Flame,
-    buttonLabel: "Ver Más Información",
-    modalDetails: {
-      subtitle: "Espacios de Silencio y Encuentro",
-      description:
-        "Los retiros espirituales permiten fortalecer la vida de fe, la oración y la convivencia comunitaria.",
-      schedule: "Según calendario parroquial y avisos oficiales.",
-      requirements: [
-        "Inscripción previa.",
-        "Disponibilidad para participar en la jornada completa.",
-        "Seguir las indicaciones del equipo organizador.",
-      ],
-      contact: "Consultar en la oficina parroquial.",
-    },
-  },
-];
-
+// los datos guardados en la BD no traen id ni icono: se completan por posición
+function mapearServicios(items: ServicioGuardado[]): ServiceItem[] {
+  return items.map((item, index) => ({
+    id: `servicio-${index + 1}`,
+    title: item.title,
+    description: item.description,
+    image: item.imageUrl ?? "",
+    category: item.category,
+    icon: iconoServicio(index),
+    buttonLabel: item.buttonLabel,
+    linkTo: item.linkTo,
+    modalDetails: item.modalDetails,
+  }));
+}
 const carouselButtonClass =
   "relative z-[1] flex w-full cursor-pointer items-center justify-center rounded-[14px] border-none bg-[rgba(23,37,84,0.08)] px-4 py-[13px] text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#172554] no-underline transition-all hover:-translate-y-0.5 hover:bg-[#172554] hover:text-white focus-visible:outline focus-visible:outline-3 focus-visible:outline-[rgba(183,131,47,0.45)] focus-visible:outline-offset-[3px] max-[420px]:px-3.5 max-[420px]:py-3 max-[420px]:text-[10px]";
 
@@ -153,6 +67,13 @@ const TRANSICION_CARRUSEL = {
 };
 
 export default function ServiciosCarousel() {
+  const { data } = useLandingSection("servicios", SERVICIOS_DEFAULT, {
+    defer: true,
+  });
+  const SERVICES = useMemo(
+    () => mapearServicios(data.items ?? SERVICIOS_DEFAULT.items),
+    [data.items],
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cardsToShow, setCardsToShow] = useState(3);
   const [anchoVista, setAnchoVista] = useState(0);
@@ -272,14 +193,13 @@ export default function ServiciosCarousel() {
       <div className="mx-auto max-w-[1200px] px-6 max-sm:px-4">
         <ScrollReveal className="mx-auto mb-12 max-w-[620px] text-center max-sm:mb-8" amount={0.35}>
           <span className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.25em] text-[#b7832f] max-sm:text-[10px] max-sm:tracking-[0.18em]">
-            Guías y Sacramentos
+            {data.eyebrow}
           </span>
           <h2 className="m-0 font-heading text-[clamp(30px,4vw,42px)] leading-[1.15] text-royal-blue">
-            Servicios Ofrecidos
+            {data.title}
           </h2>
           <p className="mt-3 text-[15px] leading-[1.7] text-text-secondary max-sm:text-[13px] max-sm:leading-[1.6]">
-            Acompañamiento y trámites espirituales administrados por la
-            Parroquia San Blas.
+            {data.intro}
           </p>
         </ScrollReveal>
 
