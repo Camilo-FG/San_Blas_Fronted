@@ -130,8 +130,15 @@ export function CustomSelect({
 
     if (e.key === "Tab") {
       if (open) {
-        setOpen(false);
-        setFocusIndex(-1);
+        e.preventDefault();
+        setFocusIndex((prev) => {
+          const base =
+            prev >= 0
+              ? prev
+              : options.findIndex((o) => o.value === value);
+          const idx = base >= 0 ? base : 0;
+          return e.shiftKey ? (idx > 0 ? idx - 1 : 0) : idx < options.length - 1 ? idx + 1 : idx;
+        });
       }
     }
   };
@@ -162,8 +169,13 @@ export function CustomSelect({
     }
 
     if (e.key === "Tab") {
-      setOpen(false);
-      setFocusIndex(-1);
+      e.preventDefault();
+      setFocusIndex((prev) => {
+        if (e.shiftKey) {
+          return prev > 0 ? prev - 1 : options.length - 1;
+        }
+        return prev < options.length - 1 ? prev + 1 : 0;
+      });
     }
   };
 
