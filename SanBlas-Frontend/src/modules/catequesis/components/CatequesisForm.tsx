@@ -95,9 +95,23 @@ const MAX_CHARACTERS = 50;
 const MAX_CHARACTERS_NOMBRE = 20;
 const MAX_CHARACTERS_DESCRIPCION = 300;
 
-// Rango de edad válido para catequesis infantil (Primer y Sétimo nivel).
-const EDAD_MINIMA_CATEQUIZANDO = 7;
-const EDAD_MAXIMA_CATEQUIZANDO = 8;
+// Fecha de corte para el cálculo de edad del catequizando: 31 de agosto del año en curso.
+const FECHA_CORTE_EDAD = (() => {
+  const ahora = new Date();
+  return new Date(ahora.getFullYear(), 7, 31);
+})();
+
+// Rango de edad según el nivel de catequesis:
+// - Primer nivel: 6 a 7 años.
+// - Sétimo nivel: 13 a 14 años.
+const obtenerRangoEdadPorNivel = (
+  nivel: string | null | undefined,
+): { minima: number; maxima: number } | null => {
+  const n = nivel?.toLowerCase();
+  if (n === "primero") return { minima: 6, maxima: 7 };
+  if (n === "sétimo" || n === "septimo") return { minima: 13, maxima: 14 };
+  return null;
+};
 
 const limitarCaracteres = (valor: string): string =>
   valor.slice(0, MAX_CHARACTERS);
@@ -128,16 +142,22 @@ const calcularEdad = (fecha: string): number | null => {
 // Incluye la edad calculada cuando existe para orientar mejor al usuario.
 const mensajeFechaNacimientoCatequizando = (
   fecha: string | null,
+  nivel: string | null | undefined,
 ): string | null => {
   if (!fecha) return "Digite la fecha de nacimiento.";
 
-  const edad = calcularEdad(fecha);
+  if (!nivel) return "Seleccione el nivel de catequesis para validar la edad del catequizando.";
+
+  const rango = obtenerRangoEdadPorNivel(nivel);
+  if (!rango) return "Debe seleccionar un nivel de catequesis válido para validar la edad del catequizando.";
+
+  const edad = calcularEdad(fecha, FECHA_CORTE_EDAD);
   if (edad === null) {
-    return "La edad del catequizando no aplica. Debe tener entre 7 y 8 años.";
+    return "No se pudo calcular la edad del catequizando.";
   }
 
-  if (edad < EDAD_MINIMA_CATEQUIZANDO || edad > EDAD_MAXIMA_CATEQUIZANDO) {
-    return `La edad del catequizando es ${edad} años y no aplica. Debe tener entre ${EDAD_MINIMA_CATEQUIZANDO} y ${EDAD_MAXIMA_CATEQUIZANDO} años.`;
+  if (edad < rango.minima || edad > rango.maxima) {
+    return "La edad del catequizando es " + edad + " años y no aplica. Debe tener entre " + rango.minima + " y " + rango.maxima + " años.";
   }
 
   return null;
@@ -383,6 +403,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
     const errorFechaNacimiento = mensajeFechaNacimientoCatequizando(
       form.catequizando.fechaNacimiento,
+      form.catequesis.nivelAInscribirse,
     );
     if (errorFechaNacimiento) {
       newErrors.fechaNacimiento = errorFechaNacimiento;
@@ -510,6 +531,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       }
       const errorFechaNacimiento = mensajeFechaNacimientoCatequizando(
         form.catequizando.fechaNacimiento,
+        form.catequesis.nivelAInscribirse,
       );
       if (errorFechaNacimiento) {
         stepErrors.fechaNacimiento = errorFechaNacimiento;
