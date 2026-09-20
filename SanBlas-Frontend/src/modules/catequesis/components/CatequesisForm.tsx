@@ -401,10 +401,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         "Digite el primer apellido del catequizando.";
     }
 
-    const errorFechaNacimiento = mensajeFechaNacimientoCatequizando(
-      form.catequizando.fechaNacimiento,
-      form.catequesis.nivelAInscribirse,
-    );
+    const errorFechaNacimiento = form.catequesis.nivelAInscribirse
+      ? mensajeFechaNacimientoCatequizando(
+          form.catequizando.fechaNacimiento,
+          form.catequesis.nivelAInscribirse,
+        )
+      : null;
     if (errorFechaNacimiento) {
       newErrors.fechaNacimiento = errorFechaNacimiento;
     }
@@ -529,10 +531,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         stepErrors.segundoApellidoCatequizando =
           "Digite el segundo apellido del catequizando.";
       }
-      const errorFechaNacimiento = mensajeFechaNacimientoCatequizando(
-        form.catequizando.fechaNacimiento,
-        form.catequesis.nivelAInscribirse,
-      );
+      const errorFechaNacimiento = form.catequesis.nivelAInscribirse
+        ? mensajeFechaNacimientoCatequizando(
+            form.catequizando.fechaNacimiento,
+            form.catequesis.nivelAInscribirse,
+          )
+        : null;
       if (errorFechaNacimiento) {
         stepErrors.fechaNacimiento = errorFechaNacimiento;
       }
@@ -948,9 +952,17 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </Label>
               <CustomSelect
                 value={form.catequesis.nivelAInscribirse || ""}
-                onChange={(valor) =>
-                  updateForm("catequesis.nivelAInscribirse", valor || null)
-                }
+                onChange={(valor) => {
+                  updateForm("catequesis.nivelAInscribirse", valor || null);
+                  if (!valor) {
+                    updateForm("catequizando.fechaNacimiento", "");
+                    setErrors((prev) => {
+                      const siguiente = { ...prev };
+                      delete siguiente.fechaNacimiento;
+                      return siguiente;
+                    });
+                  }
+                }}
                 options={[
                   ...NIVELES_CATEQUESIS.map((n) => ({ label: n.label, value: n.value })),
                 ]}
@@ -986,34 +998,37 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Fecha de nacimiento<span className="text-red-500"> *</span>
-              </Label>
-              <Input
-                type="date"
-                className="date-field"
-                value={form.catequizando.fechaNacimiento || ""}
-                onChange={(e) => {
-                  const valor = e.target.value;
-                  updateForm("catequizando.fechaNacimiento", valor);
-                  const mensaje = mensajeFechaNacimientoCatequizando(
-                    valor || null,
-                  );
-                  setErrors((prev) => {
-                    const siguiente = { ...prev };
-                    if (mensaje) siguiente.fechaNacimiento = mensaje;
-                    else delete siguiente.fechaNacimiento;
-                    return siguiente;
-                  });
-                }}
-              />
-              {errors.fechaNacimiento && (
-                <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  ⚠ {errors.fechaNacimiento}
-                </p>
-              )}
-            </div>
+            {form.catequesis.nivelAInscribirse ? (
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-black text-royal-blue">
+                  Fecha de nacimiento<span className="text-red-500"> *</span>
+                </Label>
+                <Input
+                  type="date"
+                  className="date-field"
+                  value={form.catequizando.fechaNacimiento || ""}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    updateForm("catequizando.fechaNacimiento", valor);
+                    const mensaje = mensajeFechaNacimientoCatequizando(
+                      valor || null,
+                      form.catequesis.nivelAInscribirse,
+                    );
+                    setErrors((prev) => {
+                      const siguiente = { ...prev };
+                      if (mensaje) siguiente.fechaNacimiento = mensaje;
+                      else delete siguiente.fechaNacimiento;
+                      return siguiente;
+                    });
+                  }}
+                />
+                {errors.fechaNacimiento && (
+                  <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                    ⚠ {errors.fechaNacimiento}
+                  </p>
+                )}
+              </div>
+            ) : null}
           </div>
         </section>
       )}
