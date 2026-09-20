@@ -944,29 +944,21 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Fecha de nacimiento<span className="text-red-500"> *</span>
+                Nivel a inscribirse<span className="text-red-500"> *</span>
               </Label>
-              <Input
-                type="date"
-                className="date-field"
-                value={form.catequizando.fechaNacimiento || ""}
-                onChange={(e) => {
-                  const valor = e.target.value;
-                  updateForm("catequizando.fechaNacimiento", valor);
-                  const mensaje = mensajeFechaNacimientoCatequizando(
-                    valor || null,
-                  );
-                  setErrors((prev) => {
-                    const siguiente = { ...prev };
-                    if (mensaje) siguiente.fechaNacimiento = mensaje;
-                    else delete siguiente.fechaNacimiento;
-                    return siguiente;
-                  });
-                }}
+              <CustomSelect
+                value={form.catequesis.nivelAInscribirse || ""}
+                onChange={(valor) =>
+                  updateForm("catequesis.nivelAInscribirse", valor || null)
+                }
+                options={[
+                  ...NIVELES_CATEQUESIS.map((n) => ({ label: n.label, value: n.value })),
+                ]}
+                hasError={!!errors.nivelAInscribirse}
               />
-              {errors.fechaNacimiento && (
+              {errors.nivelAInscribirse && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  ⚠ {errors.fechaNacimiento}
+                  ⚠ {errors.nivelAInscribirse}
                 </p>
               )}
             </div>
@@ -996,21 +988,29 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Nivel a inscribirse<span className="text-red-500"> *</span>
+                Fecha de nacimiento<span className="text-red-500"> *</span>
               </Label>
-              <CustomSelect
-                value={form.catequesis.nivelAInscribirse || ""}
-                onChange={(valor) =>
-                  updateForm("catequesis.nivelAInscribirse", valor || null)
-                }
-                options={[
-                  ...NIVELES_CATEQUESIS.map((n) => ({ label: n.label, value: n.value })),
-                ]}
-                hasError={!!errors.nivelAInscribirse}
+              <Input
+                type="date"
+                className="date-field"
+                value={form.catequizando.fechaNacimiento || ""}
+                onChange={(e) => {
+                  const valor = e.target.value;
+                  updateForm("catequizando.fechaNacimiento", valor);
+                  const mensaje = mensajeFechaNacimientoCatequizando(
+                    valor || null,
+                  );
+                  setErrors((prev) => {
+                    const siguiente = { ...prev };
+                    if (mensaje) siguiente.fechaNacimiento = mensaje;
+                    else delete siguiente.fechaNacimiento;
+                    return siguiente;
+                  });
+                }}
               />
-              {errors.nivelAInscribirse && (
+              {errors.fechaNacimiento && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  ⚠ {errors.nivelAInscribirse}
+                  ⚠ {errors.fechaNacimiento}
                 </p>
               )}
             </div>
