@@ -204,10 +204,10 @@ export function CustomSelect({
         }}
         onKeyDown={handleTriggerKeyDown}
         className={cn(
-          "flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+          "flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border-2 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
           hasError
             ? "border-red-400"
-            : "border-[#16243c]/10 hover:bg-slate-200",
+            : "border-[#16243c]/25 hover:bg-slate-200",
         )}
       >
         <span className={selected ? "" : "text-slate-400"}>
@@ -232,7 +232,7 @@ export function CustomSelect({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-            className="absolute top-full left-0 z-[9999] mt-1.5 w-full overflow-auto rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+            className="absolute top-full left-0 z-[9999] mt-1.5 w-full overflow-auto rounded-[8px] border-2 border-[#16243c]/25 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
             style={{ maxHeight }}
           >
             {options.map((option) => {
