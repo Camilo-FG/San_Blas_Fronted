@@ -124,6 +124,10 @@ const limitarCorreo = (valor: string): string =>
   valor.replace(/[^a-zA-Z0-9@._+-]/g, "").slice(0, 50);
 const limitarNombre = (valor: string): string =>
   soloLetras(valor).slice(0, MAX_CHARACTERS_NOMBRE);
+const limitarParroquia = (valor: string): string =>
+  soloLetras(valor).slice(0, MAX_CHARACTERS);
+const limitarDigitos = (valor: string): string =>
+  valor.replace(/\D/g, "").slice(0, MAX_CHARACTERS);
 
 const calcularEdad = (fecha: string): number | null => {
   const nacimiento = new Date(`${fecha}T00:00:00`);
@@ -1061,7 +1065,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "catequizando.bautismo.parroquia",
-                    limitarPalabras(e.target.value),
+                    limitarParroquia(e.target.value),
                   )
                 }
               />
@@ -1091,7 +1095,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "catequizando.bautismo.tomo",
-                    limitarPalabras(e.target.value),
+                    limitarDigitos(e.target.value),
                   )
                 }
               />
@@ -1109,7 +1113,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "catequizando.bautismo.folio",
-                    limitarPalabras(e.target.value),
+                    limitarDigitos(e.target.value),
                   )
                 }
               />
@@ -1127,7 +1131,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "catequizando.bautismo.asiento",
-                    limitarPalabras(e.target.value),
+                    limitarDigitos(e.target.value),
                   )
                 }
               />
