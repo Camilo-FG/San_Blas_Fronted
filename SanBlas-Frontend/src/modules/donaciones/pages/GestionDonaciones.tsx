@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Download,
   Eye,
   HandHeart,
   Inbox,
@@ -594,6 +595,15 @@ export default function GestionDonaciones(): React.JSX.Element {
         >
           <Archive size={16} />
           Historial
+        </button>
+        <button
+          type="button"
+          onClick={() => {}}
+          className="ml-auto inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border-0 bg-surface px-4 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-muted"
+          aria-label="Exportar tabla"
+        >
+          <Download size={16} />
+          Exportar tabla
         </button>
       </div>
 
