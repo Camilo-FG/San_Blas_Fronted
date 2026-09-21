@@ -11,13 +11,6 @@ export interface CrearInscripcionBackendRequest {
     fechaNacimiento: string;
     direccionExacta: string;
   };
-  datosBautismo: {
-    parroquia: string;
-    fecha?: string | null;
-    tomo?: string | null;
-    folio?: string | null;
-    asiento?: string | null;
-  };
   datosAdecuacion: {
     requiereAdecuacionCentroEducativo: boolean;
     descripcionAdecuacion?: string | null;

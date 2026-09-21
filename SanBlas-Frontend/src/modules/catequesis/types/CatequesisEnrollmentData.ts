@@ -24,7 +24,7 @@ export interface CatequizandoData {
   direccion: {
     direccionExacta: string | null;
   };
-  bautismo: {
+  bautismo?: {
     parroquia: string | null;
     fecha: string | null;
     tomo: string | null;

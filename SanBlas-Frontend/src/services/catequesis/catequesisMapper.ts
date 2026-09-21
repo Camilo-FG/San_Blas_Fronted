@@ -70,11 +70,6 @@ const obtenerNombreArchivo = (archivo: File | string | null | undefined): string
   return archivo.name;
 };
 
-const toNullableDate = (value: string | null | undefined): string | null => {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-};
-
 export const mapFormToBackendRequest = (
   form: CatequesisEnrollmentData,
 ): CrearInscripcionBackendRequest => ({
@@ -89,13 +84,6 @@ export const mapFormToBackendRequest = (
     segundoApellido: form.catequizando.segundoApellido.trim() || null,
     fechaNacimiento: form.catequizando.fechaNacimiento?.trim() ?? "",
     direccionExacta: form.catequizando.direccion.direccionExacta?.trim() ?? "",
-  },
-  datosBautismo: {
-    parroquia: form.catequizando.bautismo.parroquia?.trim() ?? "",
-    fecha: toNullableDate(form.catequizando.bautismo.fecha),
-    tomo: form.catequizando.bautismo.tomo,
-    folio: form.catequizando.bautismo.folio,
-    asiento: form.catequizando.bautismo.asiento,
   },
   datosAdecuacion: {
     requiereAdecuacionCentroEducativo:
