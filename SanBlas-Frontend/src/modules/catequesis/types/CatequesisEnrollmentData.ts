@@ -52,6 +52,11 @@ export interface PadreCatequizandoData {
   nombre: string;
   primerApellido: string;
   segundoApellido: string;
+  direccion: {
+    direccionExacta: string | null;
+    ciudad: string | null;
+    provincia: string | null;
+  };
   telefono: string;
 }
 

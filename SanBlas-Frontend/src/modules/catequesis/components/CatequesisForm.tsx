@@ -69,6 +69,11 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
     nombre: "",
     primerApellido: "",
     segundoApellido: "",
+    direccion: {
+      direccionExacta: null,
+      ciudad: null,
+      provincia: null,
+    },
     telefono: "",
   },
 
@@ -126,8 +131,12 @@ const limitarNombre = (valor: string): string =>
   soloLetras(valor).slice(0, MAX_CHARACTERS_NOMBRE);
 const limitarParroquia = (valor: string): string =>
   soloLetras(valor).slice(0, MAX_CHARACTERS);
+const limitarLugar = (valor: string): string =>
+  soloLetras(valor).slice(0, MAX_CHARACTERS);
 const limitarDigitos = (valor: string): string =>
   valor.replace(/\D/g, "").slice(0, MAX_CHARACTERS);
+const limitarComprobante = (valor: string): string =>
+  valor.replace(/[^a-zA-Z0-9\-]/g, "").slice(0, MAX_CHARACTERS);
 
 const calcularEdad = (fecha: string): number | null => {
   const nacimiento = new Date(`${fecha}T00:00:00`);
@@ -325,6 +334,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     "madreCatequizando.telefono": "telefonoMadre",
     "padreCatequizando.nombre": "nombrePadre",
     "padreCatequizando.primerApellido": "primerApellidoPadre",
+    "padreCatequizando.direccion.direccionExacta": "direccionPadre",
+    "padreCatequizando.direccion.ciudad": "ciudadPadre",
+    "padreCatequizando.direccion.provincia": "provinciaPadre",
     "padreCatequizando.telefono": "telefonoPadre",
     "inscripcion.pago.numeroComprobanteSINPE": "numeroComprobanteSINPE",
   };
@@ -352,6 +364,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     telefonoMadre: "El teléfono debe contener 8 dígitos.",
     nombrePadre: "Digite el nombre del padre.",
     primerApellidoPadre: "Digite el primer apellido del padre.",
+    direccionPadre: "Digite la dirección exacta.",
+    ciudadPadre: "Digite la ciudad.",
+    provinciaPadre: "Digite la provincia.",
     telefonoPadre: "El teléfono debe contener 8 dígitos.",
     numeroComprobanteSINPE: "Digite el número de comprobante SINPE.",
   };
@@ -644,6 +659,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           stepErrors.primerApellidoPadre =
             "Digite el primer apellido del padre.";
         }
+        if (!form.padreCatequizando.direccion.direccionExacta?.trim())
+          stepErrors.direccionPadre = "Digite la dirección exacta.";
+        if (!form.padreCatequizando.direccion.ciudad?.trim())
+          stepErrors.ciudadPadre = "Digite la ciudad.";
+        if (!form.padreCatequizando.direccion.provincia?.trim())
+          stepErrors.provinciaPadre = "Digite la provincia.";
         if (
           form.padreCatequizando.telefono &&
           !/^\d{4}-\d{4}$/.test(form.padreCatequizando.telefono)
@@ -1591,7 +1612,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "madreCatequizando.direccion.ciudad",
-                    limitarPalabras(e.target.value),
+                    limitarLugar(e.target.value),
                   )
                 }
               />
@@ -1612,7 +1633,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "madreCatequizando.direccion.provincia",
-                    limitarPalabras(e.target.value),
+                    limitarLugar(e.target.value),
                   )
                 }
               />
@@ -1675,6 +1696,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     delete siguiente.tienePadre;
                     delete siguiente.nombrePadre;
                     delete siguiente.primerApellidoPadre;
+                    delete siguiente.direccionPadre;
+                    delete siguiente.ciudadPadre;
+                    delete siguiente.provinciaPadre;
                     delete siguiente.telefonoPadre;
                     return siguiente;
                   });
@@ -1686,6 +1710,11 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                         nombre: "",
                         primerApellido: "",
                         segundoApellido: "",
+                        direccion: {
+                          direccionExacta: null,
+                          ciudad: null,
+                          provincia: null,
+                        },
                         telefono: "",
                       },
                     }));
@@ -1748,6 +1777,71 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 updateForm("padreCatequizando.segundoApellido", valor)
               }
             />
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">
+                Dirección exacta<span className="text-red-500"> *</span>
+              </Label>
+              <Input
+                type="text"
+                placeholder="Ej: 200 m norte de la iglesia, casa azul"
+                maxLength={250}
+                value={form.padreCatequizando.direccion.direccionExacta || ""}
+                onChange={(e) =>
+                  updateForm(
+                    "padreCatequizando.direccion.direccionExacta",
+                    limitarDireccion(e.target.value),
+                  )
+                }
+              />
+              <WordCounter
+                value={form.padreCatequizando.direccion.direccionExacta || ""}
+                max={250}
+                error={errors.direccionPadre}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">
+                Ciudad<span className="text-red-500"> *</span>
+              </Label>
+              <Input
+                type="text"
+                placeholder="Ej: Nicoya"
+                value={form.padreCatequizando.direccion.ciudad || ""}
+                onChange={(e) =>
+                  updateForm(
+                    "padreCatequizando.direccion.ciudad",
+                    limitarLugar(e.target.value),
+                  )
+                }
+              />
+              <WordCounter
+                value={form.padreCatequizando.direccion.ciudad || ""}
+                error={errors.ciudadPadre}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">
+                Provincia<span className="text-red-500"> *</span>
+              </Label>
+              <Input
+                type="text"
+                placeholder="Ej: Guanacaste"
+                value={form.padreCatequizando.direccion.provincia || ""}
+                onChange={(e) =>
+                  updateForm(
+                    "padreCatequizando.direccion.provincia",
+                    limitarLugar(e.target.value),
+                  )
+                }
+              />
+              <WordCounter
+                value={form.padreCatequizando.direccion.provincia || ""}
+                error={errors.provinciaPadre}
+              />
+            </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
@@ -1820,7 +1914,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "inscripcion.pago.numeroComprobanteSINPE",
-                    limitarPalabras(e.target.value),
+                    limitarComprobante(e.target.value),
                   )
                 }
               />

@@ -134,6 +134,10 @@ export const mapFormToBackendRequest = (
           primerApellido: form.padreCatequizando.primerApellido.trim(),
           segundoApellido:
             form.padreCatequizando.segundoApellido.trim() || null,
+          direccionExacta:
+            form.padreCatequizando.direccion.direccionExacta?.trim() ?? "",
+          ciudad: form.padreCatequizando.direccion.ciudad?.trim() ?? "",
+          provincia: form.padreCatequizando.direccion.provincia?.trim() ?? "",
           telefono: form.padreCatequizando.telefono.trim(),
         },
       }

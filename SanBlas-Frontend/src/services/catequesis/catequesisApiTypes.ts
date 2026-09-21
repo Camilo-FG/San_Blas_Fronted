@@ -39,6 +39,9 @@ export interface CrearInscripcionBackendRequest {
     nombre: string;
     primerApellido: string;
     segundoApellido?: string | null;
+    direccionExacta: string;
+    ciudad: string;
+    provincia: string;
     telefono: string;
   };
   datosPersonaInscribe: {
