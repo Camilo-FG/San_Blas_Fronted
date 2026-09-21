@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (no deja picar dos veces)
 import {
@@ -14,6 +14,10 @@ import { FILIALES_CATEQUESIS } from "../constants/filialesCatequesis";
 import { NIVELES_CATEQUESIS } from "../constants/nivelesCatequesis";
 import { MONTO_INSCRIPCION_CATEQUESIS } from "../constants/catequesisInformacion";
 import { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
+import {
+  SubidaImagen,
+  type ArchivoImagen,
+} from "../../solicSacramento/components/SubidaImagen";
 import { soloLetras } from "../../../shared/utils/formValidation";
 
 interface CatequesisFormProps {
@@ -227,25 +231,6 @@ function CampoApellido({
   );
 }
 
-const fileInputClass = cn(
-  "cursor-pointer p-2.5",
-  "file:mr-3 file:cursor-pointer file:rounded-[10px] file:border-0 file:bg-royal-blue file:px-3.5 file:py-2 file:text-xs file:font-extrabold file:text-white",
-  "hover:file:bg-royal-gold hover:file:text-royal-blue",
-);
-
-// Límite de tamaño para la fe de bautismo (5 MB, igual que el backend).
-const MAX_TAMANO_FE_BAUTISMO = 5 * 1024 * 1024;
-
-const validarArchivoFeBautismo = (file: File): string | null => {
-  if (!file.type.startsWith("image/")) {
-    return "La fe de bautismo debe ser una imagen (JPG, PNG u otro formato de imagen).";
-  }
-  if (file.size > MAX_TAMANO_FE_BAUTISMO) {
-    return "La imagen no debe superar los 5 MB.";
-  }
-  return null;
-};
-
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const progressBarRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState<CatequesisEnrollmentData>(
@@ -258,21 +243,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const [aceptaLineamientos, setAceptaLineamientos] = useState(false);
   const [tienePadre, setTienePadre] = useState<boolean | null>(null);
   const [tieneMadre, setTieneMadre] = useState<boolean | null>(null);
-  const [errorArchivoFeBautismo, setErrorArchivoFeBautismo] = useState<
-    string | null
-  >(null);
   const [vistaPreviaFeBautismo, setVistaPreviaFeBautismo] = useState<
     string | null
   >(null);
-  const [feBautismoInputKey, setFeBautismoInputKey] = useState(0);
-
-  useEffect(() => {
-    return () => {
-      if (vistaPreviaFeBautismo) {
-        URL.revokeObjectURL(vistaPreviaFeBautismo);
-      }
-    };
-  }, [vistaPreviaFeBautismo]);
+  const [vistaPreviaComprobante, setVistaPreviaComprobante] = useState<
+    string | null
+  >(null);
 
   const scrollToProgressBar = () => {
     requestAnimationFrame(() => {
@@ -732,40 +708,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     onSubmit(form);
   };
 
-  const manejarSeleccionFeBautismo = (file: File | null) => {
-    if (!file) {
-      return;
-    }
-
-    const mensajeError = validarArchivoFeBautismo(file);
-    if (mensajeError) {
-      setErrorArchivoFeBautismo(mensajeError);
-      updateForm("catequesis.feBautismoArchivo", null);
-      if (vistaPreviaFeBautismo) {
-        URL.revokeObjectURL(vistaPreviaFeBautismo);
-        setVistaPreviaFeBautismo(null);
-      }
-      setFeBautismoInputKey((key) => key + 1);
-      return;
-    }
-
-    setErrorArchivoFeBautismo(null);
-    updateForm("catequesis.feBautismoArchivo", file);
-    setErrors((prev) => {
-      const siguiente = { ...prev };
-      delete siguiente.feBautismoArchivo;
-      return siguiente;
-    });
-    setVistaPreviaFeBautismo(URL.createObjectURL(file));
-  };
-
-  const quitarFeBautismo = () => {
-    updateForm("catequesis.feBautismoArchivo", null);
-    setErrorArchivoFeBautismo(null);
-    setVistaPreviaFeBautismo(null);
-    setFeBautismoInputKey((key) => key + 1);
-  };
-
   return (
     <form
       className="mx-auto mt-6 flex w-full max-w-[1100px] flex-col gap-5 px-3.5 sm:mt-10 sm:gap-7 sm:px-5"
@@ -859,54 +801,52 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             </div>
 
             <div className="flex flex-col gap-1.5 md:col-span-2">
-              <Label className="text-xs font-black text-royal-blue">
-                Adjuntar fe de bautismo<span className="text-red-500"> *</span>
-              </Label>
-              <Input
-                key={feBautismoInputKey}
-                type="file"
-                accept="image/*"
-                className={fileInputClass}
-                onChange={(e) =>
-                  manejarSeleccionFeBautismo(e.target.files?.[0] || null)
+              <SubidaImagen
+                value={
+                  form.catequesis.feBautismoArchivo instanceof File &&
+                  vistaPreviaFeBautismo
+                    ? {
+                        file: form.catequesis.feBautismoArchivo,
+                        preview: vistaPreviaFeBautismo,
+                      }
+                    : null
                 }
+                existingPreview={
+                  typeof form.catequesis.feBautismoArchivo === "string"
+                    ? form.catequesis.feBautismoArchivo
+                    : null
+                }
+                onChange={(archivo: ArchivoImagen | null) => {
+                  if (archivo) {
+                    if (vistaPreviaFeBautismo) {
+                      URL.revokeObjectURL(vistaPreviaFeBautismo);
+                    }
+                    updateForm("catequesis.feBautismoArchivo", archivo.file);
+                    setVistaPreviaFeBautismo(archivo.preview);
+                  } else {
+                    if (vistaPreviaFeBautismo) {
+                      URL.revokeObjectURL(vistaPreviaFeBautismo);
+                    }
+                    setVistaPreviaFeBautismo(null);
+                    updateForm("catequesis.feBautismoArchivo", null);
+                  }
+                }}
+                onClearExisting={() =>
+                  updateForm("catequesis.feBautismoArchivo", null)
+                }
+                label="Adjuntar fe de bautismo"
+                required
+                hint="Fotografía de la constancia de bautismo. Máximo 5 MB."
+                maxSizeMB={5}
+                tiposPermitidos={[
+                  "application/pdf",
+                  "image/jpeg",
+                  "image/png",
+                  "image/webp",
+                ]}
+                mostrarVistaPrevia={false}
+                errorExterno={errors.feBautismoArchivo ?? null}
               />
-              <p className="m-0 text-xs font-medium text-text-muted">
-                Fotografía de la constancia de bautismo. Máximo 5 MB.
-              </p>
-              {(errorArchivoFeBautismo || errors.feBautismoArchivo) && (
-                <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  ⚠ {errorArchivoFeBautismo || errors.feBautismoArchivo}
-                </p>
-              )}
-              {vistaPreviaFeBautismo &&
-                form.catequesis.feBautismoArchivo instanceof File && (
-                <div className="mt-1 flex items-center gap-3 rounded-xl border border-border bg-white p-2.5 sm:max-w-md">
-                  <img
-                    src={vistaPreviaFeBautismo}
-                    alt="Vista previa de la fe de bautismo"
-                    className="h-20 w-16 shrink-0 rounded-lg border border-border object-cover shadow-sm"
-                  />
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <p className="truncate text-xs font-bold text-royal-blue">
-                      {form.catequesis.feBautismoArchivo.name}
-                    </p>
-                    <p className="m-0 text-[0.72rem] text-text-muted">
-                      {(form.catequesis.feBautismoArchivo.size / 1024).toFixed(
-                        0,
-                      )}{" "}
-                      KB
-                    </p>
-                    <button
-                      type="button"
-                      onClick={quitarFeBautismo}
-                      className="cursor-pointer self-start rounded-lg border-0 bg-transparent p-0 text-xs font-extrabold text-red-600 transition-colors hover:text-red-700 hover:underline"
-                    >
-                      Quitar archivo
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </section>
@@ -1923,25 +1863,47 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             </div>
 
             <div className="flex flex-col gap-1.5 md:col-span-2">
-              <Label className="text-xs font-black text-royal-blue">
-                Archivo del comprobante<span className="text-red-500"> *</span>
-              </Label>
-              <Input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                className={fileInputClass}
-                onChange={(e) =>
-                  updateForm(
-                    "inscripcion.pago.archivoComprobante",
-                    e.target.files?.[0] || null,
-                  )
+              <SubidaImagen
+                value={
+                  form.inscripcion.pago.archivoComprobante instanceof File &&
+                  vistaPreviaComprobante
+                    ? {
+                        file: form.inscripcion.pago.archivoComprobante,
+                        preview: vistaPreviaComprobante,
+                      }
+                    : null
                 }
+                existingPreview={
+                  typeof form.inscripcion.pago.archivoComprobante === "string"
+                    ? form.inscripcion.pago.archivoComprobante
+                    : null
+                }
+                onChange={(archivo: ArchivoImagen | null) => {
+                  if (archivo) {
+                    if (vistaPreviaComprobante) {
+                      URL.revokeObjectURL(vistaPreviaComprobante);
+                    }
+                    updateForm(
+                      "inscripcion.pago.archivoComprobante",
+                      archivo.file,
+                    );
+                    setVistaPreviaComprobante(archivo.preview);
+                  } else {
+                    if (vistaPreviaComprobante) {
+                      URL.revokeObjectURL(vistaPreviaComprobante);
+                    }
+                    setVistaPreviaComprobante(null);
+                    updateForm("inscripcion.pago.archivoComprobante", null);
+                  }
+                }}
+                onClearExisting={() =>
+                  updateForm("inscripcion.pago.archivoComprobante", null)
+                }
+                label="Archivo del comprobante"
+                required
+                mostrarVistaPrevia={false}
+                errorExterno={errors.archivoComprobante ?? null}
               />
-              {errors.archivoComprobante && (
-                <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  ⚠ {errors.archivoComprobante}
-                </p>
-              )}
             </div>
           </div>
         </section>

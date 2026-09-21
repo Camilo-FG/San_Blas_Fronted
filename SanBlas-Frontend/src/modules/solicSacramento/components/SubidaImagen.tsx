@@ -21,6 +21,7 @@ interface SubidaImagenProps {
   textoArrastrar?: string;
   textoBoton?: string;
   mostrarVistaPrevia?: boolean;
+  tiposPermitidos?: string[];
 }
 
 const TIPOS_PERMITIDOS = [
@@ -45,6 +46,7 @@ export const SubidaImagen = ({
   textoArrastrar = "Arrastra y suelta archivos aqui",
   textoBoton = "Browse Files",
   mostrarVistaPrevia = true,
+  tiposPermitidos = TIPOS_PERMITIDOS,
 }: SubidaImagenProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [arrastrando, setArrastrando] = useState(false);
@@ -53,7 +55,7 @@ export const SubidaImagen = ({
   const maxBytes = maxSizeMB * 1024 * 1024;
 
   const validarArchivo = (file: File): string | null => {
-    if (!TIPOS_PERMITIDOS.includes(file.type)) {
+    if (!tiposPermitidos.includes(file.type)) {
       return "Formato no permitido";
     }
     if (file.size > maxBytes) {
@@ -115,7 +117,7 @@ export const SubidaImagen = ({
       <input
         ref={inputRef}
         type="file"
-        accept={TIPOS_PERMITIDOS.join(",")}
+        accept={tiposPermitidos.join(",")}
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0];
