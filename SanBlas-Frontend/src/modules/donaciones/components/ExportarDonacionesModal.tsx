@@ -30,13 +30,6 @@ const rangoFechasValido = (desde: string, hasta: string): boolean => {
   );
 };
 
-const claseInterruptor = (activo: boolean) =>
-  `inline-flex min-h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border-0 px-4 text-sm transition-colors ${
-    activo
-      ? "bg-[#003366] font-semibold text-white"
-      : "bg-transparent font-medium text-text-secondary hover:bg-surface-muted"
-  }`;
-
 const claseCampo = (extra = "") =>
   `min-h-10 w-full rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none ${extra}`.trim();
 
@@ -77,22 +70,37 @@ export function ExportarDonacionesModal({
               aria-label="Formato de exportación"
               className="flex w-full items-center gap-1 rounded-xl border border-border-strong bg-surface p-1 shadow-sm"
             >
-              <button
-                type="button"
-                onClick={() => setFormato("csv")}
-                aria-pressed={formato === "csv"}
-                className={claseInterruptor(formato === "csv")}
-              >
-                CSV
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormato("pdf")}
-                aria-pressed={formato === "pdf"}
-                className={claseInterruptor(formato === "pdf")}
-              >
-                PDF
-              </button>
+              {(["csv", "pdf"] as const).map((opcion) => {
+                const activo = formato === opcion;
+                return (
+                  <button
+                    key={opcion}
+                    type="button"
+                    onClick={() => setFormato(opcion)}
+                    aria-pressed={activo}
+                    className={`relative min-h-10 flex-1 cursor-pointer rounded-lg px-4 text-sm transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none ${
+                      activo
+                        ? "font-semibold text-white"
+                        : "font-medium text-text-secondary hover:bg-surface-muted"
+                    }`}
+                  >
+                    {activo && (
+                      <motion.span
+                        layoutId="formato-exportacion-thumb"
+                        className="absolute inset-0 rounded-lg bg-[#003366]"
+                        transition={{
+                          type: "spring",
+                          stiffness: 550,
+                          damping: 40,
+                        }}
+                      />
+                    )}
+                    <span className="relative z-10 inline-flex items-center justify-center">
+                      {opcion === "csv" ? "CSV" : "PDF"}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
