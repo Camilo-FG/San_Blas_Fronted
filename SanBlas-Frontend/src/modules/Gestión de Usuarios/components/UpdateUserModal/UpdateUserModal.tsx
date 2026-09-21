@@ -197,6 +197,7 @@ const UpdateUserModal: React.FC<Props> = ({
           <form.Field
             name="correo"
             validators={{
+              onChange: ({ value }) => validarCorreo(value),
               onBlur: ({ value }) => validarCorreo(value),
               onSubmit: ({ value }) => validarCorreo(value),
             }}
