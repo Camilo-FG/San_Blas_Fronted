@@ -135,8 +135,6 @@ const limitarLugar = (valor: string): string =>
   soloLetras(valor).slice(0, MAX_CHARACTERS);
 const limitarDigitos = (valor: string): string =>
   valor.replace(/\D/g, "").slice(0, MAX_CHARACTERS);
-const limitarComprobante = (valor: string): string =>
-  valor.replace(/[^a-zA-Z0-9\-]/g, "").slice(0, MAX_CHARACTERS);
 
 const calcularEdad = (fecha: string): number | null => {
   const nacimiento = new Date(`${fecha}T00:00:00`);
@@ -1909,12 +1907,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </Label>
               <Input
                 type="text"
-                placeholder="Ej: SINPE-123456"
+                placeholder="Ej: 123456"
                 value={form.inscripcion.pago.numeroComprobanteSINPE}
                 onChange={(e) =>
                   updateForm(
                     "inscripcion.pago.numeroComprobanteSINPE",
-                    limitarComprobante(e.target.value),
+                    limitarDigitos(e.target.value),
                   )
                 }
               />
