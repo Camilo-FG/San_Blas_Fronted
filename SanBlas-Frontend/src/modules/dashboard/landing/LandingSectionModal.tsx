@@ -13,6 +13,10 @@ import { HeroPreview } from "./HeroPreview";
 import { HistoriaPreview } from "./HistoriaPreview";
 import { HorariosPreview } from "./HorariosPreview";
 import { SobreNosotrosPreview } from "./SobreNosotrosPreview";
+import { ContactoPreview } from "./ContactoPreview";
+import { BautizosPreview } from "./BautizosPreview";
+import { DonacionesPreview } from "./DonacionesPreview";
+import { ServiciosPreview } from "./ServiciosPreview";
 
 interface LandingSectionModalProps {
   title: string;
@@ -72,7 +76,19 @@ export default function LandingSectionModal({
   const esSobreNosotros = sectionKey === "sobre-nosotros";
   const esHistoria = sectionKey === "historia";
   const esHorarios = sectionKey === "horarios";
-  const tieneVisor = esHero || esSobreNosotros || esHistoria || esHorarios;
+  const esContacto = sectionKey === "contacto";
+  const esBautizos = sectionKey === "bautizos";
+  const esDonaciones = sectionKey === "donaciones";
+  const esServicios = sectionKey === "servicios";
+  const tieneVisor =
+    esHero ||
+    esSobreNosotros ||
+    esHistoria ||
+    esHorarios ||
+    esContacto ||
+    esBautizos ||
+    esDonaciones ||
+    esServicios;
   const imagenPreview =
     archivosImagen.imageUrl?.preview ||
     values.imageUrl ||
@@ -90,6 +106,17 @@ export default function LandingSectionModal({
   const bloquesHorarios = [1, 2, 3, 4].map((index) => ({
     titulo: values[`bloque${index}Titulo`] ?? "",
     filas: values[`bloque${index}Filas`] ?? "",
+  }));
+  // servicios pa la vista previa (lee los campos del formulario)
+  const serviciosPreview = [1, 2, 3, 4, 5].map((index) => ({
+    titulo: values[`servicio${index}Titulo`] ?? "",
+    descripcion: values[`servicio${index}Descripcion`] ?? "",
+    categoria: values[`servicio${index}Categoria`] ?? "",
+    boton: values[`servicio${index}Boton`] ?? "",
+    imagen:
+      archivosImagen[`servicio${index}Imagen`]?.preview ||
+      values[`servicio${index}Imagen`] ||
+      "",
   }));
   // fondo del volante: si adjuntó una nueva se previsualiza esa, si no la guardada o la por defecto
   const imagenHorariosPreview =
@@ -248,6 +275,60 @@ export default function LandingSectionModal({
           intro={values.intro ?? ""}
           imageUrl={imagenHorariosPreview}
           bloques={bloquesHorarios}
+          ampliadas={ampliadas}
+        />
+      );
+    }
+
+    if (esContacto) {
+      return (
+        <ContactoPreview
+          eyebrow={values.eyebrow ?? ""}
+          title={values.title ?? ""}
+          intro={values.intro ?? ""}
+          telefono={values.telefono ?? ""}
+          correo={values.correo ?? ""}
+          ubicacion={values.ubicacion ?? ""}
+          horariosAtencion={values.horariosAtencion ?? ""}
+          mapaUrl={values.mapaUrl ?? ""}
+          ampliadas={ampliadas}
+        />
+      );
+    }
+
+    if (esBautizos) {
+      return (
+        <BautizosPreview
+          title={values.title ?? ""}
+          intro={values.intro ?? ""}
+          requisitos={values.requisitos ?? ""}
+          charlas={values.charlas ?? ""}
+          solicitud={values.solicitud ?? ""}
+          ampliadas={ampliadas}
+        />
+      );
+    }
+
+    if (esDonaciones) {
+      return (
+        <DonacionesPreview
+          title={values.title ?? ""}
+          intro={values.intro ?? ""}
+          sinpe={values.sinpe ?? ""}
+          cuentaBancaria={values.cuentaBancaria ?? ""}
+          banco={values.banco ?? ""}
+          ampliadas={ampliadas}
+        />
+      );
+    }
+
+    if (esServicios) {
+      return (
+        <ServiciosPreview
+          eyebrow={values.eyebrow ?? ""}
+          title={values.title ?? ""}
+          intro={values.intro ?? ""}
+          items={serviciosPreview}
           ampliadas={ampliadas}
         />
       );
@@ -444,21 +525,32 @@ export default function LandingSectionModal({
                 className={`relative w-full overflow-hidden rounded-2xl outline-none ${
                   esHero
                     ? "aspect-video max-w-6xl bg-royal-blue"
-                    : esHistoria || esHorarios
+                    : esHistoria ||
+                        esHorarios ||
+                        esContacto ||
+                        esServicios
                       ? "h-[min(86vh,920px)] max-w-6xl bg-surface"
                       : "aspect-[16/11] max-w-6xl bg-surface"
                 }`}
                 role="dialog"
                 aria-modal="true"
-                aria-label={
+                aria-label={`Vista previa ampliada de ${
                   esHero
-                    ? "Vista previa ampliada del hero"
+                    ? "hero"
                     : esHistoria
-                      ? "Vista previa ampliada de Historia y legado"
+                      ? "Historia y legado"
                       : esHorarios
-                        ? "Vista previa ampliada de Horarios"
-                        : "Vista previa ampliada de Sobre nosotros"
-                }
+                        ? "Horarios"
+                        : esContacto
+                          ? "Contacto"
+                          : esBautizos
+                            ? "Bautizos"
+                            : esDonaciones
+                              ? "Donaciones"
+                              : esServicios
+                                ? "Servicios"
+                                : "Sobre nosotros"
+                }`}
                 initial={reducirMovimiento ? false : { opacity: 0, scale: 0.94, y: 18 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={

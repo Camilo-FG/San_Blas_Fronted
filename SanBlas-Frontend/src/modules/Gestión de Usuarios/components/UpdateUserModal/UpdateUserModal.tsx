@@ -147,10 +147,8 @@ const UpdateUserModal: React.FC<Props> = ({
     if (!/[a-z]/.test(v)) faltantes.push('una minúscula');
     if (!/[A-Z]/.test(v)) faltantes.push('una mayúscula');
     if (!/\d/.test(v)) faltantes.push('un número');
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(v))
-      faltantes.push('un carácter especial');
     if (faltantes.length > 0) {
-      return `Falta: ${faltantes.join(', ')}.`; // le dice exactamente qué regla le falta
+      return `Falta: ${faltantes.join(', ')}.`;
     }
     return undefined;
   };
@@ -267,11 +265,10 @@ const UpdateUserModal: React.FC<Props> = ({
                 if (/[a-z]/.test(valor)) puntos += 1;
                 if (/[A-Z]/.test(valor)) puntos += 1;
                 if (/\d/.test(valor)) puntos += 1;
-                if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(valor)) puntos += 1;
                 const fortaleza =
-                  puntos <= 2
+                  puntos <= 1
                     ? { texto: 'Débil', clase: 'bg-red-500' }
-                    : puntos <= 4
+                    : puntos <= 3
                       ? { texto: 'Media', clase: 'bg-amber-500' }
                       : { texto: 'Fuerte', clase: 'bg-emerald-500' };
                 return (
@@ -300,7 +297,7 @@ const UpdateUserModal: React.FC<Props> = ({
                         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong">
                           <div
                             className={`h-full rounded-full transition-all ${fortaleza.clase}`}
-                            style={{ width: `${(puntos / 5) * 100}%` }}
+                            style={{ width: `${(puntos / 4) * 100}%` }}
                           />
                         </div>
                         <span className="text-xs font-semibold text-text-muted">
@@ -309,7 +306,7 @@ const UpdateUserModal: React.FC<Props> = ({
                       </div>
                     ) : null}
                     <p className="mt-1 text-xs text-text-muted">
-                      Incluya mayúscula, minúscula, número y carácter especial.
+                      Incluya mayúscula, minúscula y número.
                     </p>
                     <FieldError message={field.state.meta.errors[0]} />
                   </div>

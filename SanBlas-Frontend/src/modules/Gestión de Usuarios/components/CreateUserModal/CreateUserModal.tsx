@@ -42,26 +42,23 @@ const obtenerReglasFaltantes = (v: string): string[] => {
   if (!/[a-z]/.test(v)) faltantes.push('una minúscula');
   if (!/[A-Z]/.test(v)) faltantes.push('una mayúscula');
   if (!/\d/.test(v)) faltantes.push('un número');
-  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(v))
-    faltantes.push('un carácter especial');
   return faltantes;
 };
 
-// calcula la fortaleza de 0 a 5 según cuántas reglas cumple (pa la barrita visual)
+// calcula la fortaleza de 0 a 4 según cuántas reglas cumple (pa la barrita visual)
 const calcularFortaleza = (v: string): number => {
   let puntos = 0;
   if (v.length >= 8) puntos += 1;
   if (/[a-z]/.test(v)) puntos += 1;
   if (/[A-Z]/.test(v)) puntos += 1;
   if (/\d/.test(v)) puntos += 1;
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(v)) puntos += 1;
   return puntos;
 };
 
 // textos y colores de la barrita según el puntaje
 const describirFortaleza = (puntos: number): { texto: string; clase: string } => {
-  if (puntos <= 2) return { texto: 'Débil', clase: 'bg-red-500' };
-  if (puntos <= 4) return { texto: 'Media', clase: 'bg-amber-500' };
+  if (puntos <= 1) return { texto: 'Débil', clase: 'bg-red-500' };
+  if (puntos <= 3) return { texto: 'Media', clase: 'bg-amber-500' };
   return { texto: 'Fuerte', clase: 'bg-emerald-500' };
 };
 
@@ -346,7 +343,7 @@ const CreateUserModal: React.FC<Props> = ({
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong">
                         <div
                           className={`h-full rounded-full transition-all ${fortaleza.clase}`}
-                          style={{ width: `${(puntos / 5) * 100}%` }}
+                          style={{ width: `${(puntos / 4) * 100}%` }}
                         />
                       </div>
                       <span className="text-xs font-semibold text-text-muted">
@@ -355,7 +352,7 @@ const CreateUserModal: React.FC<Props> = ({
                     </div>
                   ) : null}
                   <p className="mt-1 text-xs text-text-muted">
-                    Incluya mayúscula, minúscula, número y carácter especial.
+                    Incluya mayúscula, minúscula y número.
                   </p>
                   <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
                 </div>

@@ -21,11 +21,6 @@ const normalizarFecha = (valor: unknown): string | null => {
   return String(valor);
 };
 
-const normalizarFechaSolicitud = (valor: string | undefined): string => {
-  if (!valor) return "";
-  return valor.split("T")[0];
-};
-
 const normalizarNivel = (nivel: string | null | undefined): string => {
   if (!nivel) return "";
 
@@ -44,15 +39,22 @@ export const mapEstadoBackendToFrontend = (
   if (estadoLower === "pendiente") return "pendiente";
   if (estadoLower === "aprobada" || estadoLower === "aprobado") return "aprobado";
   if (estadoLower === "rechazada" || estadoLower === "rechazado") return "rechazado";
+  if (
+    estadoLower === "requiere_modificacion" ||
+    estadoLower === "modificación solicitada" ||
+    estadoLower === "modificacion solicitada"
+  )
+    return "requiere_modificacion";
 
   return "pendiente";
 };
 
 export const mapEstadoFrontendToBackend = (
-  estado: "aprobado" | "rechazado" | "pendiente",
+  estado: "aprobado" | "rechazado" | "pendiente" | "requiere_modificacion",
 ): string => {
   if (estado === "aprobado") return "Aprobada";
   if (estado === "rechazado") return "Rechazada";
+  if (estado === "requiere_modificacion") return "requiere_modificacion";
   return "Pendiente";
 };
 
@@ -166,7 +168,7 @@ export const mapResumenToEnrollmentRecord = (
     id: resumen.id,
     codigoSolicitud: `CAT-${resumen.id}`,
     estado: mapEstadoBackendToFrontend(resumen.estado),
-    fechaSolicitud: resumen.fechaSolicitud.split("T")[0],
+    fechaSolicitud: resumen.fechaSolicitud,
     catequesis: {
       centroCatequesis: resumen.centroCatequesis,
       nivelAInscribirse: resumen.nivelAInscribirse,
@@ -249,7 +251,8 @@ export const mapDetalleToEnrollmentRecord = (
   id: detalle.id,
   codigoSolicitud: `CAT-${detalle.id}`,
   estado: mapEstadoBackendToFrontend(detalle.estado),
-  fechaSolicitud: normalizarFechaSolicitud(detalle.fechaSolicitud),
+  fechaSolicitud: detalle.fechaSolicitud ?? "",
+  fechaActualizacionEstado: detalle.fechaActualizacionEstado ?? null,
   observacionAdministrativa: detalle.observacionAdministrativa ?? null,
   catequesis: {
     centroCatequesis: detalle.centroCatequesis,

@@ -6,8 +6,10 @@ import {
     Mail,
     Pencil,
     Phone,
+    SlidersHorizontal,
     Trash2,
     User,
+    X,
 } from 'lucide-react';
 import {
     createColumnHelper,
@@ -25,6 +27,7 @@ import { PerfilUsuarioCard } from '../PerfilUsuarioCard/PerfilUsuarioCard';
 import { useUpdateUser } from '../../hooks/hooksUsuarios/useUpdateUser';
 import { useDeleteUser } from '../../hooks/hooksUsuarios/useDeleteUser';
 import { normalizarTexto } from '../../Utils/normalizarTexto';
+import type { FiltrosAvanzados } from '../../hooks/hooksUsuarios/useGetUsuariosPaginados';
 import { AdminRecordCard } from '../../../../shared/components/admin/AdminRecordCard';
 import {
     AdminModule,
@@ -45,6 +48,7 @@ import {
     ErrorMessage,
     Modal,
     PageLoader,
+    Select,
     cn,
     useToast,
 } from '../../../../shared/ui';
@@ -59,11 +63,15 @@ interface UserListProps {
     pagina: number;
     limite: number;
     busqueda: string;
+    filtros: FiltrosAvanzados;
+    filtrosActivos: number;
     cargando: boolean;
     error: string | null;
     setPagina: (page: number) => void;
     setLimite: (size: number) => void;
     setBusqueda: (search: string) => void;
+    aplicarFiltros: (filtros: FiltrosAvanzados) => void;
+    limpiarFiltros: () => void;
 }
 
 const TAMANOS_PAGINA = [10, 25, 50] as const;
@@ -105,11 +113,15 @@ export const UserList = ({
     pagina,
     limite,
     busqueda,
+    filtros,
+    filtrosActivos,
     cargando,
     error,
     setPagina,
     setLimite,
     setBusqueda,
+    aplicarFiltros,
+    limpiarFiltros,
 }: UserListProps) => {
     const { user: usuarioSesion } = useAuth();
     const { showToast } = useToast();
@@ -119,6 +131,9 @@ export const UserList = ({
     const [usuarioAEliminar, setUsuarioAEliminar] = useState<Usuario | null>(null);
     const { actualizarUsuario } = useUpdateUser();
     const { eliminarUsuario, loading: eliminando } = useDeleteUser();
+    const [mostrarFiltros, setMostrarFiltros] = useState(false);
+    const [filtroRolTemp, setFiltroRolTemp] = useState(filtros.role ?? '');
+    const [filtroEstadoTemp, setFiltroEstadoTemp] = useState(filtros.state ?? '');
 
     const columns = useMemo(
         () => [
@@ -239,10 +254,89 @@ export const UserList = ({
                     aria-label="Buscar usuarios"
                     className="min-w-[200px] flex-1"
                 />
-                <Button variant="royal" className="shrink-0" onClick={onAddUser}>
-                    + Agregar usuario
-                </Button>
+                <div className="relative flex items-center gap-2">
+                    <Button
+                        variant={mostrarFiltros ? 'primary' : 'secondary'}
+                        className="shrink-0 gap-1.5"
+                        onClick={() => setMostrarFiltros((p) => !p)}
+                    >
+                        <SlidersHorizontal size={16} />
+                        <span className="max-sm:hidden">Filtros</span>
+                        {filtrosActivos > 0 && (
+                            <Badge variant="info" className="ml-1 text-[10px]">
+                                {filtrosActivos}
+                            </Badge>
+                        )}
+                    </Button>
+                    <Button variant="royal" className="shrink-0" onClick={onAddUser}>
+                        + Agregar usuario
+                    </Button>
+                </div>
             </AdminToolbar>
+
+            {mostrarFiltros && (
+                <div className="flex flex-col gap-3 rounded-xl border border-border-strong bg-surface-muted p-4 sm:flex-row sm:items-end">
+                    <div className="flex-1">
+                        <label className="mb-1.5 block text-xs font-bold text-text-muted uppercase">
+                            Rol
+                        </label>
+                        <Select
+                            value={filtroRolTemp}
+                            onChange={(e) => setFiltroRolTemp(e.target.value)}
+                            className="min-h-10"
+                        >
+                            <option value="">Todos los roles</option>
+                            {roles.map((rol) => (
+                                <option key={rol.id} value={rol.clave}>
+                                    {rol.nombre}
+                                </option>
+                            ))}
+                        </Select>
+                    </div>
+                    <div className="flex-1">
+                        <label className="mb-1.5 block text-xs font-bold text-text-muted uppercase">
+                            Estado
+                        </label>
+                        <Select
+                            value={filtroEstadoTemp}
+                            onChange={(e) => setFiltroEstadoTemp(e.target.value)}
+                            className="min-h-10"
+                        >
+                            <option value="">Todos</option>
+                            <option value="active">Activo</option>
+                            <option value="inactive">Inactivo</option>
+                        </Select>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="royal"
+                            className="min-h-10"
+                            onClick={() =>
+                                aplicarFiltros({
+                                    role: filtroRolTemp || undefined,
+                                    state: filtroEstadoTemp || undefined,
+                                })
+                            }
+                        >
+                            Aplicar
+                        </Button>
+                        {(filtroRolTemp || filtroEstadoTemp) && (
+                            <Button
+                                variant="secondary"
+                                className="min-h-10 gap-1"
+                                onClick={() => {
+                                    setFiltroRolTemp('');
+                                    setFiltroEstadoTemp('');
+                                    limpiarFiltros();
+                                }}
+                            >
+                                <X size={14} />
+                                Limpiar
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {cargando && users.length === 0 ? (
                 <PageLoader />

@@ -1,5 +1,4 @@
-import { useEffect, type ReactNode } from "react";
-import FocusTrap from "focus-trap-react";
+import type { ReactNode } from "react";
 import {
   AlertCircle,
   CalendarDays,
@@ -11,16 +10,19 @@ import {
   MapPin,
   Phone,
   User,
-  X,
   XCircle,
 } from "lucide-react";
 
 import { obtenerEtiquetaNivelCatequesis } from "../../../catequesis/constants/nivelesCatequesis";
+import { formatearFechaEnvio } from "../../../../shared/utils/fechas";
 import { resolveUploadedFileUrl } from "../../../../utils/files";
+import { AdminRecordDetailSheet } from "../../../../shared/components/admin/AdminRecordDetailSheet";
 import {
+  Badge,
   Button,
   ErrorMessage,
   EtiquetaSeccion,
+  type BadgeVariant,
 } from "../../../../shared/ui";
 import type {
   CatequesisEnrollmentRecord,
@@ -35,6 +37,7 @@ type DetalleSolicitudCatequesisModalProps = {
   cerrarConEsc?: boolean;
   onApprove: () => void;
   onRechazar: () => void;
+  onSolicitarModificacion: () => void;
   onClose: () => void;
 };
 
@@ -65,6 +68,19 @@ const obtenerTextoEstado = (estado?: string | null) => {
       return "Requiere modificación";
     default:
       return "Desconocido";
+  }
+};
+
+const getEstadoBadgeVariant = (estado?: string | null): BadgeVariant => {
+  switch (normalizarEstado(estado)) {
+    case "aprobado":
+      return "success";
+    case "rechazado":
+      return "danger";
+    case "requiere_modificacion":
+      return "info";
+    default:
+      return "warning";
   }
 };
 
@@ -154,77 +170,64 @@ export function DetalleSolicitudCatequesisModal({
   cerrarConEsc = true,
   onApprove,
   onRechazar,
+  onSolicitarModificacion,
   onClose,
 }: DetalleSolicitudCatequesisModalProps) {
   const estado = normalizarEstado(solicitud.estado);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && cerrarConEsc) onClose();
-    };
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [cerrarConEsc, onClose]);
-
   return (
-    <>
-      <div
-        className="fixed inset-0 z-[1300] bg-[#060f20] opacity-70"
-        aria-hidden="true"
-      />
-
-      <FocusTrap
-        focusTrapOptions={{
-          clickOutsideDeactivates: false,
-          escapeDeactivates: false,
-          allowOutsideClick: () => true,
-        }}
-      >
-        <div
-          className="fixed inset-0 z-[1300]"
-          role="presentation"
-          onClick={onClose}
-        >
-          <div className="flex h-full items-end justify-center md:items-center md:p-4">
-            <div
-              className="relative z-10 flex max-h-[92vh] w-full flex-col rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
-              style={{ fontFamily: "'Geist', sans-serif" }}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Datos de la solicitud"
-              onClick={(event) => event.stopPropagation()}
+    <AdminRecordDetailSheet
+      open
+      title={nombreCompleto(solicitud.catequizando) || "Sin nombre"}
+      subtitle={`Solicitud de catequesis · ${solicitud.codigoSolicitud || `CAT-${solicitud.id}`}`}
+      badges={
+        <Badge variant={getEstadoBadgeVariant(estado)}>
+          {obtenerTextoEstado(solicitud.estado)}
+        </Badge>
+      }
+      cerrarConEsc={cerrarConEsc}
+      onClose={onClose}
+      actions={
+        estado !== "pendiente" ? (
+          <p className="m-0 text-sm font-medium text-[#16243c]">
+            {obtenerTextoEstado(solicitud.estado)}
+            {estado === "aprobado" || estado === "rechazado"
+              ? " (permanente)"
+              : ""}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+            <Button
+              variant="royal"
+              className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+              disabled={guardando}
+              onClick={onApprove}
             >
-              <header className="flex shrink-0 items-center justify-between gap-4 rounded-t-[16px] bg-[#f1f5fa] px-6 py-4">
-                <div className="min-w-0">
-                  <p className="m-0 text-[11px] font-semibold tracking-[0.22em] text-[#aa7323] uppercase">
-                    Solicitud
-                  </p>
-                  <h2
-                    className="m-0 mt-1 text-[24px] leading-tight font-semibold tracking-tight text-[#16243c]"
-                    style={{ fontFamily: "'Geist', sans-serif" }}
-                  >
-                    Datos de la solicitud
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Cerrar detalle"
-                  className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
-                >
-                  <X size={16} />
-                </button>
-              </header>
-
-              <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-6">
-                {detalleError && <ErrorMessage message={detalleError} />}
-                {accionError && <ErrorMessage message={accionError} />}
+              Aprobar
+            </Button>
+            <Button
+              variant="secondary"
+              className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
+              disabled={guardando}
+              onClick={onSolicitarModificacion}
+            >
+              Solicitar modificación
+            </Button>
+            <Button
+              variant="secondary"
+              className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
+              disabled={guardando}
+              onClick={onRechazar}
+            >
+              Rechazar
+            </Button>
+          </div>
+        )
+      }
+    >
+      <div className="flex flex-col gap-4">
+        {detalleError && <ErrorMessage message={detalleError} />}
+        {accionError && <ErrorMessage message={accionError} />}
 
                 <div className="grid items-stretch gap-4 md:grid-cols-2">
                   <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
@@ -329,17 +332,30 @@ export function DetalleSolicitudCatequesisModal({
                         solicitud.codigoSolicitud || `CAT-${solicitud.id}`,
                       )}
                     />
-                    <Campo
-                      label="Fecha de ingreso"
-                      value={valorOGuion(solicitud.fechaSolicitud)}
-                      tabular
-                      icon={
-                        <CalendarDays
-                          size={16}
-                          className="mt-0.5 shrink-0 text-[#aa7323]"
-                        />
-                      }
+<Campo
+                  label="Fecha de ingreso"
+                  value={formatearFechaEnvio(solicitud.fechaSolicitud)}
+                  tabular
+                  icon={
+                    <CalendarDays
+                      size={16}
+                      className="mt-0.5 shrink-0 text-[#aa7323]"
                     />
+                  }
+                />
+                <Campo
+                  label="Fecha de revisión"
+                  value={formatearFechaEnvio(
+                    solicitud.fechaActualizacionEstado,
+                  )}
+                  tabular
+                  icon={
+                    <CalendarDays
+                      size={16}
+                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                    />
+                  }
+                />
                   </div>
                 </section>
 
@@ -565,40 +581,6 @@ export function DetalleSolicitudCatequesisModal({
                   </div>
                 )}
               </div>
-
-              <footer className="shrink-0 rounded-b-[16px] border-t border-[#16243c]/10 bg-[#f1f5fa] px-6 py-4">
-                {estado !== "pendiente" ? (
-                  <p className="m-0 text-sm font-medium text-[#16243c]">
-                    {obtenerTextoEstado(solicitud.estado)}
-                    {estado === "aprobado" || estado === "rechazado"
-                      ? " (permanente)"
-                      : ""}
-                  </p>
-                ) : (
-                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                    <Button
-                      variant="royal"
-                      className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
-                      disabled={guardando}
-                      onClick={onApprove}
-                    >
-                      Aprobar
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
-                      disabled={guardando}
-                      onClick={onRechazar}
-                    >
-                      Rechazar
-                    </Button>
-                  </div>
-                )}
-              </footer>
-            </div>
-          </div>
-        </div>
-      </FocusTrap>
-    </>
+    </AdminRecordDetailSheet>
   );
 }

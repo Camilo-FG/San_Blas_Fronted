@@ -89,9 +89,6 @@ export interface EncargadoCatequesisData {
   cedula: string;
   telefono: string;
   correo: string;
-  direccion: {
-    direccionExacta: string | null;
-  };
   parentesco: string;
 }
 

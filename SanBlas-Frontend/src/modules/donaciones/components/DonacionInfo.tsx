@@ -11,6 +11,8 @@ type Method = {
 };
 
 interface Props {
+  title: string;
+  intro: string;
   sinpe: string;
   cuentaBancaria: string;
   banco: string;
@@ -75,6 +77,8 @@ function PaymentCard({ method }: { method: Method }) {
 }
 
 export default function DonacionInfo({
+  title,
+  intro,
   sinpe,
   cuentaBancaria,
   banco,
@@ -115,11 +119,10 @@ export default function DonacionInfo({
           </span>
 
           <h2 className="font-heading text-[clamp(1.6rem,3.5vw,2.1rem)] font-bold leading-tight text-royal-gold">
-            Apoya a Nuestra Parroquia
+            {title}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-[0.95rem] leading-[1.75] text-white/90 sm:text-base">
-            Tu generosidad nos permite continuar con nuestra misión. Puedes
-            realizar tu donación económica mediante los siguientes medios.
+            {intro}
           </p>
         </div>
       </div>

@@ -269,6 +269,32 @@ export function validarFormularioLanding(
     }
   }
 
+  // valida que haya al menos un servicio completo (el backend exige mínimo 1)
+  if (sectionKey === "servicios") {
+    const alguno = [1, 2, 3, 4, 5].some((i) =>
+      (values[`servicio${i}Titulo`] ?? "").trim(),
+    );
+    if (!alguno) {
+      errores.servicio1Titulo = "Incluya al menos un servicio.";
+    }
+    // si un servicio tiene título, debe traer descripción, categoría y botón
+    for (let i = 1; i <= 5; i += 1) {
+      if (!(values[`servicio${i}Titulo`] ?? "").trim()) continue;
+      if (!(values[`servicio${i}Descripcion`] ?? "").trim()) {
+        errores[`servicio${i}Descripcion`] =
+          "La descripción del servicio es obligatoria.";
+      }
+      if (!(values[`servicio${i}Categoria`] ?? "").trim()) {
+        errores[`servicio${i}Categoria`] =
+          "La categoría del servicio es obligatoria.";
+      }
+      if (!(values[`servicio${i}Boton`] ?? "").trim()) {
+        errores[`servicio${i}Boton`] =
+          "El texto del botón es obligatorio.";
+      }
+    }
+  }
+
   return errores;
 }
 

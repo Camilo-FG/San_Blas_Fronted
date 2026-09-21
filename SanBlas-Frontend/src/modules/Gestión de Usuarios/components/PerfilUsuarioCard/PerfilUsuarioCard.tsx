@@ -23,7 +23,6 @@ type PerfilUsuarioCardProps = {
   titulo?: string;
   className?: string;
   espacioParaCerrar?: boolean;
-  // el padre se entera cuando se desactiva la cuenta para refrescar el listado
   onEstadoCambiado?: (activo: boolean) => void;
 };
 
@@ -41,7 +40,6 @@ export function PerfilUsuarioCard({
   const [activo, setActivo] = useState(usuario.state);
   const [confirmando, setConfirmando] = useState(false);
 
-  // si cambia el usuario mostrado (modal que reutiliza el componente) reseteamos el estado
   useEffect(() => {
     setActivo(usuario.state);
     setConfirmando(false);
@@ -51,7 +49,6 @@ export function PerfilUsuarioCard({
   const correo = usuario.email || "—";
   const rol = etiquetaRol(usuario.role, roles);
 
-  // comparamos id y email porque el del modal viene del listado y el de sesión de otra fuente
   const esUsuarioActual =
     (usuarioSesion?.id != null && usuario.id === usuarioSesion.id) ||
     (usuarioSesion?.email != null &&

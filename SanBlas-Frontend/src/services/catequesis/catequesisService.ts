@@ -131,7 +131,7 @@ export const crearSolicitudCatequesis = async (
 
 export const actualizarEstadoSolicitud = async (
   id: number,
-  estado: "aprobado" | "rechazado" | "pendiente",
+  estado: "aprobado" | "rechazado" | "pendiente" | "requiere_modificacion",
   observacion?: string,
 ): Promise<ActualizarEstadoBackendResponse> => {
   try {
@@ -155,6 +155,21 @@ export const agregarObservacionAdministrativa = async (
   observacion: string,
 ): Promise<ActualizarEstadoBackendResponse> => {
   return actualizarEstadoSolicitud(id, estado, observacion);
+};
+
+export const consultarSolicitudesPorCorreo = async (
+  correo: string,
+): Promise<CatequesisEnrollmentRecord[]> => {
+  try {
+    const { data } = await apiClient.get<{
+      inscripciones: InscripcionResumenBackend[];
+      total: number;
+    }>(`${BASE}/consulta`, { params: { correo } });
+
+    return (data.inscripciones ?? []).map(mapResumenToEnrollmentRecord);
+  } catch (error) {
+    handleApiError(error);
+  }
 };
 
 const extraerNombreArchivo = (contentDisposition?: string): string | null => {
