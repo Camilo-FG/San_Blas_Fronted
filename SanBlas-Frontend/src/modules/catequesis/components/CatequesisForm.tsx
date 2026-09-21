@@ -210,6 +210,18 @@ const validarArchivoFeBautismo = (file: File): string | null => {
   return null;
 };
 
+const MAX_TAMANO_COMPROBANTE = 5 * 1024 * 1024;
+
+const validarArchivoComprobante = (file: File): string | null => {
+  if (!file.type.startsWith("image/")) {
+    return "El comprobante debe ser una imagen (JPG, PNG u otro formato de imagen).";
+  }
+  if (file.size > MAX_TAMANO_COMPROBANTE) {
+    return "La imagen no debe superar los 5 MB.";
+  }
+  return null;
+};
+
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const progressBarRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState<CatequesisEnrollmentData>(
@@ -230,13 +242,24 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   >(null);
   const [feBautismoInputKey, setFeBautismoInputKey] = useState(0);
 
+  const [errorArchivoComprobante, setErrorArchivoComprobante] = useState<
+    string | null
+  >(null);
+  const [vistaPreviaComprobante, setVistaPreviaComprobante] = useState<
+    string | null
+  >(null);
+  const [comprobanteInputKey, setComprobanteInputKey] = useState(0);
+
   useEffect(() => {
     return () => {
       if (vistaPreviaFeBautismo) {
         URL.revokeObjectURL(vistaPreviaFeBautismo);
       }
+      if (vistaPreviaComprobante) {
+        URL.revokeObjectURL(vistaPreviaComprobante);
+      }
     };
-  }, [vistaPreviaFeBautismo]);
+  }, [vistaPreviaFeBautismo, vistaPreviaComprobante]);
 
   const scrollToProgressBar = () => {
     requestAnimationFrame(() => {
@@ -451,6 +474,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
     if (!form.inscripcion.pago.archivoComprobante) {
       newErrors.archivoComprobante = "Debe adjuntar el comprobante de pago.";
+    } else {
+      const errorComprobante = validarArchivoComprobante(
+        form.inscripcion.pago.archivoComprobante,
+      );
+      if (errorComprobante) {
+        newErrors.archivoComprobante = errorComprobante;
+      }
     }
 
     if (tieneMadre) {
@@ -622,8 +652,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       if (!form.inscripcion.pago.numeroComprobanteSINPE.trim())
         stepErrors.numeroComprobanteSINPE =
           "Digite el número de comprobante SINPE.";
-      if (!form.inscripcion.pago.archivoComprobante)
+      if (!form.inscripcion.pago.archivoComprobante) {
         stepErrors.archivoComprobante = "Debe adjuntar el comprobante de pago.";
+      } else {
+        const errorComprobante = validarArchivoComprobante(
+          form.inscripcion.pago.archivoComprobante,
+        );
+        if (errorComprobante) {
+          stepErrors.archivoComprobante = errorComprobante;
+        }
+      }
     }
 
     if (step === 8 && !aceptaLineamientos) {
@@ -710,6 +748,40 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     setErrorArchivoFeBautismo(null);
     setVistaPreviaFeBautismo(null);
     setFeBautismoInputKey((key) => key + 1);
+  };
+
+  const quitarComprobante = () => {
+    updateForm("inscripcion.pago.archivoComprobante", null);
+    setErrorArchivoComprobante(null);
+    setVistaPreviaComprobante(null);
+    setComprobanteInputKey((key) => key + 1);
+  };
+
+  const manejarSeleccionComprobante = (file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    const mensajeError = validarArchivoComprobante(file);
+    if (mensajeError) {
+      setErrorArchivoComprobante(mensajeError);
+      updateForm("inscripcion.pago.archivoComprobante", null);
+      if (vistaPreviaComprobante) {
+        URL.revokeObjectURL(vistaPreviaComprobante);
+        setVistaPreviaComprobante(null);
+      }
+      setComprobanteInputKey((key) => key + 1);
+      return;
+    }
+
+    setErrorArchivoComprobante(null);
+    updateForm("inscripcion.pago.archivoComprobante", file);
+    setErrors((prev) => {
+      const siguiente = { ...prev };
+      delete siguiente.archivoComprobante;
+      return siguiente;
+    });
+    setVistaPreviaComprobante(URL.createObjectURL(file));
   };
 
   return (
@@ -1739,20 +1811,46 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 Archivo del comprobante<span className="text-red-500"> *</span>
               </Label>
               <Input
+                key={comprobanteInputKey}
                 type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
+                accept="image/*"
                 className={fileInputClass}
                 onChange={(e) =>
-                  updateForm(
-                    "inscripcion.pago.archivoComprobante",
-                    e.target.files?.[0] || null,
-                  )
+                  manejarSeleccionComprobante(e.target.files?.[0] || null)
                 }
               />
-              {errors.archivoComprobante && (
+              {(errorArchivoComprobante || errors.archivoComprobante) && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  ⚠ {errors.archivoComprobante}
+                  ⚑ {errorArchivoComprobante || errors.archivoComprobante}
                 </p>
+              )}
+              {vistaPreviaComprobante &&
+                form.inscripcion.pago.archivoComprobante instanceof File && (
+                <div className="mt-1 flex items-center gap-3 rounded-xl border border-border bg-white p-2.5 sm:max-w-md">
+                  <img
+                    src={vistaPreviaComprobante}
+                    alt="Vista previa del comprobante"
+                    className="h-20 w-16 shrink-0 rounded-lg border border-border object-cover shadow-sm"
+                  />
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <p className="truncate text-xs font-bold text-royal-blue">
+                      {form.inscripcion.pago.archivoComprobante.name}
+                    </p>
+                    <p className="m-0 text-[0.72rem] text-text-muted">
+                      {(form.inscripcion.pago.archivoComprobante.size / 1024).toFixed(
+                        0,
+                      )}{" "}
+                      KB
+                    </p>
+                    <button
+                      type="button"
+                      onClick={quitarComprobante}
+                      className="cursor-pointer self-start rounded-lg border-0 bg-transparent p-0 text-xs font-extrabold text-red-600 transition-colors hover:text-red-700 hover:underline"
+                    >
+                      Quitar archivo
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>

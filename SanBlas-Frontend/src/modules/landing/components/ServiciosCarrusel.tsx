@@ -244,6 +244,11 @@ export default function ServiciosCarousel() {
                           height={176}
                           loading="lazy"
                           decoding="async"
+                          onError={(e) => {
+                            const img = e.currentTarget;
+                            img.onerror = null;
+                            img.src = "/servicio-placeholder.jpg";
+                          }}
                         />
 
                         <span className="absolute left-4 top-4 z-[2] rounded-full bg-white/95 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#73522f]">
@@ -366,6 +371,11 @@ export default function ServiciosCarousel() {
                   height={240}
                   loading="lazy"
                   decoding="async"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    img.onerror = null;
+                    img.src = "/servicio-placeholder.jpg";
+                  }}
                 />
 
                 <button

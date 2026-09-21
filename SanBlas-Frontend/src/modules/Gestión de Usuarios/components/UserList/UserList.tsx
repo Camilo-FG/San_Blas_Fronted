@@ -45,6 +45,7 @@ import {
     Badge,
     Button,
     ConfirmacionAccionModal,
+    EmptyState,
     ErrorMessage,
     Modal,
     PageLoader,
@@ -392,9 +393,20 @@ export const UserList = ({
                                         <AdminTableRow>
                                             <AdminTableCell
                                                 colSpan={columns.length}
-                                                className="py-10 text-center text-text-muted"
+                                                className="py-10"
                                             >
-                                                No se encontraron usuarios
+                                                <EmptyState
+                                                    title={
+                                                        busqueda.trim() || filtrosActivos > 0
+                                                            ? 'No se encontraron resultados'
+                                                            : 'No hay usuarios registrados'
+                                                    }
+                                                    description={
+                                                        busqueda.trim() || filtrosActivos > 0
+                                                            ? `No hubo coincidencias para "${busqueda.trim() || "filtros aplicados"}". Intente ajustar o limpiar los criterios de búsqueda.`
+                                                            : undefined
+                                                    }
+                                                />
                                             </AdminTableCell>
                                         </AdminTableRow>
                                     )}
@@ -405,9 +417,18 @@ export const UserList = ({
 
                     <div className="flex flex-col gap-2.5 md:hidden">
                         {table.getRowModel().rows.length === 0 ? (
-                            <p className="m-0 rounded-2xl border border-border-strong bg-surface px-4 py-10 text-center text-sm text-text-muted">
-                                No se encontraron usuarios
-                            </p>
+                            <EmptyState
+                                title={
+                                    busqueda.trim() || filtrosActivos > 0
+                                        ? 'No se encontraron resultados'
+                                        : 'No hay usuarios registrados'
+                                }
+                                description={
+                                    busqueda.trim() || filtrosActivos > 0
+                                        ? `No hubo coincidencias para "${busqueda.trim() || "filtros aplicados"}". Intente ajustar o limpiar los criterios de búsqueda.`
+                                        : undefined
+                                }
+                            />
                         ) : (
                             table.getRowModel().rows.map((row) => {
                                 const usuario = row.original;
