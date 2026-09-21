@@ -1305,6 +1305,35 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
                   const seleccionaSi = valor === "si";
                   setTieneMadre(seleccionaSi);
+
+                  if (
+                    seleccionaSi &&
+                    form.inscripcion.parentesco === "Madre"
+                  ) {
+                    const encargado = form.inscripcion.personaQueInscribe;
+                    setForm((prev) => ({
+                      ...prev,
+                      madreCatequizando: {
+                        ...prev.madreCatequizando,
+                        nombre:
+                          prev.madreCatequizando.nombre ||
+                          encargado.nombre ||
+                          "",
+                        primerApellido:
+                          prev.madreCatequizando.primerApellido ||
+                          encargado.primerApellido ||
+                          "",
+                        segundoApellido:
+                          prev.madreCatequizando.segundoApellido ||
+                          encargado.segundoApellido ||
+                          "",
+                        telefono:
+                          prev.madreCatequizando.telefono ||
+                          encargado.telefono ||
+                          "",
+                      },
+                    }));
+                  }
                   setErrors((prev) => {
                     const siguiente = { ...prev };
                     delete siguiente.tieneMadre;
@@ -1505,6 +1534,35 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
                   const seleccionaSi = valor === "si";
                   setTienePadre(seleccionaSi);
+
+                  if (
+                    seleccionaSi &&
+                    form.inscripcion.parentesco === "Padre"
+                  ) {
+                    const encargado = form.inscripcion.personaQueInscribe;
+                    setForm((prev) => ({
+                      ...prev,
+                      padreCatequizando: {
+                        ...prev.padreCatequizando,
+                        nombre:
+                          prev.padreCatequizando.nombre ||
+                          encargado.nombre ||
+                          "",
+                        primerApellido:
+                          prev.padreCatequizando.primerApellido ||
+                          encargado.primerApellido ||
+                          "",
+                        segundoApellido:
+                          prev.padreCatequizando.segundoApellido ||
+                          encargado.segundoApellido ||
+                          "",
+                        telefono:
+                          prev.padreCatequizando.telefono ||
+                          encargado.telefono ||
+                          "",
+                      },
+                    }));
+                  }
                   setErrors((prev) => {
                     const siguiente = { ...prev };
                     delete siguiente.tienePadre;
