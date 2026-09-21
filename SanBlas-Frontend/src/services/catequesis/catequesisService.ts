@@ -52,12 +52,15 @@ export interface HistorialInscripcionCatequesis {
   estado: string;
   fechaSolicitud: string;
   telefonoEncargada: string;
+  nombreEncargado?: string;
   observacionAdministrativa?: string | null;
   fechaActualizacionEstado?: string | null;
+  revisor?: string | null;
 }
 
 export const obtenerHistorialCatequesis = async (params?: {
   estado?: string;
+  encargado?: string;
   desde?: string;
   hasta?: string;
 }): Promise<{
@@ -131,7 +134,7 @@ export const crearSolicitudCatequesis = async (
 
 export const actualizarEstadoSolicitud = async (
   id: number,
-  estado: "aprobado" | "rechazado" | "pendiente" | "requiere_modificacion",
+  estado: "aprobado" | "rechazado" | "pendiente",
   observacion?: string,
 ): Promise<ActualizarEstadoBackendResponse> => {
   try {

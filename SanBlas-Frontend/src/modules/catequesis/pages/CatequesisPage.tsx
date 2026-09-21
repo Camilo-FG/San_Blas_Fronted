@@ -32,20 +32,17 @@ const normalizarEstado = (estado?: string | null): string => {
   const e = estado.trim().toLowerCase();
   if (e === "aprobado" || e === "aprobada") return "aprobado";
   if (e === "rechazado" || e === "rechazada") return "rechazado";
-  if (e === "requiere_modificacion") return "requiere_modificacion";
   return "pendiente";
 };
 
 const getEstadoBadgeVariant = (
   estado?: string | null,
-): "success" | "danger" | "warning" | "info" => {
+): "success" | "danger" | "warning" => {
   switch (normalizarEstado(estado)) {
     case "aprobado":
       return "success";
     case "rechazado":
       return "danger";
-    case "requiere_modificacion":
-      return "info";
     default:
       return "warning";
   }
@@ -57,8 +54,6 @@ const getEstadoMensaje = (estado?: string | null): string => {
       return "Tu inscripción fue aprobada. Ya puedes asistir a catequesis.";
     case "rechazado":
       return "Tu inscripción fue rechazada. Revisa el motivo adjunto.";
-    case "requiere_modificacion":
-      return "Se solicitaron modificaciones. Podés editar y reenviar tu inscripción.";
     default:
       return "Tu inscripción está pendiente de revisión por el catequista.";
   }
@@ -389,24 +384,31 @@ const CatequesisPage = () => {
                                 {solicitud.catequesis?.nivelAInscribirse ?? "—"}
                               </span>
                             </div>
-                            <div>
-                              <span className="font-semibold text-text-muted">
-                                Fecha de envío:{" "}
-                              </span>
-                              <span className="text-text">
-                                {formatearFechaEnvio(
-                                  solicitud.fechaSolicitud,
-                                )}
-                              </span>
-                            </div>
+<div>
+  <span className="font-semibold text-text-muted">
+    Fecha de envío:{" "}
+  </span>
+  <span className="text-text">
+    {formatearFechaEnvio(
+      solicitud.fechaSolicitud,
+    )}
+  </span>
+</div>
+<div>
+  <span className="font-semibold text-text-muted">
+    Fecha de revisión:{" "}
+  </span>
+  <span className="text-text">
+    {solicitud.fechaActualizacionEstado
+      ? formatearFechaEnvio(solicitud.fechaActualizacionEstado)
+      : "—"}
+  </span>
+</div>
                           </div>
                           <p className="m-0 mt-1 text-sm text-text-secondary">
                             {getEstadoMensaje(solicitud.estado)}
                           </p>
-                          {(normalizarEstado(solicitud.estado) ===
-                            "rechazado" ||
-                            normalizarEstado(solicitud.estado) ===
-                              "requiere_modificacion") &&
+                          {normalizarEstado(solicitud.estado) === "rechazado" &&
                             solicitud.observacionAdministrativa && (
                               <div className="mt-1 rounded-lg border border-border bg-surface-muted p-3 text-sm text-text-secondary">
                                 <span className="font-semibold text-text-muted">
