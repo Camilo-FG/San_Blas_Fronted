@@ -84,7 +84,6 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
     },
     parentesco: null,
     pago: {
-      numeroComprobanteSINPE: "",
       archivoComprobante: null,
       fechaPago: null,
     },
@@ -128,8 +127,6 @@ const limitarNombre = (valor: string): string =>
   soloLetras(valor).slice(0, MAX_CHARACTERS_NOMBRE);
 const limitarLugar = (valor: string): string =>
   soloLetras(valor).slice(0, MAX_CHARACTERS);
-const limitarDigitos = (valor: string): string =>
-  valor.replace(/\D/g, "").slice(0, MAX_CHARACTERS);
 
 const calcularEdad = (fecha: string): number | null => {
   const nacimiento = new Date(`${fecha}T00:00:00`);
@@ -302,7 +299,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     "padreCatequizando.direccion.ciudad": "ciudadPadre",
     "padreCatequizando.direccion.provincia": "provinciaPadre",
     "padreCatequizando.telefono": "telefonoPadre",
-    "inscripcion.pago.numeroComprobanteSINPE": "numeroComprobanteSINPE",
   };
 
   const requiredMessages: Record<string, string> = {
@@ -331,7 +327,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     ciudadPadre: "Digite la ciudad.",
     provinciaPadre: "Digite la provincia.",
     telefonoPadre: "El teléfono debe contener 8 dígitos.",
-    numeroComprobanteSINPE: "Digite el número de comprobante SINPE.",
   };
 
   const updateForm = (path: string, value: unknown) => {
@@ -448,11 +443,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     ) {
       newErrors.telefonoPersonaInscribe =
         "El teléfono debe contener 8 dígitos.";
-    }
-
-    if (!form.inscripcion.pago.numeroComprobanteSINPE.trim()) {
-      newErrors.numeroComprobanteSINPE =
-        "Digite el número de comprobante SINPE.";
     }
 
     if (!form.inscripcion.pago.archivoComprobante) {
@@ -630,9 +620,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     }
 
     if (step === 6) {
-      if (!form.inscripcion.pago.numeroComprobanteSINPE.trim())
-        stepErrors.numeroComprobanteSINPE =
-          "Digite el número de comprobante SINPE.";
       if (!form.inscripcion.pago.archivoComprobante) {
         stepErrors.archivoComprobante = "Debe adjuntar el comprobante de pago.";
       }
@@ -1776,26 +1763,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Número de comprobante SINPE<span className="text-red-500"> *</span>
-              </Label>
-              <Input
-                type="text"
-                placeholder="Ej: 123456"
-                value={form.inscripcion.pago.numeroComprobanteSINPE}
-                onChange={(e) =>
-                  updateForm(
-                    "inscripcion.pago.numeroComprobanteSINPE",
-                    limitarDigitos(e.target.value),
-                  )
-                }
-              />
-              <WordCounter
-                value={form.inscripcion.pago.numeroComprobanteSINPE}
-                error={errors.numeroComprobanteSINPE}
-              />
-            </div>
 
             <div className="flex flex-col gap-1.5 md:col-span-2">
               <SubidaImagen

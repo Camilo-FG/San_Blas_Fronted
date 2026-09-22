@@ -61,7 +61,6 @@ export interface PadreCatequizandoData {
 }
 
 export interface PagoInscripcionCatequesis {
-  numeroComprobanteSINPE: string;
   archivoComprobante: File | string | null;
   fechaPago: string | null;
 }

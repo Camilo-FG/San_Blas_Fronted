@@ -47,7 +47,6 @@ export interface CrearInscripcionBackendRequest {
   };
   datosPago: {
     metodoPago: string;
-    numeroComprobanteSinpe: string;
     comprobanteArchivo: string;
   };
 }

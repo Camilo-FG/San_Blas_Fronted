@@ -135,7 +135,6 @@ export const mapFormToBackendRequest = (
   },
   datosPago: {
     metodoPago: "SINPE Móvil",
-    numeroComprobanteSinpe: form.inscripcion.pago.numeroComprobanteSINPE.trim(),
     comprobanteArchivo: obtenerNombreArchivo(
       form.inscripcion.pago.archivoComprobante,
     ),
