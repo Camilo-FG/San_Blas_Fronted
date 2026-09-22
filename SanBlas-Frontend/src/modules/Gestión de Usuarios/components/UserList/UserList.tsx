@@ -547,7 +547,6 @@ export const UserList = ({
                     onClose={() => setUsuarioSeleccionado(null)}
                     title={`Perfil de ${usuarioSeleccionado.userName}`}
                     className="max-w-2xl p-0"
-                    cerrarAlClicFuera={false}
                 >
                     <PerfilUsuarioCard
                         usuario={usuarioSeleccionado}

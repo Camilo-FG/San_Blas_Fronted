@@ -82,7 +82,7 @@ const CreateUserModal: React.FC<Props> = ({
       telefono: '',
       contraseña: '',
       confirmarContraseña: '',
-      rol: '',
+      rol: 'user',
     },
     onSubmit: async ({ value }) => {
       const ok = await onSave({
@@ -119,11 +119,11 @@ const CreateUserModal: React.FC<Props> = ({
   };
 
   const validatePhone = (phone: string) => {
-    return /^\d{4}-\d{4}$/.test(phone);
+    return /^[1-9]\d{3}-\d{4}$/.test(phone);
   };
 
   const formatTelefono = (value: string) => {
-    const soloNumeros = value.replace(/\D/g, '').slice(0, 8);
+    const soloNumeros = value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 8);
     return soloNumeros.length > 4
       ? `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4)}`
       : soloNumeros;
@@ -183,7 +183,7 @@ const CreateUserModal: React.FC<Props> = ({
     return undefined;
   };
 
-  // el rol es obligatorio y ya no se asigna 'user' por defecto; se bloquea el submit si queda vacío
+  // el rol es obligatorio; se precarga 'user' por defecto y se bloquea el submit si queda vacío
   const validarRol = (value: string) => {
     if (!value) return 'Seleccione un rol para el usuario.';
     return undefined;
@@ -219,6 +219,9 @@ const CreateUserModal: React.FC<Props> = ({
               <div>
                 <Label htmlFor="nombre" required>
                   Nombre completo
+                  <span className="ml-1.5 font-normal text-text-muted">
+                    ({field.state.value.length}/100)
+                  </span>
                 </Label>
                 <Input
                   id="nombre"
@@ -231,6 +234,7 @@ const CreateUserModal: React.FC<Props> = ({
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
+                  maxLength={100}
                   disabled={guardando}
                 />
                 <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
@@ -249,6 +253,9 @@ const CreateUserModal: React.FC<Props> = ({
               <div>
                 <Label htmlFor="correo" required>
                   Correo electrónico
+                  <span className="ml-1.5 font-normal text-text-muted">
+                    ({field.state.value.length}/100)
+                  </span>
                 </Label>
                   <Input
                     id="correo"
@@ -262,6 +269,7 @@ const CreateUserModal: React.FC<Props> = ({
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
+                  maxLength={100}
                   disabled={guardando}
                 />
                 <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />

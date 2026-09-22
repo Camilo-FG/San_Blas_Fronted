@@ -44,8 +44,12 @@ const mapBackendToFrontend = (data: Record<string, unknown>): Usuario => ({
 });
 
 export const getUsers = async (): Promise<Usuario[]> => {
-  const { data } = await apiClient.get<Record<string, unknown>[]>('/usuario');
-  return data.map(mapBackendToFrontend);
+  try {
+    const { data } = await apiClient.get<Record<string, unknown>[]>('/usuario');
+    return data.map(mapBackendToFrontend);
+  } catch (error) {
+    handleApiError(error);
+  }
 };
 
 // respuesta paginada del backend: data + total + pages, la página y el límite usados
@@ -66,28 +70,32 @@ export const getUsersPaginados = async (
   state?: string,
 ): Promise<PaginacionUsuarios> => {
   const buscar = search?.trim();
-  const { data } = await apiClient.get<{
-    data: Record<string, unknown>[];
-    total: number;
-    page: number;
-    pages: number;
-    limit: number;
-  }>('/usuario', {
-    params: {
-      page,
-      limit,
-      ...(buscar ? { search: buscar } : {}),
-      ...(role ? { role } : {}),
-      ...(state ? { state } : {}),
-    },
-  });
-  return {
-    data: data.data.map(mapBackendToFrontend),
-    total: data.total,
-    page: data.page,
-    pages: data.pages,
-    limit: data.limit,
-  };
+  try {
+    const { data } = await apiClient.get<{
+      data: Record<string, unknown>[];
+      total: number;
+      page: number;
+      pages: number;
+      limit: number;
+    }>('/usuario', {
+      params: {
+        page,
+        limit,
+        ...(buscar ? { search: buscar } : {}),
+        ...(role ? { role } : {}),
+        ...(state ? { state } : {}),
+      },
+    });
+    return {
+      data: data.data.map(mapBackendToFrontend),
+      total: data.total,
+      page: data.page,
+      pages: data.pages,
+      limit: data.limit,
+    };
+  } catch (error) {
+    handleApiError(error);
+  }
 };
 
 export const getUserById = async (id: number): Promise<Usuario> => {
