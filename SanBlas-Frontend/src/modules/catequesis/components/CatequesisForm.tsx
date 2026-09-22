@@ -1411,24 +1411,22 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Dirección exacta<span className="text-red-500"> *</span>
+                Provincia<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
-                placeholder="Ej: 200 m norte de la iglesia, casa azul"
-                maxLength={250}
-                value={form.madreCatequizando.direccion.direccionExacta || ""}
+                placeholder="Ej: Guanacaste"
+                value={form.madreCatequizando.direccion.provincia || ""}
                 onChange={(e) =>
                   updateForm(
-                    "madreCatequizando.direccion.direccionExacta",
-                    limitarDireccion(e.target.value),
+                    "madreCatequizando.direccion.provincia",
+                    limitarLugar(e.target.value),
                   )
                 }
               />
               <WordCounter
-                value={form.madreCatequizando.direccion.direccionExacta || ""}
-                max={250}
-                error={errors.direccionMadre}
+                value={form.madreCatequizando.direccion.provincia || ""}
+                error={errors.provinciaMadre}
               />
             </div>
 
@@ -1455,22 +1453,24 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Provincia<span className="text-red-500"> *</span>
+                Dirección exacta<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
-                placeholder="Ej: Guanacaste"
-                value={form.madreCatequizando.direccion.provincia || ""}
+                placeholder="Ej: 200 m norte de la iglesia, casa azul"
+                maxLength={250}
+                value={form.madreCatequizando.direccion.direccionExacta || ""}
                 onChange={(e) =>
                   updateForm(
-                    "madreCatequizando.direccion.provincia",
-                    limitarLugar(e.target.value),
+                    "madreCatequizando.direccion.direccionExacta",
+                    limitarDireccion(e.target.value),
                   )
                 }
               />
               <WordCounter
-                value={form.madreCatequizando.direccion.provincia || ""}
-                error={errors.provinciaMadre}
+                value={form.madreCatequizando.direccion.direccionExacta || ""}
+                max={250}
+                error={errors.direccionMadre}
               />
             </div>
 
@@ -1640,24 +1640,22 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Dirección exacta<span className="text-red-500"> *</span>
+                Provincia<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
-                placeholder="Ej: 200 m norte de la iglesia, casa azul"
-                maxLength={250}
-                value={form.padreCatequizando.direccion.direccionExacta || ""}
+                placeholder="Ej: Guanacaste"
+                value={form.padreCatequizando.direccion.provincia || ""}
                 onChange={(e) =>
                   updateForm(
-                    "padreCatequizando.direccion.direccionExacta",
-                    limitarDireccion(e.target.value),
+                    "padreCatequizando.direccion.provincia",
+                    limitarLugar(e.target.value),
                   )
                 }
               />
               <WordCounter
-                value={form.padreCatequizando.direccion.direccionExacta || ""}
-                max={250}
-                error={errors.direccionPadre}
+                value={form.padreCatequizando.direccion.provincia || ""}
+                error={errors.provinciaPadre}
               />
             </div>
 
@@ -1684,22 +1682,24 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Provincia<span className="text-red-500"> *</span>
+                Dirección exacta<span className="text-red-500"> *</span>
               </Label>
               <Input
                 type="text"
-                placeholder="Ej: Guanacaste"
-                value={form.padreCatequizando.direccion.provincia || ""}
+                placeholder="Ej: 200 m norte de la iglesia, casa azul"
+                maxLength={250}
+                value={form.padreCatequizando.direccion.direccionExacta || ""}
                 onChange={(e) =>
                   updateForm(
-                    "padreCatequizando.direccion.provincia",
-                    limitarLugar(e.target.value),
+                    "padreCatequizando.direccion.direccionExacta",
+                    limitarDireccion(e.target.value),
                   )
                 }
               />
               <WordCounter
-                value={form.padreCatequizando.direccion.provincia || ""}
-                error={errors.provinciaPadre}
+                value={form.padreCatequizando.direccion.direccionExacta || ""}
+                max={250}
+                error={errors.direccionPadre}
               />
             </div>
 
