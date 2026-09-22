@@ -160,7 +160,7 @@ export const SubidaImagen = ({
         }`}
       >
         {usarTarjeta ? (
-          <div className="flex w-full items-center gap-3 text-left">
+          <div className="flex w-full max-w-md items-center gap-3 text-left">
             {vistaTarjeta && esImagenTarjeta ? (
               <img
                 src={vistaTarjeta}
