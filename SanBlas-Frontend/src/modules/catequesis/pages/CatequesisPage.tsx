@@ -18,7 +18,7 @@ import {
   Label,
 } from "../../../shared/ui";
 import { formatearFechaEnvio } from "../../../shared/utils/fechas";
-import { soloCorreo } from "../../../shared/utils/formValidation";
+import { soloCorreo, correoValido } from "../../../shared/utils/formValidation";
 
 interface ResumenSolicitudEnviada {
   nombreAlumno: string;
@@ -121,6 +121,10 @@ const CatequesisPage = () => {
 
   const handleConsultar = async () => {
     if (!correoConsulta.trim()) return;
+    if (!correoValido(correoConsulta)) {
+      setErrorConsulta("Digite un correo válido.");
+      return;
+    }
     setConsultando(true);
     setErrorConsulta(null);
     setResultadosConsulta([]);
@@ -340,7 +344,7 @@ const CatequesisPage = () => {
                     onChange={(e) => {
                       const valor = soloCorreo(e.target.value);
                       setCorreoConsulta(valor);
-                      if (!valor) setErrorConsulta(null);
+                      if (!valor || correoValido(valor)) setErrorConsulta(null);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleConsultar();

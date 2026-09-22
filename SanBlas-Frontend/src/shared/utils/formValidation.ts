@@ -53,3 +53,6 @@ export const numeroValido = (valor: string): boolean => {
   if (limpio === '') return true; // campo opcional
   return /^[1-9]\d*$/.test(limpio);
 };
+
+export const correoValido = (valor: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
