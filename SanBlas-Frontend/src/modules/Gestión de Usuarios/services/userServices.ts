@@ -35,7 +35,7 @@ const leerFechaCreacion = (data: Record<string, unknown>): string => {
 
 const mapBackendToFrontend = (data: Record<string, unknown>): Usuario => ({
   id: data.id as number,
-  userName: (data.nombre as string) ?? '',
+  userName: ((data.nombre as string) ?? (data.userName as string)) ?? '',
   email: (data.email as string) ?? '',
   phoneNumber: ((data.telefono as string) ?? (data.phoneNumber as string) ?? ''),
   role: (data.role as string) ?? 'user',

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   actualizarEstadoSolicitud,
   exportarInscripcionesCatequesis,
+  obtenerHistorialCatequesis,
   obtenerSolicitudCatequesisPorId,
   obtenerSolicitudesCatequesis,
 } from "../services/catequesisService";
@@ -20,17 +21,26 @@ export interface SolicitudesCatequesisFiltros {
   limit?: number;
 }
 
+export interface HistorialCatequesisFiltros {
+  estado?: string;
+  encargado?: string;
+  desde?: string;
+  hasta?: string;
+}
+
 // Clave raíz para invalidar la lista cuando muta algún estado
 const QUERY_KEY = ["catequesis-solicitudes"] as const;
+const HISTORIAL_KEY = ["catequesis-historial"] as const;
 
 type CambiarEstadoVariables = {
   id: number;
-  estado: "aprobado" | "rechazado" | "requiere_modificacion";
+  estado: "aprobado" | "rechazado";
   observacion?: string;
 };
 
 export const useSolicitudesCatequesis = (
   filtros?: SolicitudesCatequesisFiltros,
+  historialFiltros?: HistorialCatequesisFiltros,
 ) => {
   const queryClient = useQueryClient();
 
@@ -63,6 +73,31 @@ export const useSolicitudesCatequesis = (
   const cargando = isPending;
   const filtrando = isFetching && !isPending;
 
+  // Historial de revisiones: los filtros de estado y encargado se mandan como
+  // params al backend; el resto (filtros extra de la página) se aplica en cliente
+  const {
+    data: historial = [],
+    isPending: historialCargando,
+    isFetching: historialFiltrando,
+    error: historialQueryError,
+    refetch: refetchHistorial,
+  } = useQuery({
+    queryKey: ["catequesis-historial", historialFiltros],
+    queryFn: () =>
+      obtenerHistorialCatequesis(historialFiltros ?? undefined).then(
+        (res) => res.historial,
+      ),
+    placeholderData: (previousData) => previousData,
+    refetchOnWindowFocus: false,
+  });
+
+  let historialError = "";
+  if (historialQueryError instanceof ApiError) {
+    historialError = historialQueryError.message;
+  } else if (historialQueryError) {
+    historialError = "No se pudo cargar el historial de revisiones.";
+  }
+
   // Errores de carga se normalizan a un string para el consumidor (como antes)
   let error = "";
   if (queryError instanceof ApiError) {
@@ -82,6 +117,7 @@ export const useSolicitudesCatequesis = (
       actualizarEstadoSolicitud(id, estado, observacion),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: HISTORIAL_KEY });
     },
     onError: (error: unknown) => {
       setAccionError(
@@ -98,7 +134,7 @@ export const useSolicitudesCatequesis = (
   const cambiarEstado = useCallback(
     async (
       id: number,
-      estado: "aprobado" | "rechazado" | "requiere_modificacion",
+      estado: "aprobado" | "rechazado",
       observacion?: string,
     ): Promise<{ ok: true } | { ok: false; mensaje: string }> => {
       setAccionError("");
@@ -162,6 +198,11 @@ export const useSolicitudesCatequesis = (
     totalPaginas,
     paginaActual,
     cargarSolicitudes: () => refetch(),
+    historial,
+    cargarHistorial: () => refetchHistorial(),
+    historialCargando,
+    historialFiltrando,
+    historialError,
     obtenerDetalle,
     cambiarEstado,
     exportarExcel,

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (no deja picar dos veces)
 import {
@@ -240,6 +240,17 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const [vistaPreviaComprobante, setVistaPreviaComprobante] = useState<
     string | null
   >(null);
+
+  useEffect(() => {
+    return () => {
+      if (vistaPreviaFeBautismo) {
+        URL.revokeObjectURL(vistaPreviaFeBautismo);
+      }
+      if (vistaPreviaComprobante) {
+        URL.revokeObjectURL(vistaPreviaComprobante);
+      }
+    };
+  }, [vistaPreviaFeBautismo, vistaPreviaComprobante]);
 
   const scrollToProgressBar = () => {
     requestAnimationFrame(() => {
@@ -633,8 +644,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       if (!form.inscripcion.pago.numeroComprobanteSINPE.trim())
         stepErrors.numeroComprobanteSINPE =
           "Digite el número de comprobante SINPE.";
-      if (!form.inscripcion.pago.archivoComprobante)
+      if (!form.inscripcion.pago.archivoComprobante) {
         stepErrors.archivoComprobante = "Debe adjuntar el comprobante de pago.";
+      }
     }
 
     if (step === 7 && !aceptaLineamientos) {

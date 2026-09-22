@@ -58,7 +58,8 @@ export interface InscripcionResumenBackend {
   centroCatequesis: string;
   nivelAInscribirse: string;
   estado: string;
-  fechaSolicitud: string;
+  fechaEnvio: string;
+  fechaRevision?: string | null;
   telefonoEncargada: string;
   nombreEncargado?: string;
   correoEncargado?: string;

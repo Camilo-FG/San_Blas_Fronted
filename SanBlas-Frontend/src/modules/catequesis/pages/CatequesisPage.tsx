@@ -32,20 +32,17 @@ const normalizarEstado = (estado?: string | null): string => {
   const e = estado.trim().toLowerCase();
   if (e === "aprobado" || e === "aprobada") return "aprobado";
   if (e === "rechazado" || e === "rechazada") return "rechazado";
-  if (e === "requiere_modificacion") return "requiere_modificacion";
   return "pendiente";
 };
 
 const getEstadoBadgeVariant = (
   estado?: string | null,
-): "success" | "danger" | "warning" | "info" => {
+): "success" | "danger" | "warning" => {
   switch (normalizarEstado(estado)) {
     case "aprobado":
       return "success";
     case "rechazado":
       return "danger";
-    case "requiere_modificacion":
-      return "info";
     default:
       return "warning";
   }
@@ -57,8 +54,6 @@ const getEstadoMensaje = (estado?: string | null): string => {
       return "Tu inscripción fue aprobada. Ya puedes asistir a catequesis.";
     case "rechazado":
       return "Tu inscripción fue rechazada. Revisa el motivo adjunto.";
-    case "requiere_modificacion":
-      return "Se solicitaron modificaciones. Podés editar y reenviar tu inscripción.";
     default:
       return "Tu inscripción está pendiente de revisión por el catequista.";
   }
@@ -162,7 +157,7 @@ const CatequesisPage = () => {
 
   const tabs: { id: Section; label: string }[] = [
     { id: "info", label: "Información sobre catequesis" },
-    { id: "matricula", label: "Matricular catequesis" },
+    { id: "matricula", label: "Inscribirse" },
     { id: "consultar", label: "Consultar estado" },
   ];
 
@@ -178,27 +173,50 @@ const CatequesisPage = () => {
             <h1 className="m-0 mt-2 font-heading text-2xl font-extrabold text-royal-blue sm:text-[30px]">
               Matrícula a Catequesis
             </h1>
-            <div
-              className="mt-5 grid grid-cols-1 gap-2 rounded-2xl bg-surface-muted p-1.5 sm:grid-cols-3"
-              role="tablist"
-              aria-label="Secciones de catequesis"
-            >
-              {tabs.map((tab) => (
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+              {activeSection !== "info" && (
                 <button
-                  key={tab.id}
                   type="button"
-                  role="tab"
-                  aria-selected={activeSection === tab.id}
-                  onClick={() => cambiarSeccion(tab.id)}
-                  className={`min-h-11 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 ${
-                    activeSection === tab.id
-                      ? "bg-royal-blue text-white shadow-sm"
-                      : "text-text-secondary hover:bg-surface hover:text-royal-blue"
-                  }`}
+                  onClick={() => cambiarSeccion("info")}
+                  className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text-secondary transition-colors hover:bg-surface-muted hover:text-royal-blue"
                 >
-                  {tab.label}
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                  Información
                 </button>
-              ))}
+              )}
+              <button
+                type="button"
+                onClick={() => cambiarSeccion("matricula")}
+                className={`inline-flex min-h-12 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 ${
+                  activeSection === "matricula"
+                    ? "bg-royal-blue text-white shadow-md"
+                    : "border border-royal-blue/20 bg-royal-blue/5 text-royal-blue hover:bg-royal-blue hover:text-white"
+                }`}
+              >
+                Inscribirse
+              </button>
+              <button
+                type="button"
+                onClick={() => cambiarSeccion("consultar")}
+                className={`inline-flex min-h-12 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 ${
+                  activeSection === "consultar"
+                    ? "bg-royal-blue text-white shadow-md"
+                    : "border border-royal-blue/20 bg-royal-blue/5 text-royal-blue hover:bg-royal-blue hover:text-white"
+                }`}
+              >
+                Consultar estado
+              </button>
             </div>
           </header>
 
@@ -389,24 +407,31 @@ const CatequesisPage = () => {
                                 {solicitud.catequesis?.nivelAInscribirse ?? "—"}
                               </span>
                             </div>
-                            <div>
-                              <span className="font-semibold text-text-muted">
-                                Fecha de envío:{" "}
-                              </span>
-                              <span className="text-text">
-                                {formatearFechaEnvio(
-                                  solicitud.fechaSolicitud,
-                                )}
-                              </span>
-                            </div>
+<div>
+  <span className="font-semibold text-text-muted">
+    Fecha de envío:{" "}
+  </span>
+  <span className="text-text">
+    {formatearFechaEnvio(
+      solicitud.fechaSolicitud,
+    )}
+  </span>
+</div>
+<div>
+  <span className="font-semibold text-text-muted">
+    Fecha de revisión:{" "}
+  </span>
+  <span className="text-text">
+    {solicitud.fechaActualizacionEstado
+      ? formatearFechaEnvio(solicitud.fechaActualizacionEstado)
+      : "—"}
+  </span>
+</div>
                           </div>
                           <p className="m-0 mt-1 text-sm text-text-secondary">
                             {getEstadoMensaje(solicitud.estado)}
                           </p>
-                          {(normalizarEstado(solicitud.estado) ===
-                            "rechazado" ||
-                            normalizarEstado(solicitud.estado) ===
-                              "requiere_modificacion") &&
+                          {normalizarEstado(solicitud.estado) === "rechazado" &&
                             solicitud.observacionAdministrativa && (
                               <div className="mt-1 rounded-lg border border-border bg-surface-muted p-3 text-sm text-text-secondary">
                                 <span className="font-semibold text-text-muted">

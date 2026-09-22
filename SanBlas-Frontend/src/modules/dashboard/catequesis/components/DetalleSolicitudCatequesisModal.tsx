@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import {
-  AlertCircle,
   CalendarDays,
   CheckCircle,
   ExternalLink,
@@ -37,7 +36,6 @@ type DetalleSolicitudCatequesisModalProps = {
   cerrarConEsc?: boolean;
   onApprove: () => void;
   onRechazar: () => void;
-  onSolicitarModificacion: () => void;
   onClose: () => void;
 };
 
@@ -51,7 +49,6 @@ const normalizarEstado = (
     return "aprobado";
   if (estadoLower === "rechazado" || estadoLower === "rechazada")
     return "rechazado";
-  if (estadoLower === "requiere_modificacion") return "requiere_modificacion";
 
   return "pendiente";
 };
@@ -64,8 +61,6 @@ const obtenerTextoEstado = (estado?: string | null) => {
       return "Aprobado";
     case "rechazado":
       return "Rechazado";
-    case "requiere_modificacion":
-      return "Requiere modificación";
     default:
       return "Desconocido";
   }
@@ -77,8 +72,6 @@ const getEstadoBadgeVariant = (estado?: string | null): BadgeVariant => {
       return "success";
     case "rechazado":
       return "danger";
-    case "requiere_modificacion":
-      return "info";
     default:
       return "warning";
   }
@@ -170,7 +163,6 @@ export function DetalleSolicitudCatequesisModal({
   cerrarConEsc = true,
   onApprove,
   onRechazar,
-  onSolicitarModificacion,
   onClose,
 }: DetalleSolicitudCatequesisModalProps) {
   const estado = normalizarEstado(solicitud.estado);
@@ -204,14 +196,6 @@ export function DetalleSolicitudCatequesisModal({
               onClick={onApprove}
             >
               Aprobar
-            </Button>
-            <Button
-              variant="secondary"
-              className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
-              disabled={guardando}
-              onClick={onSolicitarModificacion}
-            >
-              Solicitar modificación
             </Button>
             <Button
               variant="secondary"
@@ -565,22 +549,7 @@ export function DetalleSolicitudCatequesisModal({
                   </div>
                 )}
 
-                {estado === "requiere_modificacion" && (
-                  <div className="flex gap-2.5 rounded-[12px] border border-blue-300 bg-blue-50 p-4 text-sm leading-relaxed text-blue-800">
-                    <AlertCircle size={17} className="mt-0.5 shrink-0" />
-                    <div>
-                      <p className="m-0 font-semibold">
-                        Requiere modificación.
-                      </p>
-                      <p className="mt-1 mb-0">
-                        {solicitud.observacionAdministrativa ||
-                          solicitud.observaciones ||
-                          "La solicitud requiere correcciones por parte del encargado."}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
     </AdminRecordDetailSheet>
   );
 }

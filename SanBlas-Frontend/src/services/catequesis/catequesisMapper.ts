@@ -39,22 +39,15 @@ export const mapEstadoBackendToFrontend = (
   if (estadoLower === "pendiente") return "pendiente";
   if (estadoLower === "aprobada" || estadoLower === "aprobado") return "aprobado";
   if (estadoLower === "rechazada" || estadoLower === "rechazado") return "rechazado";
-  if (
-    estadoLower === "requiere_modificacion" ||
-    estadoLower === "modificación solicitada" ||
-    estadoLower === "modificacion solicitada"
-  )
-    return "requiere_modificacion";
 
   return "pendiente";
 };
 
 export const mapEstadoFrontendToBackend = (
-  estado: "aprobado" | "rechazado" | "pendiente" | "requiere_modificacion",
+  estado: "aprobado" | "rechazado" | "pendiente",
 ): string => {
   if (estado === "aprobado") return "Aprobada";
   if (estado === "rechazado") return "Rechazada";
-  if (estado === "requiere_modificacion") return "requiere_modificacion";
   return "Pendiente";
 };
 
@@ -160,7 +153,8 @@ export const mapResumenToEnrollmentRecord = (
     id: resumen.id,
     codigoSolicitud: `CAT-${resumen.id}`,
     estado: mapEstadoBackendToFrontend(resumen.estado),
-    fechaSolicitud: resumen.fechaSolicitud,
+    fechaSolicitud: resumen.fechaEnvio,
+    fechaActualizacionEstado: resumen.fechaRevision ?? null,
     catequesis: {
       centroCatequesis: resumen.centroCatequesis,
       nivelAInscribirse: resumen.nivelAInscribirse,
