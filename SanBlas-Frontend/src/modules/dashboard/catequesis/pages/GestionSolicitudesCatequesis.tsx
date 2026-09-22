@@ -25,7 +25,6 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -179,18 +178,38 @@ function GestionSolicitudesCatequesis() {
   const debouncedQ = useDebouncedValue(filtroTextoLibre.trim(), 400);
   const debouncedEncargado = useDebouncedValue(filtroEncargado.trim(), 400);
 
-  // Filtros que el backend soporta (estado, encargado, q); nivel y filial se filtran en memoria
+  // Paginación de servidor: la página y el límite viajan al backend,
+  // que responde con la página pedida más el total de registros.
+  const [pagina, setPagina] = useState(1);
+  const [limite, setLimite] =
+    useState<(typeof TAMANOS_PAGINA_SOLICITUDES)[number]>(10);
+
+  // Filtros que el backend soporta (estado, encargado, q, nivel, filial)
   const filtros = useMemo(
     () => ({
       estado: filtroEstado === "todos" ? undefined : filtroEstado,
       encargado: debouncedEncargado || undefined,
       q: debouncedQ || undefined,
+      nivel: filtroNivel === "todos" ? undefined : filtroNivel,
+      filial: filtroFilial === "todos" ? undefined : filtroFilial,
+      page: pagina,
+      limit: limite,
     }),
-    [filtroEstado, debouncedEncargado, debouncedQ],
+    [
+      filtroEstado,
+      debouncedEncargado,
+      debouncedQ,
+      filtroNivel,
+      filtroFilial,
+      pagina,
+      limite,
+    ],
   );
 
   const {
     solicitudes,
+    totalSolicitudes,
+    totalPaginas,
     cambiarEstado,
     obtenerDetalle,
     exportarExcel,
@@ -633,38 +652,30 @@ function GestionSolicitudesCatequesis() {
     [openModal],
   );
 
-  // Nivel y filial no los soporta el backend, por eso se siguen filtrando en memoria
-  const filteredSolicitudes = useMemo(
-    () =>
-      solicitudes.filter((solicitud) => {
-        const coincideNivel =
-          filtroNivel === "todos" ||
-          normalizeText(solicitud.catequesis?.nivelAInscribirse) ===
-            normalizeText(filtroNivel);
-        const coincideFilial =
-          filtroFilial === "todos" ||
-          normalizeText(solicitud.catequesis?.centroCatequesis) ===
-            normalizeText(filtroFilial);
-
-        return coincideNivel && coincideFilial;
-      }),
-    [solicitudes, filtroNivel, filtroFilial],
-  );
-
   const table = useReactTable({
-    data: filteredSolicitudes,
+    data: solicitudes,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    autoResetPageIndex: false,
+    manualPagination: true,
+    pageCount: totalPaginas,
     getRowId: (row) => String(row.id),
-    initialState: {
-      pagination: { pageSize: 10 },
+    state: {
+      pagination: { pageIndex: pagina - 1, pageSize: limite },
+    },
+    onPaginationChange: (updater) => {
+      const previo = { pageIndex: pagina - 1, pageSize: limite };
+      const siguiente =
+        typeof updater === "function" ? updater(previo) : updater;
+      if (siguiente.pageSize !== previo.pageSize) {
+        setLimite(siguiente.pageSize);
+        setPagina(1);
+      } else if (siguiente.pageIndex !== previo.pageIndex) {
+        setPagina(siguiente.pageIndex + 1);
+      }
     },
   });
 
   const {
-    totalItems,
     currentPage,
     totalPages,
     canPreviousPage,
@@ -673,19 +684,16 @@ function GestionSolicitudesCatequesis() {
     goToNextPage,
   } = usePagination(table);
 
+  // Totales del backend: la tabla muestra la página que responde el servidor
+  const totalItems = totalSolicitudes;
   const isInitialLoading = cargando && solicitudes.length === 0;
-  const pageSize = table.getState().pagination.pageSize;
   const primerRegistro =
-    totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const ultimoRegistro = Math.min(currentPage * pageSize, totalItems);
+    totalItems === 0 ? 0 : (pagina - 1) * limite + 1;
+  const ultimoRegistro = Math.min(pagina * limite, totalItems);
 
   useEffect(() => {
-    table.setPageIndex(0);
+    setPagina(1);
   }, [filtroTextoLibre, filtroEncargado, filtroEstado, filtroNivel, filtroFilial]);
-
-  useEffect(() => {
-    table.setPageIndex(0);
-  }, [pageSize]);
 
   return (
     <AdminModule className="gap-3!">
@@ -1009,7 +1017,7 @@ function GestionSolicitudesCatequesis() {
         </p>
       )}
 
-      {!isInitialLoading && filteredSolicitudes.length === 0 && (
+      {!isInitialLoading && solicitudes.length === 0 && (
         <p className="py-6 text-center text-sm text-text-muted">
           {hayFiltrosActivos
             ? "No se encontraron solicitudes con los filtros seleccionados."
@@ -1017,7 +1025,7 @@ function GestionSolicitudesCatequesis() {
         </p>
       )}
 
-      {!isInitialLoading && filteredSolicitudes.length > 0 && (
+      {!isInitialLoading && solicitudes.length > 0 && (
       <>
       <div className="hidden md:block">
         <AdminTablePanel>
@@ -1134,8 +1142,13 @@ function GestionSolicitudesCatequesis() {
           <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
             Registros por página
             <select
-              value={pageSize}
-              onChange={(e) => table.setPageSize(Number(e.target.value))}
+              value={limite}
+              onChange={(e) => {
+                setLimite(
+                  Number(e.target.value) as typeof TAMANOS_PAGINA_SOLICITUDES[number],
+                );
+                setPagina(1);
+              }}
               className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
               aria-label="Cantidad de registros por página"
             >

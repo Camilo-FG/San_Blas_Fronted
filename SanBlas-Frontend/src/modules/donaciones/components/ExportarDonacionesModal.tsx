@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Download } from "lucide-react";
-import { Button, LineaDoradaTitulo, Modal } from "../../../shared/ui";
+import { Button, CustomSelect, LineaDoradaTitulo, Modal } from "../../../shared/ui";
 
 export type FormatoExportacionDonaciones = "csv" | "pdf";
 export type EstadoExportacionDonaciones =
@@ -44,6 +44,22 @@ export function ExportarDonacionesModal({
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
 
+  const estadoRef = useRef<HTMLButtonElement>(null);
+  const csvRef = useRef<HTMLButtonElement>(null);
+  const pdfRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const temporizador = setTimeout(() => {
+      estadoRef.current?.focus();
+    }, 0);
+    return () => clearTimeout(temporizador);
+  }, []);
+
+  const moverFocoFormato = (siguiente: FormatoExportacionDonaciones) => {
+    setFormato(siguiente);
+    (siguiente === "csv" ? csvRef : pdfRef).current?.focus();
+  };
+
   const rangoValido = rangoFechasValido(desde, hasta);
 
   return (
@@ -68,6 +84,18 @@ export function ExportarDonacionesModal({
             <div
               role="group"
               aria-label="Formato de exportación"
+              onKeyDown={(event) => {
+                if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                  event.preventDefault();
+                  moverFocoFormato("csv");
+                } else if (
+                  event.key === "ArrowRight" ||
+                  event.key === "ArrowDown"
+                ) {
+                  event.preventDefault();
+                  moverFocoFormato("pdf");
+                }
+              }}
               className="flex w-full items-center gap-1 rounded-xl border border-border-strong bg-surface p-1 shadow-sm"
             >
               {(["csv", "pdf"] as const).map((opcion) => {
@@ -75,6 +103,7 @@ export function ExportarDonacionesModal({
                 return (
                   <button
                     key={opcion}
+                    ref={opcion === "csv" ? csvRef : pdfRef}
                     type="button"
                     onClick={() => setFormato(opcion)}
                     aria-pressed={activo}
@@ -108,21 +137,19 @@ export function ExportarDonacionesModal({
             <span className="text-xs font-semibold text-text-muted">
               Estado
             </span>
-            <select
+            <CustomSelect
+              ref={estadoRef}
               value={estado}
-              onChange={(event) =>
-                setEstado(
-                  event.target.value as EstadoExportacionDonaciones,
-                )
+              onChange={(valor) =>
+                setEstado(valor as EstadoExportacionDonaciones)
               }
-              className={claseCampo("cursor-pointer")}
-              aria-label="Exportar por estado"
-            >
-              <option value="todos">Todos</option>
-              <option value="pendiente">Pendientes</option>
-              <option value="aprobado">Aprobadas</option>
-              <option value="rechazado">Rechazadas</option>
-            </select>
+              options={[
+                { label: "Todos", value: "todos" },
+                { label: "Pendientes", value: "pendiente" },
+                { label: "Aprobadas", value: "aprobado" },
+                { label: "Rechazadas", value: "rechazado" },
+              ]}
+            />
           </label>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

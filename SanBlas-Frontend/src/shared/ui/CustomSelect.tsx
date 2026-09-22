@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type Ref } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { cn } from "./cn";
@@ -17,6 +17,7 @@ type CustomSelectProps = {
   hasError?: boolean;
   disabled?: boolean;
   maxVisibleOptions?: number;
+  ref?: Ref<HTMLButtonElement>;
 };
 
 const OPTION_HEIGHT = 40;
@@ -32,11 +33,12 @@ export function CustomSelect({
   hasError,
   disabled,
   maxVisibleOptions,
+  ref,
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const [focusIndex, setFocusIndex] = useState(-1);
   const [maxHeight, setMaxHeight] = useState<number>(240);
-  const ref = useRef<HTMLDivElement>(null);
+  const contenedorRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -63,6 +65,18 @@ export function CustomSelect({
     triggerRef.current?.focus();
   }, []);
 
+  const asignarTriggerRef = useCallback(
+    (nodo: HTMLButtonElement | null) => {
+      triggerRef.current = nodo;
+      if (typeof ref === "function") {
+        ref(nodo);
+      } else if (ref) {
+        ref.current = nodo;
+      }
+    },
+    [ref],
+  );
+
   const selectOption = useCallback(
     (val: string) => {
       onChange(val);
@@ -73,7 +87,7 @@ export function CustomSelect({
 
   const handleClickOutside = useCallback(
     (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (contenedorRef.current && !contenedorRef.current.contains(e.target as Node)) {
         setOpen(false);
         setFocusIndex(-1);
       }
@@ -130,15 +144,11 @@ export function CustomSelect({
 
     if (e.key === "Tab") {
       if (open) {
-        e.preventDefault();
-        setFocusIndex((prev) => {
-          const base =
-            prev >= 0
-              ? prev
-              : options.findIndex((o) => o.value === value);
-          const idx = base >= 0 ? base : 0;
-          return e.shiftKey ? (idx > 0 ? idx - 1 : 0) : idx < options.length - 1 ? idx + 1 : idx;
-        });
+        if (focusIndex >= 0 && options[focusIndex]) {
+          onChange(options[focusIndex].value);
+        }
+        setOpen(false);
+        setFocusIndex(-1);
       }
     }
   };
@@ -169,13 +179,9 @@ export function CustomSelect({
     }
 
     if (e.key === "Tab") {
-      e.preventDefault();
-      setFocusIndex((prev) => {
-        if (e.shiftKey) {
-          return prev > 0 ? prev - 1 : options.length - 1;
-        }
-        return prev < options.length - 1 ? prev + 1 : 0;
-      });
+      onChange(optValue);
+      setOpen(false);
+      setFocusIndex(-1);
     }
   };
 
@@ -187,10 +193,10 @@ export function CustomSelect({
   }, [open, focusIndex]);
 
   return (
-    <div className={cn("relative", className)} ref={ref}>
+    <div className={cn("relative", className)} ref={contenedorRef}>
       <button
         type="button"
-        ref={triggerRef}
+        ref={asignarTriggerRef}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -235,19 +241,23 @@ export function CustomSelect({
             className="absolute top-full left-0 z-[9999] mt-1.5 w-full overflow-auto rounded-[8px] border-2 border-[#16243c]/25 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
             style={{ maxHeight }}
           >
-            {options.map((option) => {
+            {options.map((option, index) => {
               const activo = value === option.value;
+              const enfocado = open && focusIndex === index;
               return (
                 <li key={option.value} role="option" aria-selected={activo}>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => selectOption(option.value)}
                     onKeyDown={(e) => handleOptionKeyDown(e, option.value)}
                     className={cn(
                       "flex w-full cursor-pointer items-center rounded-[6px] px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none",
-                      activo
-                        ? "bg-[#aa7323]/10 text-[#16243c]"
-                        : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]",
+                      enfocado
+                        ? "bg-[#aa7323]/20 text-[#aa7323]"
+                        : activo
+                          ? "bg-[#aa7323]/10 text-[#16243c]"
+                          : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]",
                     )}
                   >
                     {option.label}
