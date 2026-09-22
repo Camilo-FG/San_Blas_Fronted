@@ -164,7 +164,7 @@ const CatequesisPage = () => {
   };
 
   const tabs: { id: Section; label: string }[] = [
-    { id: "info", label: "Información sobre catequesis" },
+    { id: "info", label: "Información" },
     { id: "matricula", label: "Inscribirse" },
     { id: "consultar", label: "Consultar estado" },
   ];
@@ -182,49 +182,21 @@ const CatequesisPage = () => {
               Matrícula a Catequesis
             </h1>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-              {activeSection !== "info" && (
+              {tabs.map((tab) => (
                 <button
+                  key={tab.id}
                   type="button"
-                  onClick={() => cambiarSeccion("info")}
-                  className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-xl border border-border bg-surface px-4 py-2 text-xs font-bold text-text-secondary transition-colors hover:bg-surface-muted hover:text-royal-blue"
+                  onClick={() => cambiarSeccion(tab.id)}
+                  aria-pressed={activeSection === tab.id}
+                  className={`inline-flex min-h-12 flex-1 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 ${
+                    activeSection === tab.id
+                      ? "bg-royal-blue text-white shadow-md"
+                      : "border border-royal-blue/20 bg-royal-blue/5 text-royal-blue hover:bg-royal-blue hover:text-white"
+                  }`}
                 >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="15 18 9 12 15 6" />
-                  </svg>
-                  Información
+                  {tab.label}
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={() => cambiarSeccion("matricula")}
-                className={`inline-flex min-h-12 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 ${
-                  activeSection === "matricula"
-                    ? "bg-royal-blue text-white shadow-md"
-                    : "border border-royal-blue/20 bg-royal-blue/5 text-royal-blue hover:bg-royal-blue hover:text-white"
-                }`}
-              >
-                Inscribirse
-              </button>
-              <button
-                type="button"
-                onClick={() => cambiarSeccion("consultar")}
-                className={`inline-flex min-h-12 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 ${
-                  activeSection === "consultar"
-                    ? "bg-royal-blue text-white shadow-md"
-                    : "border border-royal-blue/20 bg-royal-blue/5 text-royal-blue hover:bg-royal-blue hover:text-white"
-                }`}
-              >
-                Consultar estado
-              </button>
+              ))}
             </div>
           </header>
 
