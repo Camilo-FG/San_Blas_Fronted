@@ -1,5 +1,5 @@
 import { useRef, useState, type DragEvent } from "react";
-import { Upload, X } from "lucide-react";
+import { FileText, Upload, X } from "lucide-react";
 import { Label } from "../../../shared/ui";
 
 export interface ArchivoImagen {
@@ -22,6 +22,7 @@ interface SubidaImagenProps {
   textoBoton?: string;
   mostrarVistaPrevia?: boolean;
   tiposPermitidos?: string[];
+  varianteVistaPrevia?: "predeterminada" | "tarjeta";
 }
 
 const TIPOS_PERMITIDOS = [
@@ -47,6 +48,7 @@ export const SubidaImagen = ({
   textoBoton = "Browse Files",
   mostrarVistaPrevia = true,
   tiposPermitidos = TIPOS_PERMITIDOS,
+  varianteVistaPrevia = "predeterminada",
 }: SubidaImagenProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [arrastrando, setArrastrando] = useState(false);
@@ -94,6 +96,10 @@ export const SubidaImagen = ({
     if (value) limpiar();
     else onClearExisting?.();
   };
+  const usarTarjeta =
+    varianteVistaPrevia === "tarjeta" && Boolean(value || existingPreview);
+  const vistaTarjeta = value?.preview ?? existingPreview ?? null;
+  const esImagenTarjeta = value ? value.file.type.startsWith("image/") : true;
 
   return (
     <div
@@ -153,7 +159,42 @@ export const SubidaImagen = ({
               : "border-slate-300 bg-[#fdfdfd] hover:border-royal-blue/70 hover:bg-royal-blue/5"
         }`}
       >
-        {archivoListo && !mostrarVistaPrevia ? (
+        {usarTarjeta ? (
+          <div className="flex w-full items-center gap-3 text-left">
+            {vistaTarjeta && esImagenTarjeta ? (
+              <img
+                src={vistaTarjeta}
+                alt={value?.file.name ?? "Vista previa de la imagen"}
+                className="size-20 shrink-0 rounded-lg border border-slate-200 object-cover"
+              />
+            ) : (
+              <div className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-500">
+                <FileText size={28} />
+              </div>
+            )}
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <p className="truncate text-sm font-semibold text-[#16243c]">
+                {value?.file.name ?? "Imagen actual"}
+              </p>
+              {value && (
+                <p className="m-0 text-[0.72rem] text-text-muted">
+                  {(value.file.size / 1024).toFixed(0)} KB
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  cancelarSubida();
+                }}
+                aria-label="Quitar archivo"
+                className="cursor-pointer self-start rounded-lg border-0 bg-transparent p-0 text-xs font-extrabold text-red-600 transition-colors hover:text-red-700 hover:underline"
+              >
+                Quitar archivo
+              </button>
+            </div>
+          </div>
+        ) : archivoListo && !mostrarVistaPrevia ? (
           <>
             <div className="flex size-11 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
               <Upload size={22} />

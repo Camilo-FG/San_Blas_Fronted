@@ -836,7 +836,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   "image/png",
                   "image/webp",
                 ]}
-                mostrarVistaPrevia={false}
+                varianteVistaPrevia="tarjeta"
                 errorExterno={errors.feBautismoArchivo ?? null}
               />
             </div>
@@ -1847,7 +1847,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }
                 label="Archivo del comprobante"
                 required
-                mostrarVistaPrevia={false}
+                varianteVistaPrevia="tarjeta"
                 errorExterno={errors.archivoComprobante ?? null}
               />
             </div>
