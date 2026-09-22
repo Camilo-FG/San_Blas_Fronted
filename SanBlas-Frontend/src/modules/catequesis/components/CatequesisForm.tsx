@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (no deja picar dos veces)
 import {
@@ -240,17 +240,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const [vistaPreviaComprobante, setVistaPreviaComprobante] = useState<
     string | null
   >(null);
-
-  useEffect(() => {
-    return () => {
-      if (vistaPreviaFeBautismo) {
-        URL.revokeObjectURL(vistaPreviaFeBautismo);
-      }
-      if (vistaPreviaComprobante) {
-        URL.revokeObjectURL(vistaPreviaComprobante);
-      }
-    };
-  }, [vistaPreviaFeBautismo, vistaPreviaComprobante]);
 
   const scrollToProgressBar = () => {
     requestAnimationFrame(() => {
