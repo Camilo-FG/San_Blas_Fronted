@@ -160,7 +160,19 @@ export const SubidaImagen = ({
         }`}
       >
         {usarTarjeta ? (
-          <div className="flex w-full max-w-md items-center gap-3 text-left">
+          <>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                cancelarSubida();
+              }}
+              aria-label="Eliminar imagen"
+              className="absolute top-2.5 right-2.5 inline-flex size-8 cursor-pointer items-center justify-center rounded-full bg-slate-400 text-white shadow-sm transition-colors hover:bg-slate-500"
+            >
+              <X size={16} />
+            </button>
+            <div className="flex w-full max-w-md items-center gap-3 text-left">
             {vistaTarjeta && esImagenTarjeta ? (
               <img
                 src={vistaTarjeta}
@@ -194,6 +206,7 @@ export const SubidaImagen = ({
               </button>
             </div>
           </div>
+          </>
         ) : archivoListo && !mostrarVistaPrevia ? (
           <>
             <div className="flex size-11 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
