@@ -89,11 +89,11 @@ const UpdateUserModal: React.FC<Props> = ({
   };
 
   const validatePhone = (phone: string) => {
-    return /^\d{4}-\d{4}$/.test(phone);
+    return /^[1-9]\d{3}-\d{4}$/.test(phone);
   };
 
   const formatTelefono = (value: string) => {
-    const soloNumeros = value.replace(/\D/g, '').slice(0, 8);
+    const soloNumeros = value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 8);
     return soloNumeros.length > 4
       ? `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4)}`
       : soloNumeros;
@@ -176,7 +176,12 @@ const UpdateUserModal: React.FC<Props> = ({
           >
             {(field) => (
               <div>
-                <Label htmlFor="u-nombre">Nombre completo</Label>
+                <Label htmlFor="u-nombre">
+                  Nombre completo
+                  <span className="ml-1.5 font-normal text-text-muted">
+                    ({field.state.value.length}/100)
+                  </span>
+                </Label>
                 <Input
                   id="u-nombre"
                   type="text"
@@ -188,6 +193,7 @@ const UpdateUserModal: React.FC<Props> = ({
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
+                  maxLength={100}
                 />
                 <FieldError message={field.state.meta.errors[0]} />
               </div>
@@ -204,7 +210,12 @@ const UpdateUserModal: React.FC<Props> = ({
           >
             {(field) => (
               <div>
-                <Label htmlFor="u-correo">Correo electrónico</Label>
+                <Label htmlFor="u-correo">
+                  Correo electrónico
+                  <span className="ml-1.5 font-normal text-text-muted">
+                    ({field.state.value.length}/100)
+                  </span>
+                </Label>
                 <Input
                   id="u-correo"
                   type="email"
@@ -216,6 +227,7 @@ const UpdateUserModal: React.FC<Props> = ({
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
+                  maxLength={100}
                 />
                 <FieldError message={field.state.meta.errors[0]} />
               </div>
