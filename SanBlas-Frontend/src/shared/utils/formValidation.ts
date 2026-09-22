@@ -15,6 +15,10 @@ export const soloLetras = (valor: string): string =>
 export const soloNumeros = (valor: string, max = 20): string =>
   valor.replace(/[^0-9]/g, '').replace(/^0+/, '').slice(0, max);
 
+// Solo caracteres válidos de correo: letras, dígitos y @ . _ + -
+export const soloCorreo = (valor: string, max = 50): string =>
+  valor.replace(/[^a-zA-Z0-9@._+-]/g, '').slice(0, max);
+
 // Solo dígitos para la cédula: no letras, primer dígito del 1 al 9, hasta 9 dígitos.
 const soloCedulaDigitos = (valor: string): string => {
   const digitos = valor.replace(/\D/g, '');

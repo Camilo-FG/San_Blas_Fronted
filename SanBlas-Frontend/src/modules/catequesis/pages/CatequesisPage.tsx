@@ -18,6 +18,7 @@ import {
   Label,
 } from "../../../shared/ui";
 import { formatearFechaEnvio } from "../../../shared/utils/fechas";
+import { soloCorreo } from "../../../shared/utils/formValidation";
 
 interface ResumenSolicitudEnviada {
   nombreAlumno: string;
@@ -329,14 +330,14 @@ const CatequesisPage = () => {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="flex-1">
                   <Label htmlFor="correo-consulta">
-                    Correo electrónico *
+                    Correo electrónico<span className="text-red-500"> *</span>
                   </Label>
                   <Input
                     id="correo-consulta"
                     type="email"
                     placeholder="correo@ejemplo.com"
                     value={correoConsulta}
-                    onChange={(e) => setCorreoConsulta(e.target.value)}
+                    onChange={(e) => setCorreoConsulta(soloCorreo(e.target.value))}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleConsultar();
                     }}
