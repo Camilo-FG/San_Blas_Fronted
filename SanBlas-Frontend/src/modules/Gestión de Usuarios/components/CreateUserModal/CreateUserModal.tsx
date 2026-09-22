@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
+import { Eye, EyeOff } from 'lucide-react';
 import { isAdminRole, type Usuario } from '../../../../types/Usuario';
 import {
   opcionesSelectRol,
@@ -16,6 +17,10 @@ import {
   Select,
 } from '../../../../shared/ui';
 import { normalizarTexto } from '../../Utils/normalizarTexto';
+
+// estilos del botón de ojo para mostrar/ocultar contraseña (mismo look que el login)
+const BOTON_OJO =
+  'absolute right-2.5 inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-text-muted transition-colors hover:bg-royal-blue/5 hover:text-royal-blue focus-visible:ring-2 focus-visible:ring-royal-blue/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60';
 
 interface CreateUserData {
   nombre: string;
@@ -100,6 +105,9 @@ const CreateUserModal: React.FC<Props> = ({
   });
 
   const { user: usuarioSesion } = useAuth();
+  // controlan si se ve o se oculta el texto de cada contraseña
+  const [mostrarContrasena, setMostrarContrasena] = useState(false);
+  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
   // solo un admin puede otorgar el rol admin; el resto solo puede crear usuarios normales
   const rolesPermitidos = isAdminRole(usuarioSesion?.role ?? '')
     ? [...ROLES_ASIGNABLES]
@@ -330,22 +338,35 @@ const CreateUserModal: React.FC<Props> = ({
                       ({field.state.value.length}/64)
                     </span>
                   </Label>
-                  <Input
-                    id="nueva-contrasena-usuario"
-                    name="nueva-contrasena-usuario"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="Escriba una contraseña"
-                    value={field.state.value}
-                    hasError={field.state.meta.errors.length > 0}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={() => {
-                      field.handleChange(field.state.value.trim());
-                      field.handleBlur();
-                    }}
-                    maxLength={64}
-                    disabled={guardando}
-                  />
+                  <div className="relative flex items-center">
+                    <Input
+                      id="nueva-contrasena-usuario"
+                      name="nueva-contrasena-usuario"
+                      type={mostrarContrasena ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      placeholder="Escriba una contraseña"
+                      value={field.state.value}
+                      hasError={field.state.meta.errors.length > 0}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={() => {
+                        field.handleChange(field.state.value.trim());
+                        field.handleBlur();
+                      }}
+                      maxLength={64}
+                      disabled={guardando}
+                      className="pr-12"
+                    />
+                    <button
+                      type="button"
+                      className={BOTON_OJO}
+                      onClick={() => setMostrarContrasena((prev) => !prev)}
+                      aria-label={mostrarContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      aria-pressed={mostrarContrasena}
+                      disabled={guardando}
+                    >
+                      {mostrarContrasena ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
                   {valor ? ( // solo muestra la barrita si ya escribió algo
                     <div className="mt-2 flex items-center gap-2" aria-live="polite">
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong">
@@ -382,22 +403,35 @@ const CreateUserModal: React.FC<Props> = ({
                 <Label htmlFor="confirmar-contrasena-usuario" required>
                   Confirmar contraseña
                 </Label>
-                <Input
-                  id="confirmar-contrasena-usuario"
-                  name="confirmar-contrasena-usuario"
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Repita la contraseña"
-                  value={field.state.value}
-                  hasError={field.state.meta.errors.length > 0}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={() => {
-                    field.handleChange(field.state.value.trim());
-                    field.handleBlur();
-                  }}
-                  maxLength={64}
-                  disabled={guardando}
-                />
+                <div className="relative flex items-center">
+                  <Input
+                    id="confirmar-contrasena-usuario"
+                    name="confirmar-contrasena-usuario"
+                    type={mostrarConfirmacion ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    placeholder="Repita la contraseña"
+                    value={field.state.value}
+                    hasError={field.state.meta.errors.length > 0}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={() => {
+                      field.handleChange(field.state.value.trim());
+                      field.handleBlur();
+                    }}
+                    maxLength={64}
+                    disabled={guardando}
+                    className="pr-12"
+                  />
+                  <button
+                    type="button"
+                    className={BOTON_OJO}
+                    onClick={() => setMostrarConfirmacion((prev) => !prev)}
+                    aria-label={mostrarConfirmacion ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-pressed={mostrarConfirmacion}
+                    disabled={guardando}
+                  >
+                    {mostrarConfirmacion ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
                 <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
               </div>
             )}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { UserList } from '../components/UserList/UserList';
 import CreateUserModal from '../components/CreateUserModal/CreateUserModal';
 import CreateRolModal from '../components/CreateRolModal/CreateRolModal';
@@ -8,7 +9,7 @@ import { useGetUsuariosPaginados } from '../hooks/hooksUsuarios/useGetUsuariosPa
 import { useCreateUser } from '../hooks/hooksUsuarios/useCreateUser';
 import { useGetRoles } from '../hooks/hooksUsuarios/useGetRoles';
 import { useCreateRol } from '../hooks/hooksUsuarios/useCreateRol';
-import { AdminModule, ErrorMessage, PageLoader, cn, useToast } from '../../../shared/ui';
+import { AdminModule, Button, ErrorMessage, PageLoader, cn, useToast } from '../../../shared/ui';
 
 type PestanaUsuarios = 'usuarios' | 'roles';
 
@@ -132,7 +133,20 @@ const GestionUsuarios = () => {
                     {loading ? (
                         <PageLoader />
                     ) : error ? (
-                        <ErrorMessage message={error} />
+                        <div className="flex flex-col items-start gap-3">
+                            <ErrorMessage message={error} className="w-full" />
+                            <Button
+                                variant="royal"
+                                className="gap-1.5"
+                                onClick={() => {
+                                    void refetch();
+                                    void refetchPagina();
+                                }}
+                            >
+                                <RefreshCw size={16} />
+                                Reintentar
+                            </Button>
+                        </div>
                     ) : (
                         <UserList
                             users={usuariosPagina}
