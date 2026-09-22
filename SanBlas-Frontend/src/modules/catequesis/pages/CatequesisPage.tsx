@@ -152,6 +152,9 @@ const CatequesisPage = () => {
 
   const cambiarSeccion = (seccion: Section) => {
     setActiveSection(seccion);
+    setCorreoConsulta("");
+    setErrorConsulta(null);
+    setResultadosConsulta([]);
     const hashes: Record<Section, string> = {
       info: "#informacion",
       matricula: "#matricula",
