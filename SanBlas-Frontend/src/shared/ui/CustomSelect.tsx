@@ -102,7 +102,16 @@ export function CustomSelect({
 
   useEffect(() => {
     if (!open) return;
-    const cerrarAlDesplazar = () => {
+    const cerrarAlDesplazar = (event: Event) => {
+      const contenedor = contenedorRef.current;
+      const destino = event.target;
+      if (
+        contenedor &&
+        destino instanceof Node &&
+        contenedor.contains(destino)
+      ) {
+        return;
+      }
       setOpen(false);
       setFocusIndex(-1);
     };

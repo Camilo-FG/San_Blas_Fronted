@@ -1818,6 +1818,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 }
                 label="Archivo del comprobante"
                 required
+                hint="Fotografía del comprobante. Máximo 5 MB."
                 varianteVistaPrevia="tarjeta"
                 errorExterno={errors.archivoComprobante ?? null}
               />
