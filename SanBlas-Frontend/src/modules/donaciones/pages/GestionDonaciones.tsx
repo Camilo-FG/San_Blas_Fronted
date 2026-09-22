@@ -23,6 +23,7 @@ import {
 } from "../hooks/useGestionDonaciones";
 import { DonacionDetalleModal } from "../components/DonacionDetalleModal";
 import { ExportarDonacionesModal } from "../components/ExportarDonacionesModal";
+import { exportarDonaciones } from "../utils/exportarDonaciones";
 import { useNotificacionDonaciones } from "../hooks/useNotificacionDonaciones";
 import { NotificacionSolicitudesNuevas } from "../../../shared/components/NotificacionSolicitudesNuevas";
 import { ApiError } from "../../../services/apiClient";
@@ -1556,8 +1557,24 @@ export default function GestionDonaciones(): React.JSX.Element {
       {exportModalAbierto && (
         <ExportarDonacionesModal
           onClose={() => setExportModalAbierto(false)}
-          onConfirm={() => {
-            // TODO: exportar tabla (CSV/PDF según opciones)
+          onConfirm={(opciones) => {
+            const resultado = exportarDonaciones(
+              donaciones,
+              historial,
+              opciones,
+            );
+            setExportModalAbierto(false);
+            if (resultado.filas === 0) {
+              showToast(
+                "No hay donaciones para los criterios seleccionados",
+                "error",
+              );
+            } else {
+              showToast(
+                `Se exportaron ${resultado.filas} donaciones`,
+                "success",
+              );
+            }
           }}
         />
       )}
