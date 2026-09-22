@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (no deja picar dos veces)
 import {
@@ -14,6 +14,10 @@ import { FILIALES_CATEQUESIS } from "../constants/filialesCatequesis";
 import { NIVELES_CATEQUESIS } from "../constants/nivelesCatequesis";
 import { MONTO_INSCRIPCION_CATEQUESIS } from "../constants/catequesisInformacion";
 import { CatequesisEnrollmentData } from "../types/CatequesisEnrollmentData";
+import {
+  SubidaImagen,
+  type ArchivoImagen,
+} from "../../solicSacramento/components/SubidaImagen";
 import { soloLetras } from "../../../shared/utils/formValidation";
 
 interface CatequesisFormProps {
@@ -35,13 +39,6 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
     fechaNacimiento: null,
     direccion: {
       direccionExacta: null,
-    },
-    bautismo: {
-      parroquia: null,
-      fecha: null,
-      tomo: null,
-      folio: null,
-      asiento: null,
     },
     adecuacion: {
       requiereAdecuacionCentroEducativo: null,
@@ -69,6 +66,11 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
     nombre: "",
     primerApellido: "",
     segundoApellido: "",
+    direccion: {
+      direccionExacta: null,
+      ciudad: null,
+      provincia: null,
+    },
     telefono: "",
   },
 
@@ -82,7 +84,6 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
     },
     parentesco: null,
     pago: {
-      numeroComprobanteSINPE: "",
       archivoComprobante: null,
       fechaPago: null,
     },
@@ -93,18 +94,39 @@ const infoBoxClass =
   "mb-4 rounded-2xl border border-royal-gold/40 bg-royal-gold/10 p-3.5 text-sm leading-relaxed text-gray-600 sm:p-4";
 const MAX_CHARACTERS = 50;
 const MAX_CHARACTERS_NOMBRE = 20;
+const MAX_CHARACTERS_DESCRIPCION = 300;
 
-// Rango de edad válido para catequesis infantil (Primer y Sétimo nivel).
-const EDAD_MINIMA_CATEQUIZANDO = 7;
-const EDAD_MAXIMA_CATEQUIZANDO = 8;
+// Fecha de corte para el cálculo de edad del catequizando: 31 de agosto del año en curso.
+const FECHA_CORTE_EDAD = (() => {
+  const ahora = new Date();
+  return new Date(ahora.getFullYear(), 7, 31);
+})();
+
+// Rango de edad según el nivel de catequesis:
+// - Primer nivel: 6 a 7 años.
+// - Sétimo nivel: 13 a 14 años.
+const obtenerRangoEdadPorNivel = (
+  nivel: string | null | undefined,
+): { minima: number; maxima: number } | null => {
+  const n = nivel?.toLowerCase();
+  if (n === "primero") return { minima: 6, maxima: 7 };
+  if (n === "sétimo" || n === "septimo") return { minima: 13, maxima: 14 };
+  return null;
+};
 
 const limitarCaracteres = (valor: string): string =>
   valor.slice(0, MAX_CHARACTERS);
 const limitarPalabras = limitarCaracteres;
 const limitarDireccion = (valor: string): string =>
   valor.replace(/[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ0-9\s,.\-#]/g, "").slice(0, 250);
+const limitarDescripcion = (valor: string): string =>
+  valor.replace(/[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ0-9\s,.\-#()/\u00A0]/g, "").slice(0, MAX_CHARACTERS_DESCRIPCION);
+const limitarCorreo = (valor: string): string =>
+  valor.replace(/[^a-zA-Z0-9@._+-]/g, "").slice(0, 50);
 const limitarNombre = (valor: string): string =>
   soloLetras(valor).slice(0, MAX_CHARACTERS_NOMBRE);
+const limitarLugar = (valor: string): string =>
+  soloLetras(valor).slice(0, MAX_CHARACTERS);
 
 const calcularEdad = (fecha: string): number | null => {
   const nacimiento = new Date(`${fecha}T00:00:00`);
@@ -123,16 +145,22 @@ const calcularEdad = (fecha: string): number | null => {
 // Incluye la edad calculada cuando existe para orientar mejor al usuario.
 const mensajeFechaNacimientoCatequizando = (
   fecha: string | null,
+  nivel: string | null | undefined,
 ): string | null => {
   if (!fecha) return "Digite la fecha de nacimiento.";
 
-  const edad = calcularEdad(fecha);
+  if (!nivel) return "Seleccione el nivel de catequesis para validar la edad del catequizando.";
+
+  const rango = obtenerRangoEdadPorNivel(nivel);
+  if (!rango) return "Debe seleccionar un nivel de catequesis válido para validar la edad del catequizando.";
+
+  const edad = calcularEdad(fecha, FECHA_CORTE_EDAD);
   if (edad === null) {
-    return "La edad del catequizando no aplica. Debe tener entre 7 y 8 años.";
+    return "No se pudo calcular la edad del catequizando.";
   }
 
-  if (edad < EDAD_MINIMA_CATEQUIZANDO || edad > EDAD_MAXIMA_CATEQUIZANDO) {
-    return `La edad del catequizando es ${edad} años y no aplica. Debe tener entre ${EDAD_MINIMA_CATEQUIZANDO} y ${EDAD_MAXIMA_CATEQUIZANDO} años.`;
+  if (edad < rango.minima || edad > rango.maxima) {
+    return "La edad del catequizando es " + edad + " años y no aplica. Debe tener entre " + rango.minima + " y " + rango.maxima + " años.";
   }
 
   return null;
@@ -191,37 +219,6 @@ function CampoApellido({
   );
 }
 
-const fileInputClass = cn(
-  "cursor-pointer p-2.5",
-  "file:mr-3 file:cursor-pointer file:rounded-[10px] file:border-0 file:bg-royal-blue file:px-3.5 file:py-2 file:text-xs file:font-extrabold file:text-white",
-  "hover:file:bg-royal-gold hover:file:text-royal-blue",
-);
-
-// Límite de tamaño para la fe de bautismo (5 MB, igual que el backend).
-const MAX_TAMANO_FE_BAUTISMO = 5 * 1024 * 1024;
-
-const validarArchivoFeBautismo = (file: File): string | null => {
-  if (!file.type.startsWith("image/")) {
-    return "La fe de bautismo debe ser una imagen (JPG, PNG u otro formato de imagen).";
-  }
-  if (file.size > MAX_TAMANO_FE_BAUTISMO) {
-    return "La imagen no debe superar los 5 MB.";
-  }
-  return null;
-};
-
-const MAX_TAMANO_COMPROBANTE = 5 * 1024 * 1024;
-
-const validarArchivoComprobante = (file: File): string | null => {
-  if (!file.type.startsWith("image/")) {
-    return "El comprobante debe ser una imagen (JPG, PNG u otro formato de imagen).";
-  }
-  if (file.size > MAX_TAMANO_COMPROBANTE) {
-    return "La imagen no debe superar los 5 MB.";
-  }
-  return null;
-};
-
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const progressBarRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState<CatequesisEnrollmentData>(
@@ -234,32 +231,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const [aceptaLineamientos, setAceptaLineamientos] = useState(false);
   const [tienePadre, setTienePadre] = useState<boolean | null>(null);
   const [tieneMadre, setTieneMadre] = useState<boolean | null>(null);
-  const [errorArchivoFeBautismo, setErrorArchivoFeBautismo] = useState<
-    string | null
-  >(null);
   const [vistaPreviaFeBautismo, setVistaPreviaFeBautismo] = useState<
-    string | null
-  >(null);
-  const [feBautismoInputKey, setFeBautismoInputKey] = useState(0);
-
-  const [errorArchivoComprobante, setErrorArchivoComprobante] = useState<
     string | null
   >(null);
   const [vistaPreviaComprobante, setVistaPreviaComprobante] = useState<
     string | null
   >(null);
-  const [comprobanteInputKey, setComprobanteInputKey] = useState(0);
-
-  useEffect(() => {
-    return () => {
-      if (vistaPreviaFeBautismo) {
-        URL.revokeObjectURL(vistaPreviaFeBautismo);
-      }
-      if (vistaPreviaComprobante) {
-        URL.revokeObjectURL(vistaPreviaComprobante);
-      }
-    };
-  }, [vistaPreviaFeBautismo, vistaPreviaComprobante]);
 
   const scrollToProgressBar = () => {
     requestAnimationFrame(() => {
@@ -300,7 +277,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     "catequesis.centroCatequesis": "centroCatequesis",
     "catequesis.nivelAInscribirse": "nivelAInscribirse",
     "catequesis.feBautismoArchivo": "feBautismoArchivo",
-    "catequizando.bautismo.parroquia": "parroquiaBautismo",
     "catequizando.adecuacion.requiereAdecuacionCentroEducativo": "requiereAdecuacion",
     "catequizando.adecuacion.descripcionAdecuacion": "descripcionAdecuacion",
     "catequizando.condicionSalud.portadorEnfermedadCronica": "portadorEnfermedad",
@@ -319,8 +295,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     "madreCatequizando.telefono": "telefonoMadre",
     "padreCatequizando.nombre": "nombrePadre",
     "padreCatequizando.primerApellido": "primerApellidoPadre",
+    "padreCatequizando.direccion.direccionExacta": "direccionPadre",
+    "padreCatequizando.direccion.ciudad": "ciudadPadre",
+    "padreCatequizando.direccion.provincia": "provinciaPadre",
     "padreCatequizando.telefono": "telefonoPadre",
-    "inscripcion.pago.numeroComprobanteSINPE": "numeroComprobanteSINPE",
   };
 
   const requiredMessages: Record<string, string> = {
@@ -331,7 +309,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     centroCatequesis: "Seleccione el centro de catequesis.",
     nivelAInscribirse: "Seleccione el nivel a inscribirse.",
     feBautismoArchivo: "Debe adjuntar la fe de bautismo.",
-    parroquiaBautismo: "Digite la parroquia de bautismo.",
     nombrePersonaInscribe: "Digite el nombre de la persona que inscribe.",
     primerApellidoPersonaInscribe: "Digite el primer apellido de la persona que inscribe.",
     segundoApellidoPersonaInscribe: "Digite el segundo apellido de la persona que inscribe.",
@@ -346,8 +323,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     telefonoMadre: "El teléfono debe contener 8 dígitos.",
     nombrePadre: "Digite el nombre del padre.",
     primerApellidoPadre: "Digite el primer apellido del padre.",
+    direccionPadre: "Digite la dirección exacta.",
+    ciudadPadre: "Digite la ciudad.",
+    provinciaPadre: "Digite la provincia.",
     telefonoPadre: "El teléfono debe contener 8 dígitos.",
-    numeroComprobanteSINPE: "Digite el número de comprobante SINPE.",
   };
 
   const updateForm = (path: string, value: unknown) => {
@@ -399,19 +378,18 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         "Digite el primer apellido del catequizando.";
     }
 
-    const errorFechaNacimiento = mensajeFechaNacimientoCatequizando(
-      form.catequizando.fechaNacimiento,
-    );
+    const errorFechaNacimiento = form.catequesis.nivelAInscribirse
+      ? mensajeFechaNacimientoCatequizando(
+          form.catequizando.fechaNacimiento,
+          form.catequesis.nivelAInscribirse,
+        )
+      : null;
     if (errorFechaNacimiento) {
       newErrors.fechaNacimiento = errorFechaNacimiento;
     }
 
     if (!form.catequizando.direccion.direccionExacta?.trim()) {
       newErrors.direccionExacta = "Digite la dirección exacta.";
-    }
-
-    if (!form.catequizando.bautismo.parroquia?.trim()) {
-      newErrors.parroquiaBautismo = "Digite la parroquia de bautismo.";
     }
 
     if (
@@ -467,20 +445,8 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         "El teléfono debe contener 8 dígitos.";
     }
 
-    if (!form.inscripcion.pago.numeroComprobanteSINPE.trim()) {
-      newErrors.numeroComprobanteSINPE =
-        "Digite el número de comprobante SINPE.";
-    }
-
     if (!form.inscripcion.pago.archivoComprobante) {
       newErrors.archivoComprobante = "Debe adjuntar el comprobante de pago.";
-    } else {
-      const errorComprobante = validarArchivoComprobante(
-        form.inscripcion.pago.archivoComprobante,
-      );
-      if (errorComprobante) {
-        newErrors.archivoComprobante = errorComprobante;
-      }
     }
 
     if (tieneMadre) {
@@ -533,14 +499,20 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         stepErrors.segundoApellidoCatequizando =
           "Digite el segundo apellido del catequizando.";
       }
-      const errorFechaNacimiento = mensajeFechaNacimientoCatequizando(
-        form.catequizando.fechaNacimiento,
-      );
+      const errorFechaNacimiento = form.catequesis.nivelAInscribirse
+        ? mensajeFechaNacimientoCatequizando(
+            form.catequizando.fechaNacimiento,
+            form.catequesis.nivelAInscribirse,
+          )
+        : null;
       if (errorFechaNacimiento) {
         stepErrors.fechaNacimiento = errorFechaNacimiento;
       }
       if (!form.catequizando.direccion.direccionExacta?.trim()) {
         stepErrors.direccionExacta = "Digite la dirección exacta.";
+      }
+      if (!form.catequesis.nivelAInscribirse) {
+        stepErrors.nivelAInscribirse = "Seleccione el nivel a inscribirse.";
       }
     }
 
@@ -548,19 +520,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       if (!form.catequesis.centroCatequesis) {
         stepErrors.centroCatequesis = "Seleccione el centro de catequesis.";
       }
-      if (!form.catequesis.nivelAInscribirse) {
-        stepErrors.nivelAInscribirse = "Seleccione el nivel a inscribirse.";
-      }
       if (!form.catequesis.feBautismoArchivo) {
         stepErrors.feBautismoArchivo = "Debe adjuntar la fe de bautismo.";
       }
     }
 
-    if (step === 3 && !form.catequizando.bautismo.parroquia?.trim()) {
-      stepErrors.parroquiaBautismo = "Digite la parroquia de bautismo.";
-    }
-
-    if (step === 4) {
+    if (step === 3) {
       if (
         form.catequizando.adecuacion.requiereAdecuacionCentroEducativo === null
       ) {
@@ -581,7 +546,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       }
     }
 
-    if (step === 5) {
+    if (step === 4) {
       if (!form.inscripcion.personaQueInscribe.nombre?.trim())
         stepErrors.nombrePersonaInscribe =
           "Digite el nombre de la persona que inscribe.";
@@ -607,7 +572,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       }
     }
 
-    if (step === 6) {
+    if (step === 5) {
       if (tieneMadre === null) {
         stepErrors.tieneMadre =
           "Indique si la madre es parte del núcleo familiar.";
@@ -639,6 +604,12 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           stepErrors.primerApellidoPadre =
             "Digite el primer apellido del padre.";
         }
+        if (!form.padreCatequizando.direccion.direccionExacta?.trim())
+          stepErrors.direccionPadre = "Digite la dirección exacta.";
+        if (!form.padreCatequizando.direccion.ciudad?.trim())
+          stepErrors.ciudadPadre = "Digite la ciudad.";
+        if (!form.padreCatequizando.direccion.provincia?.trim())
+          stepErrors.provinciaPadre = "Digite la provincia.";
         if (
           form.padreCatequizando.telefono &&
           !/^\d{4}-\d{4}$/.test(form.padreCatequizando.telefono)
@@ -648,23 +619,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       }
     }
 
-    if (step === 7) {
-      if (!form.inscripcion.pago.numeroComprobanteSINPE.trim())
-        stepErrors.numeroComprobanteSINPE =
-          "Digite el número de comprobante SINPE.";
+    if (step === 6) {
       if (!form.inscripcion.pago.archivoComprobante) {
         stepErrors.archivoComprobante = "Debe adjuntar el comprobante de pago.";
-      } else {
-        const errorComprobante = validarArchivoComprobante(
-          form.inscripcion.pago.archivoComprobante,
-        );
-        if (errorComprobante) {
-          stepErrors.archivoComprobante = errorComprobante;
-        }
       }
     }
 
-    if (step === 8 && !aceptaLineamientos) {
+    if (step === 7 && !aceptaLineamientos) {
       stepErrors.lineamientos = "Debe aceptar los lineamientos de catequesis.";
     }
 
@@ -674,7 +635,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep((step) => Math.min(step + 1, 8));
+      setCurrentStep((step) => Math.min(step + 1, 7));
       scrollToProgressBar();
     } else {
       scrollToFirstError();
@@ -689,7 +650,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const stepTitles = [
     "Datos del catequizando",
     "Datos de catequesis",
-    "Datos de bautismo",
     "Adecuación y salud",
     "Datos del encargado",
     "Datos de los padres (opcional)",
@@ -700,7 +660,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    for (let step = 1; step <= 8; step++) {
+    for (let step = 1; step <= 7; step++) {
       if (!validateStep(step)) {
         setCurrentStep(step);
         scrollToFirstError();
@@ -716,79 +676,59 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     onSubmit(form);
   };
 
-  const manejarSeleccionFeBautismo = (file: File | null) => {
-    if (!file) {
-      return;
-    }
-
-    const mensajeError = validarArchivoFeBautismo(file);
-    if (mensajeError) {
-      setErrorArchivoFeBautismo(mensajeError);
-      updateForm("catequesis.feBautismoArchivo", null);
-      if (vistaPreviaFeBautismo) {
-        URL.revokeObjectURL(vistaPreviaFeBautismo);
-        setVistaPreviaFeBautismo(null);
-      }
-      setFeBautismoInputKey((key) => key + 1);
-      return;
-    }
-
-    setErrorArchivoFeBautismo(null);
-    updateForm("catequesis.feBautismoArchivo", file);
-    setErrors((prev) => {
-      const siguiente = { ...prev };
-      delete siguiente.feBautismoArchivo;
-      return siguiente;
-    });
-    setVistaPreviaFeBautismo(URL.createObjectURL(file));
-  };
-
-  const quitarFeBautismo = () => {
-    updateForm("catequesis.feBautismoArchivo", null);
-    setErrorArchivoFeBautismo(null);
-    setVistaPreviaFeBautismo(null);
-    setFeBautismoInputKey((key) => key + 1);
-  };
-
-  const quitarComprobante = () => {
-    updateForm("inscripcion.pago.archivoComprobante", null);
-    setErrorArchivoComprobante(null);
-    setVistaPreviaComprobante(null);
-    setComprobanteInputKey((key) => key + 1);
-  };
-
-  const manejarSeleccionComprobante = (file: File | null) => {
-    if (!file) {
-      return;
-    }
-
-    const mensajeError = validarArchivoComprobante(file);
-    if (mensajeError) {
-      setErrorArchivoComprobante(mensajeError);
-      updateForm("inscripcion.pago.archivoComprobante", null);
-      if (vistaPreviaComprobante) {
-        URL.revokeObjectURL(vistaPreviaComprobante);
-        setVistaPreviaComprobante(null);
-      }
-      setComprobanteInputKey((key) => key + 1);
-      return;
-    }
-
-    setErrorArchivoComprobante(null);
-    updateForm("inscripcion.pago.archivoComprobante", file);
-    setErrors((prev) => {
-      const siguiente = { ...prev };
-      delete siguiente.archivoComprobante;
-      return siguiente;
-    });
-    setVistaPreviaComprobante(URL.createObjectURL(file));
-  };
-
   return (
     <form
       className="mx-auto mt-6 flex w-full max-w-[1100px] flex-col gap-5 px-3.5 sm:mt-10 sm:gap-7 sm:px-5"
       onSubmit={handleSubmit}
     >
+      <div ref={progressBarRef} className="rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <span className="text-xs font-black tracking-wider text-royal-blue uppercase">
+            Paso {currentStep} de {stepTitles.length}
+          </span>
+          <span className="text-right text-xs font-semibold text-text-muted">
+            {stepTitles[currentStep - 1]}
+          </span>
+        </div>
+        <div className="mb-5 h-2 overflow-hidden rounded-full bg-gray-300">
+          <div
+            className="h-full rounded-full bg-royal-blue transition-[width] duration-300"
+            style={{ width: `${(currentStep / stepTitles.length) * 100}%` }}
+          />
+        </div>
+        <div
+          className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8"
+          role="tablist"
+          aria-label="Ir a un paso del formulario"
+        >
+          {stepTitles.map((title, index) => {
+            const step = index + 1;
+            const isActive = currentStep === step;
+
+            return (
+              <button
+                key={title}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-label={`Ir al paso ${step}: ${title}`}
+                onClick={() => setCurrentStep(step)}
+                disabled={loading}
+                className={cn(
+                  "min-h-9 rounded-lg border px-2 py-1.5 text-[0.68rem] font-bold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 disabled:cursor-not-allowed disabled:opacity-60",
+                  isActive
+                    ? "border-royal-blue bg-royal-blue text-white"
+                    : "border-border-strong bg-surface-muted text-text-secondary hover:border-royal-blue hover:text-royal-blue",
+                )}
+              >
+                <span className="block">Paso {step}</span>
+                <span className="block truncate font-medium">{title}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {currentStep === 2 && (
         <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
           <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
@@ -828,76 +768,53 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               )}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Nivel a inscribirse<span className="text-red-500"> *</span>
-              </Label>
-              <CustomSelect
-                value={form.catequesis.nivelAInscribirse || ""}
-                onChange={(valor) =>
-                  updateForm("catequesis.nivelAInscribirse", valor || null)
-                }
-                options={[
-                  ...NIVELES_CATEQUESIS.map((n) => ({ label: n.label, value: n.value })),
-                ]}
-                hasError={!!errors.nivelAInscribirse}
-              />
-              {errors.nivelAInscribirse && (
-                <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  ⚠ {errors.nivelAInscribirse}
-                </p>
-              )}
-            </div>
-
             <div className="flex flex-col gap-1.5 md:col-span-2">
-              <Label className="text-xs font-black text-royal-blue">
-                Adjuntar fe de bautismo<span className="text-red-500"> *</span>
-              </Label>
-              <Input
-                key={feBautismoInputKey}
-                type="file"
-                accept="image/*"
-                className={fileInputClass}
-                onChange={(e) =>
-                  manejarSeleccionFeBautismo(e.target.files?.[0] || null)
+              <SubidaImagen
+                value={
+                  form.catequesis.feBautismoArchivo instanceof File &&
+                  vistaPreviaFeBautismo
+                    ? {
+                        file: form.catequesis.feBautismoArchivo,
+                        preview: vistaPreviaFeBautismo,
+                      }
+                    : null
                 }
+                existingPreview={
+                  typeof form.catequesis.feBautismoArchivo === "string"
+                    ? form.catequesis.feBautismoArchivo
+                    : null
+                }
+                onChange={(archivo: ArchivoImagen | null) => {
+                  if (archivo) {
+                    if (vistaPreviaFeBautismo) {
+                      URL.revokeObjectURL(vistaPreviaFeBautismo);
+                    }
+                    updateForm("catequesis.feBautismoArchivo", archivo.file);
+                    setVistaPreviaFeBautismo(archivo.preview);
+                  } else {
+                    if (vistaPreviaFeBautismo) {
+                      URL.revokeObjectURL(vistaPreviaFeBautismo);
+                    }
+                    setVistaPreviaFeBautismo(null);
+                    updateForm("catequesis.feBautismoArchivo", null);
+                  }
+                }}
+                onClearExisting={() =>
+                  updateForm("catequesis.feBautismoArchivo", null)
+                }
+                label="Adjuntar fe de bautismo"
+                required
+                hint="Fotografía de la constancia de bautismo. Máximo 5 MB."
+                maxSizeMB={5}
+                tiposPermitidos={[
+                  "application/pdf",
+                  "image/jpeg",
+                  "image/png",
+                  "image/webp",
+                ]}
+                varianteVistaPrevia="tarjeta"
+                errorExterno={errors.feBautismoArchivo ?? null}
               />
-              <p className="m-0 text-xs font-medium text-text-muted">
-                Fotografía de la constancia de bautismo. Máximo 5 MB.
-              </p>
-              {(errorArchivoFeBautismo || errors.feBautismoArchivo) && (
-                <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  ⚠ {errorArchivoFeBautismo || errors.feBautismoArchivo}
-                </p>
-              )}
-              {vistaPreviaFeBautismo &&
-                form.catequesis.feBautismoArchivo instanceof File && (
-                <div className="mt-1 flex items-center gap-3 rounded-xl border border-border bg-white p-2.5 sm:max-w-md">
-                  <img
-                    src={vistaPreviaFeBautismo}
-                    alt="Vista previa de la fe de bautismo"
-                    className="h-20 w-16 shrink-0 rounded-lg border border-border object-cover shadow-sm"
-                  />
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <p className="truncate text-xs font-bold text-royal-blue">
-                      {form.catequesis.feBautismoArchivo.name}
-                    </p>
-                    <p className="m-0 text-[0.72rem] text-text-muted">
-                      {(form.catequesis.feBautismoArchivo.size / 1024).toFixed(
-                        0,
-                      )}{" "}
-                      KB
-                    </p>
-                    <button
-                      type="button"
-                      onClick={quitarFeBautismo}
-                      className="cursor-pointer self-start rounded-lg border-0 bg-transparent p-0 text-xs font-extrabold text-red-600 transition-colors hover:text-red-700 hover:underline"
-                    >
-                      Quitar archivo
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </section>
@@ -962,29 +879,29 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
-                Fecha de nacimiento<span className="text-red-500"> *</span>
+                Nivel a inscribirse<span className="text-red-500"> *</span>
               </Label>
-              <Input
-                type="date"
-                className="date-field"
-                value={form.catequizando.fechaNacimiento || ""}
-                onChange={(e) => {
-                  const valor = e.target.value;
-                  updateForm("catequizando.fechaNacimiento", valor);
-                  const mensaje = mensajeFechaNacimientoCatequizando(
-                    valor || null,
-                  );
-                  setErrors((prev) => {
-                    const siguiente = { ...prev };
-                    if (mensaje) siguiente.fechaNacimiento = mensaje;
-                    else delete siguiente.fechaNacimiento;
-                    return siguiente;
-                  });
+              <CustomSelect
+                value={form.catequesis.nivelAInscribirse || ""}
+                onChange={(valor) => {
+                  updateForm("catequesis.nivelAInscribirse", valor || null);
+                  if (!valor) {
+                    updateForm("catequizando.fechaNacimiento", "");
+                    setErrors((prev) => {
+                      const siguiente = { ...prev };
+                      delete siguiente.fechaNacimiento;
+                      return siguiente;
+                    });
+                  }
                 }}
+                options={[
+                  ...NIVELES_CATEQUESIS.map((n) => ({ label: n.label, value: n.value })),
+                ]}
+                hasError={!!errors.nivelAInscribirse}
               />
-              {errors.fechaNacimiento && (
+              {errors.nivelAInscribirse && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  ⚠ {errors.fechaNacimiento}
+                  ⚠ {errors.nivelAInscribirse}
                 </p>
               )}
             </div>
@@ -1011,115 +928,43 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 error={errors.direccionExacta}
               />
             </div>
+
+            {form.catequesis.nivelAInscribirse ? (
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-black text-royal-blue">
+                  Fecha de nacimiento<span className="text-red-500"> *</span>
+                </Label>
+                <Input
+                  type="date"
+                  className="date-field"
+                  value={form.catequizando.fechaNacimiento || ""}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    updateForm("catequizando.fechaNacimiento", valor);
+                    const mensaje = mensajeFechaNacimientoCatequizando(
+                      valor || null,
+                      form.catequesis.nivelAInscribirse,
+                    );
+                    setErrors((prev) => {
+                      const siguiente = { ...prev };
+                      if (mensaje) siguiente.fechaNacimiento = mensaje;
+                      else delete siguiente.fechaNacimiento;
+                      return siguiente;
+                    });
+                  }}
+                />
+                {errors.fechaNacimiento && (
+                  <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                    ⚠ {errors.fechaNacimiento}
+                  </p>
+                )}
+              </div>
+            ) : null}
           </div>
         </section>
       )}
 
       {currentStep === 3 && (
-        <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
-          <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="m-0 font-heading text-xl font-extrabold text-royal-blue sm:text-[23px]">
-                Datos de Bautismo
-              </h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
-                Complete la información del registro de bautismo.
-              </p>
-            </div>
-            <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Paso 3
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Parroquia<span className="text-red-500"> *</span>
-              </Label>
-              <Input
-                type="text"
-                placeholder="Ej: Parroquia San Blas"
-                value={form.catequizando.bautismo.parroquia || ""}
-                onChange={(e) =>
-                  updateForm(
-                    "catequizando.bautismo.parroquia",
-                    limitarPalabras(e.target.value),
-                  )
-                }
-              />
-              <WordCounter value={form.catequizando.bautismo.parroquia || ""} error={errors.parroquiaBautismo} />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Fecha de bautismo
-              </Label>
-              <Input
-                type="date"
-                className="date-field"
-                value={form.catequizando.bautismo.fecha || ""}
-                onChange={(e) =>
-                  updateForm("catequizando.bautismo.fecha", e.target.value)
-                }
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">Tomo</Label>
-              <Input
-                type="text"
-                placeholder="Ej: 12"
-                value={form.catequizando.bautismo.tomo || ""}
-                onChange={(e) =>
-                  updateForm(
-                    "catequizando.bautismo.tomo",
-                    limitarPalabras(e.target.value),
-                  )
-                }
-              />
-              <WordCounter value={form.catequizando.bautismo.tomo || ""} />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Folio
-              </Label>
-              <Input
-                type="text"
-                placeholder="Ej: 45"
-                value={form.catequizando.bautismo.folio || ""}
-                onChange={(e) =>
-                  updateForm(
-                    "catequizando.bautismo.folio",
-                    limitarPalabras(e.target.value),
-                  )
-                }
-              />
-              <WordCounter value={form.catequizando.bautismo.folio || ""} />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Asiento
-              </Label>
-              <Input
-                type="text"
-                placeholder="Ej: 123"
-                value={form.catequizando.bautismo.asiento || ""}
-                onChange={(e) =>
-                  updateForm(
-                    "catequizando.bautismo.asiento",
-                    limitarPalabras(e.target.value),
-                  )
-                }
-              />
-              <WordCounter value={form.catequizando.bautismo.asiento || ""} />
-            </div>
-          </div>
-        </section>
-      )}
-
-      {currentStep === 4 && (
         <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
           <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -1131,7 +976,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Paso 4
+              Paso 3
             </span>
           </div>
 
@@ -1220,7 +1065,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     onChange={(e) =>
                       updateForm(
                         "catequizando.adecuacion.descripcionAdecuacion",
-                        limitarPalabras(e.target.value),
+                        limitarDescripcion(e.target.value),
                       )
                     }
                   />
@@ -1228,6 +1073,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     value={
                       form.catequizando.adecuacion.descripcionAdecuacion || ""
                     }
+                    max={MAX_CHARACTERS_DESCRIPCION}
                     error={errors.descripcionAdecuacion}
                   />
                 </div>
@@ -1251,7 +1097,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     onChange={(e) =>
                       updateForm(
                         "catequizando.condicionSalud.descripcionEnfermedad",
-                        limitarPalabras(e.target.value),
+                        limitarDescripcion(e.target.value),
                       )
                     }
                   />
@@ -1259,6 +1105,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     value={
                       form.catequizando.condicionSalud.descripcionEnfermedad || ""
                     }
+                    max={MAX_CHARACTERS_DESCRIPCION}
                     error={errors.descripcionEnfermedad}
                   />
                 </div>
@@ -1268,7 +1115,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         </section>
       )}
 
-      {currentStep === 5 && (
+      {currentStep === 4 && (
         <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
           <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -1280,7 +1127,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Paso 5
+              Paso 4
             </span>
           </div>
 
@@ -1346,7 +1193,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "inscripcion.personaQueInscribe.correo",
-                    limitarPalabras(e.target.value),
+                    limitarCorreo(e.target.value),
                   )
                 }
               />
@@ -1408,7 +1255,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         </section>
       )}
 
-      {currentStep === 6 && (
+      {currentStep === 5 && (
         <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
           <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -1420,7 +1267,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Paso 6
+              Paso 5
             </span>
           </div>
 
@@ -1446,6 +1293,35 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
                   const seleccionaSi = valor === "si";
                   setTieneMadre(seleccionaSi);
+
+                  if (
+                    seleccionaSi &&
+                    form.inscripcion.parentesco === "Madre"
+                  ) {
+                    const encargado = form.inscripcion.personaQueInscribe;
+                    setForm((prev) => ({
+                      ...prev,
+                      madreCatequizando: {
+                        ...prev.madreCatequizando,
+                        nombre:
+                          prev.madreCatequizando.nombre ||
+                          encargado.nombre ||
+                          "",
+                        primerApellido:
+                          prev.madreCatequizando.primerApellido ||
+                          encargado.primerApellido ||
+                          "",
+                        segundoApellido:
+                          prev.madreCatequizando.segundoApellido ||
+                          encargado.segundoApellido ||
+                          "",
+                        telefono:
+                          prev.madreCatequizando.telefono ||
+                          encargado.telefono ||
+                          "",
+                      },
+                    }));
+                  }
                   setErrors((prev) => {
                     const siguiente = { ...prev };
                     delete siguiente.tieneMadre;
@@ -1567,7 +1443,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "madreCatequizando.direccion.ciudad",
-                    limitarPalabras(e.target.value),
+                    limitarLugar(e.target.value),
                   )
                 }
               />
@@ -1588,7 +1464,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                 onChange={(e) =>
                   updateForm(
                     "madreCatequizando.direccion.provincia",
-                    limitarPalabras(e.target.value),
+                    limitarLugar(e.target.value),
                   )
                 }
               />
@@ -1646,11 +1522,43 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
                   const seleccionaSi = valor === "si";
                   setTienePadre(seleccionaSi);
+
+                  if (
+                    seleccionaSi &&
+                    form.inscripcion.parentesco === "Padre"
+                  ) {
+                    const encargado = form.inscripcion.personaQueInscribe;
+                    setForm((prev) => ({
+                      ...prev,
+                      padreCatequizando: {
+                        ...prev.padreCatequizando,
+                        nombre:
+                          prev.padreCatequizando.nombre ||
+                          encargado.nombre ||
+                          "",
+                        primerApellido:
+                          prev.padreCatequizando.primerApellido ||
+                          encargado.primerApellido ||
+                          "",
+                        segundoApellido:
+                          prev.padreCatequizando.segundoApellido ||
+                          encargado.segundoApellido ||
+                          "",
+                        telefono:
+                          prev.padreCatequizando.telefono ||
+                          encargado.telefono ||
+                          "",
+                      },
+                    }));
+                  }
                   setErrors((prev) => {
                     const siguiente = { ...prev };
                     delete siguiente.tienePadre;
                     delete siguiente.nombrePadre;
                     delete siguiente.primerApellidoPadre;
+                    delete siguiente.direccionPadre;
+                    delete siguiente.ciudadPadre;
+                    delete siguiente.provinciaPadre;
                     delete siguiente.telefonoPadre;
                     return siguiente;
                   });
@@ -1662,6 +1570,11 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                         nombre: "",
                         primerApellido: "",
                         segundoApellido: "",
+                        direccion: {
+                          direccionExacta: null,
+                          ciudad: null,
+                          provincia: null,
+                        },
                         telefono: "",
                       },
                     }));
@@ -1727,6 +1640,71 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-black text-royal-blue">
+                Dirección exacta<span className="text-red-500"> *</span>
+              </Label>
+              <Input
+                type="text"
+                placeholder="Ej: 200 m norte de la iglesia, casa azul"
+                maxLength={250}
+                value={form.padreCatequizando.direccion.direccionExacta || ""}
+                onChange={(e) =>
+                  updateForm(
+                    "padreCatequizando.direccion.direccionExacta",
+                    limitarDireccion(e.target.value),
+                  )
+                }
+              />
+              <WordCounter
+                value={form.padreCatequizando.direccion.direccionExacta || ""}
+                max={250}
+                error={errors.direccionPadre}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">
+                Ciudad<span className="text-red-500"> *</span>
+              </Label>
+              <Input
+                type="text"
+                placeholder="Ej: Nicoya"
+                value={form.padreCatequizando.direccion.ciudad || ""}
+                onChange={(e) =>
+                  updateForm(
+                    "padreCatequizando.direccion.ciudad",
+                    limitarLugar(e.target.value),
+                  )
+                }
+              />
+              <WordCounter
+                value={form.padreCatequizando.direccion.ciudad || ""}
+                error={errors.ciudadPadre}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">
+                Provincia<span className="text-red-500"> *</span>
+              </Label>
+              <Input
+                type="text"
+                placeholder="Ej: Guanacaste"
+                value={form.padreCatequizando.direccion.provincia || ""}
+                onChange={(e) =>
+                  updateForm(
+                    "padreCatequizando.direccion.provincia",
+                    limitarLugar(e.target.value),
+                  )
+                }
+              />
+              <WordCounter
+                value={form.padreCatequizando.direccion.provincia || ""}
+                error={errors.provinciaPadre}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-black text-royal-blue">
                 Teléfono
               </Label>
               <Input
@@ -1755,7 +1733,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         </section>
       )}
 
-      {currentStep === 7 && (
+      {currentStep === 6 && (
         <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
           <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -1767,7 +1745,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Paso 7
+              Paso 6
             </span>
           </div>
 
@@ -1785,79 +1763,55 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-black text-royal-blue">
-                Número de comprobante SINPE<span className="text-red-500"> *</span>
-              </Label>
-              <Input
-                type="text"
-                placeholder="Ej: SINPE-123456"
-                value={form.inscripcion.pago.numeroComprobanteSINPE}
-                onChange={(e) =>
-                  updateForm(
-                    "inscripcion.pago.numeroComprobanteSINPE",
-                    limitarPalabras(e.target.value),
-                  )
-                }
-              />
-              <WordCounter
-                value={form.inscripcion.pago.numeroComprobanteSINPE}
-                error={errors.numeroComprobanteSINPE}
-              />
-            </div>
 
             <div className="flex flex-col gap-1.5 md:col-span-2">
-              <Label className="text-xs font-black text-royal-blue">
-                Archivo del comprobante<span className="text-red-500"> *</span>
-              </Label>
-              <Input
-                key={comprobanteInputKey}
-                type="file"
-                accept="image/*"
-                className={fileInputClass}
-                onChange={(e) =>
-                  manejarSeleccionComprobante(e.target.files?.[0] || null)
+              <SubidaImagen
+                value={
+                  form.inscripcion.pago.archivoComprobante instanceof File &&
+                  vistaPreviaComprobante
+                    ? {
+                        file: form.inscripcion.pago.archivoComprobante,
+                        preview: vistaPreviaComprobante,
+                      }
+                    : null
                 }
+                existingPreview={
+                  typeof form.inscripcion.pago.archivoComprobante === "string"
+                    ? form.inscripcion.pago.archivoComprobante
+                    : null
+                }
+                onChange={(archivo: ArchivoImagen | null) => {
+                  if (archivo) {
+                    if (vistaPreviaComprobante) {
+                      URL.revokeObjectURL(vistaPreviaComprobante);
+                    }
+                    updateForm(
+                      "inscripcion.pago.archivoComprobante",
+                      archivo.file,
+                    );
+                    setVistaPreviaComprobante(archivo.preview);
+                  } else {
+                    if (vistaPreviaComprobante) {
+                      URL.revokeObjectURL(vistaPreviaComprobante);
+                    }
+                    setVistaPreviaComprobante(null);
+                    updateForm("inscripcion.pago.archivoComprobante", null);
+                  }
+                }}
+                onClearExisting={() =>
+                  updateForm("inscripcion.pago.archivoComprobante", null)
+                }
+                label="Archivo del comprobante"
+                required
+                varianteVistaPrevia="tarjeta"
+                errorExterno={errors.archivoComprobante ?? null}
               />
-              {(errorArchivoComprobante || errors.archivoComprobante) && (
-                <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  ⚑ {errorArchivoComprobante || errors.archivoComprobante}
-                </p>
-              )}
-              {vistaPreviaComprobante &&
-                form.inscripcion.pago.archivoComprobante instanceof File && (
-                <div className="mt-1 flex items-center gap-3 rounded-xl border border-border bg-white p-2.5 sm:max-w-md">
-                  <img
-                    src={vistaPreviaComprobante}
-                    alt="Vista previa del comprobante"
-                    className="h-20 w-16 shrink-0 rounded-lg border border-border object-cover shadow-sm"
-                  />
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <p className="truncate text-xs font-bold text-royal-blue">
-                      {form.inscripcion.pago.archivoComprobante.name}
-                    </p>
-                    <p className="m-0 text-[0.72rem] text-text-muted">
-                      {(form.inscripcion.pago.archivoComprobante.size / 1024).toFixed(
-                        0,
-                      )}{" "}
-                      KB
-                    </p>
-                    <button
-                      type="button"
-                      onClick={quitarComprobante}
-                      className="cursor-pointer self-start rounded-lg border-0 bg-transparent p-0 text-xs font-extrabold text-red-600 transition-colors hover:text-red-700 hover:underline"
-                    >
-                      Quitar archivo
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </section>
       )}
 
-      {currentStep === 8 && (
+      {currentStep === 7 && (
         <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
           <div className="mb-5 flex flex-col gap-3 border-b border-royal-gold/35 pb-3.5 sm:mb-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -1869,7 +1823,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               </p>
             </div>
             <span className="rounded-full border border-royal-gold/35 bg-royal-gold/15 px-3 py-1.5 text-xs font-black whitespace-nowrap text-royal-gold-muted">
-              Paso 8
+              Paso 7
             </span>
           </div>
 
@@ -1911,54 +1865,6 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           </div>
         </section>
       )}
-
-      <div ref={progressBarRef} className="order-first rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <span className="text-xs font-black tracking-wider text-royal-blue uppercase">
-            Paso {currentStep} de {stepTitles.length}
-          </span>
-          <span className="text-right text-xs font-semibold text-text-muted">
-            {stepTitles[currentStep - 1]}
-          </span>
-        </div>
-        <div className="mb-5 h-2 overflow-hidden rounded-full bg-gray-300">
-          <div
-            className="h-full rounded-full bg-royal-blue transition-[width] duration-300"
-            style={{ width: `${(currentStep / stepTitles.length) * 100}%` }}
-          />
-        </div>
-        <div
-          className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8"
-          role="tablist"
-          aria-label="Ir a un paso del formulario"
-        >
-          {stepTitles.map((title, index) => {
-            const step = index + 1;
-            const isActive = currentStep === step;
-
-            return (
-              <button
-                key={title}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                aria-label={`Ir al paso ${step}: ${title}`}
-                onClick={() => setCurrentStep(step)}
-                disabled={loading}
-                className={cn(
-                  "min-h-9 rounded-lg border px-2 py-1.5 text-[0.68rem] font-bold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 disabled:cursor-not-allowed disabled:opacity-60",
-                  isActive
-                    ? "border-royal-blue bg-royal-blue text-white"
-                    : "border-border-strong bg-surface-muted text-text-secondary hover:border-royal-blue hover:text-royal-blue",
-                )}
-              >
-                <span className="block">Paso {step}</span>
-                <span className="block truncate font-medium">{title}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
         <Button

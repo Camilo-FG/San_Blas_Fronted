@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type Ref } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { cn } from "./cn";
@@ -17,6 +17,7 @@ type CustomSelectProps = {
   hasError?: boolean;
   disabled?: boolean;
   maxVisibleOptions?: number;
+  ref?: Ref<HTMLButtonElement>;
 };
 
 const OPTION_HEIGHT = 40;
@@ -32,11 +33,12 @@ export function CustomSelect({
   hasError,
   disabled,
   maxVisibleOptions,
+  ref,
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const [focusIndex, setFocusIndex] = useState(-1);
   const [maxHeight, setMaxHeight] = useState<number>(240);
-  const ref = useRef<HTMLDivElement>(null);
+  const contenedorRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -63,6 +65,18 @@ export function CustomSelect({
     triggerRef.current?.focus();
   }, []);
 
+  const asignarTriggerRef = useCallback(
+    (nodo: HTMLButtonElement | null) => {
+      triggerRef.current = nodo;
+      if (typeof ref === "function") {
+        ref(nodo);
+      } else if (ref) {
+        ref.current = nodo;
+      }
+    },
+    [ref],
+  );
+
   const selectOption = useCallback(
     (val: string) => {
       onChange(val);
@@ -73,7 +87,7 @@ export function CustomSelect({
 
   const handleClickOutside = useCallback(
     (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (contenedorRef.current && !contenedorRef.current.contains(e.target as Node)) {
         setOpen(false);
         setFocusIndex(-1);
       }
@@ -130,6 +144,9 @@ export function CustomSelect({
 
     if (e.key === "Tab") {
       if (open) {
+        if (focusIndex >= 0 && options[focusIndex]) {
+          onChange(options[focusIndex].value);
+        }
         setOpen(false);
         setFocusIndex(-1);
       }
@@ -162,6 +179,7 @@ export function CustomSelect({
     }
 
     if (e.key === "Tab") {
+      onChange(optValue);
       setOpen(false);
       setFocusIndex(-1);
     }
@@ -175,10 +193,10 @@ export function CustomSelect({
   }, [open, focusIndex]);
 
   return (
-    <div className={cn("relative", className)} ref={ref}>
+    <div className={cn("relative", className)} ref={contenedorRef}>
       <button
         type="button"
-        ref={triggerRef}
+        ref={asignarTriggerRef}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -192,10 +210,10 @@ export function CustomSelect({
         }}
         onKeyDown={handleTriggerKeyDown}
         className={cn(
-          "flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+          "flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border-2 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
           hasError
             ? "border-red-400"
-            : "border-[#16243c]/10 hover:bg-slate-200",
+            : "border-[#16243c]/25 hover:bg-slate-200",
         )}
       >
         <span className={selected ? "" : "text-slate-400"}>
@@ -220,22 +238,26 @@ export function CustomSelect({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-            className="absolute top-full left-0 z-[9999] mt-1.5 w-full overflow-auto rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+            className="absolute top-full left-0 z-[9999] mt-1.5 w-full overflow-auto rounded-[8px] border-2 border-[#16243c]/25 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
             style={{ maxHeight }}
           >
-            {options.map((option) => {
+            {options.map((option, index) => {
               const activo = value === option.value;
+              const enfocado = open && focusIndex === index;
               return (
                 <li key={option.value} role="option" aria-selected={activo}>
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => selectOption(option.value)}
                     onKeyDown={(e) => handleOptionKeyDown(e, option.value)}
                     className={cn(
                       "flex w-full cursor-pointer items-center rounded-[6px] px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none",
-                      activo
-                        ? "bg-[#aa7323]/10 text-[#16243c]"
-                        : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]",
+                      enfocado
+                        ? "bg-[#aa7323]/20 text-[#aa7323]"
+                        : activo
+                          ? "bg-[#aa7323]/10 text-[#16243c]"
+                          : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]",
                     )}
                   >
                     {option.label}

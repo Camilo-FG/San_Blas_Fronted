@@ -1,5 +1,5 @@
 import { useRef, useState, type DragEvent } from "react";
-import { Upload, X } from "lucide-react";
+import { FileText, Upload, X } from "lucide-react";
 import { Label } from "../../../shared/ui";
 
 export interface ArchivoImagen {
@@ -21,6 +21,8 @@ interface SubidaImagenProps {
   textoArrastrar?: string;
   textoBoton?: string;
   mostrarVistaPrevia?: boolean;
+  tiposPermitidos?: string[];
+  varianteVistaPrevia?: "predeterminada" | "tarjeta";
 }
 
 const TIPOS_PERMITIDOS = [
@@ -45,6 +47,8 @@ export const SubidaImagen = ({
   textoArrastrar = "Arrastra y suelta archivos aqui",
   textoBoton = "Browse Files",
   mostrarVistaPrevia = true,
+  tiposPermitidos = TIPOS_PERMITIDOS,
+  varianteVistaPrevia = "predeterminada",
 }: SubidaImagenProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [arrastrando, setArrastrando] = useState(false);
@@ -53,7 +57,7 @@ export const SubidaImagen = ({
   const maxBytes = maxSizeMB * 1024 * 1024;
 
   const validarArchivo = (file: File): string | null => {
-    if (!TIPOS_PERMITIDOS.includes(file.type)) {
+    if (!tiposPermitidos.includes(file.type)) {
       return "Formato no permitido";
     }
     if (file.size > maxBytes) {
@@ -92,6 +96,10 @@ export const SubidaImagen = ({
     if (value) limpiar();
     else onClearExisting?.();
   };
+  const usarTarjeta =
+    varianteVistaPrevia === "tarjeta" && Boolean(value || existingPreview);
+  const vistaTarjeta = value?.preview ?? existingPreview ?? null;
+  const esImagenTarjeta = value ? value.file.type.startsWith("image/") : true;
 
   return (
     <div
@@ -115,7 +123,7 @@ export const SubidaImagen = ({
       <input
         ref={inputRef}
         type="file"
-        accept={TIPOS_PERMITIDOS.join(",")}
+        accept={tiposPermitidos.join(",")}
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0];
@@ -151,7 +159,55 @@ export const SubidaImagen = ({
               : "border-slate-300 bg-[#fdfdfd] hover:border-royal-blue/70 hover:bg-royal-blue/5"
         }`}
       >
-        {archivoListo && !mostrarVistaPrevia ? (
+        {usarTarjeta ? (
+          <>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                cancelarSubida();
+              }}
+              aria-label="Eliminar imagen"
+              className="absolute top-2.5 right-2.5 inline-flex size-8 cursor-pointer items-center justify-center rounded-full bg-slate-400 text-white shadow-sm transition-colors hover:bg-slate-500"
+            >
+              <X size={16} />
+            </button>
+            <div className="flex w-full max-w-md items-center gap-3 text-left">
+            {vistaTarjeta && esImagenTarjeta ? (
+              <img
+                src={vistaTarjeta}
+                alt={value?.file.name ?? "Vista previa de la imagen"}
+                className="size-20 shrink-0 rounded-lg border border-slate-200 object-cover"
+              />
+            ) : (
+              <div className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-500">
+                <FileText size={28} />
+              </div>
+            )}
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <p className="truncate text-sm font-semibold text-[#16243c]">
+                {value?.file.name ?? "Imagen actual"}
+              </p>
+              {value && (
+                <p className="m-0 text-[0.72rem] text-text-muted">
+                  {(value.file.size / 1024).toFixed(0)} KB
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  cancelarSubida();
+                }}
+                aria-label="Quitar archivo"
+                className="cursor-pointer self-start rounded-lg border-0 bg-transparent p-0 text-xs font-extrabold text-red-600 transition-colors hover:text-red-700 hover:underline"
+              >
+                Quitar archivo
+              </button>
+            </div>
+          </div>
+          </>
+        ) : archivoListo && !mostrarVistaPrevia ? (
           <>
             <div className="flex size-11 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
               <Upload size={22} />

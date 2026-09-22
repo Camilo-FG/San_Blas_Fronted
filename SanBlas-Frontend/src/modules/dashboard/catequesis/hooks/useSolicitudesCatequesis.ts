@@ -15,6 +15,10 @@ export interface SolicitudesCatequesisFiltros {
   nombre?: string;
   encargado?: string;
   q?: string;
+  nivel?: string;
+  filial?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface HistorialCatequesisFiltros {
@@ -46,9 +50,10 @@ export const useSolicitudesCatequesis = (
   const [exportError, setExportError] = useState("");
 
   // La lista se sirve con React Query: con placeholderData mantenemos los datos
-  // previos mientras llega la respuesta de un nuevo filtro (evita parpadeos)
+  // previos mientras llega la respuesta de un nuevo filtro (evita parpadeos).
+  // El backend pagina y retorna { data, total, page, pages, limit }.
   const {
-    data: solicitudes = [],
+    data: pagina,
     isPending,
     isFetching,
     error: queryError,
@@ -59,6 +64,11 @@ export const useSolicitudesCatequesis = (
     placeholderData: (previousData) => previousData,
     refetchOnWindowFocus: false,
   });
+
+  const solicitudes = pagina?.data ?? [];
+  const totalSolicitudes = pagina?.total ?? 0;
+  const totalPaginas = pagina?.pages ?? 0;
+  const paginaActual = pagina?.page ?? filtros?.page ?? 1;
 
   const cargando = isPending;
   const filtrando = isFetching && !isPending;
@@ -184,6 +194,9 @@ export const useSolicitudesCatequesis = (
 
   return {
     solicitudes,
+    totalSolicitudes,
+    totalPaginas,
+    paginaActual,
     cargarSolicitudes: () => refetch(),
     historial,
     cargarHistorial: () => refetchHistorial(),
