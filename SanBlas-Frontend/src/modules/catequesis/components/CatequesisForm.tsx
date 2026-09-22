@@ -25,6 +25,17 @@ interface CatequesisFormProps {
   loading: boolean;
 }
 
+const PROVINCIAS_CRC: { label: string; value: string }[] = [
+  { label: "San José", value: "San José" },
+  { label: "Alajuela", value: "Alajuela" },
+  { label: "Cartago", value: "Cartago" },
+  { label: "Limón", value: "Limón" },
+  { label: "Guanacaste", value: "Guanacaste" },
+  { label: "Puntarenas", value: "Puntarenas" },
+  { label: "Heredia", value: "Heredia" },
+  { label: "Otros", value: "Otros" },
+];
+
 const getInitialFormState = (): CatequesisEnrollmentData => ({
   catequesis: {
     centroCatequesis: null,
@@ -1413,21 +1424,23 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Label className="text-xs font-black text-royal-blue">
                 Provincia<span className="text-red-500"> *</span>
               </Label>
-              <Input
-                type="text"
-                placeholder="Ej: Guanacaste"
+              <CustomSelect
                 value={form.madreCatequizando.direccion.provincia || ""}
-                onChange={(e) =>
+                placeholder="Seleccionar provincia"
+                onChange={(valor) =>
                   updateForm(
                     "madreCatequizando.direccion.provincia",
-                    limitarLugar(e.target.value),
+                    valor || null,
                   )
                 }
+                options={PROVINCIAS_CRC}
+                hasError={!!errors.provinciaMadre}
               />
-              <WordCounter
-                value={form.madreCatequizando.direccion.provincia || ""}
-                error={errors.provinciaMadre}
-              />
+              {errors.provinciaMadre && (
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.provinciaMadre}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -1642,21 +1655,23 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Label className="text-xs font-black text-royal-blue">
                 Provincia<span className="text-red-500"> *</span>
               </Label>
-              <Input
-                type="text"
-                placeholder="Ej: Guanacaste"
+              <CustomSelect
                 value={form.padreCatequizando.direccion.provincia || ""}
-                onChange={(e) =>
+                placeholder="Seleccionar provincia"
+                onChange={(valor) =>
                   updateForm(
                     "padreCatequizando.direccion.provincia",
-                    limitarLugar(e.target.value),
+                    valor || null,
                   )
                 }
+                options={PROVINCIAS_CRC}
+                hasError={!!errors.provinciaPadre}
               />
-              <WordCounter
-                value={form.padreCatequizando.direccion.provincia || ""}
-                error={errors.provinciaPadre}
-              />
+              {errors.provinciaPadre && (
+                <p data-field-error className="m-0 text-xs font-medium text-red-600">
+                  ⚠ {errors.provinciaPadre}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">

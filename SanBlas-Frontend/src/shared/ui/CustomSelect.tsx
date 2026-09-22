@@ -100,6 +100,22 @@ export function CustomSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [handleClickOutside]);
 
+  useEffect(() => {
+    if (!open) return;
+    const cerrarAlDesplazar = () => {
+      setOpen(false);
+      setFocusIndex(-1);
+    };
+    window.addEventListener("scroll", cerrarAlDesplazar, {
+      capture: true,
+      passive: true,
+    });
+    return () =>
+      window.removeEventListener("scroll", cerrarAlDesplazar, {
+        capture: true,
+      });
+  }, [open]);
+
   const handleTriggerKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
 
