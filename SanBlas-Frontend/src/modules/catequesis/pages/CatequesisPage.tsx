@@ -337,7 +337,11 @@ const CatequesisPage = () => {
                     type="email"
                     placeholder="correo@ejemplo.com"
                     value={correoConsulta}
-                    onChange={(e) => setCorreoConsulta(soloCorreo(e.target.value))}
+                    onChange={(e) => {
+                      const valor = soloCorreo(e.target.value);
+                      setCorreoConsulta(valor);
+                      if (!valor) setErrorConsulta(null);
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleConsultar();
                     }}
