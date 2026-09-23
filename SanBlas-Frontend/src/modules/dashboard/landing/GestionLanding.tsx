@@ -199,6 +199,8 @@ function GestionLanding() {
           ? err.message
           : "No se pudo guardar la sección.";
       setError(texto);
+      // avisa por toast que falló el guardado y que puede reintentar sin salir del editor
+      showToast(`${texto} Puede intentarlo de nuevo.`, "error");
       if (err instanceof ApiError && err.errores) {
         setErroresCampo(mapearErroresLanding(err.errores));
       }

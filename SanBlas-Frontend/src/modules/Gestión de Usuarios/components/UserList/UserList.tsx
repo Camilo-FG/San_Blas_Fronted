@@ -6,6 +6,7 @@ import {
     Mail,
     Pencil,
     Phone,
+    RefreshCw,
     SlidersHorizontal,
     Trash2,
     User,
@@ -342,7 +343,17 @@ export const UserList = ({
             {cargando && users.length === 0 ? (
                 <PageLoader />
             ) : error ? (
-                <ErrorMessage message={error} />
+                <div className="flex flex-col items-start gap-3">
+                    <ErrorMessage message={error} className="w-full" />
+                    <Button
+                        variant="royal"
+                        className="gap-1.5"
+                        onClick={onRefetch}
+                    >
+                        <RefreshCw size={16} />
+                        Reintentar
+                    </Button>
+                </div>
             ) : (
                 <>
                     <div className="hidden md:block">
