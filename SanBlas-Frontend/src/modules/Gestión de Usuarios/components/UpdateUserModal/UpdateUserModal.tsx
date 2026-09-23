@@ -97,7 +97,14 @@ const UpdateUserModal: React.FC<Props> = ({
       form.setFieldValue('correo', usuario.email);
       form.setFieldValue('telefono', usuario.phoneNumber);
       form.setFieldValue('contraseña', '');
-      form.setFieldValue('roles', usuario.role ? [usuario.role] : []);
+      form.setFieldValue(
+        'roles',
+        usuario.roles && usuario.roles.length > 0
+          ? [...usuario.roles]
+          : usuario.role
+            ? [usuario.role]
+            : [],
+      );
       form.setFieldValue('estado', usuario.state);
     }
   }, [usuario, isOpen]);
