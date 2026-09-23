@@ -5,6 +5,7 @@ export interface UserCreate {
     password: string;
     confirmPassword: string;
     role?: string;
+    roles?: string[];
 }
 
 export interface UserUpdate {
@@ -14,6 +15,7 @@ export interface UserUpdate {
     password?: string;
     confirmPassword?: string;
     role?: string;
+    roles?: string[];
     state?: boolean;
 }
 
@@ -23,9 +25,12 @@ export interface Usuario {
     email: string;
     phoneNumber: string;
     role: string;
+    roles?: string[];
     state: boolean;
     creationDate: string;
 }
 
-export const isAdminRole = (role: string): boolean =>
-    role?.toLowerCase() === "admin";
+export const isAdminRole = (role: string): boolean => {
+    const clave = role?.toLowerCase();
+    return clave === "secretario" || clave === "admin";
+};
