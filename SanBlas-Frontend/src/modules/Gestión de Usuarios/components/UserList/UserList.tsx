@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ChevronLeft,
     ChevronRight,
     Eye,
+    Loader2,
     Mail,
     Pencil,
     Phone,
@@ -17,7 +18,6 @@ import {
     flexRender,
     getCoreRowModel,
     useReactTable,
-    getSortedRowModel,
     SortingState,
 } from '@tanstack/react-table';
 import { Usuario } from '../../../../types/Usuario';
@@ -29,6 +29,13 @@ import { useUpdateUser } from '../../hooks/hooksUsuarios/useUpdateUser';
 import { useDeleteUser } from '../../hooks/hooksUsuarios/useDeleteUser';
 import { normalizarTexto } from '../../Utils/normalizarTexto';
 import type { FiltrosAvanzados } from '../../hooks/hooksUsuarios/useGetUsuariosPaginados';
+import type { OrdenUsuarios } from '../../services/userServices';
+import {
+    ordenDesdeSorting,
+    sortingDesdeOrden,
+    textoABusqueda,
+} from '../../Utils/usuariosBusqueda';
+import { useDebouncedValue } from '../../../../shared/hooks/useDebouncedValue';
 import { AdminRecordCard } from '../../../../shared/components/admin/AdminRecordCard';
 import {
     AdminModule,
@@ -67,11 +74,13 @@ interface UserListProps {
     busqueda: string;
     filtros: FiltrosAvanzados;
     filtrosActivos: number;
+    orden: OrdenUsuarios;
     cargando: boolean;
     error: string | null;
     setPagina: (page: number) => void;
     setLimite: (size: number) => void;
     setBusqueda: (search: string) => void;
+    setOrden: (orden: OrdenUsuarios) => void;
     aplicarFiltros: (filtros: FiltrosAvanzados) => void;
     limpiarFiltros: () => void;
 }
@@ -117,17 +126,18 @@ export const UserList = ({
     busqueda,
     filtros,
     filtrosActivos,
+    orden,
     cargando,
     error,
     setPagina,
     setLimite,
     setBusqueda,
+    setOrden,
     aplicarFiltros,
     limpiarFiltros,
 }: UserListProps) => {
     const { user: usuarioSesion } = useAuth();
     const { showToast } = useToast();
-    const [sorting, setSorting] = useState<SortingState>([]);
     const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null);
     const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
     const [usuarioAEliminar, setUsuarioAEliminar] = useState<Usuario | null>(null);
@@ -136,6 +146,48 @@ export const UserList = ({
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
     const [filtroRolTemp, setFiltroRolTemp] = useState(filtros.role ?? '');
     const [filtroEstadoTemp, setFiltroEstadoTemp] = useState(filtros.state ?? '');
+    const [textoBusqueda, setTextoBusqueda] = useState(busqueda);
+    const textoDebounced = useDebouncedValue(textoBusqueda, 400);
+    // último texto que nosotros mandamos, para distinguirlo de un clear que venga del padre
+    const textoAplicadoRef = useRef('');
+    // hay datos viejos en pantalla mientras llega la respuesta nueva
+    const ocupado = cargando && users.length > 0;
+
+    // manda el texto al hook de paginación; con menos de 2 caracteres no se filtra
+    // (y si el padre limpió los filtros, que el input no quede con texto fantasma)
+    const aplicarBusqueda = (texto: string) => {
+        const valor = textoABusqueda(texto);
+        textoAplicadoRef.current = valor;
+        setBusqueda(valor);
+    };
+
+    // busca sola después de dejar de escribir, en vez de un request por tecla
+    useEffect(() => {
+        aplicarBusqueda(textoDebounced);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [textoDebounced]);
+
+    // si el padre vació la búsqueda (p. ej. "Limpiar"), reflejarlo en el input
+    useEffect(() => {
+        if (busqueda === '' && textoAplicadoRef.current !== '') {
+            textoAplicadoRef.current = '';
+            setTextoBusqueda('');
+        }
+    }, [busqueda]);
+
+    // el orden lo manda el servidor: la flecha del encabezado solo refleja ese estado
+    const sorting: SortingState = useMemo(() => sortingDesdeOrden(orden), [orden]);
+
+    // al clicar un encabezado pasamos el orden al hook, que reconsulta y vuelve a la pág 1.
+    // tanstack puede mandar el array directo o un updater: hay que resolver ambos
+    const manejarCambioOrden = (
+        nuevo:
+            | SortingState
+            | ((previo: SortingState) => SortingState),
+    ) => {
+        const siguiente = typeof nuevo === 'function' ? nuevo(sorting) : nuevo;
+        setOrden(ordenDesdeSorting(siguiente));
+    };
 
     const columns = useMemo(
         () => [
@@ -231,14 +283,17 @@ export const UserList = ({
         [usuarioSesion?.email, usuarioSesion?.id, roles],
     );
 
-    // paginación y búsqueda ahora son server-side; la tabla solo recibe la página actual
+    // paginación y orden son server-side; la tabla solo pinta la página actual.
+    // sin getSortedRowModel evitamos reordenar a medias la página visible (el backend ya lo hizo).
+    // enableSortingRemoval en false: sin esto, al clicar la columna ya ordenada tanstack
+    // borra el orden y como volvemos al default (mismo valor) la flecha nunca cambiaba
     const table = useReactTable({
         data: users,
         columns,
         state: { sorting },
-        onSortingChange: setSorting,
+        onSortingChange: manejarCambioOrden,
+        enableSortingRemoval: false,
         getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
     });
 
     const canPreviousPage = pagina > 1 && !cargando;
@@ -251,8 +306,14 @@ export const UserList = ({
             <AdminToolbar>
                 <AdminSearch
                     placeholder="Buscar por nombre, email o teléfono..."
-                    value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
+                    value={textoBusqueda}
+                    onChange={(e) => setTextoBusqueda(e.target.value)}
+                    onKeyDown={(e) => {
+                        // Enter busca al toque, sin esperar el debounce de 400ms
+                        if (e.key !== 'Enter') return;
+                        e.preventDefault();
+                        aplicarBusqueda(textoBusqueda);
+                    }}
                     aria-label="Buscar usuarios"
                     className="min-w-[200px] flex-1"
                 />
@@ -275,6 +336,17 @@ export const UserList = ({
                     </Button>
                 </div>
             </AdminToolbar>
+
+            {ocupado && (
+                <p
+                    role="status"
+                    aria-live="polite"
+                    className="m-0 flex items-center gap-2 text-sm text-text-muted"
+                >
+                    <Loader2 size={16} className="animate-spin" />
+                    Buscando usuarios...
+                </p>
+            )}
 
             {mostrarFiltros && (
                 <div className="flex flex-col gap-3 rounded-xl border border-border-strong bg-surface-muted p-4 sm:flex-row sm:items-end">
@@ -312,15 +384,20 @@ export const UserList = ({
                     <div className="flex gap-2">
                         <Button
                             variant="royal"
-                            className="min-h-10"
-                            onClick={() =>
+                            className="min-h-10 gap-1.5"
+                            disabled={cargando}
+                            onClick={() => {
                                 aplicarFiltros({
                                     role: filtroRolTemp || undefined,
                                     state: filtroEstadoTemp || undefined,
-                                })
-                            }
+                                });
+                                aplicarBusqueda(textoBusqueda);
+                            }}
                         >
-                            Aplicar
+                            {cargando ? (
+                                <Loader2 size={16} className="animate-spin" />
+                            ) : null}
+                            Buscar
                         </Button>
                         {(filtroRolTemp || filtroEstadoTemp) && (
                             <Button
@@ -356,7 +433,10 @@ export const UserList = ({
                 </div>
             ) : (
                 <>
-                    <div className="hidden md:block">
+                    <div
+                        className={cn('hidden md:block', ocupado && 'opacity-60')}
+                        aria-busy={ocupado}
+                    >
                         <AdminTablePanel>
                             <AdminTable>
                                 <AdminTableHead>
@@ -426,7 +506,13 @@ export const UserList = ({
                         </AdminTablePanel>
                     </div>
 
-                    <div className="flex flex-col gap-2.5 md:hidden">
+                    <div
+                        className={cn(
+                            'flex flex-col gap-2.5 md:hidden',
+                            ocupado && 'opacity-60',
+                        )}
+                        aria-busy={ocupado}
+                    >
                         {table.getRowModel().rows.length === 0 ? (
                             <EmptyState
                                 title={

@@ -32,9 +32,11 @@ const GestionUsuarios = () => {
         busqueda,
         filtros,
         filtrosActivos,
+        orden,
         setPagina,
         setLimite,
         setBusqueda,
+        setOrden,
         aplicarFiltros,
         limpiarFiltros,
         refetch: refetchPagina,
@@ -163,11 +165,13 @@ const GestionUsuarios = () => {
                             busqueda={busqueda}
                             filtros={filtros}
                             filtrosActivos={filtrosActivos}
+                            orden={orden}
                             cargando={cargandoPagina}
                             error={errorPagina}
                             setPagina={setPagina}
                             setLimite={setLimite}
                             setBusqueda={setBusqueda}
+                            setOrden={setOrden}
                             aplicarFiltros={aplicarFiltros}
                             limpiarFiltros={limpiarFiltros}
                         />
