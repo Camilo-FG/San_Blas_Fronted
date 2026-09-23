@@ -100,6 +100,31 @@ export function CustomSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [handleClickOutside]);
 
+  useEffect(() => {
+    if (!open) return;
+    const cerrarAlDesplazar = (event: Event) => {
+      const contenedor = contenedorRef.current;
+      const destino = event.target;
+      if (
+        contenedor &&
+        destino instanceof Node &&
+        contenedor.contains(destino)
+      ) {
+        return;
+      }
+      setOpen(false);
+      setFocusIndex(-1);
+    };
+    window.addEventListener("scroll", cerrarAlDesplazar, {
+      capture: true,
+      passive: true,
+    });
+    return () =>
+      window.removeEventListener("scroll", cerrarAlDesplazar, {
+        capture: true,
+      });
+  }, [open]);
+
   const handleTriggerKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
 
@@ -144,11 +169,17 @@ export function CustomSelect({
 
     if (e.key === "Tab") {
       if (open) {
-        if (focusIndex >= 0 && options[focusIndex]) {
-          onChange(options[focusIndex].value);
-        }
-        setOpen(false);
-        setFocusIndex(-1);
+        e.preventDefault();
+        setFocusIndex((prev) => {
+          const base = prev >= 0 ? prev : 0;
+          return e.shiftKey
+            ? base > 0
+              ? base - 1
+              : options.length - 1
+            : base < options.length - 1
+              ? base + 1
+              : 0;
+        });
       }
     }
   };
@@ -179,9 +210,13 @@ export function CustomSelect({
     }
 
     if (e.key === "Tab") {
-      onChange(optValue);
-      setOpen(false);
-      setFocusIndex(-1);
+      e.preventDefault();
+      setFocusIndex((prev) => {
+        if (e.shiftKey) {
+          return prev > 0 ? prev - 1 : options.length - 1;
+        }
+        return prev < options.length - 1 ? prev + 1 : 0;
+      });
     }
   };
 
