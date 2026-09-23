@@ -31,6 +31,37 @@ const TIPOS_PERMITIDOS = [
   "image/webp",
 ];
 
+// Extensiones explícitas: si el input usa image/jpeg, Windows muestra
+// también .pjp, .jfif, .jpe y .pjpeg en el explorador.
+const EXTENSIONES_POR_TIPO: Record<string, string[]> = {
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/png": [".png"],
+  "image/webp": [".webp"],
+  "application/pdf": [".pdf"],
+};
+
+const acceptDesdeTipos = (tipos: string[]) =>
+  tipos.flatMap((tipo) => EXTENSIONES_POR_TIPO[tipo] ?? [tipo]).join(",");
+
+const ETIQUETAS_TIPO: Record<string, string> = {
+  "image/jpeg": "JPG, JPEG",
+  "image/png": "PNG",
+  "image/webp": "WEBP",
+  "application/pdf": "PDF",
+};
+
+const textoFormatosAceptados = (tipos: string[], maxSizeMB: number) => {
+  const nombres = tipos.flatMap((tipo) =>
+    ETIQUETAS_TIPO[tipo] ? [ETIQUETAS_TIPO[tipo]] : [],
+  );
+  if (nombres.length === 0) return null;
+  const lista =
+    nombres.length === 1
+      ? nombres[0]
+      : `${nombres.slice(0, -1).join(", ")} o ${nombres[nombres.length - 1]}`;
+  return `${lista} (máx. ${maxSizeMB} MB)`;
+};
+
 const MAX_DEFAULT_MB = 5;
 
 export const SubidaImagen = ({
@@ -55,9 +86,15 @@ export const SubidaImagen = ({
   const [error, setError] = useState<string | null>(null);
 
   const maxBytes = maxSizeMB * 1024 * 1024;
+  const formatosAceptados = textoFormatosAceptados(tiposPermitidos, maxSizeMB);
 
   const validarArchivo = (file: File): string | null => {
-    if (!tiposPermitidos.includes(file.type)) {
+    const extension = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+    const extensiones = EXTENSIONES_POR_TIPO[file.type];
+    if (
+      !tiposPermitidos.includes(file.type) ||
+      (extensiones && !extensiones.includes(extension))
+    ) {
       return "Formato no permitido";
     }
     if (file.size > maxBytes) {
@@ -123,7 +160,7 @@ export const SubidaImagen = ({
       <input
         ref={inputRef}
         type="file"
-        accept={tiposPermitidos.join(",")}
+        accept={acceptDesdeTipos(tiposPermitidos)}
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0];
@@ -299,6 +336,10 @@ export const SubidaImagen = ({
           </>
         )}
       </div>
+
+      {formatosAceptados && (
+        <p className="m-0 text-xs text-text-secondary">{formatosAceptados}</p>
+      )}
 
       {error && (
         <span role="alert" className="text-[0.84rem] font-semibold text-red-500">

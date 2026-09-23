@@ -7,7 +7,9 @@ const mapCreateToBackend = (userData: UserCreate) => ({
   email: normalizarTexto(userData.email),
   password: userData.password.trim(),
   confirmPassword: userData.confirmPassword.trim(),
-  role: userData.role,
+  ...(userData.roles && userData.roles.length > 0
+    ? { roles: userData.roles }
+    : {}),
   telefono: normalizarTexto(userData.phoneNumber),
 });
 
@@ -18,7 +20,7 @@ const mapUpdateToBackend = (userData: UserUpdate) => {
     body.password = userData.password.trim();
     body.confirmPassword = (userData.confirmPassword ?? userData.password).trim();
   }
-  if (userData.role) body.role = userData.role;
+  if (userData.roles) body.roles = userData.roles;
   if (typeof userData.state === 'boolean') body.isActive = userData.state;
   if (userData.phoneNumber !== undefined) {
     body.telefono = normalizarTexto(userData.phoneNumber);
@@ -47,6 +49,11 @@ const mapBackendToFrontend = (data: Record<string, unknown>): Usuario => ({
   email: (data.email as string) ?? '',
   phoneNumber: ((data.telefono as string) ?? (data.phoneNumber as string) ?? ''),
   role: (data.role as string) ?? 'user',
+  roles: Array.isArray(data.roles)
+    ? (data.roles as unknown[]).filter(
+        (rol): rol is string => typeof rol === 'string',
+      )
+    : undefined,
   state: leerEstado(data),
   creationDate: leerFechaCreacion(data),
 });

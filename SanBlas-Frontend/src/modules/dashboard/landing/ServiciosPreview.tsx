@@ -1,4 +1,5 @@
 import { ImageOff } from "lucide-react";
+import { claseResaltePreview } from "./previewResalte";
 
 interface ServiciosPreviewProps {
   eyebrow: string;
@@ -12,6 +13,7 @@ interface ServiciosPreviewProps {
     imagen: string;
   }>;
   ampliadas?: boolean;
+  campoResaltado?: string | null;
 }
 
 // miniatura del carrusel de servicios pa la vista previa del editor
@@ -21,23 +23,41 @@ export function ServiciosPreview({
   intro,
   items,
   ampliadas = false,
+  campoResaltado = null,
 }: ServiciosPreviewProps) {
-  const visibles = items.filter((item) => item.titulo.trim());
+  const visibles = items
+    .map((item, index) => ({ ...item, n: index + 1 }))
+    .filter((item) => {
+      const marcado = campoResaltado
+        ? new RegExp(`^servicio${item.n}(?!\\d)`).test(campoResaltado)
+        : false;
+      return marcado || item.titulo.trim();
+    });
 
   return (
     <div
+      data-preview-scroll
       className={`flex h-full flex-col overflow-y-auto bg-surface ${
         ampliadas ? "p-8" : "p-5"
       }`}
     >
       <div className="mx-auto mb-6 max-w-[620px] text-center">
-        <span className="mb-2 block text-[10px] font-extrabold tracking-[0.25em] text-[#b7832f] uppercase">
+        <span
+          data-campo-preview="eyebrow"
+          className={`mb-2 block text-[10px] font-extrabold tracking-[0.25em] text-royal-gold uppercase ${claseResaltePreview(campoResaltado === "eyebrow")}`}
+        >
           {eyebrow || "Etiqueta"}
         </span>
-        <h2 className="m-0 font-heading text-2xl leading-tight text-royal-blue">
+        <h2
+          data-campo-preview="title"
+          className={`m-0 font-heading text-2xl leading-tight text-royal-blue ${claseResaltePreview(campoResaltado === "title")}`}
+        >
           {title || "Título"}
         </h2>
-        <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+        <p
+          data-campo-preview="intro"
+          className={`mt-2 text-sm leading-relaxed text-text-secondary ${claseResaltePreview(campoResaltado === "intro")}`}
+        >
           {intro || "La introducción aparecerá aquí."}
         </p>
       </div>
@@ -49,12 +69,19 @@ export function ServiciosPreview({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {visibles.map((item, index) => (
+          {visibles.map((item) => {
+            const titulo = `servicio${item.n}Titulo`;
+            const descripcion = `servicio${item.n}Descripcion`;
+            const categoria = `servicio${item.n}Categoria`;
+            const boton = `servicio${item.n}Boton`;
+            const enlace = `servicio${item.n}Enlace`;
+            return (
             <article
-              key={`${item.titulo}-${index}`}
-              className="flex flex-col overflow-hidden rounded-2xl border border-[rgba(120,82,30,0.08)] bg-[#fcfbf7]"
+              key={`${item.titulo}-${item.n}`}
+              data-campo-preview={enlace}
+              className={`flex flex-col rounded-2xl border border-black/20 bg-surface ${claseResaltePreview(campoResaltado === enlace)}`}
             >
-              <div className="relative h-32 overflow-hidden bg-slate-100">
+              <div className="relative h-32 overflow-hidden rounded-t-2xl bg-slate-100">
                 {item.imagen.trim() ? (
                   <img
                     src={item.imagen}
@@ -67,25 +94,38 @@ export function ServiciosPreview({
                     <ImageOff size={22} aria-hidden="true" />
                   </div>
                 )}
-                {item.categoria.trim() && (
-                  <span className="absolute top-2.5 left-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[9px] font-extrabold tracking-[0.08em] text-[#73522f] uppercase">
-                    {item.categoria}
+                {(item.categoria.trim() || campoResaltado === categoria) && (
+                  <span
+                    data-campo-preview={categoria}
+                    className={`absolute top-2.5 left-2.5 rounded-full bg-royal-blue px-2.5 py-1 text-[9px] font-extrabold tracking-[0.08em] text-royal-gold uppercase ${claseResaltePreview(campoResaltado === categoria)}`}
+                  >
+                    {item.categoria || "Categoría"}
                   </span>
                 )}
               </div>
               <div className="flex flex-1 flex-col gap-2 p-4">
-                <h3 className="m-0 font-serif text-sm leading-tight text-gray-900">
-                  {item.titulo}
+                <h3
+                  data-campo-preview={titulo}
+                  className={`m-0 font-heading text-sm leading-tight text-royal-blue ${claseResaltePreview(campoResaltado === titulo)}`}
+                >
+                  {item.titulo || "Título del servicio"}
                 </h3>
-                <p className="m-0 text-xs leading-relaxed text-text-secondary">
+                <p
+                  data-campo-preview={descripcion}
+                  className={`m-0 text-xs leading-relaxed text-text-secondary ${claseResaltePreview(campoResaltado === descripcion)}`}
+                >
                   {item.descripcion || "La descripción aparecerá aquí."}
                 </p>
-                <span className="mt-auto inline-flex items-center justify-center rounded-[10px] bg-[rgba(23,37,84,0.08)] px-3 py-2 text-[10px] font-extrabold tracking-[0.12em] text-[#172554] uppercase">
+                <span
+                  data-campo-preview={boton}
+                  className={`mt-auto inline-flex items-center justify-center rounded-[10px] border border-royal-blue bg-royal-blue px-3 py-2 text-[10px] font-extrabold tracking-[0.12em] text-white uppercase ${claseResaltePreview(campoResaltado === boton)}`}
+                >
                   {item.boton || "Ver más"}
                 </span>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

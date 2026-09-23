@@ -1,4 +1,5 @@
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
+import { claseResaltePreview } from "./previewResalte";
 
 interface ContactoPreviewProps {
   eyebrow: string;
@@ -10,6 +11,7 @@ interface ContactoPreviewProps {
   horariosAtencion: string;
   mapaUrl: string;
   ampliadas?: boolean;
+  campoResaltado?: string | null;
 }
 
 // miniatura de la página de contacto pa la vista previa del editor
@@ -23,6 +25,7 @@ export function ContactoPreview({
   horariosAtencion,
   mapaUrl,
   ampliadas = false,
+  campoResaltado = null,
 }: ContactoPreviewProps) {
   const horarios = horariosAtencion
     .split("\n")
@@ -31,17 +34,27 @@ export function ContactoPreview({
 
   return (
     <div
+      data-preview-scroll
       className={`flex h-full flex-col overflow-y-auto bg-surface ${
         ampliadas ? "p-8" : "p-5"
       }`}
     >
-      <span className="mb-2 inline-flex text-[10px] font-black tracking-[0.28em] text-royal-gold uppercase">
+      <span
+        data-campo-preview="eyebrow"
+        className={`mb-2 inline-flex text-[10px] font-black tracking-[0.28em] text-royal-gold uppercase ${claseResaltePreview(campoResaltado === "eyebrow")}`}
+      >
         {eyebrow || "Etiqueta"}
       </span>
-      <h2 className="m-0 mb-3 font-heading text-2xl leading-tight text-royal-blue">
+      <h2
+        data-campo-preview="title"
+        className={`m-0 mb-3 font-heading text-2xl leading-tight text-royal-blue ${claseResaltePreview(campoResaltado === "title")}`}
+      >
         {title || "Título"}
       </h2>
-      <p className="m-0 mb-5 text-sm leading-relaxed text-text-muted">
+      <p
+        data-campo-preview="intro"
+        className={`m-0 mb-5 text-sm leading-relaxed text-text-muted ${claseResaltePreview(campoResaltado === "intro")}`}
+      >
         {intro || "La introducción aparecerá aquí."}
       </p>
 
@@ -54,7 +67,10 @@ export function ContactoPreview({
                 <span className="block text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
                   Teléfono
                 </span>
-                <span className="text-sm text-royal-blue">
+                <span
+                  data-campo-preview="telefono"
+                  className={`text-sm text-royal-blue ${claseResaltePreview(campoResaltado === "telefono")}`}
+                >
                   {telefono || "Teléfono"}
                 </span>
               </div>
@@ -65,7 +81,10 @@ export function ContactoPreview({
                 <span className="block text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
                   Correo
                 </span>
-                <span className="text-sm text-royal-blue">
+                <span
+                  data-campo-preview="correo"
+                  className={`text-sm text-royal-blue ${claseResaltePreview(campoResaltado === "correo")}`}
+                >
                   {correo || "Correo"}
                 </span>
               </div>
@@ -76,14 +95,20 @@ export function ContactoPreview({
                 <span className="block text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
                   Ubicación
                 </span>
-                <span className="text-sm text-royal-blue">
+                <span
+                  data-campo-preview="ubicacion"
+                  className={`text-sm text-royal-blue ${claseResaltePreview(campoResaltado === "ubicacion")}`}
+                >
                   {ubicacion || "Ubicación"}
                 </span>
               </div>
             </li>
           </ul>
 
-          <div className="flex items-start gap-2.5 rounded-r-xl border-l-4 border-royal-blue bg-surface-muted px-4 py-3">
+          <div
+            data-campo-preview="horariosAtencion"
+            className={`flex items-start gap-2.5 rounded-r-xl border-l-4 border-royal-blue bg-surface-muted px-4 py-3 ${claseResaltePreview(campoResaltado === "horariosAtencion")}`}
+          >
             <Clock size={16} className="mt-0.5 shrink-0 text-royal-blue" />
             <div>
               <strong className="mb-1.5 block text-xs text-royal-blue">
@@ -100,7 +125,10 @@ export function ContactoPreview({
           </div>
         </div>
 
-        <div className="min-h-[180px] overflow-hidden rounded-xl border border-[#e8edf2] bg-slate-100">
+        <div
+          data-campo-preview="mapaUrl"
+          className={`min-h-[180px] overflow-hidden rounded-xl border border-[#e8edf2] bg-slate-100 ${claseResaltePreview(campoResaltado === "mapaUrl")}`}
+        >
           {mapaUrl.trim() ? (
             <iframe
               title="Vista previa del mapa"

@@ -2,6 +2,7 @@ import {
   SOBRE_NOSOTROS_IMAGE,
   type SobreNosotrosCard,
 } from "../../landing/sobreNosotrosContent";
+import { claseResaltePreview } from "./previewResalte";
 import { ScaledStage } from "./ScaledStage";
 
 const SOBRE_FRAME = { width: 1280, height: 980 };
@@ -13,24 +14,37 @@ type SobreNosotrosPreviewProps = {
   cards: SobreNosotrosCard[];
   imageSrc?: string | null;
   ampliadas?: boolean;
+  campoResaltado?: string | null;
 };
 
 function PreviewCard({
   card,
   alignEnd = false,
+  campoTitulo,
+  campoTexto,
+  campoResaltado,
 }: {
   card: SobreNosotrosCard;
   alignEnd?: boolean;
+  campoTitulo: string;
+  campoTexto: string;
+  campoResaltado?: string | null;
 }) {
   return (
     <article className={alignEnd ? "ml-auto max-w-[380px]" : "max-w-[380px]"}>
       <div className="mb-3 flex size-10 items-center justify-center rounded-full border border-royal-gold/35 text-sm font-extrabold text-royal-gold">
         {card.icono || "00"}
       </div>
-      <h3 className="mb-2.5 font-heading text-xl leading-snug text-royal-blue md:text-[22px]">
+      <h3
+        data-campo-preview={campoTitulo}
+        className={`mb-2.5 font-heading text-xl leading-snug text-royal-blue md:text-[22px] ${claseResaltePreview(campoResaltado === campoTitulo)}`}
+      >
         {card.titulo || "Título de la tarjeta"}
       </h3>
-      <p className="text-[15px] leading-[1.75] text-text-secondary md:text-base md:leading-[1.8]">
+      <p
+        data-campo-preview={campoTexto}
+        className={`text-[15px] leading-[1.75] text-text-secondary md:text-base md:leading-[1.8] ${claseResaltePreview(campoResaltado === campoTexto)}`}
+      >
         {card.texto || "El texto de la tarjeta aparecerá aquí."}
       </p>
     </article>
@@ -44,6 +58,7 @@ export function SobreNosotrosPreview({
   cards,
   imageSrc,
   ampliadas = false,
+  campoResaltado = null,
 }: SobreNosotrosPreviewProps) {
   const visibles = [0, 1, 2, 3].map(
     (index) => cards[index] ?? { icono: "", titulo: "", texto: "" },
@@ -55,13 +70,22 @@ export function SobreNosotrosPreview({
   const escena = (
     <section className="flex h-full w-full flex-col justify-center bg-surface px-6 py-16">
       <div className="mx-auto mb-14 max-w-[920px] text-center">
-        <span className="mb-4 inline-flex text-xs font-black uppercase tracking-[0.28em] text-royal-gold md:text-sm">
+        <span
+          data-campo-preview="eyebrow"
+          className={`mb-4 inline-flex text-xs font-black uppercase tracking-[0.28em] text-royal-gold md:text-sm ${claseResaltePreview(campoResaltado === "eyebrow")}`}
+        >
           {eyebrow || "Etiqueta"}
         </span>
-        <h2 className="mb-5 font-heading text-[58px] leading-[1.12] text-royal-blue">
+        <h2
+          data-campo-preview="title"
+          className={`mb-5 font-heading text-[58px] leading-[1.12] text-royal-blue ${claseResaltePreview(campoResaltado === "title")}`}
+        >
           {title || "Título de la sección"}
         </h2>
-        <p className="mx-auto max-w-[780px] text-base leading-[1.8] text-text-secondary md:text-lg md:leading-[1.85]">
+        <p
+          data-campo-preview="lead"
+          className={`mx-auto max-w-[780px] text-base leading-[1.8] text-text-secondary md:text-lg md:leading-[1.85] ${claseResaltePreview(campoResaltado === "lead")}`}
+        >
           {lead || "La descripción aparecerá aquí."}
         </p>
       </div>
@@ -69,7 +93,13 @@ export function SobreNosotrosPreview({
       <div className="mx-auto grid max-w-[1240px] grid-cols-[minmax(240px,1fr)_minmax(380px,460px)_minmax(240px,1fr)] items-center gap-x-10 gap-y-12">
         <div className="flex flex-col justify-center gap-10 pt-2">
           {leftCards.map((card, index) => (
-            <PreviewCard key={`left-${index}`} card={card} />
+            <PreviewCard
+              key={`left-${index}`}
+              card={card}
+              campoTitulo={`card${index + 1}Titulo`}
+              campoTexto={`card${index + 1}Texto`}
+              campoResaltado={campoResaltado}
+            />
           ))}
         </div>
 
@@ -83,7 +113,14 @@ export function SobreNosotrosPreview({
 
         <div className="flex flex-col justify-center gap-10 pt-2">
           {rightCards.map((card, index) => (
-            <PreviewCard key={`right-${index}`} card={card} alignEnd />
+            <PreviewCard
+              key={`right-${index}`}
+              card={card}
+              alignEnd
+              campoTitulo={`card${index + 3}Titulo`}
+              campoTexto={`card${index + 3}Texto`}
+              campoResaltado={campoResaltado}
+            />
           ))}
         </div>
       </div>

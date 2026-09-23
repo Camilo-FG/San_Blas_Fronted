@@ -17,6 +17,7 @@ type CustomSelectProps = {
   hasError?: boolean;
   disabled?: boolean;
   maxVisibleOptions?: number;
+  menuHaciaArriba?: boolean;
   ref?: Ref<HTMLButtonElement>;
 };
 
@@ -33,6 +34,7 @@ export function CustomSelect({
   hasError,
   disabled,
   maxVisibleOptions,
+  menuHaciaArriba = false,
   ref,
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
@@ -100,6 +102,31 @@ export function CustomSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [handleClickOutside]);
 
+  useEffect(() => {
+    if (!open) return;
+    const cerrarAlDesplazar = (event: Event) => {
+      const contenedor = contenedorRef.current;
+      const destino = event.target;
+      if (
+        contenedor &&
+        destino instanceof Node &&
+        contenedor.contains(destino)
+      ) {
+        return;
+      }
+      setOpen(false);
+      setFocusIndex(-1);
+    };
+    window.addEventListener("scroll", cerrarAlDesplazar, {
+      capture: true,
+      passive: true,
+    });
+    return () =>
+      window.removeEventListener("scroll", cerrarAlDesplazar, {
+        capture: true,
+      });
+  }, [open]);
+
   const handleTriggerKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
 
@@ -144,11 +171,17 @@ export function CustomSelect({
 
     if (e.key === "Tab") {
       if (open) {
-        if (focusIndex >= 0 && options[focusIndex]) {
-          onChange(options[focusIndex].value);
-        }
-        setOpen(false);
-        setFocusIndex(-1);
+        e.preventDefault();
+        setFocusIndex((prev) => {
+          const base = prev >= 0 ? prev : 0;
+          return e.shiftKey
+            ? base > 0
+              ? base - 1
+              : options.length - 1
+            : base < options.length - 1
+              ? base + 1
+              : 0;
+        });
       }
     }
   };
@@ -179,9 +212,13 @@ export function CustomSelect({
     }
 
     if (e.key === "Tab") {
-      onChange(optValue);
-      setOpen(false);
-      setFocusIndex(-1);
+      e.preventDefault();
+      setFocusIndex((prev) => {
+        if (e.shiftKey) {
+          return prev > 0 ? prev - 1 : options.length - 1;
+        }
+        return prev < options.length - 1 ? prev + 1 : 0;
+      });
     }
   };
 
@@ -234,11 +271,22 @@ export function CustomSelect({
           <motion.ul
             ref={listRef}
             role="listbox"
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            initial={{
+              opacity: 0,
+              y: menuHaciaArriba ? 6 : -6,
+              scale: 0.98,
+            }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            exit={{
+              opacity: 0,
+              y: menuHaciaArriba ? 6 : -6,
+              scale: 0.98,
+            }}
             transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-            className="absolute top-full left-0 z-[9999] mt-1.5 w-full overflow-auto rounded-[8px] border-2 border-[#16243c]/25 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+            className={cn(
+              "absolute left-0 z-[9999] w-full overflow-auto rounded-[8px] border-2 border-[#16243c]/25 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]",
+              menuHaciaArriba ? "bottom-full mb-1.5" : "top-full mt-1.5",
+            )}
             style={{ maxHeight }}
           >
             {options.map((option, index) => {

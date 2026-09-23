@@ -1,16 +1,6 @@
 import { clearAuthToken, getAuthToken } from "../utils/authToken";
-import { getAccesoPanelFromToken, isTokenExpired } from "./jwt";
+import { isTokenExpired } from "./jwt";
 import Rutas from "../routes/Rutas";
-
-export const USER_ALLOWED_PATHS = [
-  Rutas.SolicitudesSacramentos,
-  Rutas.FormsolicitudesCatequesis,
-  Rutas.login,
-  Rutas.home,
-] as const;
-
-export const isAdminFromToken = (token: string): boolean =>
-  getAccesoPanelFromToken(token);
 
 export const getValidSessionToken = (): string | null => {
   const token = getAuthToken();
@@ -19,11 +9,6 @@ export const getValidSessionToken = (): string | null => {
     return null;
   }
   return token;
-};
-
-export const isAuthenticatedAdmin = (): boolean => {
-  const token = getValidSessionToken();
-  return token !== null && isAdminFromToken(token);
 };
 
 export const isUserRouteAllowed = (pathname: string): boolean => {
@@ -35,10 +20,10 @@ export const isUserRouteAllowed = (pathname: string): boolean => {
 };
 
 export const getPostLoginPath = (
-  isAdmin: boolean,
+  puedeVerPanel: boolean,
   redirectTo?: string,
 ): string => {
-  if (isAdmin) {
+  if (puedeVerPanel) {
     return redirectTo?.startsWith(Rutas.dashboard)
       ? redirectTo
       : Rutas.dashboard;

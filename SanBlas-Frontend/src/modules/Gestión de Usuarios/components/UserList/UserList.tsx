@@ -707,6 +707,12 @@ export const UserList = ({
                         usuarioSesion?.id,
                         usuarioSesion?.email,
                     );
+                    const rolesPrevios = [
+                        ...(usuarioEditando.roles ?? [usuarioEditando.role]),
+                    ]
+                        .sort()
+                        .join(",");
+                    const rolesNuevos = [...data.roles].sort().join(",");
 
                     const resultado = await actualizarUsuario(usuarioEditando.id, {
                         ...(normalizarTexto(data.nombre) !==
@@ -723,9 +729,9 @@ export const UserList = ({
                         ...(esPropio
                             ? {}
                             : {
-                                  // solo se envían si cambiaron para no pisar roles custom del backend
-                                  ...(data.rol !== usuarioEditando.role
-                                      ? { role: data.rol }
+                                  // los roles solo se envían si cambiaron para no pisar roles del backend
+                                  ...(rolesNuevos !== rolesPrevios
+                                      ? { roles: data.roles }
                                       : {}),
                                   ...(data.estado !== usuarioEditando.state
                                       ? { state: data.estado }

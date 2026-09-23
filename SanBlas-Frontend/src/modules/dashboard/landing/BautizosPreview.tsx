@@ -1,3 +1,5 @@
+import { claseResaltePreview } from "./previewResalte";
+
 interface BautizosPreviewProps {
   title: string;
   intro: string;
@@ -5,6 +7,7 @@ interface BautizosPreviewProps {
   charlas: string;
   solicitud: string;
   ampliadas?: boolean;
+  campoResaltado?: string | null;
 }
 
 // miniatura de la página de bautizos pa la vista previa del editor
@@ -15,6 +18,7 @@ export function BautizosPreview({
   charlas,
   solicitud,
   ampliadas = false,
+  campoResaltado = null,
 }: BautizosPreviewProps) {
   const lista = requisitos
     .split("\n")
@@ -23,14 +27,21 @@ export function BautizosPreview({
 
   return (
     <div
+      data-preview-scroll
       className={`flex h-full flex-col overflow-y-auto bg-surface text-center ${
         ampliadas ? "p-10" : "p-6"
       }`}
     >
-      <h2 className="m-0 mb-4 font-heading text-2xl text-royal-blue">
+      <h2
+        data-campo-preview="title"
+        className={`m-0 mb-4 font-heading text-2xl text-royal-blue ${claseResaltePreview(campoResaltado === "title")}`}
+      >
         {title || "Título"}
       </h2>
-      <p className="m-0 mb-6 text-sm leading-relaxed text-text-muted">
+      <p
+        data-campo-preview="intro"
+        className={`m-0 mb-6 text-sm leading-relaxed text-text-muted ${claseResaltePreview(campoResaltado === "intro")}`}
+      >
         {intro || "La introducción aparecerá aquí."}
       </p>
 
@@ -38,7 +49,10 @@ export function BautizosPreview({
         <h3 className="m-0 mb-2 font-heading text-base text-royal-blue">
           Requisitos para el Bautismo
         </h3>
-        <ul className="m-0 list-disc pl-5 text-sm leading-relaxed text-text-muted">
+        <ul
+          data-campo-preview="requisitos"
+          className={`m-0 list-disc pl-5 text-sm leading-relaxed text-text-muted ${claseResaltePreview(campoResaltado === "requisitos")}`}
+        >
           {(lista.length ? lista : ["Requisito"]).map((item, index) => (
             <li key={`${item}-${index}`}>{item}</li>
           ))}
@@ -47,14 +61,20 @@ export function BautizosPreview({
         <h3 className="mt-5 mb-2 font-heading text-base text-royal-blue">
           Charlas Bautismales
         </h3>
-        <p className="m-0 text-sm leading-relaxed text-text-muted">
+        <p
+          data-campo-preview="charlas"
+          className={`m-0 text-sm leading-relaxed text-text-muted ${claseResaltePreview(campoResaltado === "charlas")}`}
+        >
           {charlas || "Las charlas aparecerán aquí."}
         </p>
 
         <h3 className="mt-5 mb-2 font-heading text-base text-royal-blue">
           Solicitud de Bautizo
         </h3>
-        <p className="m-0 text-sm leading-relaxed text-text-muted">
+        <p
+          data-campo-preview="solicitud"
+          className={`m-0 text-sm leading-relaxed text-text-muted ${claseResaltePreview(campoResaltado === "solicitud")}`}
+        >
           {solicitud || "El texto de solicitud aparecerá aquí."}
         </p>
       </div>

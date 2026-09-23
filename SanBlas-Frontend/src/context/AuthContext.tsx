@@ -7,8 +7,10 @@ import {
   type ReactNode,
 } from "react";
 import {
+  esSecretario,
   getCurrentUser,
   logout as logoutSession,
+  tienePermiso as tienePermisoSesion,
   type AuthUser,
 } from "../services/authSession";
 import type { LoginCredentials } from "../services/authService";
@@ -16,7 +18,9 @@ import type { LoginCredentials } from "../services/authService";
 interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
+  // Alias de esSecretario: solo display. La fuente de verdad de acceso es tienePermiso().
   isAdmin: boolean;
+  tienePermiso: (permiso: string) => boolean;
   login: (credentials: LoginCredentials) => Promise<AuthUser>;
   logout: () => void;
 }
@@ -38,15 +42,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
   }, []);
 
+  const tienePermiso = useCallback(
+    (permiso: string) => tienePermisoSesion(user, permiso),
+    [user],
+  );
+
   const value = useMemo(
     () => ({
       user,
       isAuthenticated: user !== null,
-      isAdmin: user?.role === "admin" || user?.accesoPanel === true,
+      isAdmin: esSecretario(user),
+      tienePermiso,
       login,
       logout,
     }),
-    [user, login, logout],
+    [user, tienePermiso, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

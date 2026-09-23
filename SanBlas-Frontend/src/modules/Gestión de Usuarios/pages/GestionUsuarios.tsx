@@ -55,7 +55,7 @@ const GestionUsuarios = () => {
         telefono: string;
         contraseña: string;
         confirmarContraseña: string;
-        rol: string;
+        roles: string[];
     }) => {
         const resultado = await crearUsuario({
             userName: userData.nombre,
@@ -63,7 +63,7 @@ const GestionUsuarios = () => {
             phoneNumber: userData.telefono,
             password: userData.contraseña,
             confirmPassword: userData.confirmarContraseña,
-            role: userData.rol,
+            roles: userData.roles,
         });
 
         if (resultado.ok) {

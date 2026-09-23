@@ -4,6 +4,7 @@ import {
   HISTORIA_QUOTE_IMAGE,
   HISTORIA_TITULO,
 } from "../../landing/historiaContent";
+import { claseResaltePreview } from "./previewResalte";
 import { ScaledStage } from "./ScaledStage";
 
 const HISTORIA_FRAME = { width: 1280, height: 2100 };
@@ -20,6 +21,7 @@ type HistoriaPreviewProps = {
   headerImageSrc?: string | null;
   quoteImageSrc?: string | null;
   ampliadas?: boolean;
+  campoResaltado?: string | null;
 };
 
 export function HistoriaPreview({
@@ -34,6 +36,7 @@ export function HistoriaPreview({
   headerImageSrc,
   quoteImageSrc,
   ampliadas = false,
+  campoResaltado = null,
 }: HistoriaPreviewProps) {
   const headerSrc = headerImageSrc?.trim() || HISTORIA_HEADER_IMAGE;
   const quoteSrc = quoteImageSrc?.trim() || HISTORIA_QUOTE_IMAGE;
@@ -52,17 +55,29 @@ export function HistoriaPreview({
       </div>
 
       <div className="mx-auto max-w-[860px] px-6 py-20">
-        <span className="mb-3 block text-center text-sm font-bold uppercase tracking-[0.2em] text-royal-gold">
+        <span
+          data-campo-preview="eyebrow"
+          className={`mb-3 block text-center text-sm font-bold uppercase tracking-[0.2em] text-royal-gold ${claseResaltePreview(campoResaltado === "eyebrow")}`}
+        >
           {eyebrow || "Etiqueta"}
         </span>
-        <h2 className="mb-8 text-center font-heading text-[42px] leading-tight text-royal-blue">
+        <h2
+          data-campo-preview="subtitle"
+          className={`mb-8 text-center font-heading text-[42px] leading-tight text-royal-blue ${claseResaltePreview(campoResaltado === "subtitle")}`}
+        >
           {subtitle || "Subtítulo"}
         </h2>
         <div className="flex flex-col gap-5">
-          <p className="text-justify text-[1.1rem] leading-[1.8] text-text-secondary">
+          <p
+            data-campo-preview="origenes"
+            className={`text-justify text-[1.1rem] leading-[1.8] text-text-secondary ${claseResaltePreview(campoResaltado === "origenes")}`}
+          >
             {origenes || "El párrafo de orígenes aparecerá aquí."}
           </p>
-          <p className="text-justify text-[1.1rem] leading-[1.8] text-text-secondary">
+          <p
+            data-campo-preview="restauraciones"
+            className={`text-justify text-[1.1rem] leading-[1.8] text-text-secondary ${claseResaltePreview(campoResaltado === "restauraciones")}`}
+          >
             {restauraciones || "El párrafo de restauraciones aparecerá aquí."}
           </p>
         </div>
@@ -73,24 +88,36 @@ export function HistoriaPreview({
         style={{ backgroundImage: `url(${quoteSrc})` }}
       >
         <div className="absolute inset-0 z-[1] bg-gradient-to-b from-royal-blue/60 to-royal-blue/30" />
-        <p className="relative z-[2] m-0 max-w-[800px] text-center font-heading text-[32px] leading-snug text-white shadow-[0_4px_8px_rgba(0,0,0,0.4)]">
+        <p
+          data-campo-preview="cita"
+          className={`relative z-[2] m-0 max-w-[800px] text-center font-heading text-[32px] leading-snug text-white shadow-[0_4px_8px_rgba(0,0,0,0.4)] ${claseResaltePreview(campoResaltado === "cita", "oscuro")}`}
+        >
           {cita || "La cita espiritual aparecerá aquí."}
         </p>
       </div>
 
       <div className="mx-auto max-w-[860px] px-6 py-20">
         <div className="flex flex-col gap-5">
-          <p className="text-justify text-[1.1rem] leading-[1.8] text-text-secondary">
+          <p
+            data-campo-preview="fachada"
+            className={`text-justify text-[1.1rem] leading-[1.8] text-text-secondary ${claseResaltePreview(campoResaltado === "fachada")}`}
+          >
             {fachada || "El párrafo de la fachada aparecerá aquí."}
           </p>
-          <p className="text-justify text-[1.1rem] leading-[1.8] text-text-secondary">
+          <p
+            data-campo-preview="invitacion"
+            className={`text-justify text-[1.1rem] leading-[1.8] text-text-secondary ${claseResaltePreview(campoResaltado === "invitacion")}`}
+          >
             {invitacion || "El párrafo de invitación aparecerá aquí."}
           </p>
         </div>
       </div>
 
       <div className="mx-auto max-w-[900px] px-6 pb-16 pt-5">
-        <div className="relative h-0 overflow-hidden rounded-xl bg-black pb-[56.25%] shadow-[0_16px_32px_rgba(0,0,0,0.1)]">
+        <div
+          data-campo-preview="videoUrl"
+          className={`relative h-0 overflow-hidden rounded-xl bg-black pb-[56.25%] shadow-[0_16px_32px_rgba(0,0,0,0.1)] ${claseResaltePreview(campoResaltado === "videoUrl", "oscuro")}`}
+        >
           {videoSrc ? (
             <iframe
               className="absolute inset-0 size-full border-0"
