@@ -708,7 +708,10 @@ export const UserList = ({
                         usuarioSesion?.email,
                     );
                     const rolesPrevios = [
-                        ...(usuarioEditando.roles ?? [usuarioEditando.role]),
+                        ...(usuarioEditando.roles &&
+                        usuarioEditando.roles.length > 0
+                          ? usuarioEditando.roles
+                          : [usuarioEditando.role]),
                     ]
                         .sort()
                         .join(",");
