@@ -192,7 +192,7 @@ export default function EventosCarousel() {
 
   return (
     <section className="border-t border-[#eef2f7] bg-surface-muted py-24 max-md:py-[72px] max-sm:py-16" id="eventos">
-      <div className="mx-auto max-w-[1200px] px-6 max-sm:px-[18px]">
+      <div className="mx-auto max-w-[1320px] px-6 max-sm:px-[18px]">
         <ScrollReveal className="mx-auto mb-12 max-w-[620px] text-center" amount={0.35}>
           <span className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.25em] text-royal-gold">
             Comunidad parroquial
@@ -222,7 +222,7 @@ export default function EventosCarousel() {
         {!cargando && !error && eventos.length > 0 && (
           <>
             <ScrollReveal className="relative px-7 max-md:px-2 max-sm:px-0" delay={0.08}>
-              <div ref={pistaRef} className="overflow-hidden touch-pan-y">
+              <div ref={pistaRef} className="overflow-hidden py-6 touch-pan-y">
                 <motion.div
                   className="flex touch-pan-y will-change-transform"
                   drag={maxIndex > 0 && !eventoSeleccionado ? "x" : false}
@@ -246,13 +246,13 @@ export default function EventosCarousel() {
                     return (
                     <article
                       key={evento.id}
-                      className="mx-3 box-border flex h-[560px] flex-col gap-3 overflow-hidden rounded-[22px] border border-[#e8edf2] bg-surface p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition-all hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] max-sm:mx-0 max-sm:h-[540px] max-sm:p-4"
+                      className="mx-3 box-border flex h-[600px] flex-col gap-3 overflow-hidden rounded-[28px] border border-[#e8edf2] bg-surface p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition-all hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] max-[900px]:h-[580px] max-sm:mx-0 max-sm:h-[560px] max-sm:rounded-[22px] max-sm:p-4"
                       style={{
                         width: `calc(100% / ${eventos.length})`,
                       }}
                     >
                       <div className="relative">
-                        <div className="h-44 w-full overflow-hidden rounded-[16px] bg-gradient-to-br from-royal-blue to-royal-blue-dark max-sm:h-40">
+                        <div className="h-56 w-full overflow-hidden rounded-[16px] bg-gradient-to-br from-royal-blue to-royal-blue-dark max-sm:h-44">
                           {evento.imagenUrl ? (
                             <img
                               src={evento.imagenUrl}
@@ -309,7 +309,7 @@ export default function EventosCarousel() {
                         </p>
                         <button
                           type="button"
-                          className="mt-auto inline-flex w-full shrink-0 items-center justify-center rounded-[10px] bg-royal-blue px-5 py-3 text-[0.78rem] font-extrabold uppercase tracking-wider text-white transition-all hover:-translate-y-0.5 hover:bg-royal-gold hover:text-royal-blue"
+                          className="mt-auto inline-flex w-full shrink-0 items-center justify-center rounded-[14px] bg-royal-blue px-5 py-3.5 text-[0.78rem] font-extrabold uppercase tracking-wider text-white transition-all hover:-translate-y-0.5 hover:bg-royal-gold hover:text-royal-blue"
                           onPointerDown={(event) => event.stopPropagation()}
                           onClick={() => setEventoSeleccionado(evento)}
                         >

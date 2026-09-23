@@ -857,7 +857,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             Se recuperó el avance de tu inscripción en este navegador.
             {(!form.catequesis.feBautismoArchivo ||
               !form.inscripcion.pago.archivoComprobante) &&
-              " Volvé a adjuntar la fe de bautismo y el comprobante de pago."}
+              " Vuelve a adjuntar la fe de bautismo y el comprobante de pago."}
           </p>
           <button
             type="button"
