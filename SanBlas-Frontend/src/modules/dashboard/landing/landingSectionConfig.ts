@@ -76,7 +76,7 @@ export const LANDING_SECTIONS: LandingSectionConfig[] = [
         name: "description",
         label: "Descripción",
         type: "textarea",
-        maxLength: 300,
+        maxLength: 200,
         rows: 4,
         placeholder:
           "Ubicada en el corazón de Nicoya, la Parroquia San Blas es testimonio vivo de nuestra historia y esperanza cristiana.",

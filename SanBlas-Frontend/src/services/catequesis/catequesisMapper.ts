@@ -39,22 +39,15 @@ export const mapEstadoBackendToFrontend = (
   if (estadoLower === "pendiente") return "pendiente";
   if (estadoLower === "aprobada" || estadoLower === "aprobado") return "aprobado";
   if (estadoLower === "rechazada" || estadoLower === "rechazado") return "rechazado";
-  if (
-    estadoLower === "requiere_modificacion" ||
-    estadoLower === "modificación solicitada" ||
-    estadoLower === "modificacion solicitada"
-  )
-    return "requiere_modificacion";
 
   return "pendiente";
 };
 
 export const mapEstadoFrontendToBackend = (
-  estado: "aprobado" | "rechazado" | "pendiente" | "requiere_modificacion",
+  estado: "aprobado" | "rechazado" | "pendiente",
 ): string => {
   if (estado === "aprobado") return "Aprobada";
   if (estado === "rechazado") return "Rechazada";
-  if (estado === "requiere_modificacion") return "requiere_modificacion";
   return "Pendiente";
 };
 
@@ -68,11 +61,6 @@ const obtenerNombreArchivo = (archivo: File | string | null | undefined): string
   if (!archivo) return "";
   if (typeof archivo === "string") return archivo;
   return archivo.name;
-};
-
-const toNullableDate = (value: string | null | undefined): string | null => {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
 };
 
 export const mapFormToBackendRequest = (
@@ -89,13 +77,6 @@ export const mapFormToBackendRequest = (
     segundoApellido: form.catequizando.segundoApellido.trim() || null,
     fechaNacimiento: form.catequizando.fechaNacimiento?.trim() ?? "",
     direccionExacta: form.catequizando.direccion.direccionExacta?.trim() ?? "",
-  },
-  datosBautismo: {
-    parroquia: form.catequizando.bautismo.parroquia?.trim() ?? "",
-    fecha: toNullableDate(form.catequizando.bautismo.fecha),
-    tomo: form.catequizando.bautismo.tomo,
-    folio: form.catequizando.bautismo.folio,
-    asiento: form.catequizando.bautismo.asiento,
   },
   datosAdecuacion: {
     requiereAdecuacionCentroEducativo:
@@ -134,6 +115,10 @@ export const mapFormToBackendRequest = (
           primerApellido: form.padreCatequizando.primerApellido.trim(),
           segundoApellido:
             form.padreCatequizando.segundoApellido.trim() || null,
+          direccionExacta:
+            form.padreCatequizando.direccion.direccionExacta?.trim() ?? "",
+          ciudad: form.padreCatequizando.direccion.ciudad?.trim() ?? "",
+          provincia: form.padreCatequizando.direccion.provincia?.trim() ?? "",
           telefono: form.padreCatequizando.telefono.trim(),
         },
       }
@@ -150,7 +135,6 @@ export const mapFormToBackendRequest = (
   },
   datosPago: {
     metodoPago: "SINPE Móvil",
-    numeroComprobanteSinpe: form.inscripcion.pago.numeroComprobanteSINPE.trim(),
     comprobanteArchivo: obtenerNombreArchivo(
       form.inscripcion.pago.archivoComprobante,
     ),
@@ -168,7 +152,8 @@ export const mapResumenToEnrollmentRecord = (
     id: resumen.id,
     codigoSolicitud: `CAT-${resumen.id}`,
     estado: mapEstadoBackendToFrontend(resumen.estado),
-    fechaSolicitud: resumen.fechaSolicitud,
+    fechaSolicitud: resumen.fechaEnvio,
+    fechaActualizacionEstado: resumen.fechaRevision ?? null,
     catequesis: {
       centroCatequesis: resumen.centroCatequesis,
       nivelAInscribirse: resumen.nivelAInscribirse,

@@ -25,7 +25,6 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -34,11 +33,7 @@ import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecord
 import { obtenerEtiquetaNivelCatequesis, NIVELES_CATEQUESIS } from "../../../catequesis/constants/nivelesCatequesis";
 import { FILIALES_CATEQUESIS } from "../../../catequesis/constants/filialesCatequesis";
 import { useSolicitudesCatequesis } from "../hooks/useSolicitudesCatequesis";
-import {
-  obtenerHistorialCatequesis,
-  type HistorialInscripcionCatequesis,
-} from "../services/catequesisService";
-import { ApiError } from "../../../../services/apiClient";
+import type { HistorialInscripcionCatequesis } from "../services/catequesisService";
 import type {
   CatequesisEnrollmentRecord,
   EstadoInscripcionCatequesis,
@@ -121,7 +116,6 @@ const normalizarEstado = (
     return "aprobado";
   if (estadoLower === "rechazado" || estadoLower === "rechazada")
     return "rechazado";
-  if (estadoLower === "requiere_modificacion") return "requiere_modificacion";
 
   return "pendiente";
 };
@@ -136,8 +130,6 @@ const obtenerTextoEstado = (estado?: string | null) => {
       return "Aprobado";
     case "rechazado":
       return "Rechazado";
-    case "requiere_modificacion":
-      return "Requiere modificación";
     default:
       return "Desconocido";
   }
@@ -151,8 +143,6 @@ const getEstadoBadgeVariant = (estado?: string | null): BadgeVariant => {
       return "success";
     case "rechazado":
       return "danger";
-    case "requiere_modificacion":
-      return "info";
     default:
       return "warning";
   }
@@ -179,18 +169,61 @@ function GestionSolicitudesCatequesis() {
   const debouncedQ = useDebouncedValue(filtroTextoLibre.trim(), 400);
   const debouncedEncargado = useDebouncedValue(filtroEncargado.trim(), 400);
 
-  // Filtros que el backend soporta (estado, encargado, q); nivel y filial se filtran en memoria
+  // Paginación de servidor: la página y el límite viajan al backend,
+  // que responde con la página pedida más el total de registros.
+  const [pagina, setPagina] = useState(1);
+  const [limite, setLimite] =
+    useState<(typeof TAMANOS_PAGINA_SOLICITUDES)[number]>(10);
+
+  // Filtros que el backend soporta (estado, encargado, q, nivel, filial)
   const filtros = useMemo(
     () => ({
       estado: filtroEstado === "todos" ? undefined : filtroEstado,
       encargado: debouncedEncargado || undefined,
       q: debouncedQ || undefined,
+      nivel: filtroNivel === "todos" ? undefined : filtroNivel,
+      filial: filtroFilial === "todos" ? undefined : filtroFilial,
+      page: pagina,
+      limit: limite,
     }),
-    [filtroEstado, debouncedEncargado, debouncedQ],
+    [
+      filtroEstado,
+      debouncedEncargado,
+      debouncedQ,
+      filtroNivel,
+      filtroFilial,
+      pagina,
+      limite,
+    ],
+  );
+
+  const [historialEncargadoInput, setHistorialEncargadoInput] = useState("");
+  const [tipoFiltro, setTipoFiltro] = useState<
+    "todos" | "aprobado" | "rechazado"
+  >("todos");
+
+  const historialEncargadoDebounced = useDebouncedValue(
+    historialEncargadoInput.trim(),
+    400,
+  );
+
+  // Estado y encargado del historial se filtran en el backend; el resto (nivel,
+  // filial, fechas, nombre) se sigue aplicando en memoria
+  const historialParamsBackend = useMemo(
+    () => ({
+      estado: tipoFiltro === "todos" ? undefined : tipoFiltro,
+      encargado: historialEncargadoDebounced || undefined,
+    }),
+    [tipoFiltro, historialEncargadoDebounced],
   );
 
   const {
     solicitudes,
+    totalSolicitudes,
+    totalPaginas,
+    historial,
+    historialCargando,
+    historialError,
     cambiarEstado,
     obtenerDetalle,
     exportarExcel,
@@ -205,7 +238,7 @@ function GestionSolicitudesCatequesis() {
     limpiarDetalleError,
     limpiarAccionError,
     limpiarExportError,
-  } = useSolicitudesCatequesis(filtros);
+  } = useSolicitudesCatequesis(filtros, historialParamsBackend);
   const [selectedSolicitud, setSelectedSolicitud] =
     useState<CatequesisEnrollmentRecord | null>(null);
 
@@ -213,18 +246,9 @@ function GestionSolicitudesCatequesis() {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isConfirmRejectOpen, setIsConfirmRejectOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [isModificacionModalOpen, setIsModificacionModalOpen] = useState(false);
-  const [isConfirmModificacionOpen, setIsConfirmModificacionOpen] =
-    useState(false);
-  const [modificacionReason, setModificacionReason] = useState("");
   const [vista, setVista] = useState<"solicitudes" | "historial">(
     "solicitudes",
   );
-  const [historial, setHistorial] = useState<
-    HistorialInscripcionCatequesis[]
-  >([]);
-  const [historialCargando, setHistorialCargando] = useState(false);
-  const [historialError, setHistorialError] = useState<string | null>(null);
   const [historialPagina, setHistorialPagina] = useState(1);
   const [historialRegistrosPorPagina, setHistorialRegistrosPorPagina] =
     useState(7);
@@ -239,9 +263,6 @@ function GestionSolicitudesCatequesis() {
   >("todos");
   const [historialFiltroFilial, setHistorialFiltroFilial] = useState<
     "todos" | string
-  >("todos");
-  const [tipoFiltro, setTipoFiltro] = useState<
-    "todos" | "aprobado" | "rechazado"
   >("todos");
   const [historialFechaDesde, setHistorialFechaDesde] = useState("");
   const [historialFechaHasta, setHistorialFechaHasta] = useState("");
@@ -275,29 +296,6 @@ function GestionSolicitudesCatequesis() {
     return () => clearTimeout(timer);
   }, [historialNombreInput]);
 
-  const cargarHistorial = useCallback(async () => {
-    setHistorialCargando(true);
-    setHistorialError(null);
-
-    try {
-      const respuesta = await obtenerHistorialCatequesis();
-      setHistorial(respuesta.historial);
-      setHistorialPagina(1);
-    } catch (e: unknown) {
-      setHistorialError(
-        e instanceof ApiError
-          ? e.message
-          : "No se pudo cargar el historial de catequesis.",
-      );
-    } finally {
-      setHistorialCargando(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void cargarHistorial();
-  }, [cargarHistorial]);
-
   useEffect(() => {
     setHistorialPagina(1);
   }, [
@@ -306,6 +304,7 @@ function GestionSolicitudesCatequesis() {
     historialFiltroNivel,
     historialFiltroFilial,
     tipoFiltro,
+    historialEncargadoInput,
     historialFechaDesde,
     historialFechaHasta,
   ]);
@@ -353,9 +352,6 @@ function GestionSolicitudesCatequesis() {
     setIsRejectModalOpen(false);
     setIsConfirmRejectOpen(false);
     setRejectionReason("");
-    setIsModificacionModalOpen(false);
-    setIsConfirmModificacionOpen(false);
-    setModificacionReason("");
     limpiarDetalleError();
     limpiarAccionError();
   }, [limpiarDetalleError, limpiarAccionError]);
@@ -368,9 +364,6 @@ function GestionSolicitudesCatequesis() {
       setIsRejectModalOpen(false);
       setIsConfirmRejectOpen(false);
       setRejectionReason("");
-      setIsModificacionModalOpen(false);
-      setIsConfirmModificacionOpen(false);
-      setModificacionReason("");
     },
     [obtenerDetalle],
   );
@@ -380,34 +373,6 @@ function GestionSolicitudesCatequesis() {
     setIsConfirmRejectOpen(false);
     setRejectionReason("");
   }, []);
-
-  const cerrarModificacion = useCallback(() => {
-    setIsModificacionModalOpen(false);
-    setIsConfirmModificacionOpen(false);
-    setModificacionReason("");
-  }, []);
-
-  const solicitarModificacion = useCallback(
-    async (id: number) => {
-      if (!modificacionReason.trim()) return;
-
-      const resultado = await cambiarEstado(
-        id,
-        "requiere_modificacion",
-        modificacionReason.trim(),
-      );
-
-      if (resultado.ok) {
-        showToast("Modificación solicitada correctamente", "success");
-        closeModal();
-        void cargarHistorial();
-        return;
-      }
-
-      showToast(resultado.mensaje, "error");
-    },
-    [cambiarEstado, modificacionReason, closeModal, showToast, cargarHistorial],
-  );
 
   const approveSolicitud = useCallback(
     async (id: number) => {
@@ -420,13 +385,12 @@ function GestionSolicitudesCatequesis() {
       if (resultado.ok) {
         showToast("Solicitud aprobada correctamente", "success");
         closeModal();
-        void cargarHistorial();
         return;
       }
 
       showToast(resultado.mensaje, "error");
     },
-    [cambiarEstado, closeModal, showToast, cargarHistorial],
+    [cambiarEstado, closeModal, showToast],
   );
 
   const rejectSolicitud = useCallback(
@@ -442,13 +406,12 @@ function GestionSolicitudesCatequesis() {
       if (resultado.ok) {
         showToast("Solicitud rechazada correctamente", "error");
         closeModal();
-        void cargarHistorial();
         return;
       }
 
       showToast(resultado.mensaje, "error");
     },
-    [cambiarEstado, rejectionReason, closeModal, showToast, cargarHistorial],
+    [cambiarEstado, rejectionReason, closeModal, showToast],
   );
 
   const historialFiltrado = useMemo(() => {
@@ -456,10 +419,6 @@ function GestionSolicitudesCatequesis() {
 
     return historial
       .filter((item) => {
-        if (tipoFiltro !== "todos") {
-          if (normalizarEstado(item.estado) !== tipoFiltro) return false;
-        }
-
         const coincideNombre =
           !nombreBuscado ||
           normalizeText(item.nombreCatequizando).includes(nombreBuscado);
@@ -491,23 +450,23 @@ function GestionSolicitudesCatequesis() {
 
         return true;
       })
-      .sort(
-        (a, b) =>
-          new Date(b.fechaSolicitud ?? 0).getTime() -
-          new Date(a.fechaSolicitud ?? 0).getTime(),
-      );
+      .sort((a, b) => {
+        const tA = new Date(a.fechaActualizacionEstado ?? 0).getTime();
+        const tB = new Date(b.fechaActualizacionEstado ?? 0).getTime();
+        return tB - tA;
+      });
   }, [
     historial,
     historialFiltros,
     historialFiltroNivel,
     historialFiltroFilial,
-    tipoFiltro,
     historialFechaDesde,
     historialFechaHasta,
   ]);
 
   const hayFiltrosHistorialActivos =
     historialNombreInput !== "" ||
+    historialEncargadoInput !== "" ||
     historialFiltroNivel !== "todos" ||
     historialFiltroFilial !== "todos" ||
     tipoFiltro !== "todos" ||
@@ -516,6 +475,7 @@ function GestionSolicitudesCatequesis() {
 
   const limpiarFiltrosHistorial = () => {
     setHistorialNombreInput("");
+    setHistorialEncargadoInput("");
     setHistorialFiltroNivel("todos");
     setHistorialFiltroFilial("todos");
     setTipoFiltro("todos");
@@ -633,38 +593,30 @@ function GestionSolicitudesCatequesis() {
     [openModal],
   );
 
-  // Nivel y filial no los soporta el backend, por eso se siguen filtrando en memoria
-  const filteredSolicitudes = useMemo(
-    () =>
-      solicitudes.filter((solicitud) => {
-        const coincideNivel =
-          filtroNivel === "todos" ||
-          normalizeText(solicitud.catequesis?.nivelAInscribirse) ===
-            normalizeText(filtroNivel);
-        const coincideFilial =
-          filtroFilial === "todos" ||
-          normalizeText(solicitud.catequesis?.centroCatequesis) ===
-            normalizeText(filtroFilial);
-
-        return coincideNivel && coincideFilial;
-      }),
-    [solicitudes, filtroNivel, filtroFilial],
-  );
-
   const table = useReactTable({
-    data: filteredSolicitudes,
+    data: solicitudes,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    autoResetPageIndex: false,
+    manualPagination: true,
+    pageCount: totalPaginas,
     getRowId: (row) => String(row.id),
-    initialState: {
-      pagination: { pageSize: 10 },
+    state: {
+      pagination: { pageIndex: pagina - 1, pageSize: limite },
+    },
+    onPaginationChange: (updater) => {
+      const previo = { pageIndex: pagina - 1, pageSize: limite };
+      const siguiente =
+        typeof updater === "function" ? updater(previo) : updater;
+      if (siguiente.pageSize !== previo.pageSize) {
+        setLimite(siguiente.pageSize);
+        setPagina(1);
+      } else if (siguiente.pageIndex !== previo.pageIndex) {
+        setPagina(siguiente.pageIndex + 1);
+      }
     },
   });
 
   const {
-    totalItems,
     currentPage,
     totalPages,
     canPreviousPage,
@@ -673,19 +625,16 @@ function GestionSolicitudesCatequesis() {
     goToNextPage,
   } = usePagination(table);
 
+  // Totales del backend: la tabla muestra la página que responde el servidor
+  const totalItems = totalSolicitudes;
   const isInitialLoading = cargando && solicitudes.length === 0;
-  const pageSize = table.getState().pagination.pageSize;
   const primerRegistro =
-    totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const ultimoRegistro = Math.min(currentPage * pageSize, totalItems);
+    totalItems === 0 ? 0 : (pagina - 1) * limite + 1;
+  const ultimoRegistro = Math.min(pagina * limite, totalItems);
 
   useEffect(() => {
-    table.setPageIndex(0);
+    setPagina(1);
   }, [filtroTextoLibre, filtroEncargado, filtroEstado, filtroNivel, filtroFilial]);
-
-  useEffect(() => {
-    table.setPageIndex(0);
-  }, [pageSize]);
 
   return (
     <AdminModule className="gap-3!">
@@ -1009,7 +958,7 @@ function GestionSolicitudesCatequesis() {
         </p>
       )}
 
-      {!isInitialLoading && filteredSolicitudes.length === 0 && (
+      {!isInitialLoading && solicitudes.length === 0 && (
         <p className="py-6 text-center text-sm text-text-muted">
           {hayFiltrosActivos
             ? "No se encontraron solicitudes con los filtros seleccionados."
@@ -1017,7 +966,7 @@ function GestionSolicitudesCatequesis() {
         </p>
       )}
 
-      {!isInitialLoading && filteredSolicitudes.length > 0 && (
+      {!isInitialLoading && solicitudes.length > 0 && (
       <>
       <div className="hidden md:block">
         <AdminTablePanel>
@@ -1134,8 +1083,13 @@ function GestionSolicitudesCatequesis() {
           <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
             Registros por página
             <select
-              value={pageSize}
-              onChange={(e) => table.setPageSize(Number(e.target.value))}
+              value={limite}
+              onChange={(e) => {
+                setLimite(
+                  Number(e.target.value) as typeof TAMANOS_PAGINA_SOLICITUDES[number],
+                );
+                setPagina(1);
+              }}
               className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
               aria-label="Cantidad de registros por página"
             >
@@ -1181,18 +1135,13 @@ function GestionSolicitudesCatequesis() {
           accionError={accionError}
           guardando={guardando}
           cerrarConEsc={
-            !isApproveModalOpen && !isRejectModalOpen && !isModificacionModalOpen
+            !isApproveModalOpen && !isRejectModalOpen
           }
           onApprove={() => setIsApproveModalOpen(true)}
           onRechazar={() => {
             setRejectionReason("");
             setIsConfirmRejectOpen(false);
             setIsRejectModalOpen(true);
-          }}
-          onSolicitarModificacion={() => {
-            setModificacionReason("");
-            setIsConfirmModificacionOpen(false);
-            setIsModificacionModalOpen(true);
           }}
           onClose={closeModal}
         />
@@ -1293,105 +1242,6 @@ function GestionSolicitudesCatequesis() {
         </Modal>
       )}
 
-      {isModificacionModalOpen && selectedSolicitud && (
-        <Modal
-          onClose={
-            isConfirmModificacionOpen
-              ? () => setIsConfirmModificacionOpen(false)
-              : cerrarModificacion
-          }
-          title={
-            isConfirmModificacionOpen
-              ? "Confirmar solicitud de modificación"
-              : "Solicitar modificación"
-          }
-          sinFondo
-          overlayClassName={
-            isConfirmModificacionOpen
-              ? "fixed inset-0 z-[1350] backdrop-blur-[6px]"
-              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
-          }
-        >
-          <motion.div
-            key={isConfirmModificacionOpen ? "confirmar" : "formulario"}
-            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {isConfirmModificacionOpen ? (
-              <div className="flex min-h-44 flex-col">
-                <LineaDoradaTitulo parteSubrayada="Solicitar modificación" />
-                <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
-                  <p className="text-sm leading-relaxed text-text-secondary">
-                    ¿Seguro/a que quieres solicitar modificaciones a esta
-                    solicitud de catequesis? El encargado deberá corregir la
-                    información indicada antes de que pueda ser aprobada.
-                  </p>
-                </div>
-                <div className="flex shrink-0 justify-end gap-2">
-                  <Button
-                    variant="royal"
-                    className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
-                    onClick={() => void solicitarModificacion(selectedSolicitud.id)}
-                    disabled={guardando}
-                  >
-                    {guardando ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        Solicitando...
-                      </>
-                    ) : (
-                      "Solicitar modificación"
-                    )}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
-                    onClick={() => setIsConfirmModificacionOpen(false)}
-                    disabled={guardando}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex min-h-44 flex-col gap-4">
-                <LineaDoradaTitulo parteSubrayada="Solicitar modificación" />
-                <p className="text-sm text-text-secondary">
-                  Indique qué datos debe corregir el encargado. Este comentario
-                  quedará registrado en la solicitud.
-                </p>
-                <Textarea
-                  value={modificacionReason}
-                  onChange={(e) => setModificacionReason(e.target.value)}
-                  placeholder="Ej: Corregir el nombre del catequizando, adjuntar copia legible de la fe de bautismo o verificar el comprobante de pago."
-                  rows={3}
-                  className="min-h-20"
-                />
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    variant="royal"
-                    className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
-                    onClick={() => setIsConfirmModificacionOpen(true)}
-                    disabled={!modificacionReason.trim()}
-                  >
-                    Continuar
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
-                    onClick={cerrarModificacion}
-                    disabled={guardando}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </Modal>
-      )}
-
       <ConfirmacionAccionModal
         open={isApproveModalOpen && selectedSolicitud !== null}
         title="Confirmar aprobación"
@@ -1425,6 +1275,19 @@ function GestionSolicitudesCatequesis() {
               }
               className="min-w-[200px] flex-1"
               aria-label="Filtrar historial por nombre"
+            />
+            <AdminSearch
+              type="text"
+              placeholder="Encargado"
+              maxLength={30}
+              value={historialEncargadoInput}
+              onChange={(e) =>
+                setHistorialEncargadoInput(
+                  handleSoloLetrasNombre(e.target.value),
+                )
+              }
+              className="min-w-[200px] flex-1"
+              aria-label="Filtrar historial por encargado"
             />
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold text-text-muted">
@@ -1572,12 +1435,14 @@ function GestionSolicitudesCatequesis() {
                           <AdminTableHeaderCell>
                             Catequizando
                           </AdminTableHeaderCell>
+                          <AdminTableHeaderCell>Encargado</AdminTableHeaderCell>
                           <AdminTableHeaderCell>Filial</AdminTableHeaderCell>
                           <AdminTableHeaderCell>Nivel</AdminTableHeaderCell>
                           <AdminTableHeaderCell>
-                            Fecha de solicitud
+                            Fecha de revisión
                           </AdminTableHeaderCell>
                           <AdminTableHeaderCell>Estado</AdminTableHeaderCell>
+                          <AdminTableHeaderCell>Revisor</AdminTableHeaderCell>
                           <AdminTableHeaderCell>Acciones</AdminTableHeaderCell>
                         </AdminTableRow>
                       </AdminTableHead>
@@ -1588,6 +1453,13 @@ function GestionSolicitudesCatequesis() {
                               <span className="font-medium">
                                 {item.nombreCatequizando || "Sin nombre"}
                               </span>
+                            </AdminTableCell>
+                            <AdminTableCell>
+                              {item.nombreEncargado || (
+                                <span className="text-slate-400 italic">
+                                  No registrado
+                                </span>
+                              )}
                             </AdminTableCell>
                             <AdminTableCell>
                               {item.centroCatequesis || (
@@ -1603,7 +1475,9 @@ function GestionSolicitudesCatequesis() {
                             </AdminTableCell>
                             <AdminTableCell>
                               <span className="tabular-nums text-text-secondary">
-                                {formatFechaIngreso(item.fechaSolicitud ?? "")}
+                                {formatFechaIngreso(
+                                  item.fechaActualizacionEstado ?? "",
+                                )}
                               </span>
                             </AdminTableCell>
                             <AdminTableCell>
@@ -1612,6 +1486,13 @@ function GestionSolicitudesCatequesis() {
                               >
                                 {obtenerTextoEstado(item.estado)}
                               </Badge>
+                            </AdminTableCell>
+                            <AdminTableCell>
+                              {item.revisor || (
+                                <span className="text-slate-400 italic">
+                                  —
+                                </span>
+                              )}
                             </AdminTableCell>
                             <AdminTableCell>
                               <button
@@ -1650,14 +1531,26 @@ function GestionSolicitudesCatequesis() {
                           value: item.centroCatequesis || "No registrada",
                         },
                         {
+                          icon: <User size={12} />,
+                          label: "Encargado",
+                          value: item.nombreEncargado || "No registrado",
+                        },
+                        {
                           icon: <Calendar size={12} />,
-                          label: "Fecha de solicitud",
-                          value: formatFechaIngreso(item.fechaSolicitud ?? ""),
+                          label: "Fecha de revisión",
+                          value: formatFechaIngreso(
+                            item.fechaActualizacionEstado ?? "",
+                          ),
                         },
                         {
                           icon: <Phone size={12} />,
                           label: "Teléfono",
                           value: item.telefonoEncargada || "No registrado",
+                        },
+                        {
+                          icon: <User size={12} />,
+                          label: "Revisor",
+                          value: item.revisor || "—",
                         },
                       ]}
                       actions={[
@@ -1780,6 +1673,16 @@ function GestionSolicitudesCatequesis() {
                   {historialSeleccionada.telefonoEncargada && (
                     <p className="m-0 text-xs text-text-muted">
                       Teléfono: {historialSeleccionada.telefonoEncargada}
+                    </p>
+                  )}
+                  {historialSeleccionada.nombreEncargado && (
+                    <p className="m-0 text-xs text-text-muted">
+                      Encargado: {historialSeleccionada.nombreEncargado}
+                    </p>
+                  )}
+                  {historialSeleccionada.revisor && (
+                    <p className="m-0 text-xs text-text-muted">
+                      Revisor: {historialSeleccionada.revisor}
                     </p>
                   )}
                 </div>

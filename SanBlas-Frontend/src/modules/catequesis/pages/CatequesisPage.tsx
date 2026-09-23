@@ -18,6 +18,7 @@ import {
   Label,
 } from "../../../shared/ui";
 import { formatearFechaEnvio } from "../../../shared/utils/fechas";
+import { soloCorreo, correoValido } from "../../../shared/utils/formValidation";
 
 interface ResumenSolicitudEnviada {
   nombreAlumno: string;
@@ -32,20 +33,17 @@ const normalizarEstado = (estado?: string | null): string => {
   const e = estado.trim().toLowerCase();
   if (e === "aprobado" || e === "aprobada") return "aprobado";
   if (e === "rechazado" || e === "rechazada") return "rechazado";
-  if (e === "requiere_modificacion") return "requiere_modificacion";
   return "pendiente";
 };
 
 const getEstadoBadgeVariant = (
   estado?: string | null,
-): "success" | "danger" | "warning" | "info" => {
+): "success" | "danger" | "warning" => {
   switch (normalizarEstado(estado)) {
     case "aprobado":
       return "success";
     case "rechazado":
       return "danger";
-    case "requiere_modificacion":
-      return "info";
     default:
       return "warning";
   }
@@ -57,8 +55,6 @@ const getEstadoMensaje = (estado?: string | null): string => {
       return "Tu inscripción fue aprobada. Ya puedes asistir a catequesis.";
     case "rechazado":
       return "Tu inscripción fue rechazada. Revisa el motivo adjunto.";
-    case "requiere_modificacion":
-      return "Se solicitaron modificaciones. Podés editar y reenviar tu inscripción.";
     default:
       return "Tu inscripción está pendiente de revisión por el catequista.";
   }
@@ -125,6 +121,10 @@ const CatequesisPage = () => {
 
   const handleConsultar = async () => {
     if (!correoConsulta.trim()) return;
+    if (!correoValido(correoConsulta)) {
+      setErrorConsulta("Digite un correo válido.");
+      return;
+    }
     setConsultando(true);
     setErrorConsulta(null);
     setResultadosConsulta([]);
@@ -152,6 +152,9 @@ const CatequesisPage = () => {
 
   const cambiarSeccion = (seccion: Section) => {
     setActiveSection(seccion);
+    setCorreoConsulta("");
+    setErrorConsulta(null);
+    setResultadosConsulta([]);
     const hashes: Record<Section, string> = {
       info: "#informacion",
       matricula: "#matricula",
@@ -161,8 +164,8 @@ const CatequesisPage = () => {
   };
 
   const tabs: { id: Section; label: string }[] = [
-    { id: "info", label: "Información sobre catequesis" },
-    { id: "matricula", label: "Matricular catequesis" },
+    { id: "info", label: "Información" },
+    { id: "matricula", label: "Inscribirse" },
     { id: "consultar", label: "Consultar estado" },
   ];
 
@@ -178,22 +181,17 @@ const CatequesisPage = () => {
             <h1 className="m-0 mt-2 font-heading text-2xl font-extrabold text-royal-blue sm:text-[30px]">
               Matrícula a Catequesis
             </h1>
-            <div
-              className="mt-5 grid grid-cols-1 gap-2 rounded-2xl bg-surface-muted p-1.5 sm:grid-cols-3"
-              role="tablist"
-              aria-label="Secciones de catequesis"
-            >
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
-                  role="tab"
-                  aria-selected={activeSection === tab.id}
                   onClick={() => cambiarSeccion(tab.id)}
-                  className={`min-h-11 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 ${
+                  aria-pressed={activeSection === tab.id}
+                  className={`inline-flex min-h-12 flex-1 items-center justify-center rounded-xl px-6 py-3 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-royal-gold/40 ${
                     activeSection === tab.id
-                      ? "bg-royal-blue text-white shadow-sm"
-                      : "text-text-secondary hover:bg-surface hover:text-royal-blue"
+                      ? "bg-royal-blue text-white shadow-md"
+                      : "border border-royal-blue/20 bg-royal-blue/5 text-royal-blue hover:bg-royal-blue hover:text-white"
                   }`}
                 >
                   {tab.label}
@@ -311,14 +309,18 @@ const CatequesisPage = () => {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="flex-1">
                   <Label htmlFor="correo-consulta">
-                    Correo electrónico *
+                    Correo electrónico<span className="text-red-500"> *</span>
                   </Label>
                   <Input
                     id="correo-consulta"
                     type="email"
                     placeholder="correo@ejemplo.com"
                     value={correoConsulta}
-                    onChange={(e) => setCorreoConsulta(e.target.value)}
+                    onChange={(e) => {
+                      const valor = soloCorreo(e.target.value);
+                      setCorreoConsulta(valor);
+                      if (!valor || correoValido(valor)) setErrorConsulta(null);
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleConsultar();
                     }}
@@ -389,24 +391,31 @@ const CatequesisPage = () => {
                                 {solicitud.catequesis?.nivelAInscribirse ?? "—"}
                               </span>
                             </div>
-                            <div>
-                              <span className="font-semibold text-text-muted">
-                                Fecha de envío:{" "}
-                              </span>
-                              <span className="text-text">
-                                {formatearFechaEnvio(
-                                  solicitud.fechaSolicitud,
-                                )}
-                              </span>
-                            </div>
+<div>
+  <span className="font-semibold text-text-muted">
+    Fecha de envío:{" "}
+  </span>
+  <span className="text-text">
+    {formatearFechaEnvio(
+      solicitud.fechaSolicitud,
+    )}
+  </span>
+</div>
+<div>
+  <span className="font-semibold text-text-muted">
+    Fecha de revisión:{" "}
+  </span>
+  <span className="text-text">
+    {solicitud.fechaActualizacionEstado
+      ? formatearFechaEnvio(solicitud.fechaActualizacionEstado)
+      : "—"}
+  </span>
+</div>
                           </div>
                           <p className="m-0 mt-1 text-sm text-text-secondary">
                             {getEstadoMensaje(solicitud.estado)}
                           </p>
-                          {(normalizarEstado(solicitud.estado) ===
-                            "rechazado" ||
-                            normalizarEstado(solicitud.estado) ===
-                              "requiere_modificacion") &&
+                          {normalizarEstado(solicitud.estado) === "rechazado" &&
                             solicitud.observacionAdministrativa && (
                               <div className="mt-1 rounded-lg border border-border bg-surface-muted p-3 text-sm text-text-secondary">
                                 <span className="font-semibold text-text-muted">

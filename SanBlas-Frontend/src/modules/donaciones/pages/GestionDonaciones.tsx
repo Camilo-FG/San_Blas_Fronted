@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Download,
   Eye,
   HandHeart,
   Inbox,
@@ -21,6 +22,8 @@ import {
   type EstadoDonacionAccion,
 } from "../hooks/useGestionDonaciones";
 import { DonacionDetalleModal } from "../components/DonacionDetalleModal";
+import { ExportarDonacionesModal } from "../components/ExportarDonacionesModal";
+import { exportarDonaciones } from "../utils/exportarDonaciones";
 import { useNotificacionDonaciones } from "../hooks/useNotificacionDonaciones";
 import { NotificacionSolicitudesNuevas } from "../../../shared/components/NotificacionSolicitudesNuevas";
 import { ApiError } from "../../../services/apiClient";
@@ -108,6 +111,7 @@ export default function GestionDonaciones(): React.JSX.Element {
     TAMANO_PAGINA_INICIAL,
   );
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [exportModalAbierto, setExportModalAbierto] = useState(false);
   const [isConfirmRejectOpen, setIsConfirmRejectOpen] = useState(false);
   const [rejectionReasonSelect, setRejectionReasonSelect] = useState("");
   const [rejectionReasonText, setRejectionReasonText] = useState("");
@@ -594,6 +598,15 @@ export default function GestionDonaciones(): React.JSX.Element {
         >
           <Archive size={16} />
           Historial
+        </button>
+        <button
+          type="button"
+          onClick={() => setExportModalAbierto(true)}
+          className="ml-auto inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border-0 bg-surface px-4 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-muted"
+          aria-label="Exportar tabla"
+        >
+          <Download size={16} />
+          Exportar tabla
         </button>
       </div>
 
@@ -1539,6 +1552,31 @@ export default function GestionDonaciones(): React.JSX.Element {
             )}
           </motion.div>
         </Modal>
+      )}
+
+      {exportModalAbierto && (
+        <ExportarDonacionesModal
+          onClose={() => setExportModalAbierto(false)}
+          onConfirm={(opciones) => {
+            const resultado = exportarDonaciones(
+              donaciones,
+              historial,
+              opciones,
+            );
+            setExportModalAbierto(false);
+            if (resultado.filas === 0) {
+              showToast(
+                "No hay donaciones para los criterios seleccionados",
+                "error",
+              );
+            } else {
+              showToast(
+                `Se exportaron ${resultado.filas} donaciones`,
+                "success",
+              );
+            }
+          }}
+        />
       )}
     </AdminModule>
   );

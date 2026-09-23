@@ -10,11 +10,17 @@ export const useGetUserList = () => {
 
     const cargarUsuarios = async () => {
         setLoading(true);
+        setError(null);
         try {
             const data = await getUsers();
             setUsers(data);
         } catch (err) {
-            setError('Error al hacer fetch a los usuarios');
+            // el servicio ya traduce el error con handleApiError (distingue sin conexión de error del servidor)
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : 'Error al cargar la lista de usuarios.',
+            );
             console.error(err);
         } finally {
             setLoading(false);

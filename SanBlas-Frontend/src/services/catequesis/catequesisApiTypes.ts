@@ -11,13 +11,6 @@ export interface CrearInscripcionBackendRequest {
     fechaNacimiento: string;
     direccionExacta: string;
   };
-  datosBautismo: {
-    parroquia: string;
-    fecha?: string | null;
-    tomo?: string | null;
-    folio?: string | null;
-    asiento?: string | null;
-  };
   datosAdecuacion: {
     requiereAdecuacionCentroEducativo: boolean;
     descripcionAdecuacion?: string | null;
@@ -39,6 +32,9 @@ export interface CrearInscripcionBackendRequest {
     nombre: string;
     primerApellido: string;
     segundoApellido?: string | null;
+    direccionExacta: string;
+    ciudad: string;
+    provincia: string;
     telefono: string;
   };
   datosPersonaInscribe: {
@@ -51,7 +47,6 @@ export interface CrearInscripcionBackendRequest {
   };
   datosPago: {
     metodoPago: string;
-    numeroComprobanteSinpe: string;
     comprobanteArchivo: string;
   };
 }
@@ -62,7 +57,8 @@ export interface InscripcionResumenBackend {
   centroCatequesis: string;
   nivelAInscribirse: string;
   estado: string;
-  fechaSolicitud: string;
+  fechaEnvio: string;
+  fechaRevision?: string | null;
   telefonoEncargada: string;
   nombreEncargado?: string;
   correoEncargado?: string;

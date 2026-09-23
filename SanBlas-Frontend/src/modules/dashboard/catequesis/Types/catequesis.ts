@@ -73,7 +73,6 @@ export type EstadoInscripcionCatequesis =
   | "aprobada"
   | "rechazado"
   | "rechazada"
-  | "requiere_modificacion"
   | "Pendiente"
   | "Aprobado"
   | "Aprobada"

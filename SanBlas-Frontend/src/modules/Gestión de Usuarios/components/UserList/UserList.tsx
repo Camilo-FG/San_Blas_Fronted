@@ -6,6 +6,7 @@ import {
     Mail,
     Pencil,
     Phone,
+    RefreshCw,
     SlidersHorizontal,
     Trash2,
     User,
@@ -45,6 +46,7 @@ import {
     Badge,
     Button,
     ConfirmacionAccionModal,
+    EmptyState,
     ErrorMessage,
     Modal,
     PageLoader,
@@ -341,7 +343,17 @@ export const UserList = ({
             {cargando && users.length === 0 ? (
                 <PageLoader />
             ) : error ? (
-                <ErrorMessage message={error} />
+                <div className="flex flex-col items-start gap-3">
+                    <ErrorMessage message={error} className="w-full" />
+                    <Button
+                        variant="royal"
+                        className="gap-1.5"
+                        onClick={onRefetch}
+                    >
+                        <RefreshCw size={16} />
+                        Reintentar
+                    </Button>
+                </div>
             ) : (
                 <>
                     <div className="hidden md:block">
@@ -392,9 +404,20 @@ export const UserList = ({
                                         <AdminTableRow>
                                             <AdminTableCell
                                                 colSpan={columns.length}
-                                                className="py-10 text-center text-text-muted"
+                                                className="py-10"
                                             >
-                                                No se encontraron usuarios
+                                                <EmptyState
+                                                    title={
+                                                        busqueda.trim() || filtrosActivos > 0
+                                                            ? 'No se encontraron resultados'
+                                                            : 'No hay usuarios registrados'
+                                                    }
+                                                    description={
+                                                        busqueda.trim() || filtrosActivos > 0
+                                                            ? `No hubo coincidencias para "${busqueda.trim() || "filtros aplicados"}". Intente ajustar o limpiar los criterios de búsqueda.`
+                                                            : undefined
+                                                    }
+                                                />
                                             </AdminTableCell>
                                         </AdminTableRow>
                                     )}
@@ -405,9 +428,18 @@ export const UserList = ({
 
                     <div className="flex flex-col gap-2.5 md:hidden">
                         {table.getRowModel().rows.length === 0 ? (
-                            <p className="m-0 rounded-2xl border border-border-strong bg-surface px-4 py-10 text-center text-sm text-text-muted">
-                                No se encontraron usuarios
-                            </p>
+                            <EmptyState
+                                title={
+                                    busqueda.trim() || filtrosActivos > 0
+                                        ? 'No se encontraron resultados'
+                                        : 'No hay usuarios registrados'
+                                }
+                                description={
+                                    busqueda.trim() || filtrosActivos > 0
+                                        ? `No hubo coincidencias para "${busqueda.trim() || "filtros aplicados"}". Intente ajustar o limpiar los criterios de búsqueda.`
+                                        : undefined
+                                }
+                            />
                         ) : (
                             table.getRowModel().rows.map((row) => {
                                 const usuario = row.original;
@@ -526,7 +558,6 @@ export const UserList = ({
                     onClose={() => setUsuarioSeleccionado(null)}
                     title={`Perfil de ${usuarioSeleccionado.userName}`}
                     className="max-w-2xl p-0"
-                    cerrarAlClicFuera={false}
                 >
                     <PerfilUsuarioCard
                         usuario={usuarioSeleccionado}

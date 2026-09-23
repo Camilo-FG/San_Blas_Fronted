@@ -21,24 +21,52 @@ const tieneArchivosReales = (formData: CatequesisEnrollmentData): boolean =>
   formData.catequesis.feBautismoArchivo instanceof File &&
   formData.inscripcion.pago.archivoComprobante instanceof File;
 
+export interface PaginaSolicitudesCatequesis {
+  data: CatequesisEnrollmentRecord[];
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
+}
+
 export const obtenerSolicitudesCatequesis = async (filtros?: {
   estado?: string;
   nombre?: string;
   encargado?: string;
   q?: string;
-}): Promise<CatequesisEnrollmentRecord[]> => {
+  nivel?: string;
+  filial?: string;
+  page?: number;
+  limit?: number;
+}): Promise<PaginaSolicitudesCatequesis> => {
   try {
     const params = {
       ...(filtros?.estado ? { estado: filtros.estado } : {}),
       ...(filtros?.nombre ? { nombre: filtros.nombre } : {}),
       ...(filtros?.encargado ? { encargado: filtros.encargado } : {}),
       ...(filtros?.q ? { q: filtros.q } : {}),
+      ...(filtros?.nivel ? { nivel: filtros.nivel } : {}),
+      ...(filtros?.filial ? { filial: filtros.filial } : {}),
+      ...(filtros?.page ? { page: filtros.page } : {}),
+      ...(filtros?.limit ? { limit: filtros.limit } : {}),
     };
-    const { data } = await apiClient.get<InscripcionResumenBackend[]>(BASE, {
+    const { data } = await apiClient.get<{
+      data: InscripcionResumenBackend[];
+      total: number;
+      page: number;
+      pages: number;
+      limit: number;
+    }>(BASE, {
       params: Object.keys(params).length ? params : undefined,
     });
 
-    return data.map(mapResumenToEnrollmentRecord);
+    return {
+      data: (data.data ?? []).map(mapResumenToEnrollmentRecord),
+      total: data.total ?? 0,
+      page: data.page ?? 1,
+      pages: data.pages ?? 0,
+      limit: data.limit ?? 10,
+    };
   } catch (error) {
     handleApiError(error);
   }
@@ -52,12 +80,15 @@ export interface HistorialInscripcionCatequesis {
   estado: string;
   fechaSolicitud: string;
   telefonoEncargada: string;
+  nombreEncargado?: string;
   observacionAdministrativa?: string | null;
   fechaActualizacionEstado?: string | null;
+  revisor?: string | null;
 }
 
 export const obtenerHistorialCatequesis = async (params?: {
   estado?: string;
+  encargado?: string;
   desde?: string;
   hasta?: string;
 }): Promise<{
@@ -131,7 +162,7 @@ export const crearSolicitudCatequesis = async (
 
 export const actualizarEstadoSolicitud = async (
   id: number,
-  estado: "aprobado" | "rechazado" | "pendiente" | "requiere_modificacion",
+  estado: "aprobado" | "rechazado" | "pendiente",
   observacion?: string,
 ): Promise<ActualizarEstadoBackendResponse> => {
   try {

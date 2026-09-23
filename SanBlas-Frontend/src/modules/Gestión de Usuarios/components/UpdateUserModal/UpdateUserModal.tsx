@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
+import { Eye, EyeOff } from 'lucide-react';
 import { isAdminRole, type Usuario } from '../../../../types/Usuario';
 import {
   opcionesSelectRol,
@@ -16,6 +17,10 @@ import {
   Select,
 } from '../../../../shared/ui';
 import { normalizarTexto } from '../../Utils/normalizarTexto';
+
+// estilos del botón de ojo para mostrar/ocultar contraseña (mismo look que el login)
+const BOTON_OJO =
+  'absolute right-2.5 inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-text-muted transition-colors hover:bg-royal-blue/5 hover:text-royal-blue focus-visible:ring-2 focus-visible:ring-royal-blue/25 focus-visible:outline-none';
 
 interface Props {
   isOpen: boolean;
@@ -66,6 +71,8 @@ const UpdateUserModal: React.FC<Props> = ({
   });
 
   const { user: usuarioSesion } = useAuth();
+  // controla si se ve o se oculta el texto de la nueva contraseña
+  const [mostrarContrasena, setMostrarContrasena] = useState(false);
   // solo un admin puede otorgar/editar el rol admin; los demás solo ven el rol usuario
   const rolesPermitidos = isAdminRole(usuarioSesion?.role ?? '')
     ? [...ROLES_ASIGNABLES]
@@ -89,11 +96,11 @@ const UpdateUserModal: React.FC<Props> = ({
   };
 
   const validatePhone = (phone: string) => {
-    return /^\d{4}-\d{4}$/.test(phone);
+    return /^[1-9]\d{3}-\d{4}$/.test(phone);
   };
 
   const formatTelefono = (value: string) => {
-    const soloNumeros = value.replace(/\D/g, '').slice(0, 8);
+    const soloNumeros = value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 8);
     return soloNumeros.length > 4
       ? `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4)}`
       : soloNumeros;
@@ -176,7 +183,12 @@ const UpdateUserModal: React.FC<Props> = ({
           >
             {(field) => (
               <div>
-                <Label htmlFor="u-nombre">Nombre completo</Label>
+                <Label htmlFor="u-nombre">
+                  Nombre completo
+                  <span className="ml-1.5 font-normal text-text-muted">
+                    ({field.state.value.length}/100)
+                  </span>
+                </Label>
                 <Input
                   id="u-nombre"
                   type="text"
@@ -188,6 +200,7 @@ const UpdateUserModal: React.FC<Props> = ({
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
+                  maxLength={100}
                 />
                 <FieldError message={field.state.meta.errors[0]} />
               </div>
@@ -197,13 +210,19 @@ const UpdateUserModal: React.FC<Props> = ({
           <form.Field
             name="correo"
             validators={{
+              onChange: ({ value }) => validarCorreo(value),
               onBlur: ({ value }) => validarCorreo(value),
               onSubmit: ({ value }) => validarCorreo(value),
             }}
           >
             {(field) => (
               <div>
-                <Label htmlFor="u-correo">Correo electrónico</Label>
+                <Label htmlFor="u-correo">
+                  Correo electrónico
+                  <span className="ml-1.5 font-normal text-text-muted">
+                    ({field.state.value.length}/100)
+                  </span>
+                </Label>
                 <Input
                   id="u-correo"
                   type="email"
@@ -215,6 +234,7 @@ const UpdateUserModal: React.FC<Props> = ({
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
+                  maxLength={100}
                 />
                 <FieldError message={field.state.meta.errors[0]} />
               </div>
@@ -279,19 +299,31 @@ const UpdateUserModal: React.FC<Props> = ({
                         ({field.state.value.length}/64)
                       </span>
                     </Label>
-                    <Input
-                      id="u-contraseña"
-                      type="password"
-                      placeholder="Dejar vacío para no cambiar"
-                      value={field.state.value}
-                      hasError={field.state.meta.errors.length > 0}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={() => {
-                        field.handleChange(field.state.value.trim());
-                        field.handleBlur();
-                      }}
-                      maxLength={64}
-                    />
+                    <div className="relative flex items-center">
+                      <Input
+                        id="u-contraseña"
+                        type={mostrarContrasena ? 'text' : 'password'}
+                        placeholder="Dejar vacío para no cambiar"
+                        value={field.state.value}
+                        hasError={field.state.meta.errors.length > 0}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={() => {
+                          field.handleChange(field.state.value.trim());
+                          field.handleBlur();
+                        }}
+                        maxLength={64}
+                        className="pr-12"
+                      />
+                      <button
+                        type="button"
+                        className={BOTON_OJO}
+                        onClick={() => setMostrarContrasena((prev) => !prev)}
+                        aria-label={mostrarContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        aria-pressed={mostrarContrasena}
+                      >
+                        {mostrarContrasena ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+                    </div>
                     {valor ? (
                       <div className="mt-2 flex items-center gap-2" aria-live="polite">
                         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong">

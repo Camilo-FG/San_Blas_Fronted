@@ -24,7 +24,7 @@ export interface CatequizandoData {
   direccion: {
     direccionExacta: string | null;
   };
-  bautismo: {
+  bautismo?: {
     parroquia: string | null;
     fecha: string | null;
     tomo: string | null;
@@ -52,11 +52,15 @@ export interface PadreCatequizandoData {
   nombre: string;
   primerApellido: string;
   segundoApellido: string;
+  direccion: {
+    direccionExacta: string | null;
+    ciudad: string | null;
+    provincia: string | null;
+  };
   telefono: string;
 }
 
 export interface PagoInscripcionCatequesis {
-  numeroComprobanteSINPE: string;
   archivoComprobante: File | string | null;
   fechaPago: string | null;
 }
@@ -104,7 +108,6 @@ export type EstadoInscripcionCatequesis =
   | "aprobada"
   | "rechazado"
   | "rechazada"
-  | "requiere_modificacion"
   | "Pendiente"
   | "Aprobado"
   | "Aprobada"

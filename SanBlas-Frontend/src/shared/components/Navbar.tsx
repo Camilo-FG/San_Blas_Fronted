@@ -183,29 +183,14 @@ function Navbar() {
                 onMouseEnter={abrirServicios}
                 onMouseLeave={cerrarServiciosConDelay}
               >
-                <div className="rounded-[10px] px-3.5 py-2.5">
-                  <p className="mb-1 text-sm font-semibold text-text">
-                    Matrícula a Catequesis
-                  </p>
-                  <div className="flex flex-col border-l border-border pl-2">
-                    <Link
-                      to={Rutas.FormsolicitudesCatequesis}
-                      hash="informacion"
-                      className="block rounded-lg px-2.5 py-2 text-[13px] font-semibold text-text-muted no-underline transition-colors hover:bg-gray-100 hover:text-royal-gold-muted"
-                      onClick={cerrarMenu}
-                    >
-                      Información
-                    </Link>
-                    <Link
-                      to={Rutas.FormsolicitudesCatequesis}
-                      hash="matricula"
-                      className="block rounded-lg px-2.5 py-2 text-[13px] font-semibold text-text-muted no-underline transition-colors hover:bg-gray-100 hover:text-royal-gold-muted"
-                      onClick={cerrarMenu}
-                    >
-                      Formulario
-                    </Link>
-                  </div>
-                </div>
+                <Link
+                  to={Rutas.FormsolicitudesCatequesis}
+                  hash="informacion"
+                  className={submenuLinkClass}
+                  onClick={cerrarMenu}
+                >
+                  Matrícula a Catequesis
+                </Link>
 
                 <Link
                   to={Rutas.SolicitudesSacramentos}
@@ -389,24 +374,13 @@ function Navbar() {
               {serviciosAbierto && (
                 <div className="mt-2 flex flex-col gap-1 rounded-xl border border-white/20 bg-royal-blue-dark/80 p-2 pl-3.5 shadow-inner">
                   <div className="flex flex-col gap-1">
-                    <span className="py-[7px] text-[13px] font-bold uppercase text-white/82">
-                      Matrícula a Catequesis
-                    </span>
                     <Link
                       to={Rutas.FormsolicitudesCatequesis}
                       hash="informacion"
-                      className="py-[5px] pl-3 text-[12px] font-bold uppercase text-white/65 no-underline transition-colors hover:text-royal-gold"
+                      className="py-[7px] text-[13px] font-bold uppercase text-white/82 no-underline transition-colors hover:text-royal-gold"
                       onClick={cerrarMenu}
                     >
-                      Información sobre catequesis
-                    </Link>
-                    <Link
-                      to={Rutas.FormsolicitudesCatequesis}
-                      hash="matricula"
-                      className="py-[5px] pl-3 text-[12px] font-bold uppercase text-white/65 no-underline transition-colors hover:text-royal-gold"
-                      onClick={cerrarMenu}
-                    >
-                      Formulario de inscripción
+                      Matrícula a Catequesis
                     </Link>
                   </div>
 
