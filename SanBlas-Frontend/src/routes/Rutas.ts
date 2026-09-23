@@ -24,6 +24,7 @@ const Rutas = {
   eventosPublicos: "/eventos",
   login: "/login",
   recuperarContrasena: "/recuperar-contrasena",
+  restablecerContrasena: "/reset-password",
   dashboard: dashboardBase,
 
   dashboardPath,

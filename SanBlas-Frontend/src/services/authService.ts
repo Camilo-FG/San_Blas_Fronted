@@ -44,3 +44,15 @@ export const solicitarRecuperacionContrasena = async (
     handleApiError(error);
   }
 };
+
+export const restablecerContrasena = async (datos: {
+  token: string;
+  password: string;
+  confirmPassword: string;
+}): Promise<void> => {
+  try {
+    await apiClient.post("/auth/restablecer-contrasena", datos);
+  } catch (error) {
+    handleApiError(error);
+  }
+};

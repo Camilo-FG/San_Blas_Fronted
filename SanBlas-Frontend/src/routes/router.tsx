@@ -40,6 +40,9 @@ const LoginPage = lazyWithRetry(() => import("../modules/auth/pages/LoginPage"))
 const RecuperarContrasenaPage = lazyWithRetry(
   () => import("../modules/auth/pages/RecuperarContrasenaPage"),
 );
+const RestablecerContrasenaPage = lazyWithRetry(
+  () => import("../modules/auth/pages/RestablecerContrasenaPage"),
+);
 const EventosPublicPage = lazyWithRetry(
   () => import("../modules/eventos/pages/EventosPublicPage"),
 );
@@ -89,7 +92,8 @@ function RootLayout() {
   const isAuthPublica =
     pathname === Rutas.login ||
     pathname.startsWith(`${Rutas.login}/`) ||
-    pathname === Rutas.recuperarContrasena;
+    pathname === Rutas.recuperarContrasena ||
+    pathname === Rutas.restablecerContrasena;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -171,6 +175,22 @@ const recuperarContrasenaRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.recuperarContrasena,
   component: withSuspense(RecuperarContrasenaPage, LandingLoader),
+});
+
+const restablecerContrasenaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.restablecerContrasena,
+  validateSearch: (search: Record<string, unknown>) => ({
+    token: typeof search.token === "string" ? search.token : "",
+  }),
+  component: function RestablecerContrasenaRoute() {
+    const { token } = restablecerContrasenaRoute.useSearch();
+    return (
+      <Suspense fallback={<LandingLoader />}>
+        <RestablecerContrasenaPage token={token} />
+      </Suspense>
+    );
+  },
 });
 
 const dashboardRoute = createRoute({
@@ -287,6 +307,7 @@ const routeTree = rootRoute.addChildren([
   eventosPublicosRoute,
   loginRoute,
   recuperarContrasenaRoute,
+  restablecerContrasenaRoute,
   dashboardRoute.addChildren([
     dashboardHomeRoute,
     solicitudesCatequesisRoute,
