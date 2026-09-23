@@ -17,6 +17,12 @@ dist-ssr
 .env
 .env.*
 
+# Playwright (artefactos de corrida; el estado de sesión trae el token)
+test-results/
+playwright-report/
+blob-report/
+e2e/.auth/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

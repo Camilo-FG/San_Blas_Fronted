@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Usuario } from '../../../../types/Usuario';
-import { getUsersPaginados } from '../../services/userServices';
+import { getUsersPaginados, type OrdenUsuarios } from '../../services/userServices';
 
 const LIMITE_INICIAL = 10;
+
+// el orden por defecto es el más reciente primero, igual que el backend
+const ORDEN_INICIAL: OrdenUsuarios = { campo: 'createdAt', direccion: 'desc' };
 
 export interface FiltrosAvanzados {
   role?: string;
@@ -14,6 +17,7 @@ export const useGetUsuariosPaginados = () => {
   const [limite, setLimite] = useState(LIMITE_INICIAL);
   const [busqueda, setBusqueda] = useState('');
   const [filtros, setFiltros] = useState<FiltrosAvanzados>({});
+  const [orden, setOrden] = useState<OrdenUsuarios>(ORDEN_INICIAL);
   const [users, setUsers] = useState<Usuario[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -21,7 +25,13 @@ export const useGetUsuariosPaginados = () => {
   const [error, setError] = useState<string | null>(null);
 
   const cargar = useCallback(
-    async (p: number, l: number, b: string, f: FiltrosAvanzados) => {
+    async (
+      p: number,
+      l: number,
+      b: string,
+      f: FiltrosAvanzados,
+      o: OrdenUsuarios,
+    ) => {
       setLoading(true);
       setError(null);
       try {
@@ -31,6 +41,7 @@ export const useGetUsuariosPaginados = () => {
           b.length > 0 ? b : undefined,
           f.role,
           f.state,
+          o,
         );
         setUsers(res.data);
         setTotal(res.total);
@@ -47,8 +58,8 @@ export const useGetUsuariosPaginados = () => {
   );
 
   useEffect(() => {
-    void cargar(pagina, limite, busqueda, filtros);
-  }, [pagina, limite, busqueda, filtros, cargar]);
+    void cargar(pagina, limite, busqueda, filtros, orden);
+  }, [pagina, limite, busqueda, filtros, orden, cargar]);
 
   useEffect(() => {
     if (users.length === 0 && total > 0 && pagina > 1) {
@@ -68,6 +79,12 @@ export const useGetUsuariosPaginados = () => {
 
   const aplicarFiltros = useCallback((nuevosFiltros: FiltrosAvanzados) => {
     setFiltros(nuevosFiltros);
+    setPagina(1);
+  }, []);
+
+  // al reordenar volvemos a la primera página: ordenar la página 4 suelta no tendría sentido
+  const cambiarOrden = useCallback((nuevoOrden: OrdenUsuarios) => {
+    setOrden(nuevoOrden);
     setPagina(1);
   }, []);
 
@@ -92,11 +109,13 @@ export const useGetUsuariosPaginados = () => {
     busqueda,
     filtros,
     filtrosActivos,
+    orden,
     setPagina,
     setLimite: cambiarLimite,
     setBusqueda: cambiarBusqueda,
+    setOrden: cambiarOrden,
     aplicarFiltros,
     limpiarFiltros,
-    refetch: () => cargar(pagina, limite, busqueda, filtros),
+    refetch: () => cargar(pagina, limite, busqueda, filtros, orden),
   };
 };

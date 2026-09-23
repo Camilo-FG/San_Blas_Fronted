@@ -33,13 +33,21 @@ const leerFechaCreacion = (data: Record<string, unknown>): string => {
   return '';
 };
 
+// el backend responde `state` (el DTO renombra isActive al serializar).
+// antes se leía isActive, que nunca viene: todas las filas salían "Activo"
+const leerEstado = (data: Record<string, unknown>): boolean => {
+  if (typeof data.state === 'boolean') return data.state;
+  if (typeof data.isActive === 'boolean') return data.isActive;
+  return true;
+};
+
 const mapBackendToFrontend = (data: Record<string, unknown>): Usuario => ({
   id: data.id as number,
   userName: ((data.nombre as string) ?? (data.userName as string)) ?? '',
   email: (data.email as string) ?? '',
   phoneNumber: ((data.telefono as string) ?? (data.phoneNumber as string) ?? ''),
   role: (data.role as string) ?? 'user',
-  state: data.isActive === false ? false : true,
+  state: leerEstado(data),
   creationDate: leerFechaCreacion(data),
 });
 
@@ -61,6 +69,12 @@ export interface PaginacionUsuarios {
   limit: number;
 }
 
+// orden que pide la tabla al servidor (el cliente ya no ordena la página a medias)
+export type OrdenUsuarios = {
+  campo: string;
+  direccion: 'asc' | 'desc';
+};
+
 // consulta paginada con búsqueda server-side; sin `search` devuelve la primera página completa
 export const getUsersPaginados = async (
   page = 1,
@@ -68,6 +82,7 @@ export const getUsersPaginados = async (
   search?: string,
   role?: string,
   state?: string,
+  orden?: OrdenUsuarios,
 ): Promise<PaginacionUsuarios> => {
   const buscar = search?.trim();
   try {
@@ -84,6 +99,10 @@ export const getUsersPaginados = async (
         ...(buscar ? { search: buscar } : {}),
         ...(role ? { role } : {}),
         ...(state ? { state } : {}),
+        // el orden siempre viaja para que el backend no caiga al default
+        ...(orden
+          ? { sortBy: orden.campo, sortDirection: orden.direccion }
+          : { sortBy: 'createdAt', sortDirection: 'desc' }),
       },
     });
     return {
