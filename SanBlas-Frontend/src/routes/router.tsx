@@ -15,7 +15,11 @@ import LandingLoader from "../modules/landing/components/LandingLoader";
 import Rutas from "./Rutas";
 import { clearAuthToken, getAuthToken } from "../utils/authToken";
 import { isTokenExpired } from "../utils/jwt";
-import { isAuthenticatedAdmin } from "../utils/authRouting";
+import {
+  getCurrentUser,
+  tienePermiso,
+  type AuthUser,
+} from "../services/authSession";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
 
 const Home = lazyWithRetry(() => import("../modules/landing/pages/HomePage"));
@@ -207,7 +211,8 @@ const dashboardRoute = createRoute({
       });
     }
 
-    if (!isAuthenticatedAdmin()) {
+    const usuario = getCurrentUser();
+    if (!usuario || !usuario.accesoPanel) {
       throw redirect({
         to: Rutas.SolicitudesSacramentos,
         search: { accessDenied: "admin" },
@@ -216,34 +221,72 @@ const dashboardRoute = createRoute({
   },
 });
 
+const RUTAS_POR_PERMISO: { permiso: string; to: string }[] = [
+  { permiso: "panel", to: Rutas.dashboard },
+  { permiso: "sacramentos", to: Rutas.dashboardUrl.registroSacramentos },
+  { permiso: "constancias", to: Rutas.dashboardUrl.constanciasSacramentos },
+  { permiso: "catequesis", to: Rutas.dashboardUrl.solicitudesCatequesis },
+  { permiso: "donaciones", to: Rutas.dashboardUrl.donaciones },
+  { permiso: "eventos", to: Rutas.dashboardUrl.eventos },
+  { permiso: "landing", to: Rutas.dashboardUrl.gestionLanding },
+  { permiso: "usuarios", to: Rutas.dashboardUrl.gestionUsuarios },
+];
+
+const primeraRutaPermitida = (usuario: AuthUser | null): string => {
+  if (!usuario) return Rutas.SolicitudesSacramentos;
+  const hallada = RUTAS_POR_PERMISO.find((item) =>
+    tienePermiso(usuario, item.permiso),
+  );
+  return hallada ? hallada.to : Rutas.SolicitudesSacramentos;
+};
+
+const requierePermiso = (permiso: string) => () => {
+  const usuario = getCurrentUser();
+  if (!usuario || !tienePermiso(usuario, permiso)) {
+    const destino = primeraRutaPermitida(usuario);
+    if (destino === Rutas.SolicitudesSacramentos) {
+      throw redirect({
+        to: Rutas.SolicitudesSacramentos,
+        search: { accessDenied: "admin" },
+      });
+    }
+    throw redirect({ to: destino });
+  }
+};
+
 const dashboardHomeRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: "/",
   component: withSuspense(DashboardHome),
+  beforeLoad: requierePermiso("panel"),
 });
 
 const registroSacramentosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.registroSacramentos,
   component: withSuspense(GestionSacramentos),
+  beforeLoad: requierePermiso("sacramentos"),
 });
 
 const constanciasSacramentosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.constanciasSacramentos,
   component: withSuspense(DashSacra),
+  beforeLoad: requierePermiso("constancias"),
 });
 
 const solicitudesCatequesisRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.solicitudesCatequesis,
   component: withSuspense(GestionSolicitudesCatequesis),
+  beforeLoad: requierePermiso("catequesis"),
 });
 
 const donacionesAdminRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.donaciones,
   component: withSuspense(GestionDonaciones),
+  beforeLoad: requierePermiso("donaciones"),
 });
 
 const bautizosRoute = createRoute({
@@ -274,18 +317,21 @@ const eventosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.eventos,
   component: withSuspense(GestionEventos),
+  beforeLoad: requierePermiso("eventos"),
 });
 
 const gestionLandingRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.gestionLanding,
   component: withSuspense(GestionLanding),
+  beforeLoad: requierePermiso("landing"),
 });
 
 const gestionUsuariosRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.gestionUsuarios,
   component: withSuspense(GestionUsuarios),
+  beforeLoad: requierePermiso("usuarios"),
 });
 
 const perfilRoute = createRoute({
