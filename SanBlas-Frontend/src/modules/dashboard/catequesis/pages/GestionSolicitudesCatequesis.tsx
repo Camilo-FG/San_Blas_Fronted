@@ -1710,6 +1710,11 @@ function GestionSolicitudesCatequesis() {
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="flex flex-col gap-4">
+              <div className="pr-14">
+                <LineaDoradaTitulo
+                  parteSubrayada={`Historial de CAT-${historialSeleccionada.id}`}
+                />
+              </div>
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border-strong bg-surface-muted p-4">
                 <div className="flex flex-col gap-1">
                   <p className="m-0 text-lg font-semibold text-slate-900">
@@ -1745,44 +1750,43 @@ function GestionSolicitudesCatequesis() {
                     </p>
                   )}
                 </div>
-                <Badge
-                  variant={getEstadoBadgeVariant(historialSeleccionada.estado)}
-                >
-                  {obtenerTextoEstado(historialSeleccionada.estado)}
-                </Badge>
               </div>
 
               {normalizarEstado(historialSeleccionada.estado) === "aprobado" ? (
-                <div className="flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                  <Badge variant="success">Aprobado</Badge>
-                  <p className="m-0 text-sm text-emerald-900">
-                    {historialSeleccionada.observacionAdministrativa ||
-                      "Sin comentario de aprobación"}
-                  </p>
-                  {historialSeleccionada.fechaActualizacionEstado && (
-                    <p className="m-0 text-xs text-emerald-700">
-                      Aprobado el{" "}
-                      {formatFechaIngreso(
-                        historialSeleccionada.fechaActualizacionEstado,
-                      )}
+                <div className="flex gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <CheckCircle size={17} className="mt-0.5 shrink-0 text-emerald-700" />
+                  <div>
+                    <p className="m-0 text-sm text-emerald-900">
+                      {historialSeleccionada.observacionAdministrativa ||
+                        "Sin comentario de aprobación"}
                     </p>
-                  )}
+                    {historialSeleccionada.fechaActualizacionEstado && (
+                      <p className="m-0 mt-1 text-xs text-emerald-700">
+                        Aprobado el{" "}
+                        {formatFechaIngreso(
+                          historialSeleccionada.fechaActualizacionEstado,
+                        )}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 p-4">
-                  <Badge variant="danger">Rechazado</Badge>
-                  <p className="m-0 text-sm font-semibold text-red-900">
-                    {historialSeleccionada.observacionAdministrativa ||
-                      "Motivo no especificado"}
-                  </p>
-                  {historialSeleccionada.fechaActualizacionEstado && (
-                    <p className="m-0 text-xs text-red-700">
-                      Rechazado el{" "}
-                      {formatFechaIngreso(
-                        historialSeleccionada.fechaActualizacionEstado,
-                      )}
+                <div className="flex gap-2.5 rounded-xl border border-red-200 bg-red-50 p-4">
+                  <XCircle size={17} className="mt-0.5 shrink-0 text-red-700" />
+                  <div>
+                    <p className="m-0 text-sm font-semibold text-red-900">
+                      {historialSeleccionada.observacionAdministrativa ||
+                        "Motivo no especificado"}
                     </p>
-                  )}
+                    {historialSeleccionada.fechaActualizacionEstado && (
+                      <p className="m-0 mt-1 text-xs text-red-700">
+                        Rechazado el{" "}
+                        {formatFechaIngreso(
+                          historialSeleccionada.fechaActualizacionEstado,
+                        )}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
