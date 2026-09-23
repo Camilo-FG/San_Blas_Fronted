@@ -36,16 +36,20 @@ test('espera a dejar de escribir antes de consultar (debounce)', async ({
   await expect(page.locator(TABLA).first()).toBeVisible();
 
   const input = buscar(page);
+
+  // medimos cuánto tarda la petición desde que escribimos: es inmune a que la
+  // máquina esté lenta, mientras que un "esperar 250ms y mirar" no lo es
+  const inicio = Date.now();
   await input.fill('ana');
 
-  // inmediatamente después de escribir todavía no debe haber disparado
-  await page.waitForTimeout(250);
-  expect(conSearch(peticiones, 'ana')).toHaveLength(0);
-
-  // pasado el debounce, sí
   await expect
     .poll(() => conSearch(peticiones, 'ana').length, { timeout: 10_000 })
     .toBeGreaterThan(0);
+  const transcurrido = Date.now() - inicio;
+
+  // el hook espera 400ms; con holgura exigimos al menos 300ms.
+  // si el debounce no existiera, la petición saldría al instante y esto revienta
+  expect(transcurrido).toBeGreaterThanOrEqual(300);
 
   await expect(input).toHaveValue('ana');
 });
