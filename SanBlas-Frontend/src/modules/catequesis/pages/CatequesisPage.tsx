@@ -19,6 +19,7 @@ import {
 } from "../../../shared/ui";
 import { formatearFechaEnvio } from "../../../shared/utils/fechas";
 import { soloCorreo, correoValido } from "../../../shared/utils/formValidation";
+import { borrarBorradorInscripcionCatequesis } from "../utils/borradorInscripcionCatequesis";
 
 interface ResumenSolicitudEnviada {
   nombreAlumno: string;
@@ -107,6 +108,7 @@ const CatequesisPage = () => {
         fechaEnvio:
           respuesta?.fechaSolicitud ?? new Date().toISOString(),
       });
+      borrarBorradorInscripcionCatequesis();
       setSubmitted(true);
     } catch (error) {
       if (error instanceof ApiError) {

@@ -29,6 +29,7 @@ import {
 } from "@tanstack/react-table";
 
 import { DetalleSolicitudCatequesisModal } from "../components/DetalleSolicitudCatequesisModal";
+import { ExportarSolicitudesCatequesisModal } from "../components/ExportarSolicitudesCatequesisModal";
 import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
 import { obtenerEtiquetaNivelCatequesis, NIVELES_CATEQUESIS } from "../../../catequesis/constants/nivelesCatequesis";
 import { FILIALES_CATEQUESIS } from "../../../catequesis/constants/filialesCatequesis";
@@ -160,6 +161,7 @@ function GestionSolicitudesCatequesis() {
   const [filtroEstado, setFiltroEstado] = useState<
     "todos" | "pendiente" | "aprobado" | "rechazado"
   >("todos");
+  const [exportModalAbierto, setExportModalAbierto] = useState(false);
   const [filtroNivelMenuAbierto, setFiltroNivelMenuAbierto] = useState(false);
   const [filtroFilialMenuAbierto, setFiltroFilialMenuAbierto] = useState(false);
   const filtroNivelMenuRef = useRef<HTMLDivElement>(null);
@@ -940,12 +942,12 @@ function GestionSolicitudesCatequesis() {
             className="shrink-0"
             onClick={() => {
               limpiarExportError();
-              void exportarExcel();
+              setExportModalAbierto(true);
             }}
-            disabled={exportando || isInitialLoading}
+            disabled={isInitialLoading}
           >
             <Download size={16} />
-            {exportando ? "Exportando..." : "Exportar a Excel"}
+            Exportar tabla
           </Button>
         </div>
       </AdminToolbar>
@@ -1729,6 +1731,23 @@ function GestionSolicitudesCatequesis() {
             </div>
           </motion.div>
         </Modal>
+      )}
+
+      {exportModalAbierto && (
+        <ExportarSolicitudesCatequesisModal
+          exportando={exportando}
+          onClose={() => setExportModalAbierto(false)}
+          onConfirm={(opciones) => {
+            void exportarExcel(opciones).then((resultado) => {
+              if (resultado.ok) {
+                setExportModalAbierto(false);
+                showToast("Se exportó el archivo de Excel.", "success");
+                return;
+              }
+              showToast(resultado.mensaje, "error");
+            });
+          }}
+        />
       )}
     </AdminModule>
   );

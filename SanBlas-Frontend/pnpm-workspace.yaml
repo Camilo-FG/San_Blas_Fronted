@@ -1,6 +1,9 @@
 packages:
   - '.'
 
+allowBuilds:
+  core-js: false
+
 onlyBuiltDependencies:
   - lightningcss
   - fsevents

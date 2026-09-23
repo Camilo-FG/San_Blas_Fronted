@@ -42,6 +42,7 @@ export function ScaledStage({
   return (
     <div
       ref={marcoRef}
+      data-preview-scroll
       className={`h-full w-full overflow-x-hidden overflow-y-auto ${className ?? ""}`}
     >
       <div
