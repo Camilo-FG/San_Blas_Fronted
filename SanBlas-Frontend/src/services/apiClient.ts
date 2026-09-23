@@ -54,8 +54,11 @@ apiClient.interceptors.response.use(
       const isRecuperarRequest = url
         .toLowerCase()
         .includes("/auth/recuperar-contrasena");
+      const isRestablecerRequest = url
+        .toLowerCase()
+        .includes("/auth/restablecer-contrasena");
 
-      if (!isLoginRequest && !isRecuperarRequest) {
+      if (!isLoginRequest && !isRecuperarRequest && !isRestablecerRequest) {
         clearAuthToken();
         const currentPath = window.location.pathname;
         if (!currentPath.startsWith("/login") && !redirigiendoAlLogin) {

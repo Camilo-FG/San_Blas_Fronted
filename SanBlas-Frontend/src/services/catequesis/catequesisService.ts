@@ -235,12 +235,20 @@ const handleBlobApiError = async (error: unknown): Promise<never> => {
   return handleApiError(error);
 };
 
-export const exportarInscripcionesCatequesis = async (
-  estado = "Aprobada",
-): Promise<void> => {
+export const exportarInscripcionesCatequesis = async (opciones?: {
+  estado?: "pendiente" | "aprobado" | "rechazado";
+  nivel?: "Primero" | "Sétimo";
+  filial?: string;
+}): Promise<void> => {
   try {
     const response = await apiClient.get<Blob>(`${BASE}/exportar`, {
-      params: { estado },
+      params: {
+        ...(opciones?.estado
+          ? { estado: mapEstadoFrontendToBackend(opciones.estado) }
+          : {}),
+        ...(opciones?.nivel ? { nivel: opciones.nivel } : {}),
+        ...(opciones?.filial ? { filial: opciones.filial } : {}),
+      },
       responseType: "blob",
     });
 

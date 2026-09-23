@@ -68,6 +68,7 @@ export default function LandingSectionModal({
   const visorAmpliadoRef = useRef<HTMLDivElement>(null);
   const [previewAmpliada, setPreviewAmpliada] = useState(false);
   const [visorVisible, setVisorVisible] = useState(false);
+  const [campoResaltado, setCampoResaltado] = useState<string | null>(null);
   const reducirMovimiento = useReducedMotion();
   const transicionVisor = reducirMovimiento
     ? { duration: 0 }
@@ -145,12 +146,68 @@ export default function LandingSectionModal({
     };
   }, [guardando, onClose, previewAmpliada, visorVisible]);
 
+  useEffect(() => {
+    if (!campoResaltado || (!visorVisible && !previewAmpliada)) return;
+    let cancelado = false;
+    let reintento = 0;
+
+    const llevarALaVista = () => {
+      if (cancelado) return;
+      const raiz = previewAmpliada
+        ? visorAmpliadoRef.current
+        : dialogRef.current;
+      const nodo = raiz?.querySelector(
+        `[data-campo-preview="${CSS.escape(campoResaltado)}"]`,
+      );
+      if (!(nodo instanceof HTMLElement)) {
+        if (reintento === 0) {
+          reintento = window.setTimeout(llevarALaVista, 420);
+        }
+        return;
+      }
+      const scroller = nodo.closest("[data-preview-scroll]");
+      if (!(scroller instanceof HTMLElement)) return;
+      const nodoRect = nodo.getBoundingClientRect();
+      const scrollerRect = scroller.getBoundingClientRect();
+      const delta =
+        nodoRect.top -
+        scrollerRect.top -
+        scroller.clientHeight / 2 +
+        nodoRect.height / 2;
+      if (Math.abs(delta) < 12) return;
+      scroller.scrollTo({
+        top: scroller.scrollTop + delta,
+        behavior: "smooth",
+      });
+    };
+
+    const frame = requestAnimationFrame(llevarALaVista);
+    return () => {
+      cancelado = true;
+      cancelAnimationFrame(frame);
+      if (reintento) window.clearTimeout(reintento);
+    };
+  }, [campoResaltado, previewAmpliada, visorVisible]);
+
   const camposFormulario = fields.map((field) => {
     const value = values[field.name] ?? "";
     const fieldId = `landing-field-${field.name}`;
     const errorId = `${fieldId}-error`;
     const mensajeError = errores[field.name];
     const esObligatorio = field.type !== "image" && field.required !== false;
+    const puedeResaltar = tieneVisor && field.type !== "image";
+    const marcarEnPreview = () => {
+      if (!puedeResaltar) return;
+      setCampoResaltado(field.name);
+    };
+    const escribirEnCampo = (valor: string) => {
+      if (puedeResaltar) setCampoResaltado(null);
+      onChange(field.name, valor);
+    };
+    const quitarResalte = () => {
+      if (!puedeResaltar) return;
+      setCampoResaltado((actual) => (actual === field.name ? null : actual));
+    };
 
     if (field.type === "image") {
       const archivoCampo = archivosImagen[field.name] ?? null;
@@ -198,7 +255,10 @@ export default function LandingSectionModal({
             hasError={Boolean(mensajeError)}
             aria-invalid={Boolean(mensajeError)}
             aria-describedby={mensajeError ? errorId : undefined}
-            onChange={(event) => onChange(field.name, event.target.value)}
+            onFocus={marcarEnPreview}
+            onClick={marcarEnPreview}
+            onBlur={quitarResalte}
+            onChange={(event) => escribirEnCampo(event.target.value)}
           />
           <CharacterCounter
             value={value}
@@ -226,7 +286,10 @@ export default function LandingSectionModal({
           hasError={Boolean(mensajeError)}
           aria-invalid={Boolean(mensajeError)}
           aria-describedby={mensajeError ? errorId : undefined}
-          onChange={(event) => onChange(field.name, event.target.value)}
+          onFocus={marcarEnPreview}
+          onClick={marcarEnPreview}
+          onBlur={quitarResalte}
+          onChange={(event) => escribirEnCampo(event.target.value)}
         />
         <CharacterCounter value={value} maxLength={field.maxLength} />
         <FieldError id={errorId} message={mensajeError} />
@@ -244,6 +307,7 @@ export default function LandingSectionModal({
           description={values.description ?? ""}
           imageSrc={imagenPreview}
           ampliadas={ampliadas}
+          campoResaltado={campoResaltado}
         />
       );
     }
@@ -262,6 +326,7 @@ export default function LandingSectionModal({
           headerImageSrc={headerHistoriaPreview}
           quoteImageSrc={quoteHistoriaPreview}
           ampliadas={ampliadas}
+          campoResaltado={campoResaltado}
         />
       );
     }
@@ -276,6 +341,7 @@ export default function LandingSectionModal({
           imageUrl={imagenHorariosPreview}
           bloques={bloquesHorarios}
           ampliadas={ampliadas}
+          campoResaltado={campoResaltado}
         />
       );
     }
@@ -292,6 +358,7 @@ export default function LandingSectionModal({
           horariosAtencion={values.horariosAtencion ?? ""}
           mapaUrl={values.mapaUrl ?? ""}
           ampliadas={ampliadas}
+          campoResaltado={campoResaltado}
         />
       );
     }
@@ -305,6 +372,7 @@ export default function LandingSectionModal({
           charlas={values.charlas ?? ""}
           solicitud={values.solicitud ?? ""}
           ampliadas={ampliadas}
+          campoResaltado={campoResaltado}
         />
       );
     }
@@ -318,6 +386,7 @@ export default function LandingSectionModal({
           cuentaBancaria={values.cuentaBancaria ?? ""}
           banco={values.banco ?? ""}
           ampliadas={ampliadas}
+          campoResaltado={campoResaltado}
         />
       );
     }
@@ -330,6 +399,7 @@ export default function LandingSectionModal({
           intro={values.intro ?? ""}
           items={serviciosPreview}
           ampliadas={ampliadas}
+          campoResaltado={campoResaltado}
         />
       );
     }
@@ -342,6 +412,7 @@ export default function LandingSectionModal({
         cards={tarjetasSobreNosotros}
         imageSrc={imagenPreview}
         ampliadas={ampliadas}
+        campoResaltado={campoResaltado}
       />
     );
   };

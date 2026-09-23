@@ -19,6 +19,7 @@ import {
 } from "../../../shared/ui";
 import { formatearFechaEnvio } from "../../../shared/utils/fechas";
 import { soloCorreo, correoValido } from "../../../shared/utils/formValidation";
+import { borrarBorradorInscripcionCatequesis } from "../utils/borradorInscripcionCatequesis";
 
 interface ResumenSolicitudEnviada {
   nombreAlumno: string;
@@ -107,6 +108,7 @@ const CatequesisPage = () => {
         fechaEnvio:
           respuesta?.fechaSolicitud ?? new Date().toISOString(),
       });
+      borrarBorradorInscripcionCatequesis();
       setSubmitted(true);
     } catch (error) {
       if (error instanceof ApiError) {
@@ -302,7 +304,7 @@ const CatequesisPage = () => {
                 Consultar estado de inscripción
               </h2>
               <p className="m-0 mb-6 text-sm text-text-secondary">
-                Ingresá el correo electrónico con el que se realizó la
+                Ingresa el correo electrónico con el que se realizó la
                 inscripción para ver el estado de tu solicitud.
               </p>
 
@@ -415,7 +417,8 @@ const CatequesisPage = () => {
                           <p className="m-0 mt-1 text-sm text-text-secondary">
                             {getEstadoMensaje(solicitud.estado)}
                           </p>
-                          {normalizarEstado(solicitud.estado) === "rechazado" &&
+                          {(normalizarEstado(solicitud.estado) === "rechazado" ||
+                            normalizarEstado(solicitud.estado) === "aprobado") &&
                             solicitud.observacionAdministrativa && (
                               <div className="mt-1 rounded-lg border border-border bg-surface-muted p-3 text-sm text-text-secondary">
                                 <span className="font-semibold text-text-muted">
