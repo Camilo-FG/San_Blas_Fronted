@@ -439,16 +439,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     parentesco: "Seleccione el parentesco.",
     correoPersonaInscribe: "Digite el correo de la persona que inscribe.",
     telefonoPersonaInscribe: "El teléfono debe contener 8 dígitos.",
-    nombreMadre: "Digite el nombre de la madre o encargada.",
-    primerApellidoMadre: "Digite el primer apellido de la madre o encargada.",
-    segundoApellidoMadre: "Digite el segundo apellido de la madre o encargada.",
+    nombreMadre: "Ingrese el nombre de la madre",
+    primerApellidoMadre: "Ingrese el primer apellido de la madre",
+    segundoApellidoMadre: "Ingrese el segundo apellido de la madre",
     direccionMadre: "Digite la dirección exacta.",
     ciudadMadre: "Digite la ciudad.",
     provinciaMadre: "Digite la provincia.",
     telefonoMadre: "El teléfono debe contener 8 dígitos.",
-    nombrePadre: "Digite el nombre del padre.",
-    primerApellidoPadre: "Digite el primer apellido del padre.",
-    segundoApellidoPadre: "Digite el segundo apellido del padre.",
+    nombrePadre: "Ingrese el nombre del padre",
+    primerApellidoPadre: "Ingrese el primer apellido del padre",
+    segundoApellidoPadre: "Ingrese el segundo apellido del padre",
     direccionPadre: "Digite la dirección exacta.",
     ciudadPadre: "Digite la ciudad.",
     provinciaPadre: "Digite la provincia.",
@@ -577,17 +577,17 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
     if (tieneMadre) {
       if (!form.madreCatequizando.nombre.trim()) {
-        newErrors.nombreMadre = "Digite el nombre de la madre o encargada.";
+        newErrors.nombreMadre = "Ingrese el nombre de la madre";
       }
 
       if (!form.madreCatequizando.primerApellido.trim()) {
         newErrors.primerApellidoMadre =
-          "Digite el primer apellido de la madre o encargada.";
+          "Ingrese el primer apellido de la madre";
       }
 
       if (!form.madreCatequizando.segundoApellido.trim()) {
         newErrors.segundoApellidoMadre =
-          "Digite el segundo apellido de la madre o encargada.";
+          "Ingrese el segundo apellido de la madre";
       }
 
       if (!form.madreCatequizando.direccion.direccionExacta?.trim()) {
@@ -709,13 +709,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           "Indique si la madre es parte del núcleo familiar.";
       } else if (tieneMadre) {
         if (!form.madreCatequizando.nombre.trim())
-          stepErrors.nombreMadre = "Digite el nombre de la madre o encargada.";
+          stepErrors.nombreMadre = "Ingrese el nombre de la madre";
         if (!form.madreCatequizando.primerApellido.trim())
           stepErrors.primerApellidoMadre =
-            "Digite el primer apellido de la madre o encargada.";
+            "Ingrese el primer apellido de la madre";
         if (!form.madreCatequizando.segundoApellido.trim())
           stepErrors.segundoApellidoMadre =
-            "Digite el segundo apellido de la madre o encargada.";
+            "Ingrese el segundo apellido de la madre";
         if (!form.madreCatequizando.direccion.direccionExacta?.trim())
           stepErrors.direccionMadre = "Digite la dirección exacta.";
         if (!form.madreCatequizando.direccion.ciudad?.trim())
@@ -732,15 +732,15 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           "Indique si el padre es parte del núcleo familiar.";
       } else if (tienePadre) {
         if (!form.padreCatequizando.nombre.trim()) {
-          stepErrors.nombrePadre = "Digite el nombre del padre.";
+          stepErrors.nombrePadre = "Ingrese el nombre del padre";
         }
         if (!form.padreCatequizando.primerApellido.trim()) {
           stepErrors.primerApellidoPadre =
-            "Digite el primer apellido del padre.";
+            "Ingrese el primer apellido del padre";
         }
         if (!form.padreCatequizando.segundoApellido.trim()) {
           stepErrors.segundoApellidoPadre =
-            "Digite el segundo apellido del padre.";
+            "Ingrese el segundo apellido del padre";
         }
         if (!form.padreCatequizando.direccion.direccionExacta?.trim())
           stepErrors.direccionPadre = "Digite la dirección exacta.";
@@ -1538,12 +1538,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.madreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
-              {errors.nombreMadre && (
-                <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  {errors.nombreMadre}
-                </p>
-              )}
+              <WordCounter value={form.madreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} error={errors.nombreMadre} />
             </div>
 
             <CampoApellido
@@ -1771,12 +1766,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.padreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
-              {errors.nombrePadre && (
-                <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  {errors.nombrePadre}
-                </p>
-              )}
+              <WordCounter value={form.padreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} error={errors.nombrePadre} />
             </div>
 
             <CampoApellido
