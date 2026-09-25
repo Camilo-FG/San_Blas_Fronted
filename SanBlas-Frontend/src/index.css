@@ -229,27 +229,28 @@ input[type="date"].date-field::-webkit-calendar-picker-indicator:hover {
   }
 }
 
-/* CatequesisForm: el aro de foco aparece SOLO con teclado (TAB), nunca con
-   mouse. Los navegadores activan :focus-visible en inputs de texto también
-   con click, por eso la modalidad se detecta por JS (data-kb en el form).
+/* Contenedores con .foco-solo-teclado: el aro de foco aparece SOLO con
+   teclado (TAB), nunca con mouse. Los navegadores activan :focus-visible
+   en inputs de texto también con click, por eso la modalidad se detecta
+   por JS (data-kb en el contenedor).
    Estas reglas van sin @layer para prevalecer sobre los utilities. */
-.catequesis-form input:focus,
-.catequesis-form textarea:focus {
+.foco-solo-teclado input:focus,
+.foco-solo-teclado textarea:focus {
   outline: none;
   box-shadow: none;
   border-color: #d1d5db;
 }
-.catequesis-form input.border-red-400:focus,
-.catequesis-form textarea.border-red-400:focus {
+.foco-solo-teclado input.border-red-400:focus,
+.foco-solo-teclado textarea.border-red-400:focus {
   border-color: #f87171;
 }
-.catequesis-form[data-kb="true"] input:focus,
-.catequesis-form[data-kb="true"] textarea:focus {
+.foco-solo-teclado[data-kb="true"] input:focus,
+.foco-solo-teclado[data-kb="true"] textarea:focus {
   border-color: #60a5fa;
   box-shadow: 0 0 0 3px rgb(147 197 253 / 0.55);
 }
-.catequesis-form[data-kb="true"] input.border-red-400:focus,
-.catequesis-form[data-kb="true"] textarea.border-red-400:focus {
+.foco-solo-teclado[data-kb="true"] input.border-red-400:focus,
+.foco-solo-teclado[data-kb="true"] textarea.border-red-400:focus {
   border-color: #f87171;
   box-shadow: 0 0 0 3px rgb(248 113 113 / 0.45);
 }

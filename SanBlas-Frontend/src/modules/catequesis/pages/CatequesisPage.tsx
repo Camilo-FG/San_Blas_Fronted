@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CatequesisForm from "../components/CatequesisForm";
 import CatequesisInfoSection from "../components/CatequesisInfoSection";
 import {
@@ -76,6 +76,25 @@ const CatequesisPage = () => {
   const [resultadosConsulta, setResultadosConsulta] = useState<
     CatequesisEnrollmentRecord[]
   >([]);
+  const consultaRef = useRef<HTMLElement>(null);
+  const [modoTecladoConsulta, setModoTecladoConsulta] = useState(false);
+
+  useEffect(() => {
+    const seccion = consultaRef.current;
+    if (!seccion) return;
+    const marcarTeclado = (evento: KeyboardEvent) => {
+      if (evento.key === "Tab") setModoTecladoConsulta(true);
+    };
+    const marcarMouse = () => setModoTecladoConsulta(false);
+    window.addEventListener("keydown", marcarTeclado);
+    seccion.addEventListener("mousedown", marcarMouse);
+    seccion.addEventListener("touchstart", marcarMouse);
+    return () => {
+      window.removeEventListener("keydown", marcarTeclado);
+      seccion.removeEventListener("mousedown", marcarMouse);
+      seccion.removeEventListener("touchstart", marcarMouse);
+    };
+  }, [activeSection]);
 
   useEffect(() => {
     const syncSectionWithHash = () => {
@@ -299,7 +318,11 @@ const CatequesisPage = () => {
               <CatequesisForm loading={loading} onSubmit={handleSubmit} />
             </>
           ) : (
-            <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">
+            <section
+              ref={consultaRef}
+              className="foco-solo-teclado rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7"
+              data-kb={modoTecladoConsulta || undefined}
+            >
               <h2 className="m-0 mb-2 font-heading text-xl font-extrabold text-royal-blue sm:text-2xl">
                 Consultar estado de inscripción
               </h2>

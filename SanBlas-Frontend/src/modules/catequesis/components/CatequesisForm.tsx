@@ -836,7 +836,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   return (
     <form
       ref={formRef}
-      className="catequesis-form mx-auto mt-6 flex w-full max-w-[1100px] flex-col gap-5 px-3.5 sm:mt-10 sm:gap-7 sm:px-5"
+      className="foco-solo-teclado mx-auto mt-6 flex w-full max-w-[1100px] flex-col gap-5 px-3.5 sm:mt-10 sm:gap-7 sm:px-5"
       data-kb={modoTeclado || undefined}
       onSubmit={handleSubmit}
     >
