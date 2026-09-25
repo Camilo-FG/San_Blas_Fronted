@@ -305,6 +305,25 @@ function CampoApellido({
 
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const progressBarRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [modoTeclado, setModoTeclado] = useState(false);
+
+  useEffect(() => {
+    const formulario = formRef.current;
+    if (!formulario) return;
+    const marcarTeclado = (evento: KeyboardEvent) => {
+      if (evento.key === "Tab") setModoTeclado(true);
+    };
+    const marcarMouse = () => setModoTeclado(false);
+    window.addEventListener("keydown", marcarTeclado);
+    formulario.addEventListener("mousedown", marcarMouse);
+    formulario.addEventListener("touchstart", marcarMouse);
+    return () => {
+      window.removeEventListener("keydown", marcarTeclado);
+      formulario.removeEventListener("mousedown", marcarMouse);
+      formulario.removeEventListener("touchstart", marcarMouse);
+    };
+  }, []);
   const [borradorInicial] = useState(leerBorradorInscripcionCatequesis);
   const [mostrarAvisoBorrador, setMostrarAvisoBorrador] = useState(
     borradorInicial !== null,
@@ -816,7 +835,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
   return (
     <form
-      className="mx-auto mt-6 flex w-full max-w-[1100px] flex-col gap-5 px-3.5 sm:mt-10 sm:gap-7 sm:px-5"
+      ref={formRef}
+      className="catequesis-form mx-auto mt-6 flex w-full max-w-[1100px] flex-col gap-5 px-3.5 sm:mt-10 sm:gap-7 sm:px-5"
+      data-kb={modoTeclado || undefined}
       onSubmit={handleSubmit}
     >
       <div ref={progressBarRef} className="rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
