@@ -411,12 +411,14 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     "inscripcion.parentesco": "parentesco",
     "madreCatequizando.nombre": "nombreMadre",
     "madreCatequizando.primerApellido": "primerApellidoMadre",
+    "madreCatequizando.segundoApellido": "segundoApellidoMadre",
     "madreCatequizando.direccion.direccionExacta": "direccionMadre",
     "madreCatequizando.direccion.ciudad": "ciudadMadre",
     "madreCatequizando.direccion.provincia": "provinciaMadre",
     "madreCatequizando.telefono": "telefonoMadre",
     "padreCatequizando.nombre": "nombrePadre",
     "padreCatequizando.primerApellido": "primerApellidoPadre",
+    "padreCatequizando.segundoApellido": "segundoApellidoPadre",
     "padreCatequizando.direccion.direccionExacta": "direccionPadre",
     "padreCatequizando.direccion.ciudad": "ciudadPadre",
     "padreCatequizando.direccion.provincia": "provinciaPadre",
@@ -439,12 +441,14 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     telefonoPersonaInscribe: "El teléfono debe contener 8 dígitos.",
     nombreMadre: "Digite el nombre de la madre o encargada.",
     primerApellidoMadre: "Digite el primer apellido de la madre o encargada.",
+    segundoApellidoMadre: "Digite el segundo apellido de la madre o encargada.",
     direccionMadre: "Digite la dirección exacta.",
     ciudadMadre: "Digite la ciudad.",
     provinciaMadre: "Digite la provincia.",
     telefonoMadre: "El teléfono debe contener 8 dígitos.",
     nombrePadre: "Digite el nombre del padre.",
     primerApellidoPadre: "Digite el primer apellido del padre.",
+    segundoApellidoPadre: "Digite el segundo apellido del padre.",
     direccionPadre: "Digite la dirección exacta.",
     ciudadPadre: "Digite la ciudad.",
     provinciaPadre: "Digite la provincia.",
@@ -581,6 +585,11 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           "Digite el primer apellido de la madre o encargada.";
       }
 
+      if (!form.madreCatequizando.segundoApellido.trim()) {
+        newErrors.segundoApellidoMadre =
+          "Digite el segundo apellido de la madre o encargada.";
+      }
+
       if (!form.madreCatequizando.direccion.direccionExacta?.trim()) {
         newErrors.direccionMadre = "Digite la dirección exacta.";
       }
@@ -704,6 +713,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         if (!form.madreCatequizando.primerApellido.trim())
           stepErrors.primerApellidoMadre =
             "Digite el primer apellido de la madre o encargada.";
+        if (!form.madreCatequizando.segundoApellido.trim())
+          stepErrors.segundoApellidoMadre =
+            "Digite el segundo apellido de la madre o encargada.";
         if (!form.madreCatequizando.direccion.direccionExacta?.trim())
           stepErrors.direccionMadre = "Digite la dirección exacta.";
         if (!form.madreCatequizando.direccion.ciudad?.trim())
@@ -725,6 +737,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         if (!form.padreCatequizando.primerApellido.trim()) {
           stepErrors.primerApellidoPadre =
             "Digite el primer apellido del padre.";
+        }
+        if (!form.padreCatequizando.segundoApellido.trim()) {
+          stepErrors.segundoApellidoPadre =
+            "Digite el segundo apellido del padre.";
         }
         if (!form.padreCatequizando.direccion.direccionExacta?.trim())
           stepErrors.direccionPadre = "Digite la dirección exacta.";
@@ -1542,8 +1558,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
             <CampoApellido
               label="Segundo apellido"
+              required
               placeholder="Ej: Vargas"
               value={form.madreCatequizando.segundoApellido}
+              error={errors.segundoApellidoMadre}
               onChange={(valor) =>
                 updateForm("madreCatequizando.segundoApellido", valor)
               }
@@ -1773,8 +1791,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
             <CampoApellido
               label="Segundo apellido"
+              required
               placeholder="Ej: Vargas"
               value={form.padreCatequizando.segundoApellido}
+              error={errors.segundoApellidoPadre}
               onChange={(valor) =>
                 updateForm("padreCatequizando.segundoApellido", valor)
               }
