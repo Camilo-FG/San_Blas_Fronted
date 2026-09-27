@@ -16,6 +16,7 @@ export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { ...DEFAULT_HEADERS },
   timeout: TIEMPO_MAXIMO_PETICION_MS,
+  withCredentials: true,
 });
 
 apiClient.interceptors.request.use(
@@ -44,13 +45,18 @@ apiClient.interceptors.request.use(
 // generar varios 401 seguidos. Sin este control, cada uno relanzaría la
 // navegación y dejaría la pestaña bloqueada.
 let redirigiendoAlLogin = false;
+let refreshPromise: Promise<void> | null = null;
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       const url = error.config?.url ?? "";
+      const config = error.config as (typeof error.config & { _retry?: boolean }) | undefined;
       const isLoginRequest = url.toLowerCase().includes("/auth/login");
+      const isRefreshRequest = url.toLowerCase().includes("/auth/refresh");
+      const isSessionRequest = url.toLowerCase().includes("/auth/session");
+      const isLogoutRequest = url.toLowerCase().includes("/auth/logout");
       const isRecuperarRequest = url
         .toLowerCase()
         .includes("/auth/recuperar-contrasena");
@@ -58,7 +64,29 @@ apiClient.interceptors.response.use(
         .toLowerCase()
         .includes("/auth/restablecer-contrasena");
 
-      if (!isLoginRequest && !isRecuperarRequest && !isRestablecerRequest) {
+      if (
+        config &&
+        !isLoginRequest &&
+        !isRefreshRequest &&
+        !isSessionRequest &&
+        !isLogoutRequest &&
+        !isRecuperarRequest &&
+        !isRestablecerRequest &&
+        !config._retry
+      ) {
+        config._retry = true;
+        try {
+          refreshPromise ??= apiClient.post("/auth/refresh").then(() => undefined);
+          await refreshPromise;
+          return apiClient.request(config);
+        } catch {
+          // Si tampoco se puede renovar, continúa al cierre controlado de sesión.
+        } finally {
+          refreshPromise = null;
+        }
+      }
+
+      if (!isLoginRequest && !isRefreshRequest && !isSessionRequest && !isLogoutRequest && !isRecuperarRequest && !isRestablecerRequest) {
         clearAuthToken();
         const currentPath = window.location.pathname;
         if (!currentPath.startsWith("/login") && !redirigiendoAlLogin) {

@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -13,7 +14,12 @@ import {
   tienePermiso as tienePermisoSesion,
   type AuthUser,
 } from "../services/authSession";
-import type { LoginCredentials } from "../services/authService";
+import {
+  login as loginRequest,
+  logout as logoutRequest,
+  restoreSession,
+  type LoginCredentials,
+} from "../services/authService";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -30,8 +36,18 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(() => getCurrentUser());
 
+  useEffect(() => {
+    let active = true;
+    void restoreSession().then((sessionUser) => {
+      if (active) setUser(sessionUser);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const login = useCallback(async (credentials: LoginCredentials) => {
-    const { login: loginRequest } = await import("../services/authService");
     const authUser = await loginRequest(credentials);
     setUser(authUser);
     return authUser;
@@ -40,6 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(() => {
     logoutSession();
     setUser(null);
+    void logoutRequest();
   }, []);
 
   const tienePermiso = useCallback(

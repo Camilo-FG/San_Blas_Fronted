@@ -10,7 +10,9 @@ export const useGetSolicitudes = (filters?: SolicitudesSacramentosFilters) => {
     queryKey: ["solicitudes", filters],
     queryFn: () => obtenerSolicitudesSacramentos(filters),
     placeholderData: (previousData) => previousData,
-    refetchInterval: 5_000,
+    // Mientras la pestaña está activa basta una actualización por minuto; en
+    // segundo plano se detiene para no generar consultas que nadie está viendo.
+    refetchInterval: () => (document.hidden ? false : 60_000),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
