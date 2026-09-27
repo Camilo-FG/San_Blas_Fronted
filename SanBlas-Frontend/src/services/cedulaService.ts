@@ -1,5 +1,7 @@
 import { apiClient } from "./apiClient";
 
+const consultasCedula = new Map<string, Promise<DatosCedula | null>>();
+
 export const existeCedula = async (cedula: string): Promise<boolean> => {
   const { data } = await apiClient.get(`/usuario/cedula/${cedula}`);
   return Boolean(data) && Object.keys(data).length > 0;
@@ -42,14 +44,25 @@ const parsearNombre = (valor: string): DatosCedula | null => {
 };
 
 export const obtenerDatosCedula = async (cedula: string): Promise<DatosCedula | null> => {
-  const { data } = await apiClient.get<unknown>(`/usuario/cedula/${cedula}`);
+  const cedulaNormalizada = cedula.replace(/\D/g, "");
+  const consultaEnCurso = consultasCedula.get(cedulaNormalizada);
+  if (consultaEnCurso) return consultaEnCurso;
 
-  if (!data) return null;
+  const consulta = apiClient
+    .get<unknown>(`/usuario/cedula/${cedulaNormalizada}`)
+    .then(({ data }) => {
+      if (!data) return null;
 
-  // Respuesta en texto plano del backend: "FIRSTNAME MIDDLENAME SURNAME1 SURNAME2"
-  if (typeof data === "string") {
-    return parsearNombre(data);
-  }
+      // El backend mantiene texto plano para no romper los consumidores existentes.
+      if (typeof data === "string") return parsearNombre(data);
 
-  return null;
+      return null;
+    })
+    .catch((error) => {
+      consultasCedula.delete(cedulaNormalizada); // un fallo de red no se guarda para poder reintentar
+      throw error;
+    });
+
+  consultasCedula.set(cedulaNormalizada, consulta);
+  return consulta;
 };
