@@ -1,13 +1,4 @@
-import { clearAuthToken, getAuthToken } from "../utils/authToken";
-import {
-  getAccesoPanelFromToken,
-  getEmailFromToken,
-  getPermisosFromToken,
-  getRoleFromToken,
-  getRolesFromToken,
-  getUserIdFromToken,
-  isTokenExpired,
-} from "../utils/jwt";
+import { clearAuthToken } from "../utils/authToken";
 
 export interface AuthUser {
   id: number | null;
@@ -18,32 +9,18 @@ export interface AuthUser {
   accesoPanel: boolean;
 }
 
+let currentUser: AuthUser | null = null;
+
+export const setCurrentUser = (user: AuthUser | null): void => {
+  currentUser = user;
+};
+
 export const logout = (): void => {
   clearAuthToken();
+  setCurrentUser(null);
 };
 
-export const getCurrentUser = (): AuthUser | null => {
-  const token = getAuthToken();
-  if (!token || isTokenExpired(token)) {
-    if (token) clearAuthToken();
-    return null;
-  }
-
-  const email = getEmailFromToken(token);
-  if (!email) {
-    clearAuthToken();
-    return null;
-  }
-
-  return {
-    id: getUserIdFromToken(token),
-    email,
-    role: getRoleFromToken(token) ?? "user",
-    roles: getRolesFromToken(token),
-    permisos: getPermisosFromToken(token),
-    accesoPanel: getAccesoPanelFromToken(token),
-  };
-};
+export const getCurrentUser = (): AuthUser | null => currentUser;
 
 export const esSecretario = (user: AuthUser | null): boolean =>
   !!user &&

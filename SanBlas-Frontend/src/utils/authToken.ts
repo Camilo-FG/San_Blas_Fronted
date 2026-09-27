@@ -1,12 +1,13 @@
-import { AUTH_TOKEN_KEY } from "../config/api";
+// El token de acceso vive en una cookie HttpOnly. Esta variable solo mantiene
+// compatibilidad con utilidades internas y nunca persiste entre recargas.
+let authToken: string | null = null;
 
-export const getAuthToken = (): string | null =>
-  localStorage.getItem(AUTH_TOKEN_KEY);
+export const getAuthToken = (): string | null => authToken;
 
 export const setAuthToken = (token: string): void => {
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  authToken = token;
 };
 
 export const clearAuthToken = (): void => {
-  localStorage.removeItem(AUTH_TOKEN_KEY);
+  authToken = null;
 };

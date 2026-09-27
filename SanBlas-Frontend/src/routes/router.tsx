@@ -13,13 +13,12 @@ import Footer from "../modules/landing/components/Footer";
 import { PageLoader } from "../shared/ui";
 import LandingLoader from "../modules/landing/components/LandingLoader";
 import Rutas from "./Rutas";
-import { clearAuthToken, getAuthToken } from "../utils/authToken";
-import { isTokenExpired } from "../utils/jwt";
 import {
   getCurrentUser,
   tienePermiso,
   type AuthUser,
 } from "../services/authSession";
+import { restoreSession } from "../services/authService";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
 
 const Home = lazyWithRetry(() => import("../modules/landing/pages/HomePage"));
@@ -201,18 +200,16 @@ const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.dashboard,
   component: withSuspense(Dashboard),
-  beforeLoad: ({ location }) => {
-    const token = getAuthToken();
-    if (!token || isTokenExpired(token)) {
-      if (token) clearAuthToken();
+  beforeLoad: async ({ location }) => {
+    const usuario = await restoreSession();
+    if (!usuario) {
       throw redirect({
         to: Rutas.login,
         search: { redirect: location.pathname },
       });
     }
 
-    const usuario = getCurrentUser();
-    if (!usuario || !usuario.accesoPanel) {
+    if (!usuario.accesoPanel) {
       throw redirect({
         to: Rutas.SolicitudesSacramentos,
         search: { accessDenied: "admin" },
@@ -240,8 +237,8 @@ const primeraRutaPermitida = (usuario: AuthUser | null): string => {
   return hallada ? hallada.to : Rutas.SolicitudesSacramentos;
 };
 
-const requierePermiso = (permiso: string) => () => {
-  const usuario = getCurrentUser();
+const requierePermiso = (permiso: string) => async () => {
+  const usuario = (await restoreSession()) ?? getCurrentUser();
   if (!usuario || !tienePermiso(usuario, permiso)) {
     const destino = primeraRutaPermitida(usuario);
     if (destino === Rutas.SolicitudesSacramentos) {
