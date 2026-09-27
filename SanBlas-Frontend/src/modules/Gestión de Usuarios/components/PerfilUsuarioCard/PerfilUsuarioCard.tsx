@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
-import { AlertOctagon, Loader2, Mail, Shield, User } from "lucide-react";
+import { AlertOctagon, Mail, Shield, User } from "lucide-react";
 import type { Usuario } from "../../../../types/Usuario";
 import { etiquetaRol, type Rol } from "../../../../types/Rol";
 import { useAuth } from "../../../../context/AuthContext";
 import { useToast } from "../../../../shared/ui";
-import { Badge, Button, Card, cn } from "../../../../shared/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  ConfirmacionAccionModal,
+  cn,
+} from "../../../../shared/ui";
 import { useUpdateUser } from "../../hooks/hooksUsuarios/useUpdateUser";
 
 const formatFechaCreacion = (fecha?: string | null) => {
@@ -142,7 +148,7 @@ export function PerfilUsuarioCard({
             <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
             Esta cuenta está inactiva y no aparece en el listado.
           </p>
-        ) : !confirmando ? (
+        ) : (
           <div>
             <div className="flex items-start gap-2.5">
               <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
@@ -163,34 +169,30 @@ export function PerfilUsuarioCard({
               Desactivar cuenta
             </Button>
           </div>
-        ) : (
-          <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-            <p className="m-0 flex-1 text-sm leading-relaxed text-text-secondary">
-              ¿Confirmar la desactivación de <strong>{nombre}</strong>? Esta
-              acción no se puede deshacer.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="danger"
-                onClick={() => void confirmarDesactivacion()}
-                disabled={desactivando}
-              >
-                {desactivando ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : null}
-                {desactivando ? "Desactivando..." : "Sí, desactivar"}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => setConfirmando(false)}
-                disabled={desactivando}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </div>
         )}
       </div>
+
+      {/* misma doble confirmación que usan sacramentos y "Eliminar usuario" */}
+      <ConfirmacionAccionModal
+        open={confirmando}
+        title="Confirmar desactivación"
+        parteSubrayada="Desactivar cuenta"
+        iconoAdvertencia
+        confirmVariant="danger"
+        mensaje={
+          <>
+            ¿Estás seguro/a que quieres desactivar la cuenta de{' '}
+            <strong className="font-semibold text-text">{nombre}</strong>?
+            Perderá el acceso y dejará de aparecer en el listado de usuarios.
+            Esta acción no se puede deshacer.
+          </>
+        }
+        confirmLabel="Sí, desactivar"
+        pendingLabel="Desactivando..."
+        isPending={desactivando}
+        onConfirm={() => void confirmarDesactivacion()}
+        onCancel={() => setConfirmando(false)}
+      />
     </Card>
   );
 }

@@ -14,6 +14,7 @@ type ModalProps = {
   overlayClassName?: string;
   cerrarAlClicFuera?: boolean;
   cerrarConEsc?: boolean;
+  tamano?: "md" | "xl";
 };
 
 export function Modal({
@@ -25,6 +26,7 @@ export function Modal({
   overlayClassName,
   cerrarAlClicFuera = true,
   cerrarConEsc = false,
+  tamano = "md",
 }: ModalProps) {
   const dialogoRef = useRef<HTMLDivElement>(null);
   useScrollLock(true, dialogoRef);
@@ -43,7 +45,13 @@ export function Modal({
   }, [cerrarConEsc, onClose]);
 
   const clasesContenido = sinFondo
-    ? "fixed top-1/2 left-1/2 z-[1400] max-h-[90vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-lg border border-border bg-surface p-6 shadow-[0_22px_55px_rgba(6,15,32,0.45)]"
+    ? `fixed top-1/2 left-1/2 z-[1400] max-h-[90vh] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overscroll-contain rounded-lg border border-border bg-surface shadow-[0_22px_55px_rgba(6,15,32,0.45)] ${
+        tamano === "xl" ? "max-w-xl p-8" : "max-w-md p-6"
+      } ${
+        className?.includes("overflow-visible")
+          ? "overflow-visible"
+          : "overflow-y-auto"
+      }`
     : "relative max-h-[90vh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface p-6 shadow-xl";
 
   const contenido = (

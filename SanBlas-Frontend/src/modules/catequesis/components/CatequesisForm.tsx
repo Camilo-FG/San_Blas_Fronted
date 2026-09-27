@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (no deja picar dos veces)
 import {
@@ -19,6 +19,7 @@ import {
   type ArchivoImagen,
 } from "../../solicSacramento/components/SubidaImagen";
 import { soloLetras } from "../../../shared/utils/formValidation";
+import { leerBorradorInscripcionCatequesis, guardarBorradorInscripcionCatequesis, borrarBorradorInscripcionCatequesis } from "../utils/borradorInscripcionCatequesis";
 
 interface CatequesisFormProps {
   onSubmit: (data: CatequesisEnrollmentData) => void;
@@ -100,6 +101,78 @@ const getInitialFormState = (): CatequesisEnrollmentData => ({
     },
   },
 });
+
+function esRegistro(valor: unknown): valor is Record<string, unknown> {
+  return typeof valor === "object" && valor !== null && !Array.isArray(valor);
+}
+
+function aplicarBorradorAlFormulario(guardado: unknown): CatequesisEnrollmentData {
+  const base = getInitialFormState();
+  if (!esRegistro(guardado)) return base;
+
+  const catequesis = esRegistro(guardado.catequesis) ? guardado.catequesis : {};
+  const catequizando = esRegistro(guardado.catequizando) ? guardado.catequizando : {};
+  const madre = esRegistro(guardado.madreCatequizando) ? guardado.madreCatequizando : {};
+  const padre = esRegistro(guardado.padreCatequizando) ? guardado.padreCatequizando : {};
+  const inscripcion = esRegistro(guardado.inscripcion) ? guardado.inscripcion : {};
+  const persona = esRegistro(inscripcion.personaQueInscribe)
+    ? inscripcion.personaQueInscribe
+    : {};
+  const pago = esRegistro(inscripcion.pago) ? inscripcion.pago : {};
+
+  return {
+    catequesis: {
+      ...base.catequesis,
+      ...catequesis,
+      feBautismoArchivo: null,
+    },
+    catequizando: {
+      ...base.catequizando,
+      ...catequizando,
+      direccion: {
+        ...base.catequizando.direccion,
+        ...(esRegistro(catequizando.direccion) ? catequizando.direccion : {}),
+      },
+      adecuacion: {
+        ...base.catequizando.adecuacion,
+        ...(esRegistro(catequizando.adecuacion) ? catequizando.adecuacion : {}),
+      },
+      condicionSalud: {
+        ...base.catequizando.condicionSalud,
+        ...(esRegistro(catequizando.condicionSalud) ? catequizando.condicionSalud : {}),
+      },
+    },
+    madreCatequizando: {
+      ...base.madreCatequizando,
+      ...madre,
+      direccion: {
+        ...base.madreCatequizando.direccion,
+        ...(esRegistro(madre.direccion) ? madre.direccion : {}),
+      },
+    },
+    padreCatequizando: {
+      ...base.padreCatequizando,
+      ...padre,
+      direccion: {
+        ...base.padreCatequizando.direccion,
+        ...(esRegistro(padre.direccion) ? padre.direccion : {}),
+      },
+    },
+    inscripcion: {
+      ...base.inscripcion,
+      ...inscripcion,
+      personaQueInscribe: {
+        ...base.inscripcion.personaQueInscribe,
+        ...persona,
+      },
+      pago: {
+        ...base.inscripcion.pago,
+        ...pago,
+        archivoComprobante: null,
+      },
+    },
+  };
+}
 
 const infoBoxClass =
   "mb-4 rounded-2xl border border-royal-gold/40 bg-royal-gold/10 p-3.5 text-sm leading-relaxed text-gray-600 sm:p-4";
@@ -232,22 +305,60 @@ function CampoApellido({
 
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const progressBarRef = useRef<HTMLDivElement>(null);
-  const [form, setForm] = useState<CatequesisEnrollmentData>(
-    getInitialFormState(),
+  const [borradorInicial] = useState(leerBorradorInscripcionCatequesis);
+  const [mostrarAvisoBorrador, setMostrarAvisoBorrador] = useState(
+    borradorInicial !== null,
   );
-  const [currentStep, setCurrentStep] = useState(1);
+  const [form, setForm] = useState<CatequesisEnrollmentData>(() =>
+    borradorInicial
+      ? aplicarBorradorAlFormulario(borradorInicial.form)
+      : getInitialFormState(),
+  );
+  const [currentStep, setCurrentStep] = useState(borradorInicial?.paso ?? 1);
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [aceptaLineamientos, setAceptaLineamientos] = useState(false);
-  const [tienePadre, setTienePadre] = useState<boolean | null>(null);
-  const [tieneMadre, setTieneMadre] = useState<boolean | null>(null);
+  const [aceptaLineamientos, setAceptaLineamientos] = useState(
+    borradorInicial?.aceptaLineamientos ?? false,
+  );
+  const [tienePadre, setTienePadre] = useState<boolean | null>(
+    borradorInicial?.tienePadre ?? null,
+  );
+  const [tieneMadre, setTieneMadre] = useState<boolean | null>(
+    borradorInicial?.tieneMadre ?? null,
+  );
   const [vistaPreviaFeBautismo, setVistaPreviaFeBautismo] = useState<
     string | null
   >(null);
   const [vistaPreviaComprobante, setVistaPreviaComprobante] = useState<
     string | null
   >(null);
+
+  useEffect(() => {
+    guardarBorradorInscripcionCatequesis(
+      {
+        paso: currentStep,
+        aceptaLineamientos,
+        tienePadre,
+        tieneMadre,
+        form,
+      },
+      getInitialFormState(),
+    );
+  }, [form, currentStep, aceptaLineamientos, tienePadre, tieneMadre]);
+
+  const descartarBorrador = () => {
+    borrarBorradorInscripcionCatequesis();
+    setForm(getInitialFormState());
+    setCurrentStep(1);
+    setAceptaLineamientos(false);
+    setTienePadre(null);
+    setTieneMadre(null);
+    setErrors({});
+    setVistaPreviaFeBautismo(null);
+    setVistaPreviaComprobante(null);
+    setMostrarAvisoBorrador(false);
+  };
 
   const scrollToProgressBar = () => {
     requestAnimationFrame(() => {
@@ -739,6 +850,24 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           })}
         </div>
       </div>
+
+      {mostrarAvisoBorrador && (
+        <div className={infoBoxClass}>
+          <p className="m-0">
+            Se recuperó el avance de tu inscripción en este navegador.
+            {(!form.catequesis.feBautismoArchivo ||
+              !form.inscripcion.pago.archivoComprobante) &&
+              " Vuelve a adjuntar la fe de bautismo y el comprobante de pago."}
+          </p>
+          <button
+            type="button"
+            className="mt-2 cursor-pointer border-0 bg-transparent p-0 text-sm font-bold text-royal-blue underline"
+            onClick={descartarBorrador}
+          >
+            Empezar de nuevo
+          </button>
+        </div>
+      )}
 
       {currentStep === 2 && (
         <section className="rounded-[18px] border border-border bg-surface p-5 shadow-sm sm:rounded-[22px] sm:p-7">

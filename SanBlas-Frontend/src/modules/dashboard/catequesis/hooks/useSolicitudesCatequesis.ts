@@ -171,26 +171,35 @@ export const useSolicitudesCatequesis = (
     }
   }, []);
 
-  const exportarExcel = useCallback(async () => {
-    try {
-      setExportando(true);
-      setExportError("");
-      await exportarInscripcionesCatequesis("Aprobada");
-    } catch (error) {
-      console.error(error);
-      if (error instanceof ApiError) {
-        setExportError(
-          error.status === 404
-            ? "La exportación no está disponible. Reinicie el backend para cargar los cambios recientes."
-            : error.message,
-        );
-      } else {
-        setExportError("No se pudo exportar el archivo de Excel.");
+  const exportarExcel = useCallback(
+    async (opciones: {
+      nivel: "todos" | "Primero" | "Sétimo";
+      estado: "todos" | "pendiente" | "aprobado" | "rechazado";
+      filial: "todos" | string;
+    }): Promise<{ ok: true } | { ok: false; mensaje: string }> => {
+      try {
+        setExportando(true);
+        setExportError("");
+        await exportarInscripcionesCatequesis({
+          estado: opciones.estado === "todos" ? undefined : opciones.estado,
+          nivel: opciones.nivel === "todos" ? undefined : opciones.nivel,
+          filial: opciones.filial === "todos" ? undefined : opciones.filial,
+        });
+        return { ok: true };
+      } catch (error) {
+        console.error(error);
+        const mensaje =
+          error instanceof ApiError
+            ? error.message
+            : "No se pudo exportar el archivo de Excel.";
+        setExportError(mensaje);
+        return { ok: false, mensaje };
+      } finally {
+        setExportando(false);
       }
-    } finally {
-      setExportando(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   return {
     solicitudes,

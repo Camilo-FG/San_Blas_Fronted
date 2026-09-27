@@ -1,4 +1,5 @@
 import { Copy, Heart, Landmark, Package, Smartphone } from "lucide-react";
+import { claseResaltePreview } from "./previewResalte";
 
 interface DonacionesPreviewProps {
   title: string;
@@ -7,6 +8,7 @@ interface DonacionesPreviewProps {
   cuentaBancaria: string;
   banco: string;
   ampliadas?: boolean;
+  campoResaltado?: string | null;
 }
 
 // miniatura de la página de donaciones pa la vista previa del editor
@@ -17,10 +19,13 @@ export function DonacionesPreview({
   cuentaBancaria,
   banco,
   ampliadas = false,
+  campoResaltado = null,
 }: DonacionesPreviewProps) {
   const metodos = [
     {
       id: "sinpe",
+      campoValor: "sinpe",
+      campoNota: null as string | null,
       label: "SINPE Móvil",
       icon: Smartphone,
       note: "Ideal para montos pequeños",
@@ -28,6 +33,8 @@ export function DonacionesPreview({
     },
     {
       id: "banco",
+      campoValor: "cuentaBancaria",
+      campoNota: "banco",
       label: "Cuenta Bancaria",
       icon: Landmark,
       note: `Para montos mayores${banco ? ` — ${banco}` : ""}`,
@@ -37,6 +44,7 @@ export function DonacionesPreview({
 
   return (
     <div
+      data-preview-scroll
       className={`flex h-full flex-col overflow-y-auto bg-white ${
         ampliadas ? "p-8" : "p-5"
       }`}
@@ -52,10 +60,16 @@ export function DonacionesPreview({
         <span className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full border border-royal-gold/50 text-royal-gold">
           <Heart className="size-5 fill-royal-gold" aria-hidden="true" />
         </span>
-        <h2 className="m-0 font-heading text-xl font-bold text-royal-gold">
+        <h2
+          data-campo-preview="title"
+          className={`m-0 font-heading text-xl font-bold text-royal-gold ${claseResaltePreview(campoResaltado === "title", "oscuro")}`}
+        >
           {title || "Título"}
         </h2>
-        <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-white/90">
+        <p
+          data-campo-preview="intro"
+          className={`mx-auto mt-2 max-w-xl text-sm leading-relaxed text-white/90 ${claseResaltePreview(campoResaltado === "intro", "oscuro")}`}
+        >
           {intro || "La introducción aparecerá aquí."}
         </p>
       </div>
@@ -76,13 +90,19 @@ export function DonacionesPreview({
                   <h3 className="m-0 font-heading text-base font-bold text-royal-blue">
                     {metodo.label}
                   </h3>
-                  <p className="m-0 mt-0.5 text-xs text-text-muted">
+                  <p
+                    data-campo-preview={metodo.campoNota ?? undefined}
+                    className={`m-0 mt-0.5 text-xs text-text-muted ${claseResaltePreview(Boolean(metodo.campoNota) && campoResaltado === metodo.campoNota)}`}
+                  >
                     {metodo.note}
                   </p>
                 </div>
               </div>
               <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface-muted/80 px-4 py-3">
-                <span className="min-w-0 flex-1 truncate font-mono text-sm font-bold text-royal-blue">
+                <span
+                  data-campo-preview={metodo.campoValor}
+                  className={`min-w-0 flex-1 truncate font-mono text-sm font-bold text-royal-blue ${claseResaltePreview(campoResaltado === metodo.campoValor)}`}
+                >
                   {metodo.value}
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-xl bg-royal-blue px-3 py-1.5 text-xs font-semibold text-white">

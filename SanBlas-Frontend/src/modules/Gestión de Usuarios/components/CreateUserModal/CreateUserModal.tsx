@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { Eye, EyeOff } from 'lucide-react';
-import { isAdminRole, type Usuario } from '../../../../types/Usuario';
+import { type Usuario } from '../../../../types/Usuario';
 import {
   opcionesSelectRol,
   ROLES_ASIGNABLES,
@@ -14,7 +14,6 @@ import {
   Input,
   Label,
   Modal,
-  Select,
 } from '../../../../shared/ui';
 import { normalizarTexto } from '../../Utils/normalizarTexto';
 
@@ -28,7 +27,7 @@ interface CreateUserData {
   telefono: string;
   contraseña: string;
   confirmarContraseña: string;
-  rol: string;
+  roles: string[];
 }
 
 interface Props {
@@ -87,7 +86,7 @@ const CreateUserModal: React.FC<Props> = ({
       telefono: '',
       contraseña: '',
       confirmarContraseña: '',
-      rol: 'user',
+      roles: ['user'],
     },
     onSubmit: async ({ value }) => {
       const ok = await onSave({
@@ -108,10 +107,17 @@ const CreateUserModal: React.FC<Props> = ({
   // controlan si se ve o se oculta el texto de cada contraseña
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
-  // solo un admin puede otorgar el rol admin; el resto solo puede crear usuarios normales
-  const rolesPermitidos = isAdminRole(usuarioSesion?.role ?? '')
+  const rolesSesion: string[] =
+    usuarioSesion?.roles && usuarioSesion.roles.length > 0
+      ? usuarioSesion.roles
+      : [usuarioSesion?.role ?? 'user'];
+  const esSecretarioSesion = rolesSesion.some(
+    (rol) => rol.toLowerCase() === 'secretario',
+  );
+  // solo un secretario puede otorgar el rol secretario
+  const rolesPermitidos = esSecretarioSesion
     ? [...ROLES_ASIGNABLES]
-    : [ROLES_ASIGNABLES[ROLES_ASIGNABLES.length - 1]];
+    : ROLES_ASIGNABLES.filter((rol) => rol !== 'secretario');
 
   useEffect(() => {
     if (!isOpen) {
@@ -191,9 +197,9 @@ const CreateUserModal: React.FC<Props> = ({
     return undefined;
   };
 
-  // el rol es obligatorio; se precarga 'user' por defecto y se bloquea el submit si queda vacío
-  const validarRol = (value: string) => {
-    if (!value) return 'Seleccione un rol para el usuario.';
+  // al menos un rol obligatorio; se precarga 'user' por defecto
+  const validarRoles = (value: string[]) => {
+    if (!value || value.length === 0) return 'Seleccione al menos un rol.';
     return undefined;
   };
 
@@ -438,36 +444,54 @@ const CreateUserModal: React.FC<Props> = ({
           </form.Field>
 
           <form.Field
-            name="rol"
+            name="roles"
             validators={{
-              onBlur: ({ value }) => validarRol(value),
-              onSubmit: ({ value }) => validarRol(value),
+              onChange: ({ value }) => validarRoles(value),
+              onBlur: ({ value }) => validarRoles(value),
+              onSubmit: ({ value }) => validarRoles(value),
             }}
           >
             {(field) => (
               <div>
-                <Label htmlFor="rol" required>
-                  Rol de Usuario
+                <Label id="roles-usuario-titulo" required>
+                  Roles del usuario
                 </Label>
-                <Select
-                  id="rol"
-                  value={field.state.value}
-                  hasError={field.state.meta.errors.length > 0}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  disabled={guardando}
+                <div
+                  role="group"
+                  aria-labelledby="roles-usuario-titulo"
+                  className="flex flex-col gap-2 rounded-xl border border-border-strong bg-surface-muted p-3"
                 >
-                  <option value="">Seleccione un rol</option>
                   {opcionesSelectRol(
                     roles,
-                    field.state.value,
+                    undefined,
                     rolesPermitidos,
-                  ).map((rol) => (
-                    <option key={rol.clave} value={rol.clave}>
-                      {rol.nombre}
-                    </option>
-                  ))}
-                </Select>
+                  ).map((rol) => {
+                    const marcado = field.state.value.includes(rol.clave);
+                    return (
+                      <label
+                        key={rol.clave}
+                        className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-text"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={marcado}
+                          disabled={guardando}
+                          onChange={() => {
+                            const actual = field.state.value;
+                            field.handleChange(
+                              marcado
+                                ? actual.filter((r) => r !== rol.clave)
+                                : [...actual, rol.clave],
+                            );
+                          }}
+                          onBlur={field.handleBlur}
+                          className="h-4 w-4 shrink-0 cursor-pointer accent-royal-blue"
+                        />
+                        <span>{rol.nombre}</span>
+                      </label>
+                    );
+                  })}
+                </div>
                 <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
               </div>
             )}

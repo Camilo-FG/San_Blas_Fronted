@@ -62,6 +62,7 @@ export interface InscripcionResumenBackend {
   telefonoEncargada: string;
   nombreEncargado?: string;
   correoEncargado?: string;
+  observacionAdministrativa?: string | null;
 }
 
 export interface InscripcionDetalleBackend {

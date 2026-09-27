@@ -1,3 +1,5 @@
+import { claseResaltePreview } from "./previewResalte";
+
 const HERO_DEFAULT_IMAGE = "/hero.webp";
 
 type HeroPreviewProps = {
@@ -7,6 +9,7 @@ type HeroPreviewProps = {
   description: string;
   imageSrc?: string | null;
   ampliadas?: boolean;
+  campoResaltado?: string | null;
 };
 
 export function HeroPreview({
@@ -16,6 +19,7 @@ export function HeroPreview({
   description,
   imageSrc,
   ampliadas = false,
+  campoResaltado = null,
 }: HeroPreviewProps) {
   const image = imageSrc?.trim() || HERO_DEFAULT_IMAGE;
 
@@ -31,7 +35,10 @@ export function HeroPreview({
       <div className="relative z-[2] w-full max-w-[1200px]">
         <div className="mb-3 flex items-center gap-2.5 font-black uppercase tracking-[0.28em] text-royal-gold @min-[420px]:mb-5 @min-[420px]:gap-3.5 @min-[420px]:text-[13px] @min-[420px]:tracking-[4px]">
           <span className="h-0.5 w-8 shrink-0 bg-royal-gold @min-[420px]:w-[54px]" />
-          <span className="text-[10px] @min-[420px]:text-[13px]">
+          <span
+            data-campo-preview="subtitle"
+            className={`text-[10px] @min-[420px]:text-[13px] ${claseResaltePreview(campoResaltado === "subtitle", "oscuro")}`}
+          >
             {subtitle || "Encabezado"}
           </span>
         </div>
@@ -43,8 +50,17 @@ export function HeroPreview({
               : "text-[clamp(26px,7cqi,64px)]"
           }`}
         >
-          {title || "Título"} <br />
-          <span className="italic text-royal-gold">
+          <span
+            data-campo-preview="title"
+            className={`inline-block ${claseResaltePreview(campoResaltado === "title", "oscuro")}`}
+          >
+            {title || "Título"}
+          </span>
+          <br />
+          <span
+            data-campo-preview="titleHighlight"
+            className={`inline-block italic text-royal-gold ${claseResaltePreview(campoResaltado === "titleHighlight", "oscuro")}`}
+          >
             {titleHighlight || "Título destacado"}
           </span>
         </h2>
@@ -52,7 +68,8 @@ export function HeroPreview({
         <p
           className={`m-0 mb-4 max-w-[620px] border-l-4 border-royal-gold/65 pl-3 leading-relaxed text-white/90 @min-[420px]:mb-[42px] @min-[420px]:pl-[22px] ${
             ampliadas ? "text-lg" : "text-[clamp(12px,2cqi,18px)]"
-          }`}
+          } ${claseResaltePreview(campoResaltado === "description", "oscuro")}`}
+          data-campo-preview="description"
         >
           {description || "La descripción aparecerá aquí."}
         </p>

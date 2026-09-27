@@ -14,7 +14,7 @@ interface LoginPageProps {
 }
 
 const LoginPage = ({ redirectTo }: LoginPageProps) => {
-  const { login, isAuthenticated, isAdmin, user } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,10 +26,10 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
   useEffect(() => {
     if (isAuthenticated && user) {
       navigate({
-        to: getPostLoginPath(isAdmin, redirectTo),
+        to: getPostLoginPath(user.accesoPanel, redirectTo),
       });
     }
-  }, [isAuthenticated, isAdmin, navigate, redirectTo, user]);
+  }, [isAuthenticated, navigate, redirectTo, user]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -39,7 +39,7 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
     try {
       const authUser = await login({ email, password });
       const destination = getPostLoginPath(
-        authUser.role === "admin",
+        authUser.accesoPanel,
         redirectTo,
       );
       navigate({ to: destination });

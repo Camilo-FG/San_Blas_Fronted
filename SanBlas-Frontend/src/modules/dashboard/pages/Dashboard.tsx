@@ -17,43 +17,56 @@ import {
 import Rutas from "../../../routes/Rutas";
 import { useAuth } from "../../../context/AuthContext";
 import { cn } from "../../../shared/ui";
+import type { PermisoRolId } from "../../../types/Rol";
 
-const navLinks = [
-  { to: Rutas.dashboard, label: "Resumen", icon: LayoutDashboard },
+const navLinks: {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  permiso: PermisoRolId;
+}[] = [
+  { to: Rutas.dashboard, label: "Resumen", icon: LayoutDashboard, permiso: "panel" },
   {
     to: Rutas.dashboardUrl.registroSacramentos,
     label: "Registro de Sacramentos",
     icon: FileSpreadsheet,
+    permiso: "sacramentos",
   },
   {
     to: Rutas.dashboardUrl.constanciasSacramentos,
     label: "Solicitudes de Sacramentos",
     icon: FileText,
+    permiso: "constancias",
   },
   {
     to: Rutas.dashboardUrl.solicitudesCatequesis,
     label: "Solicitudes de Catequesis",
     icon: BookOpen,
+    permiso: "catequesis",
   },
   {
     to: Rutas.dashboardUrl.donaciones,
     label: "Gestión de Donaciones",
     icon: Heart,
+    permiso: "donaciones",
   },
   {
     to: Rutas.dashboardUrl.eventos,
     label: "Gestión de Eventos",
     icon: Calendar,
+    permiso: "eventos",
   },
   {
     to: Rutas.dashboardUrl.gestionLanding,
     label: "Gestión del Landing (CMS)",
     icon: Settings,
+    permiso: "landing",
   },
   {
     to: Rutas.dashboardUrl.gestionUsuarios,
     label: "Gestión de Usuarios",
     icon: Users,
+    permiso: "usuarios",
   },
 ];
 
@@ -110,13 +123,19 @@ function getUserInitial(email?: string | null): string {
   return email.charAt(0).toUpperCase();
 }
 
-function getRoleLabel(role?: string): string {
-  if (role === "admin") return "Administrador";
-  return "Usuario";
+function getRoleLabel(role?: string | null): string {
+  if (!role) return "Usuario";
+  const clave = role.toLowerCase();
+  if (clave === "secretario" || clave === "admin") return "Secretario";
+  if (clave === "catequista") return "Catequista";
+  if (clave === "gestor-eventos") return "Gestor de Eventos";
+  if (clave === "gestor-donaciones") return "Personal de Donaciones";
+  if (clave === "user") return "Usuario";
+  return role;
 }
 
 function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, tienePermiso } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -217,7 +236,9 @@ function Dashboard() {
           </div>
 
           <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {navLinks.map((link) => {
+            {navLinks
+              .filter((link) => tienePermiso(link.permiso))
+              .map((link) => {
               const Icon = link.icon;
 
               return (

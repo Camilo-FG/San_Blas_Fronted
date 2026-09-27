@@ -1,6 +1,11 @@
 packages:
   - '.'
 
+allowBuilds:
+  # pnpm exige decidir explícitamente por los scripts de post-install;
+  # core-js no necesita compilar, se desactiva para no bloquear pnpm build/test
+  core-js: false
+
 onlyBuiltDependencies:
   - lightningcss
   - fsevents

@@ -7,7 +7,9 @@ const mapCreateToBackend = (userData: UserCreate) => ({
   email: normalizarTexto(userData.email),
   password: userData.password.trim(),
   confirmPassword: userData.confirmPassword.trim(),
-  role: userData.role,
+  ...(userData.roles && userData.roles.length > 0
+    ? { roles: userData.roles }
+    : {}),
   telefono: normalizarTexto(userData.phoneNumber),
 });
 
@@ -18,7 +20,7 @@ const mapUpdateToBackend = (userData: UserUpdate) => {
     body.password = userData.password.trim();
     body.confirmPassword = (userData.confirmPassword ?? userData.password).trim();
   }
-  if (userData.role) body.role = userData.role;
+  if (userData.roles) body.roles = userData.roles;
   if (typeof userData.state === 'boolean') body.isActive = userData.state;
   if (userData.phoneNumber !== undefined) {
     body.telefono = normalizarTexto(userData.phoneNumber);
@@ -33,13 +35,26 @@ const leerFechaCreacion = (data: Record<string, unknown>): string => {
   return '';
 };
 
+// el backend responde `state` (el DTO renombra isActive al serializar).
+// antes se leía isActive, que nunca viene: todas las filas salían "Activo"
+const leerEstado = (data: Record<string, unknown>): boolean => {
+  if (typeof data.state === 'boolean') return data.state;
+  if (typeof data.isActive === 'boolean') return data.isActive;
+  return true;
+};
+
 const mapBackendToFrontend = (data: Record<string, unknown>): Usuario => ({
   id: data.id as number,
   userName: ((data.nombre as string) ?? (data.userName as string)) ?? '',
   email: (data.email as string) ?? '',
   phoneNumber: ((data.telefono as string) ?? (data.phoneNumber as string) ?? ''),
   role: (data.role as string) ?? 'user',
-  state: data.isActive === false ? false : true,
+  roles: Array.isArray(data.roles)
+    ? (data.roles as unknown[]).filter(
+        (rol): rol is string => typeof rol === 'string',
+      )
+    : undefined,
+  state: leerEstado(data),
   creationDate: leerFechaCreacion(data),
 });
 
@@ -61,6 +76,12 @@ export interface PaginacionUsuarios {
   limit: number;
 }
 
+// orden que pide la tabla al servidor (el cliente ya no ordena la página a medias)
+export type OrdenUsuarios = {
+  campo: string;
+  direccion: 'asc' | 'desc';
+};
+
 // consulta paginada con búsqueda server-side; sin `search` devuelve la primera página completa
 export const getUsersPaginados = async (
   page = 1,
@@ -68,6 +89,7 @@ export const getUsersPaginados = async (
   search?: string,
   role?: string,
   state?: string,
+  orden?: OrdenUsuarios,
 ): Promise<PaginacionUsuarios> => {
   const buscar = search?.trim();
   try {
@@ -84,6 +106,10 @@ export const getUsersPaginados = async (
         ...(buscar ? { search: buscar } : {}),
         ...(role ? { role } : {}),
         ...(state ? { state } : {}),
+        // el orden siempre viaja para que el backend no caiga al default
+        ...(orden
+          ? { sortBy: orden.campo, sortDirection: orden.direccion }
+          : { sortBy: 'createdAt', sortDirection: 'desc' }),
       },
     });
     return {

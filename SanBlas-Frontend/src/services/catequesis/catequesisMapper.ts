@@ -191,6 +191,7 @@ export const mapResumenToEnrollmentRecord = (
       parentesco: "",
     },
     pago: emptyPago(),
+    observacionAdministrativa: resumen.observacionAdministrativa ?? null,
   };
 };
 

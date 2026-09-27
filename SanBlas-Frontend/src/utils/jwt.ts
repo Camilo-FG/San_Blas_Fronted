@@ -53,6 +53,32 @@ export const getRoleFromToken = (token: string): string | null => {
   return typeof role === "string" ? role : null;
 };
 
+const normalizarArreglo = (valor: unknown): string[] => {
+  const lista = Array.isArray(valor) ? valor : valor == null ? [] : [valor];
+  return lista
+    .map((item) => (typeof item === "string" ? item.trim().toLowerCase() : ""))
+    .filter((item) => item.length > 0);
+};
+
+export const getRolesFromToken = (token: string): string[] => {
+  const payload = parseJwt(token);
+  if (!payload) return [];
+
+  const directos = normalizarArreglo(payload.roles);
+  if (directos.length > 0) return directos;
+
+  const principal = payload[CLAIM_ROLE] ?? payload.role;
+  return typeof principal === "string" && principal.trim()
+    ? [principal.trim().toLowerCase()]
+    : [];
+};
+
+export const getPermisosFromToken = (token: string): string[] => {
+  const payload = parseJwt(token);
+  if (!payload) return [];
+  return normalizarArreglo(payload.permisos);
+};
+
 export const getAccesoPanelFromToken = (token: string): boolean => {
   const payload = parseJwt(token);
   if (!payload) return false;

@@ -59,7 +59,7 @@ export function AdminRecordDetailSheet({
       onClick={cerrarAlClicFuera ? onClose : undefined}
     >
       <div
-        className="relative flex max-h-[94vh] w-full flex-col rounded-t-[18px] bg-surface shadow-[0_-8px_30px_rgba(15,23,42,0.18)] md:max-h-[88vh] md:max-w-[640px] md:rounded-[18px]"
+        className="relative flex max-h-[94vh] w-full flex-col rounded-t-[18px] bg-surface shadow-[0_-8px_30px_rgba(15,23,42,0.18)] md:max-h-[92vh] md:min-h-[78vh] md:max-w-5xl md:rounded-[18px]"
         role="dialog"
         aria-modal="true"
         aria-labelledby={hideHeader ? undefined : titleId}
@@ -78,7 +78,7 @@ export function AdminRecordDetailSheet({
         )}
 
         {!hideHeader && (
-          <header className="flex items-start justify-between gap-3 border-b border-border-strong px-[1.1rem] py-4">
+          <header className="flex items-start justify-between gap-3 border-b border-border-strong px-5 py-5 md:px-8">
             <div>
               {subtitle && (
                 <p className="mb-1 text-[0.78rem] font-semibold text-text-muted">
@@ -122,15 +122,15 @@ export function AdminRecordDetailSheet({
         <div
           className={
             hideHeader
-              ? "overflow-y-auto px-[1.1rem] pt-14 pb-4"
-              : "overflow-y-auto px-[1.1rem] py-4"
+              ? "min-h-0 flex-1 overflow-y-auto px-5 pt-14 pb-5 md:px-8"
+              : "min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-8"
           }
         >
           {children}
         </div>
 
         {actions && (
-          <footer className="flex flex-col gap-2.5 border-t border-border-strong px-[1.1rem] pt-3.5 pb-[1.1rem] md:flex-row md:flex-wrap md:justify-end">
+          <footer className="flex flex-col gap-2.5 border-t border-border-strong px-5 pt-4 pb-5 md:flex-row md:flex-wrap md:justify-end md:px-8">
             {actions}
           </footer>
         )}

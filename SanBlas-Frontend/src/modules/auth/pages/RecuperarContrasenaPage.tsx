@@ -10,7 +10,7 @@ import SeoHead from "../../../seo/SeoHead";
 import { mensajeErrorCorreo } from "../validarCorreo";
 
 const MENSAJE_CONFIRMACION =
-  "Enviamos el enlace de recuperación a ese correo. Revise su bandeja de entrada y la carpeta de spam. Si no recibe el mensaje, también puede intentar de nuevo más tarde.";
+  "Si existe una cuenta asociada a este correo, recibirás instrucciones para recuperar tu contraseña.";
 
 export default function RecuperarContrasenaPage() {
   const correoId = useId();

@@ -20,7 +20,6 @@ import {
   Badge,
   Button,
   ErrorMessage,
-  EtiquetaSeccion,
   type BadgeVariant,
 } from "../../../../shared/ui";
 import type {
@@ -89,6 +88,20 @@ const valorOGuion = (valor?: string | number | null) => {
   return texto || "—";
 };
 
+const claseTarjetaClara =
+  "flex flex-col gap-4 rounded-2xl bg-[#f1f5fa] p-5";
+const claseTarjeta =
+  "flex flex-col gap-4 rounded-2xl bg-[#e4eaf3] p-5";
+
+function TituloSeccion({ children }: { children: ReactNode }) {
+  return (
+    <h4 className="m-0 flex items-center gap-2.5 text-sm font-bold text-royal-blue">
+      <span className="h-4 w-1 rounded-full bg-[#94a3b8]" aria-hidden="true" />
+      {children}
+    </h4>
+  );
+}
+
 function Separador() {
   return <div className="h-px w-full bg-[#16243c]/10" />;
 }
@@ -105,14 +118,16 @@ function Campo({
   tabular?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-2">
-      {icon}
-      <div className="min-w-0">
-        <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
-          {label}
-        </p>
+    <div className="flex items-start gap-3">
+      {icon ? (
+        <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-white/80 text-[#aa7323]">
+          {icon}
+        </span>
+      ) : null}
+      <div className="min-w-0 pt-0.5">
+        <p className="m-0 text-xs font-medium text-slate-500">{label}</p>
         <p
-          className={`m-0 mt-1 break-words text-sm font-semibold text-[#16243c] ${
+          className={`m-0 mt-0.5 break-words text-[0.95rem] font-semibold leading-snug text-[#16243c] ${
             tabular ? "tabular-nums" : ""
           }`}
         >
@@ -209,27 +224,27 @@ export function DetalleSolicitudCatequesisModal({
         )
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         {detalleError && <ErrorMessage message={detalleError} />}
         {accionError && <ErrorMessage message={accionError} />}
 
                 <div className="grid items-stretch gap-4 md:grid-cols-2">
-                  <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
-                    <EtiquetaSeccion>Nombre del catequizando</EtiquetaSeccion>
-                    <p className="m-0 text-sm font-semibold text-[#16243c]">
+                  <section className={claseTarjetaClara}>
+                    <TituloSeccion>Catequizando</TituloSeccion>
+                    <p className="m-0 text-lg font-bold tracking-tight text-[#16243c]">
                       {nombreCompleto(solicitud.catequizando)}
                     </p>
                     <Separador />
                     <Campo
                       label="Fecha de nacimiento"
-                      value={valorOGuion(
-                        solicitud.catequizando?.fechaNacimiento,
+                      value={formatearFechaEnvio(
+                        solicitud.catequizando?.fechaNacimiento ?? "",
                       )}
                       tabular
                       icon={
                         <CalendarDays
                           size={16}
-                          className="mt-0.5 shrink-0 text-[#aa7323]"
+                          className="shrink-0"
                         />
                       }
                     />
@@ -242,21 +257,21 @@ export function DetalleSolicitudCatequesisModal({
                       icon={
                         <MapPin
                           size={16}
-                          className="mt-0.5 shrink-0 text-[#aa7323]"
+                          className="shrink-0"
                         />
                       }
                     />
                   </section>
 
-                  <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
-                    <EtiquetaSeccion>Contacto</EtiquetaSeccion>
+                  <section className={claseTarjetaClara}>
+                    <TituloSeccion>Contacto</TituloSeccion>
                     <Campo
                       label="Encargado"
                       value={nombreCompleto(solicitud.encargado)}
                       icon={
                         <User
                           size={16}
-                          className="mt-0.5 shrink-0 text-[#aa7323]"
+                          className="shrink-0"
                         />
                       }
                     />
@@ -268,7 +283,7 @@ export function DetalleSolicitudCatequesisModal({
                       icon={
                         <Phone
                           size={16}
-                          className="mt-0.5 shrink-0 text-[#aa7323]"
+                          className="shrink-0"
                         />
                       }
                     />
@@ -282,15 +297,23 @@ export function DetalleSolicitudCatequesisModal({
                       icon={
                         <Mail
                           size={16}
-                          className="mt-0.5 shrink-0 text-[#aa7323]"
+                          className="shrink-0"
                         />
                       }
+                    />
+                    <Separador />
+                    <Campo
+                      label="Parentesco"
+                      value={valorOGuion(
+                        solicitud.personaInscribe?.parentesco ||
+                          solicitud.encargado?.parentesco,
+                      )}
                     />
                   </section>
                 </div>
 
-                <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
-                  <EtiquetaSeccion>Información de catequesis</EtiquetaSeccion>
+                <section className={claseTarjeta}>
+                  <TituloSeccion>Información de catequesis</TituloSeccion>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Campo
                       label="Centro"
@@ -300,7 +323,7 @@ export function DetalleSolicitudCatequesisModal({
                       icon={
                         <GraduationCap
                           size={16}
-                          className="mt-0.5 shrink-0 text-[#aa7323]"
+                          className="shrink-0"
                         />
                       }
                     />
@@ -316,120 +339,92 @@ export function DetalleSolicitudCatequesisModal({
                         solicitud.codigoSolicitud || `CAT-${solicitud.id}`,
                       )}
                     />
-<Campo
-                  label="Fecha de ingreso"
-                  value={formatearFechaEnvio(solicitud.fechaSolicitud)}
-                  tabular
-                  icon={
-                    <CalendarDays
-                      size={16}
-                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                    <Campo
+                      label="Fecha de ingreso"
+                      value={formatearFechaEnvio(solicitud.fechaSolicitud)}
+                      tabular
+                      icon={
+                        <CalendarDays
+                          size={16}
+                          className="shrink-0"
+                        />
+                      }
                     />
-                  }
-                />
-                <Campo
-                  label="Fecha de revisión"
-                  value={formatearFechaEnvio(
-                    solicitud.fechaActualizacionEstado,
-                  )}
-                  tabular
-                  icon={
-                    <CalendarDays
-                      size={16}
-                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                    <Campo
+                      label="Fecha de revisión"
+                      value={formatearFechaEnvio(
+                        solicitud.fechaActualizacionEstado,
+                      )}
+                      tabular
+                      icon={
+                        <CalendarDays
+                          size={16}
+                          className="shrink-0"
+                        />
+                      }
                     />
-                  }
-                />
                   </div>
                 </section>
 
-                <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
-                  <EtiquetaSeccion>Datos de bautismo</EtiquetaSeccion>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Campo
-                      label="Parroquia"
-                      value={valorOGuion(
-                        solicitud.catequizando?.bautismo?.parroquia,
-                      )}
-                    />
-                    <Campo
-                      label="Fecha"
-                      value={valorOGuion(
-                        solicitud.catequizando?.bautismo?.fecha,
-                      )}
-                      tabular
-                    />
-                    <Campo
-                      label="Tomo"
-                      value={valorOGuion(
-                        solicitud.catequizando?.bautismo?.tomo,
-                      )}
-                    />
-                    <Campo
-                      label="Folio"
-                      value={valorOGuion(
-                        solicitud.catequizando?.bautismo?.folio,
-                      )}
-                    />
-                    <Campo
-                      label="Asiento"
-                      value={valorOGuion(
-                        solicitud.catequizando?.bautismo?.asiento,
-                      )}
-                    />
-                  </div>
-                  <Separador />
-                  <div className="flex flex-col gap-2">
-                    <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
-                      Fe de bautismo
-                    </p>
-                    <EnlaceArchivo
-                      archivo={solicitud.catequesis?.feBautismoArchivo}
-                      label="Abrir fe de bautismo"
-                    />
-                  </div>
+                <section className={claseTarjeta}>
+                  <TituloSeccion>Fe de bautismo</TituloSeccion>
+                  <EnlaceArchivo
+                    archivo={solicitud.catequesis?.feBautismoArchivo}
+                    label="Abrir fe de bautismo"
+                  />
                 </section>
 
                 <div className="grid items-stretch gap-4 md:grid-cols-2">
-                  <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
-                    <EtiquetaSeccion>Adecuación educativa</EtiquetaSeccion>
+                  <section className={claseTarjetaClara}>
+                    <TituloSeccion>Adecuación educativa</TituloSeccion>
                     <p className="m-0 text-sm font-semibold text-[#16243c]">
                       {solicitud.catequizando?.adecuacion
                         ?.requiereAdecuacionCentroEducativo
                         ? "Sí requiere adecuación"
                         : "No requiere adecuación"}
                     </p>
-                    <Separador />
-                    <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c]">
-                      {valorOGuion(
-                        solicitud.catequizando?.adecuacion
-                          ?.descripcionAdecuacion,
-                      )}
-                    </p>
+                    {solicitud.catequizando?.adecuacion
+                      ?.requiereAdecuacionCentroEducativo && (
+                      <>
+                        <Separador />
+                        <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c]">
+                          {valorOGuion(
+                            solicitud.catequizando?.adecuacion
+                              ?.descripcionAdecuacion,
+                          )}
+                        </p>
+                      </>
+                    )}
                   </section>
 
-                  <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
-                    <EtiquetaSeccion>Condición de salud</EtiquetaSeccion>
+                  <section className={claseTarjetaClara}>
+                    <TituloSeccion>Condición de salud</TituloSeccion>
                     <p className="m-0 text-sm font-semibold text-[#16243c]">
                       {solicitud.catequizando?.condicionSalud
                         ?.portadorEnfermedadCronica
                         ? "Porta enfermedad crónica"
                         : "Sin enfermedad crónica"}
                     </p>
-                    <Separador />
-                    <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c]">
-                      {valorOGuion(
-                        solicitud.catequizando?.condicionSalud
-                          ?.descripcionEnfermedad,
-                      )}
-                    </p>
+                    {solicitud.catequizando?.condicionSalud
+                      ?.portadorEnfermedadCronica && (
+                      <>
+                        <Separador />
+                        <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c]">
+                          {valorOGuion(
+                            solicitud.catequizando?.condicionSalud
+                              ?.descripcionEnfermedad,
+                          )}
+                        </p>
+                      </>
+                    )}
                   </section>
                 </div>
 
                 <div className="grid items-stretch gap-4 md:grid-cols-2">
-                  <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
-                    <EtiquetaSeccion>Madre o encargada</EtiquetaSeccion>
-                    <p className="m-0 text-sm font-semibold text-[#16243c]">
+                  {nombreCompleto(solicitud.madreCatequizando) !== "—" && (
+                  <section className={claseTarjetaClara}>
+                    <TituloSeccion>Madre o encargada</TituloSeccion>
+                    <p className="m-0 text-base font-bold text-[#16243c]">
                       {nombreCompleto(solicitud.madreCatequizando)}
                     </p>
                     <Separador />
@@ -440,7 +435,7 @@ export function DetalleSolicitudCatequesisModal({
                       icon={
                         <Phone
                           size={16}
-                          className="mt-0.5 shrink-0 text-[#aa7323]"
+                          className="shrink-0"
                         />
                       }
                     />
@@ -458,15 +453,17 @@ export function DetalleSolicitudCatequesisModal({
                       icon={
                         <MapPin
                           size={16}
-                          className="mt-0.5 shrink-0 text-[#aa7323]"
+                          className="shrink-0"
                         />
                       }
                     />
                   </section>
+                  )}
 
-                  <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
-                    <EtiquetaSeccion>Padre</EtiquetaSeccion>
-                    <p className="m-0 text-sm font-semibold text-[#16243c]">
+                  {nombreCompleto(solicitud.padreCatequizando) !== "—" && (
+                  <section className={claseTarjetaClara}>
+                    <TituloSeccion>Padre</TituloSeccion>
+                    <p className="m-0 text-base font-bold text-[#16243c]">
                       {nombreCompleto(solicitud.padreCatequizando)}
                     </p>
                     <Separador />
@@ -477,60 +474,36 @@ export function DetalleSolicitudCatequesisModal({
                       icon={
                         <Phone
                           size={16}
-                          className="mt-0.5 shrink-0 text-[#aa7323]"
+                          className="shrink-0"
                         />
                       }
                     />
                   </section>
+                  )}
                 </div>
 
-                <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
-                  <EtiquetaSeccion>Persona que inscribe</EtiquetaSeccion>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Campo
-                      label="Nombre"
-                      value={nombreCompleto(solicitud.personaInscribe)}
-                    />
-                    <Campo
-                      label="Parentesco"
-                      value={valorOGuion(
-                        solicitud.personaInscribe?.parentesco ||
-                          solicitud.encargado?.parentesco,
-                      )}
-                    />
-                  </div>
+                <section className={claseTarjeta}>
+                  <TituloSeccion>Comprobante de pago</TituloSeccion>
+                  <EnlaceArchivo
+                    archivo={solicitud.pago?.comprobanteArchivo}
+                    label="Abrir imagen del comprobante"
+                  />
                 </section>
-
-                <div className="grid items-stretch gap-4 md:grid-cols-2">
-                  <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
-                    <EtiquetaSeccion>Datos de pago</EtiquetaSeccion>
-                    <Campo
-                      label="Método"
-                      value={valorOGuion(solicitud.pago?.metodoPago)}
-                    />
-                    <Separador />
-                    <Campo
-                      label="Número de comprobante"
-                      value={valorOGuion(solicitud.pago?.numeroComprobante)}
-                    />
-                  </section>
-
-                  <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
-                    <EtiquetaSeccion>Comprobante de pago</EtiquetaSeccion>
-                    <EnlaceArchivo
-                      archivo={solicitud.pago?.comprobanteArchivo}
-                      label="Abrir imagen del comprobante"
-                    />
-                  </section>
-                </div>
 
                 {estado === "aprobado" && (
                   <div className="flex gap-2.5 rounded-[12px] border border-emerald-600/25 bg-emerald-600/10 p-4 text-sm leading-relaxed text-emerald-800">
                     <CheckCircle size={17} className="mt-0.5 shrink-0" />
-                    <p className="m-0">
-                      La inscripción ya fue aprobada e integrada al proceso de
-                      catequesis.
-                    </p>
+                    <div>
+                      <p className="m-0">
+                        La inscripción ya fue aprobada e integrada al proceso de
+                        catequesis.
+                      </p>
+                      {solicitud.observacionAdministrativa?.trim() && (
+                        <p className="mt-1 mb-0">
+                          Observación: {solicitud.observacionAdministrativa}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
 
