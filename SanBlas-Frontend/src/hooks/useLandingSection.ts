@@ -45,7 +45,7 @@ export function useLandingSection<T extends Record<string, unknown>>(
     queryKey: ["landing", sectionKey],
     queryFn: () => obtenerSeccionLanding<T>(sectionKey),
     enabled: ready,
-    staleTime: 10 * 60_000,
+    staleTime: 60_000,
     gcTime: 30 * 60_000,
   });
 

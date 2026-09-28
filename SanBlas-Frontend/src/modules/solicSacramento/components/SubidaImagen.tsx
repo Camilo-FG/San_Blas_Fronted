@@ -300,17 +300,21 @@ export const SubidaImagen = ({
             <span className="text-sm font-medium text-slate-700">
               Imagen actual
             </span>
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onClearExisting?.();
-              }}
-              aria-label="Eliminar imagen"
-              className="absolute right-2 top-2 flex size-7 cursor-pointer items-center justify-center rounded-full bg-slate-900/70 text-white transition-colors duration-150 ease-out hover:bg-red-600"
-            >
-              <X size={15} />
-            </button>
+            {/* sin X acá: elegir otro archivo reemplaza directo y así no se
+                borra la imagen actual por accidente al querer cambiarla */}
+            {onClearExisting && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onClearExisting();
+                }}
+                aria-label="Eliminar imagen"
+                className="absolute right-2 top-2 flex size-7 cursor-pointer items-center justify-center rounded-full bg-slate-900/70 text-white transition-colors duration-150 ease-out hover:bg-red-600"
+              >
+                <X size={15} />
+              </button>
+            )}
           </>
         ) : (
           <>

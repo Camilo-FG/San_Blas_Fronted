@@ -231,7 +231,6 @@ export default function LandingSectionModal({
                 onChange(field.name, values[field.name] ?? "");
               }
             }}
-            onClearExisting={() => onChange(field.name, "")}
           />
         </div>
       );
