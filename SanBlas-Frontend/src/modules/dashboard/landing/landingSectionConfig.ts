@@ -11,7 +11,7 @@ import { HORARIOS_DEFAULT } from "../../landing/horariosContent";
  * (update-landing-section.dto.ts). Cambiar una regla implica actualizar ambos lados.
  */
 export type FieldType = "text" | "textarea" | "url" | "image" | "lines";
-export type LandingFieldFormat = "email" | "phone" | "youtube" | "url";
+export type LandingFieldFormat = "email" | "phone" | "youtube" | "url" | "ibanCr";
 
 export interface LandingFieldConfig {
   name: string;
@@ -348,7 +348,15 @@ export const LANDING_SECTIONS: LandingSectionConfig[] = [
       { name: "title", label: "Título", type: "text", maxLength: 80 },
       { name: "intro", label: "Introducción", type: "textarea", maxLength: 300, rows: 3 },
       { name: "sinpe", label: "SINPE Móvil", type: "text", maxLength: 40, format: "phone" },
-      { name: "cuentaBancaria", label: "Cuenta bancaria (IBAN)", type: "text", maxLength: 60 },
+      {
+        name: "cuentaBancaria",
+        label: "Cuenta bancaria (IBAN)",
+        type: "text",
+        maxLength: 22,
+        format: "ibanCr",
+        placeholder: "CR67015100012345678901",
+        hint: "Ejemplo: CR67015100012345678901 (CR seguido de 20 dígitos).",
+      },
       { name: "banco", label: "Banco", type: "text", maxLength: 80 },
     ],
   },

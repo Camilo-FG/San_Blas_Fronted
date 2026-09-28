@@ -273,7 +273,7 @@ export default function LandingSectionModal({
         <Label htmlFor={fieldId} required={esObligatorio}>
           {field.label}
         </Label>
-        {field.hint && (
+        {field.hint && field.format !== "ibanCr" && (
           <p className="mb-1.5 text-sm text-text-muted">{field.hint}</p>
         )}
         <Input
@@ -284,12 +284,23 @@ export default function LandingSectionModal({
           placeholder={field.placeholder}
           hasError={Boolean(mensajeError)}
           aria-invalid={Boolean(mensajeError)}
-          aria-describedby={mensajeError ? errorId : undefined}
+          aria-describedby={
+            field.format === "ibanCr"
+              ? `${fieldId}-formato${mensajeError ? ` ${errorId}` : ""}`
+              : mensajeError
+                ? errorId
+                : undefined
+          }
           onFocus={marcarEnPreview}
           onClick={marcarEnPreview}
           onBlur={quitarResalte}
           onChange={(event) => escribirEnCampo(event.target.value)}
         />
+        {field.format === "ibanCr" && field.hint && (
+          <p id={`${fieldId}-formato`} className="mt-1.5 text-sm text-text-muted">
+            {field.hint}
+          </p>
+        )}
         <CharacterCounter value={value} maxLength={field.maxLength} />
         <FieldError id={errorId} message={mensajeError} />
       </div>
