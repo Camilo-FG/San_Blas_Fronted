@@ -40,6 +40,7 @@ import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 import { ApiError } from "../../services/apiClient";
 import { toFriendlySolicitudesMessage } from "../../services/constancias/solicitudesQueryHandler";
 import { useAuth } from "../../context/AuthContext";
+import { ThemeSwitch } from "../../shared/components/ThemeSwitch";
 import { AdminRecordCard } from "../../shared/components/admin/AdminRecordCard";
 import {
   AdminModule,
@@ -641,7 +642,7 @@ const TableSacramentos = () => {
         id: "solicitante",
         header: () => "Solicitante",
         cell: (info) => (
-          <span className="font-medium text-text">
+          <span className="font-medium text-text dark:text-[#f3f6fa]">
             {nombreCompleto(info.row.original)}
           </span>
         ),
@@ -649,7 +650,7 @@ const TableSacramentos = () => {
       columnHelper.accessor("Cedula", {
         header: () => "Cédula",
         cell: (info) => (
-          <span className="tabular-nums text-text-secondary">
+          <span className="tabular-nums text-text-secondary dark:text-[#b7c3d4]">
             {formatearCedulaMostrada(String(info.getValue() ?? ""))}
           </span>
         ),
@@ -657,7 +658,7 @@ const TableSacramentos = () => {
       columnHelper.accessor("Fecha", {
         header: () => "Fecha de ingreso",
         cell: (info) => (
-          <span className="tabular-nums text-text-secondary">
+          <span className="tabular-nums text-text-secondary dark:text-[#b7c3d4]">
             {formatFechaHora(info.getValue())}
           </span>
         ),
@@ -668,7 +669,7 @@ const TableSacramentos = () => {
         cell: (info) => {
           const r = info.row.original;
           return (
-            <span className="flex flex-col text-sm leading-snug text-text-secondary">
+            <span className="flex flex-col text-sm leading-snug text-text-secondary dark:text-[#b7c3d4]">
               <span className="tabular-nums font-medium">
                 {formatearTelefono(r.Telefono) || "—"}
               </span>
@@ -693,7 +694,7 @@ const TableSacramentos = () => {
                 type="button"
                 onClick={() => setSolicitudSeleccionada(info.row.original)}
                 aria-label="Ver solicitud"
-                className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
               >
                 <Eye
                   size={17}
@@ -706,7 +707,7 @@ const TableSacramentos = () => {
                   onClick={() => handleRestaurar(info.row.original)}
                   aria-label="Restaurar solicitud"
                   title="Restaurar solicitud"
-                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
                 >
                   <ArchiveRestore
                     size={17}
@@ -719,7 +720,7 @@ const TableSacramentos = () => {
                   onClick={() => handleSolicitarArchivar(info.row.original)}
                   aria-label="Archivar solicitud"
                   title="Archivar solicitud"
-                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
                 >
                   <Archive
                     size={17}
@@ -873,8 +874,17 @@ const mensaje =
 
   const renderEstadoBadge = (estado?: string) => {
     const currentEstado = estado ?? "Pendiente";
+    const normalizado = currentEstado.toLowerCase();
+    const darkPill =
+      normalizado === "aprobado"
+        ? "dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]"
+        : normalizado === "rechazado"
+          ? "dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]"
+          : normalizado === "archivado"
+            ? "dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]"
+            : "dark:border-[#f2a34a] dark:bg-[rgba(242,163,74,0.10)] dark:text-[#f2a34a]";
     return (
-      <Badge variant={getEstadoBadgeVariant(currentEstado)}>
+      <Badge variant={getEstadoBadgeVariant(currentEstado)} className={darkPill}>
         {currentEstado}
       </Badge>
     );
@@ -899,10 +909,10 @@ const mensaje =
 
   return (
     <AdminModule className="gap-3!">
-      <AdminToolbar className="p-3!">
+      <AdminToolbar className="p-3! dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
         <div className="flex flex-wrap items-center gap-2">
           <div
-            className="flex items-center gap-0.5 rounded-lg border border-border-strong bg-surface p-0.5"
+            className="flex items-center gap-0.5 rounded-lg border border-border-strong bg-surface p-0.5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0b192d]/60"
             role="group"
             aria-label="Cambiar vista de solicitudes"
           >
@@ -916,13 +926,15 @@ const mensaje =
                   aria-pressed={activo}
                   className={cn(
                     "relative inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-                    activo ? "text-white" : "text-text-muted hover:text-text",
+                    activo
+                      ? "text-white dark:bg-[#d9a928] dark:text-[#040b16] dark:shadow-[0_0_18px_rgba(217,169,40,0.35)]"
+                      : "text-text-muted hover:text-text dark:text-[#b7c3d4] dark:hover:bg-[rgba(217,169,40,0.14)] dark:hover:text-[#d9a928]",
                   )}
                 >
                   {activo && (
                     <motion.span
                       layoutId="vistaSolicitudesActiva"
-                      className="absolute inset-0 rounded-md bg-royal-blue"
+                      className="absolute inset-0 rounded-md bg-royal-blue dark:bg-[#d9a928]"
                       transition={{
                         type: "spring",
                         stiffness: 420,
@@ -948,6 +960,7 @@ const mensaje =
             <Button
               type="button"
               variant="secondary"
+              className="dark:border-[rgba(220,230,242,0.12)] dark:bg-transparent dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:[&_svg]:text-[#d9a928]"
               onClick={() => setIsArchivarTodasOpen(true)}
               disabled={filasArchivables.length === 0}
               title={
@@ -972,7 +985,7 @@ const mensaje =
               )
             }
             placeholder="Nombre completo"
-            className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)]"
             aria-label="Filtrar por nombre completo"
           />
           <input
@@ -983,7 +996,7 @@ const mensaje =
               setFiltroCedula(soloDigitos(e.target.value).slice(0, 9))
             }
             placeholder="Cédula"
-            className="min-h-11 w-[150px] shrink-0 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm tabular-nums text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            className="min-h-11 w-[150px] shrink-0 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm tabular-nums text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)]"
             aria-label="Filtrar por cédula"
           />
           <div
@@ -995,9 +1008,9 @@ const mensaje =
               aria-haspopup="listbox"
               aria-expanded={filtroEstadoMenuAbierto}
               onClick={() => setFiltroEstadoMenuAbierto((prev) => !prev)}
-              className={`flex min-h-11 w-[150px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none ${
+              className={`flex min-h-11 w-[150px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)] dark:outline-none dark:transition ${
                 filtroEstadoMenuAbierto
-                  ? "border-blue-400 bg-surface"
+                  ? "border-blue-400 bg-surface dark:border-[#d9a928]"
                   : "border-border-strong"
               }`}
             >
@@ -1014,7 +1027,7 @@ const mensaje =
             {filtroEstadoMenuAbierto && (
               <ul
                 role="listbox"
-                className="absolute top-full left-0 z-50 mt-1.5 w-[150px] overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+                className="absolute top-full left-0 z-50 mt-1.5 w-[150px] overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:shadow-[0_16px_40px_rgba(0,0,0,0.4)]"
               >
                 {(
                   [
@@ -1045,8 +1058,8 @@ const mensaje =
                         }}
                         className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
                           activo
-                            ? "bg-royal-blue/10 text-royal-blue"
-                            : "text-slate-700 hover:bg-royal-blue/5"
+                            ? "bg-royal-blue/10 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                            : "text-slate-700 hover:bg-royal-blue/5 dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
                         }`}
                       >
                         {opcion.label}
@@ -1060,21 +1073,30 @@ const mensaje =
           {isFiltering && (
             <Loader2
               size={18}
-              className="animate-spin text-text-muted"
+              className="animate-spin text-text-muted dark:text-[#7f8da3]"
               aria-label="Aplicando filtros"
             />
           )}
+          <div
+            className="flex items-center gap-2"
+            title="Cambiar entre modo claro y oscuro"
+          >
+            <span className="text-xs font-semibold tracking-wider text-text-muted uppercase dark:text-[#7f8da3]">
+              Tema
+            </span>
+            <ThemeSwitch id="theme-switch-constancias" />
+          </div>
         </div>
       </AdminToolbar>
 
       {isInitialLoading && (
-        <p className="py-6 text-center text-sm text-text-muted">
+        <p className="py-6 text-center text-sm text-text-muted dark:text-[#7f8da3]">
           Cargando solicitudes...
         </p>
       )}
 
       {!isInitialLoading && filasVista.length === 0 && (
-        <p className="py-6 text-center text-sm text-text-muted">
+        <p className="py-6 text-center text-sm text-text-muted dark:text-[#7f8da3]">
           {vista === "archivados"
             ? "Actualmente no existen solicitudes archivadas."
             : filtroNombre.trim() || filtroCedula.trim() || filtroEstado
@@ -1086,8 +1108,8 @@ const mensaje =
       {!isInitialLoading && filasVista.length > 0 && (
         <>
           <div className="hidden md:block">
-            <AdminTablePanel>
-              <AdminTable className="table-fixed [&_td]:py-2! [&_th]:py-2.5!">
+            <AdminTablePanel className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
+              <AdminTable className="table-fixed dark:bg-[#0a1425] [&_td]:py-2! [&_th]:py-2.5!">
                 <colgroup>
                   <col className="w-[20%]" />
                   <col className="w-[14%]" />
@@ -1096,11 +1118,14 @@ const mensaje =
                   <col className="w-[13%]" />
                   <col className="w-[15%]" />
                 </colgroup>
-                <AdminTableHead>
+                <AdminTableHead className="dark:bg-[#0f1d33]">
                   {table.getHeaderGroups().map((hg) => (
-                    <AdminTableRow key={hg.id}>
+                    <AdminTableRow key={hg.id} className="dark:hover:bg-transparent">
                       {hg.headers.map((h) => (
-                        <AdminTableHeaderCell key={h.id}>
+                        <AdminTableHeaderCell
+                          key={h.id}
+                          className="dark:border-[rgba(220,230,242,0.12)] dark:text-[#f3f6fa]"
+                        >
                           {h.isPlaceholder
                             ? null
                             : flexRender(
@@ -1114,14 +1139,20 @@ const mensaje =
                 </AdminTableHead>
                 <tbody>
                   {table.getRowModel().rows.map((row) => (
-                    <AdminTableRow key={row.id}>
+                    <AdminTableRow
+                      key={row.id}
+                      className="dark:bg-[#0a1425] dark:hover:bg-white/[0.035]"
+                    >
                       {row.getVisibleCells().map((cell) => {
                         if (cell.column.id === "Estado") {
                           const originalRow = row.original;
                           const currentEstado =
                             originalRow.Estado ?? "Pendiente";
                           return (
-                            <AdminTableCell key={cell.id}>
+                            <AdminTableCell
+                              key={cell.id}
+                              className="dark:border-white/[0.08] dark:text-[#f3f6fa]"
+                            >
                               {renderEstadoBadge(
                                 vista === "archivados"
                                   ? "Archivado"
@@ -1131,7 +1162,10 @@ const mensaje =
                           );
                         }
                         return (
-                          <AdminTableCell key={cell.id}>
+                          <AdminTableCell
+                            key={cell.id}
+                            className="dark:border-white/[0.08] dark:text-[#f3f6fa]"
+                          >
                             {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext(),
@@ -1771,22 +1805,28 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
       </AnimatePresence>
 
       {!isInitialLoading && table.getRowModel().rows.length > 0 && (
-        <AdminTableFooter pegadoAbajo>
-          <span className="text-sm text-text-muted">
+        <AdminTableFooter
+          pegadoAbajo
+          className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]"
+        >
+          <span className="text-sm text-text-muted dark:text-[#7f8da3]">
             Mostrando{" "}
-            <strong className="text-text tabular-nums">
+            <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
               {primerRegistroVista}-{ultimoRegistroVista}
             </strong>{" "}
-            de <strong className="text-text tabular-nums">{totalVista}</strong>{" "}
+            de{" "}
+            <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
+              {totalVista}
+            </strong>{" "}
             registros
           </span>
           <AdminPagination>
-            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted dark:text-[#7f8da3]">
               Registros por página
               <select
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928]"
                 aria-label="Cantidad de registros por página"
               >
                 {PAGE_SIZES.map((tamano) => (
@@ -1810,11 +1850,11 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                 strokeWidth={2}
               />
             </AdminPaginationButton>
-            <span className="text-sm whitespace-nowrap text-text-muted">
+            <span className="text-sm whitespace-nowrap text-text-muted dark:text-[#7f8da3]">
               Página{" "}
-              <strong className="text-text tabular-nums">{currentPage}</strong>{" "}
+              <strong className="text-text tabular-nums dark:text-[#f3f6fa]">{currentPage}</strong>{" "}
               de{" "}
-              <strong className="text-text tabular-nums">
+              <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                 {totalPagesVista}
               </strong>
             </span>

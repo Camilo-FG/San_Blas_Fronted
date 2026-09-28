@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-royal-blue: #003366;
   --color-royal-blue-dark: #0b4f8a;
@@ -143,6 +145,28 @@
   *::before,
   *::after {
     box-sizing: border-box;
+  }
+
+  :root {
+    --navy-950: #040b16;
+    --navy-900: #0b192d;
+    --navy-800: #0a1425;
+    --navy-700: #0f1d33;
+    --navy-600: #12345c;
+    --gold: #d9a928;
+    --gold-soft: rgba(217, 169, 40, 0.14);
+    --gold-glow: rgba(217, 169, 40, 0.32);
+    --text-primary: #f3f6fa;
+    --text-secondary: #b7c3d4;
+    --text-muted: #7f8da3;
+    --border: rgba(220, 230, 242, 0.12);
+    --success: #35d6a0;
+    --warning: #f2a34a;
+    --danger: #e66a6a;
+  }
+
+  .dark {
+    color-scheme: dark;
   }
 
   html {
