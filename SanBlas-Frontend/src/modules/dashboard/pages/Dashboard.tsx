@@ -110,7 +110,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
 };
 
 const menuItemBaseClassName =
-  "flex w-full items-center gap-3 rounded-lg border-l-4 py-3 pr-4 pl-3 text-left text-xs font-semibold no-underline transition-all duration-200 ease-out hover:translate-x-1.5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
+  "flex w-full items-center gap-3 rounded-lg border-l-4 py-3 pr-4 pl-0 text-left text-xs font-semibold no-underline transition-all duration-200 ease-out hover:translate-x-1.5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
 const menuItemInactiveClassName =
   "border-transparent text-gray-400 hover:bg-white/5 hover:text-white [&_svg]:text-gray-500 hover:[&_svg]:text-white";
@@ -220,11 +220,11 @@ function Dashboard() {
         aria-label="Menú del panel administrativo"
       >
         <div>
-          <div className={cn("border-b border-gray-800 p-6", !barraExpandida && "lg:flex lg:h-[84px] lg:items-center lg:justify-center lg:p-0")}>
+          <div className={cn("border-b border-gray-800 px-4 py-6", !barraExpandida && "lg:flex lg:h-[84px] lg:items-center lg:justify-start lg:p-0 lg:pl-4")}>
             <Link
               to={Rutas.home}
               aria-label="Ir al sitio de la parroquia"
-              className="flex items-center justify-center gap-2.5 text-center no-underline transition-opacity hover:opacity-90"
+              className="flex items-center gap-2.5 no-underline transition-opacity hover:opacity-90"
               onClick={() => setMenuAbierto(false)}
             >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-brand-gold bg-brand-blue">
@@ -257,7 +257,7 @@ function Dashboard() {
                   to={link.to}
                   className={cn(
                     menuItemBaseClassName,
-                    !barraExpandida && "lg:justify-center lg:gap-0 lg:px-0",
+                    !barraExpandida && "lg:px-0",
                   )}
                   inactiveProps={{ className: menuItemInactiveClassName }}
                   activeProps={{ className: menuItemActiveClassName }}
@@ -269,7 +269,6 @@ function Dashboard() {
                       activo
                         ? "bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_16px_rgba(230,181,58,0.55),0_4px_10px_rgba(0,0,0,0.35)]"
                         : "bg-transparent",
-                      !barraExpandida && "lg:-translate-x-[2px]",
                     )}
                   >
                     <Icon
