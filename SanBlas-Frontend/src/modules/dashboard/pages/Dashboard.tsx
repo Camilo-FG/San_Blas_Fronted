@@ -113,7 +113,7 @@ const menuItemBaseClassName =
   "relative flex w-full items-center gap-3 rounded-lg border-l-4 py-3 pr-4 pl-0 text-left text-xs font-semibold no-underline transition-all duration-200 ease-out hover:translate-x-1.5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
 const menuItemInactiveClassName =
-  "border-transparent text-gray-400 hover:bg-white/5 hover:text-white [&_svg]:text-gray-500 hover:[&_svg]:text-white";
+  "border-transparent text-gray-400 hover:bg-white/5 hover:text-white dark:hover:bg-transparent [&_svg]:text-gray-500 hover:[&_svg]:text-white";
 
 const menuItemActiveClassName =
   "border-brand-gold bg-brand-blue text-brand-gold dark:border-transparent dark:bg-transparent";
@@ -280,18 +280,18 @@ function Dashboard() {
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-[#f6c945] via-[#e6b53a] to-[#c9992b] transition-opacity duration-300 ease-out will-change-opacity",
+                        "pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-[#f6c945] via-[#e6b53a] to-[#c9992b] will-change-opacity",
                         activo && barraExpandida
-                          ? "opacity-100 shadow-[0_0_18px_rgba(230,181,58,0.45),0_4px_10px_rgba(0,0,0,0.3)]"
-                          : "opacity-0",
+                          ? "opacity-100 shadow-[0_0_18px_rgba(230,181,58,0.45),0_4px_10px_rgba(0,0,0,0.3)] transition-none"
+                          : "opacity-0 transition-opacity duration-300 ease-out",
                       )}
                     />
                     <span
                       className={cn(
-                        "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] transition-all duration-200",
+                        "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]",
                         activo && !barraExpandida
-                          ? "bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_16px_rgba(230,181,58,0.55),0_4px_10px_rgba(0,0,0,0.35)]"
-                          : "bg-transparent",
+                          ? "bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_16px_rgba(230,181,58,0.55),0_4px_10px_rgba(0,0,0,0.35)] transition-none"
+                          : "bg-transparent transition-all duration-200",
                       )}
                     >
                       <Icon
