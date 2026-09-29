@@ -113,7 +113,7 @@ function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-8 py-3 max-[900px]:gap-3.5 max-[900px]:px-[22px] max-sm:px-4 max-sm:py-[11px]">
         <Link
           to={Rutas.home}
-          className="flex min-w-0 items-center gap-2.5 font-heading text-[22px] font-extrabold uppercase tracking-wide text-white no-underline transition-colors hover:text-royal-gold max-sm:text-[17px] max-sm:tracking-[0.5px] max-[480px]:text-sm"
+          className="flex min-w-0 items-center gap-2.5 font-heading text-[22px] font-extrabold uppercase tracking-wide text-white no-underline transition-colors hover:text-royal-gold max-sm:text-[17px] max-sm:tracking-[0.5px] max-[480px]:text-sm md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2"
           onClick={cerrarMenu}
         >
           <img

@@ -116,7 +116,7 @@ const menuItemInactiveClassName =
   "border-transparent text-gray-400 hover:bg-white/5 hover:text-white [&_svg]:text-gray-500 hover:[&_svg]:text-white";
 
 const menuItemActiveClassName =
-  "border-brand-gold bg-brand-blue text-brand-gold";
+  "border-brand-gold bg-brand-blue text-brand-gold dark:bg-transparent";
 
 function getUserInitial(email?: string | null): string {
   if (!email) return "A";
@@ -224,7 +224,7 @@ function Dashboard() {
             <Link
               to={Rutas.home}
               aria-label="Ir al sitio de la parroquia"
-              className="flex items-center gap-2.5 no-underline transition-opacity hover:opacity-90"
+              className="flex items-center justify-center gap-2.5 text-center no-underline transition-opacity hover:opacity-90"
               onClick={() => setMenuAbierto(false)}
             >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-brand-gold bg-brand-blue">
@@ -255,7 +255,10 @@ function Dashboard() {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={menuItemBaseClassName}
+                  className={cn(
+                    menuItemBaseClassName,
+                    !barraExpandida && "lg:justify-center lg:gap-0 lg:px-0",
+                  )}
                   inactiveProps={{ className: menuItemInactiveClassName }}
                   activeProps={{ className: menuItemActiveClassName }}
                   activeOptions={{ exact: link.to === Rutas.dashboard }}
