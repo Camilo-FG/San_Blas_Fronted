@@ -269,6 +269,7 @@ function Dashboard() {
                       activo
                         ? "bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_16px_rgba(230,181,58,0.55),0_4px_10px_rgba(0,0,0,0.35)]"
                         : "bg-transparent",
+                      !barraExpandida && "lg:-translate-x-[2px]",
                     )}
                   >
                     <Icon
