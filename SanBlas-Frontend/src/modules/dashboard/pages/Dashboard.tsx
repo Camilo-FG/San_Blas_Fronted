@@ -116,7 +116,7 @@ const menuItemInactiveClassName =
   "border-transparent text-gray-400 hover:bg-white/5 hover:text-white [&_svg]:text-gray-500 hover:[&_svg]:text-white";
 
 const menuItemActiveClassName =
-  "border-brand-gold bg-brand-blue text-brand-gold dark:bg-transparent";
+  "border-brand-gold bg-brand-blue text-brand-gold dark:border-transparent dark:bg-transparent";
 
 function getUserInitial(email?: string | null): string {
   if (!email) return "A";
