@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import Rutas from "../../../routes/Rutas";
+import { motion } from "framer-motion";
 import { useAuth } from "../../../context/AuthContext";
 import { cn } from "../../../shared/ui";
 import type { PermisoRolId } from "../../../types/Rol";
@@ -277,23 +278,22 @@ function Dashboard() {
                       "relative flex min-w-0 flex-1 items-center gap-3 self-stretch rounded-lg",
                     )}
                   >
-                    <span
+                  {activo && (
+                    <motion.span
                       aria-hidden="true"
+                      layout
+                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                       className={cn(
-                        "pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-[#f6c945] via-[#e6b53a] to-[#c9992b] will-change-opacity",
-                        activo && barraExpandida
-                          ? "opacity-100 shadow-[0_0_18px_rgba(230,181,58,0.45),0_4px_10px_rgba(0,0,0,0.3)] transition-none"
-                          : "opacity-0 transition-opacity duration-300 ease-out",
+                        "pointer-events-none absolute bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)]",
+                        barraExpandida
+                          ? "inset-0 rounded-lg"
+                          : "bottom-0 left-1 top-0 my-auto h-9 w-9 rounded-[10px]",
                       )}
                     />
-                    <span
-                      className={cn(
-                        "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]",
-                        activo && !barraExpandida
-                          ? "bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_16px_rgba(230,181,58,0.55),0_4px_10px_rgba(0,0,0,0.35)] transition-none"
-                          : "bg-transparent transition-all duration-200",
-                      )}
-                    >
+                  )}
+                  <span
+                    className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-transparent"
+                  >
                       <Icon
                         className={cn(
                           "h-[18px] w-[18px] shrink-0",
