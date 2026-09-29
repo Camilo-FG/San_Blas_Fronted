@@ -210,10 +210,10 @@ function Dashboard() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 z-50 flex h-screen w-64 shrink-0 flex-col justify-between overflow-hidden bg-[#0b172a] text-gray-300 transition-[width,transform] duration-[800ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] lg:sticky lg:translate-x-0",
+          "fixed top-0 z-50 flex h-screen w-64 shrink-0 flex-col justify-between overflow-hidden bg-[#050a12] text-gray-300 transition-[width,transform] duration-[800ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] lg:sticky lg:translate-x-0",
           menuAbierto ? "translate-x-0" : "-translate-x-full",
           barraExpandida ? "lg:w-64" : "lg:w-16",
-          esConstancias && "dark:bg-[#0b192d]",
+          esConstancias && "dark:bg-[#030710]",
         )}
         onMouseEnter={() => setBarraExpandida(true)}
         onMouseLeave={() => setBarraExpandida(false)}
@@ -266,7 +266,7 @@ function Dashboard() {
           </nav>
         </div>
 
-        <div className={cn("border-t border-gray-800 bg-[#070f1d] px-6 py-4 text-xs", !barraExpandida && "lg:flex lg:h-[99px] lg:items-start lg:justify-center lg:pt-4 lg:px-0")}>
+        <div className={cn("border-t border-gray-800 bg-[#050a12] px-6 py-4 text-xs", !barraExpandida && "lg:flex lg:h-[99px] lg:items-start lg:justify-center lg:pt-4 lg:px-0")}>
           <Link
             to={Rutas.dashboardUrl.perfil}
             className={cn(
