@@ -116,7 +116,7 @@ const menuItemInactiveClassName =
   "border-transparent text-gray-400 hover:bg-white/5 hover:text-white [&_svg]:text-gray-500 hover:[&_svg]:text-white";
 
 const menuItemActiveClassName =
-  "border-brand-gold bg-brand-blue text-brand-gold [&_svg]:text-brand-gold";
+  "border-brand-gold bg-brand-blue text-brand-gold";
 
 function getUserInitial(email?: string | null): string {
   if (!email) return "A";
@@ -210,7 +210,7 @@ function Dashboard() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 z-50 flex h-screen w-64 shrink-0 flex-col justify-between overflow-hidden bg-[#050a12] text-gray-300 transition-[width,transform] duration-[800ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] lg:sticky lg:translate-x-0",
+          "fixed top-0 z-50 flex h-screen w-64 shrink-0 flex-col justify-between overflow-hidden border-r border-gray-800 bg-[#050a12] text-gray-300 transition-[width,transform] duration-[800ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] lg:sticky lg:translate-x-0",
           menuAbierto ? "translate-x-0" : "-translate-x-full",
           barraExpandida ? "lg:w-64" : "lg:w-16",
           esConstancias && "dark:bg-[#030710]",
@@ -246,6 +246,10 @@ function Dashboard() {
               .filter((link) => tienePermiso(link.permiso))
               .map((link) => {
               const Icon = link.icon;
+              const activo =
+                link.to === Rutas.dashboard
+                  ? pathname === link.to
+                  : pathname === link.to || pathname.startsWith(`${link.to}/`);
 
               return (
                 <Link
@@ -256,7 +260,22 @@ function Dashboard() {
                   activeProps={{ className: menuItemActiveClassName }}
                   activeOptions={{ exact: link.to === Rutas.dashboard }}
                 >
-                  <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                  <span
+                    className={cn(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] transition-all duration-200",
+                      activo
+                        ? "bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_16px_rgba(230,181,58,0.55),0_4px_10px_rgba(0,0,0,0.35)]"
+                        : "bg-transparent",
+                    )}
+                  >
+                    <Icon
+                      className={cn(
+                        "h-[18px] w-[18px] shrink-0",
+                        activo && "text-[#0a1628]",
+                      )}
+                      strokeWidth={activo ? 2.25 : 1.75}
+                    />
+                  </span>
                   <span className={cn("whitespace-nowrap", !barraExpandida && "lg:hidden")}>
                     {link.label}
                   </span>
