@@ -286,7 +286,7 @@ function Dashboard() {
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "pointer-events-none absolute left-1 top-1/2 h-10 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-none",
+                        "pointer-events-none absolute left-1 top-1/2 h-10 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-300 ease-out",
                         barraExpandida ? "w-[calc(100%-4px)]" : "w-10",
                       )}
                     />
