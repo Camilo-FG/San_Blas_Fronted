@@ -11,11 +11,14 @@ import {
   Settings,
   Users,
   Menu,
+  Moon,
+  Sun,
   X,
 } from "lucide-react";
 
 import Rutas from "../../../routes/Rutas";
 import { useAuth } from "../../../context/AuthContext";
+import { useTheme } from "../../../context/ThemeContext";
 import { cn } from "../../../shared/ui";
 import type { PermisoRolId } from "../../../types/Rol";
 
@@ -110,10 +113,10 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
 };
 
 const menuItemBaseClassName =
-  "relative flex w-full items-center gap-3 rounded-lg border-l-4 py-3 pr-4 pl-0 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out hover:translate-x-1.5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
+  "group relative flex w-full items-center gap-3 rounded-lg border-l-4 py-3 pr-4 pl-1 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out hover:translate-x-1.5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
 const menuItemInactiveClassName =
-  "border-transparent text-gray-400 hover:bg-white/5 hover:text-white dark:hover:bg-transparent [&_svg]:text-gray-500 hover:[&_svg]:text-white";
+  "border-transparent text-gray-400 hover:bg-white/5 hover:text-white dark:hover:bg-transparent";
 
 const menuItemActiveClassName =
   "border-brand-gold bg-brand-blue text-brand-gold dark:border-transparent dark:bg-transparent";
@@ -141,6 +144,7 @@ function getRoleLabel(role?: string | null): string {
 
 function Dashboard() {
   const { user, logout, tienePermiso } = useAuth();
+  const { esOscuro, alternarTema } = useTheme();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -225,7 +229,7 @@ function Dashboard() {
         aria-label="Menú del panel administrativo"
       >
         <div>
-          <div className={cn("border-b border-gray-800 px-4 py-6", !barraExpandida && "lg:flex lg:h-[84px] lg:items-center lg:justify-start lg:p-0 lg:pl-4")}>
+          <div className={cn("border-b border-gray-800 px-5 py-6", !barraExpandida && "lg:flex lg:h-[88px] lg:items-center lg:justify-start lg:p-0 lg:pl-5")}>
             <Link
               to={Rutas.home}
               aria-label="Ir al sitio de la parroquia"
@@ -255,6 +259,7 @@ function Dashboard() {
                 link.to === Rutas.dashboard
                   ? pathname === link.to
                   : pathname === link.to || pathname.startsWith(`${link.to}/`);
+              const esDonaciones = link.to === Rutas.dashboardUrl.donaciones;
 
               return (
                 <Link
@@ -262,7 +267,7 @@ function Dashboard() {
                   to={link.to}
                   className={cn(
                     menuItemBaseClassName,
-                    !barraExpandida && "lg:px-0",
+                    !barraExpandida && "lg:pr-0",
                   )}
                   inactiveProps={{ className: menuItemInactiveClassName }}
                   activeProps={{
@@ -281,8 +286,8 @@ function Dashboard() {
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "pointer-events-none absolute left-0 top-1/2 h-10 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-300 ease-out",
-                        barraExpandida ? "w-full" : "w-10",
+                        "pointer-events-none absolute left-1 top-1/2 h-10 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-300 ease-out",
+                        barraExpandida ? "w-[calc(100%-4px)]" : "w-10",
                       )}
                     />
                   )}
@@ -291,8 +296,12 @@ function Dashboard() {
                   >
                     <Icon
                       className={cn(
-                        "h-5 w-5 shrink-0",
-                        activo && "text-[#0a1628]",
+                        "h-5 w-5 shrink-0 transition-all duration-200",
+                        activo
+                          ? "text-[#0a1628]"
+                          : esDonaciones
+                            ? "text-gray-500 group-hover:text-pink-400 group-hover:drop-shadow-[0_0_6px_rgba(244,114,182,0.8)]"
+                            : "text-gray-500 group-hover:text-white",
                       )}
                       strokeWidth={activo ? 2.25 : 1.75}
                     />
@@ -309,6 +318,35 @@ function Dashboard() {
                 </Link>
               );
             })}
+            <button
+              type="button"
+              aria-label="Cambiar tema de color"
+              onClick={alternarTema}
+              className={cn(
+                "flex w-full cursor-pointer items-center gap-2.5 rounded-full border border-white/10 bg-black/40 px-3.5 py-2 text-gray-300 transition-colors hover:border-white/20 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                !barraExpandida && "lg:hidden",
+              )}
+            >
+              <Moon size={15} className={cn("shrink-0 text-gray-400", !esOscuro && "hidden")} />
+              <Sun size={15} className={cn("shrink-0 text-gray-400", esOscuro && "hidden")} />
+              <span className="flex-1 text-left text-xs font-semibold">
+                {esOscuro ? "Dark Mode" : "Light Mode"}
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-label="Cambiar tema de color"
+              onClick={alternarTema}
+              className={cn(
+                "flex w-full cursor-pointer items-center rounded-lg text-gray-400 transition-colors hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                barraExpandida ? "hidden" : "hidden lg:flex lg:pl-2",
+              )}
+            >
+              <span className="flex h-10 w-10 items-center justify-center">
+                <Moon size={20} className={cn("shrink-0", !esOscuro && "hidden")} />
+                <Sun size={20} className={cn("shrink-0", esOscuro && "hidden")} />
+              </span>
+            </button>
           </nav>
         </div>
 
