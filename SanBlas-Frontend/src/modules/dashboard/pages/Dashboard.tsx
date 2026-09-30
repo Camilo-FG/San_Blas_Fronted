@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 
 import Rutas from "../../../routes/Rutas";
-import { motion } from "framer-motion";
 import { useAuth } from "../../../context/AuthContext";
 import { cn } from "../../../shared/ui";
 import type { PermisoRolId } from "../../../types/Rol";
@@ -279,15 +278,11 @@ function Dashboard() {
                     )}
                   >
                   {activo && (
-                    <motion.span
+                    <span
                       aria-hidden="true"
-                      layout
-                      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                       className={cn(
-                        "pointer-events-none absolute bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)]",
-                        barraExpandida
-                          ? "inset-0 rounded-lg"
-                          : "bottom-0 left-1 top-0 my-auto h-9 w-9 rounded-[10px]",
+                        "pointer-events-none absolute left-1 top-1/2 h-9 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-300 ease-out",
+                        barraExpandida ? "w-full" : "w-9",
                       )}
                     />
                   )}
