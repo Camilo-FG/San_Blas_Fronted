@@ -232,8 +232,8 @@ function Dashboard() {
               className="flex items-center gap-2.5 no-underline transition-opacity hover:opacity-90"
               onClick={() => setMenuAbierto(false)}
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-brand-gold bg-brand-blue">
-                <span className="font-heading text-sm font-bold text-brand-gold">SB</span>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-brand-gold bg-brand-blue dark:border-[#e3c05c] dark:bg-[#050a12] dark:shadow-[0_0_14px_rgba(212,175,55,0.45)]">
+                <span className="font-heading text-sm font-bold text-brand-gold dark:text-[#e8c85a]">SB</span>
               </div>
               <div className={cn("min-w-0", !barraExpandida && "lg:hidden")}>
                 <span className="block truncate whitespace-nowrap font-heading text-sm font-bold text-white">
