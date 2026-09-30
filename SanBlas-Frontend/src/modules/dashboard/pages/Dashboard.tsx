@@ -323,28 +323,23 @@ function Dashboard() {
               aria-label="Cambiar tema de color"
               onClick={alternarTema}
               className={cn(
-                "flex w-full cursor-pointer items-center gap-2.5 rounded-full border border-white/10 bg-black/40 px-3.5 py-2 text-gray-300 transition-colors hover:border-white/20 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-                !barraExpandida && "lg:hidden",
+                "flex w-full cursor-pointer items-center gap-2.5 rounded-full border py-2 pl-2 pr-3.5 text-gray-300 transition-colors hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                barraExpandida
+                  ? "border-white/10 bg-black/40 hover:border-white/20"
+                  : "border-transparent bg-transparent lg:pr-0",
               )}
             >
-              <Moon size={15} className={cn("shrink-0 text-gray-400", !esOscuro && "hidden")} />
-              <Sun size={15} className={cn("shrink-0 text-gray-400", esOscuro && "hidden")} />
-              <span className="flex-1 text-left text-xs font-semibold">
-                {esOscuro ? "Dark Mode" : "Light Mode"}
-              </span>
-            </button>
-            <button
-              type="button"
-              aria-label="Cambiar tema de color"
-              onClick={alternarTema}
-              className={cn(
-                "flex w-full cursor-pointer items-center rounded-lg text-gray-400 transition-colors hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-                barraExpandida ? "hidden" : "hidden lg:flex lg:pl-2",
-              )}
-            >
-              <span className="flex h-10 w-10 items-center justify-center">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center">
                 <Moon size={20} className={cn("shrink-0", !esOscuro && "hidden")} />
                 <Sun size={20} className={cn("shrink-0", esOscuro && "hidden")} />
+              </span>
+              <span
+                className={cn(
+                  "flex-1 text-left text-xs font-semibold",
+                  !barraExpandida && "lg:hidden",
+                )}
+              >
+                {esOscuro ? "Dark Mode" : "Light Mode"}
               </span>
             </button>
           </nav>
