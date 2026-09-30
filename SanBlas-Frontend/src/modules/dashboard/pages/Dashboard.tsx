@@ -335,7 +335,7 @@ function Dashboard() {
               </span>
               <span
                 className={cn(
-                  "flex-1 whitespace-nowrap text-left text-xs font-semibold",
+                  "flex-1 whitespace-nowrap text-left text-sm font-semibold",
                   !barraExpandida && "lg:hidden",
                 )}
               >
