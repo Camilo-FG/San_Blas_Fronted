@@ -110,7 +110,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
 };
 
 const menuItemBaseClassName =
-  "relative flex w-full items-center gap-3 rounded-lg border-l-4 py-3 pr-4 pl-0 text-left text-xs font-semibold no-underline transition-all duration-200 ease-out hover:translate-x-1.5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
+  "relative flex w-full items-center gap-3 rounded-lg border-l-4 py-3 pr-4 pl-0 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out hover:translate-x-1.5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
 const menuItemInactiveClassName =
   "border-transparent text-gray-400 hover:bg-white/5 hover:text-white dark:hover:bg-transparent [&_svg]:text-gray-500 hover:[&_svg]:text-white";
@@ -176,7 +176,7 @@ function Dashboard() {
           "relative flex min-h-screen flex-col bg-gray-50 lg:flex-row",
           esConstancias && "dark:bg-[#040b16] dark:text-[#f3f6fa]",
         )}
-        style={{ "--sidebar-width": barraExpandida ? "16rem" : "4rem" } as CSSProperties}
+        style={{ "--sidebar-width": barraExpandida ? "18rem" : "5rem" } as CSSProperties}
       >
       {/* Mobile top header */}
       <div className="sticky top-0 z-30 flex items-center justify-between bg-brand-blue px-4 py-3 shadow-sm lg:hidden">
@@ -215,9 +215,9 @@ function Dashboard() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 z-50 flex h-screen w-64 shrink-0 flex-col justify-between overflow-hidden border-r border-gray-800 bg-[#050a12] text-gray-300 transition-[width,transform] duration-[800ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] lg:sticky lg:translate-x-0",
+          "fixed top-0 z-50 flex h-screen w-72 shrink-0 flex-col justify-between overflow-hidden border-r border-gray-800 bg-[#050a12] text-gray-300 transition-[width,transform] duration-[800ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] lg:sticky lg:translate-x-0",
           menuAbierto ? "translate-x-0" : "-translate-x-full",
-          barraExpandida ? "lg:w-64" : "lg:w-16",
+          barraExpandida ? "lg:w-72" : "lg:w-20",
           esConstancias && "dark:bg-[#030710]",
         )}
         onMouseEnter={() => setBarraExpandida(true)}
@@ -232,7 +232,7 @@ function Dashboard() {
               className="flex items-center gap-2.5 no-underline transition-opacity hover:opacity-90"
               onClick={() => setMenuAbierto(false)}
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-brand-gold bg-brand-blue dark:border-[#e3c05c] dark:bg-[#050a12] dark:shadow-[0_0_14px_rgba(212,175,55,0.45)]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-brand-gold bg-brand-blue dark:border-[#e3c05c] dark:bg-[#050a12] dark:shadow-[0_0_14px_rgba(212,175,55,0.45)]">
                 <span className="font-heading text-sm font-bold text-brand-gold dark:text-[#e8c85a]">SB</span>
               </div>
               <div className={cn("min-w-0", !barraExpandida && "lg:hidden")}>
@@ -281,21 +281,21 @@ function Dashboard() {
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "pointer-events-none absolute left-0 top-1/2 h-9 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-300 ease-out",
-                        barraExpandida ? "w-full" : "w-9",
+                        "pointer-events-none absolute left-0 top-1/2 h-10 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-300 ease-out",
+                        barraExpandida ? "w-full" : "w-10",
                       )}
                     />
                   )}
                   <span
-                    className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-transparent"
+                    className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-transparent"
                   >
-                      <Icon
-                        className={cn(
-                          "h-[18px] w-[18px] shrink-0",
-                          activo && "text-[#0a1628]",
-                        )}
-                        strokeWidth={activo ? 2.25 : 1.75}
-                      />
+                    <Icon
+                      className={cn(
+                        "h-5 w-5 shrink-0",
+                        activo && "text-[#0a1628]",
+                      )}
+                      strokeWidth={activo ? 2.25 : 1.75}
+                    />
                     </span>
                     <span
                       className={cn(
@@ -321,7 +321,7 @@ function Dashboard() {
             )}
             aria-label="Ver mi perfil"
           >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-gold font-heading text-[10px] font-bold text-brand-blue uppercase">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-gold font-heading text-[10px] font-bold text-brand-blue uppercase">
               {getUserInitial(user?.email)}
             </div>
             <div className={cn("min-w-0 overflow-hidden", !barraExpandida && "lg:hidden")}>
