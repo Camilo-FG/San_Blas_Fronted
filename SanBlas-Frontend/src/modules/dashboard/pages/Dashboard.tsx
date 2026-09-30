@@ -323,7 +323,7 @@ function Dashboard() {
               aria-label="Cambiar tema de color"
               onClick={alternarTema}
               className={cn(
-                "flex w-full cursor-pointer items-center gap-2.5 rounded-full border py-2 pl-2 pr-3.5 text-gray-300 transition-colors hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                "flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-full border py-2 pl-2 pr-3.5 text-gray-300 transition-colors hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
                 barraExpandida
                   ? "border-white/10 bg-black/40 hover:border-white/20"
                   : "border-transparent bg-transparent lg:pr-0",
@@ -335,11 +335,11 @@ function Dashboard() {
               </span>
               <span
                 className={cn(
-                  "flex-1 text-left text-xs font-semibold",
+                  "flex-1 whitespace-nowrap text-left text-xs font-semibold",
                   !barraExpandida && "lg:hidden",
                 )}
               >
-                {esOscuro ? "Dark Mode" : "Light Mode"}
+                {esOscuro ? "Modo oscuro" : "Modo claro"}
               </span>
             </button>
           </nav>
