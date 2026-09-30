@@ -40,7 +40,6 @@ import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 import { ApiError } from "../../services/apiClient";
 import { toFriendlySolicitudesMessage } from "../../services/constancias/solicitudesQueryHandler";
 import { useAuth } from "../../context/AuthContext";
-import { ThemeSwitch } from "../../shared/components/ThemeSwitch";
 import { AdminRecordCard } from "../../shared/components/admin/AdminRecordCard";
 import {
   AdminModule,
@@ -1077,15 +1076,6 @@ const mensaje =
               aria-label="Aplicando filtros"
             />
           )}
-          <div
-            className="flex items-center gap-2"
-            title="Cambiar entre modo claro y oscuro"
-          >
-            <span className="text-xs font-semibold tracking-wider text-text-muted uppercase dark:text-[#7f8da3]">
-              Tema
-            </span>
-            <ThemeSwitch id="theme-switch-constancias" />
-          </div>
         </div>
       </AdminToolbar>
 
