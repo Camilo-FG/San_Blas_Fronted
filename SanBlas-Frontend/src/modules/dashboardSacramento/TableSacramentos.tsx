@@ -910,7 +910,9 @@ const mensaje =
     <AdminModule className="gap-3!">
       <AdminToolbar className="p-3! dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
         <div className="flex flex-wrap items-center gap-2">
-          <div
+          <motion.div
+            layout
+            transition={{ type: "spring", stiffness: 400, damping: 34 }}
             className="flex items-center gap-0.5 rounded-lg border border-border-strong bg-surface p-0.5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0b192d]/60"
             role="group"
             aria-label="Cambiar vista de solicitudes"
@@ -954,8 +956,17 @@ const mensaje =
                 </button>
               );
             })}
-          </div>
+          </motion.div>
+          <AnimatePresence mode="popLayout" initial={false}>
           {vista === "solicitudes" && (
+            <motion.span
+              key="btn-archivar-procesadas"
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
             <Button
               type="button"
               variant="secondary"
@@ -974,7 +985,10 @@ const mensaje =
               />
               Archivar procesadas
             </Button>
+            </motion.span>
           )}
+          </AnimatePresence>
+          <motion.div layout transition={{ type: "spring", stiffness: 400, damping: 34 }} className="ml-auto flex flex-wrap items-center gap-2">
           <input
             type="text"
             value={filtroNombre}
@@ -984,7 +998,7 @@ const mensaje =
               )
             }
             placeholder="Nombre completo"
-            className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)]"
+            className="min-h-11 w-[220px] shrink-0 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)]"
             aria-label="Filtrar por nombre completo"
           />
           <input
@@ -1069,6 +1083,7 @@ const mensaje =
               </ul>
             )}
           </div>
+          </motion.div>
           {isFiltering && (
             <Loader2
               size={18}
@@ -1279,20 +1294,20 @@ const mensaje =
           >
             <div className="flex min-h-full items-end justify-center md:items-center md:p-4">
             <div
-              className="relative z-10 w-full rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
+              className="relative z-10 w-full rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px] dark:bg-[#0a1425]"
             style={{ fontFamily: "'Geist', sans-serif" }}
             role="dialog"
             aria-modal="true"
             aria-label="Datos de la solicitud"
             onClick={(event) => event.stopPropagation()}
           >
-            <header className="flex shrink-0 items-center justify-between gap-4 rounded-t-[16px] bg-[#f1f5fa] px-6 py-4">
+            <header className="flex shrink-0 items-center justify-between gap-4 rounded-t-[16px] bg-[#f1f5fa] px-6 py-4 dark:bg-[#0f1d33]">
               <div className="min-w-0">
-                <p className="m-0 text-[11px] font-semibold tracking-[0.22em] text-[#aa7323] uppercase">
+                <p className="m-0 text-[11px] font-semibold tracking-[0.22em] text-[#aa7323] uppercase dark:text-[#d9a928]">
                   Solicitud
                 </p>
                 <h2
-                  className="m-0 mt-1 text-[24px] leading-tight font-semibold tracking-tight text-[#16243c]"
+                  className="m-0 mt-1 text-[24px] leading-tight font-semibold tracking-tight text-[#16243c] dark:text-[#f3f6fa]"
                   style={{ fontFamily: "'Geist', sans-serif" }}
                 >
                   Datos de la solicitud
@@ -1302,7 +1317,7 @@ const mensaje =
                 type="button"
                 onClick={() => setSolicitudSeleccionada(null)}
                 aria-label="Cerrar detalle"
-                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-white/10 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
               >
                 <X size={16} />
               </button>
@@ -1313,55 +1328,55 @@ const mensaje =
               className="flex flex-col gap-4 p-6"
             >
               <div className="grid items-stretch gap-4 md:grid-cols-2">
-                <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
+                <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4 dark:bg-[#0f1d33]">
                   <EtiquetaSeccion>Nombre del solicitante</EtiquetaSeccion>
-                  <p className="m-0 text-sm font-semibold text-[#16243c]">
+                  <p className="m-0 text-sm font-semibold text-[#16243c] dark:text-[#f3f6fa]">
                     {nombreCompleto(solicitudSeleccionada)}
                   </p>
-                  <div className="h-px w-full bg-[#16243c]/10" />
+                  <div className="h-px w-full bg-[#16243c]/10 dark:bg-white/10" />
                   <div className="flex items-start gap-2">
                     <CalendarDays
                       size={16}
-                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                      className="mt-0.5 shrink-0 text-[#aa7323] dark:text-[#d9a928]"
                     />
                     <div className="min-w-0">
-                      <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
+                        <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase dark:text-[#b7c3d4]">
                         Fecha de ingreso
                       </p>
-                      <p className="m-0 mt-1 text-sm font-semibold tabular-nums text-[#16243c]">
+                        <p className="m-0 mt-1 text-sm font-semibold tabular-nums text-[#16243c] dark:text-[#f3f6fa]">
                         {formatFechaHora(solicitudSeleccionada.Fecha)}
                       </p>
                     </div>
                   </div>
                 </section>
 
-                <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
+                <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4 dark:bg-[#0f1d33]">
                   <EtiquetaSeccion>Contacto</EtiquetaSeccion>
                   <div className="flex items-start gap-2">
                     <Mail
                       size={16}
-                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                      className="mt-0.5 shrink-0 text-[#aa7323] dark:text-[#d9a928]"
                     />
                     <div className="min-w-0">
-                      <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
+                        <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase dark:text-[#b7c3d4]">
                         Correo
                       </p>
-                      <p className="m-0 mt-1 break-words text-sm font-semibold text-[#16243c]">
+                        <p className="m-0 mt-1 break-words text-sm font-semibold text-[#16243c] dark:text-[#f3f6fa]">
                         {solicitudSeleccionada.Correo || "—"}
                       </p>
                     </div>
                   </div>
-                  <div className="h-px w-full bg-[#16243c]/10" />
+                  <div className="h-px w-full bg-[#16243c]/10 dark:bg-white/10" />
                   <div className="flex items-start gap-2">
                     <Phone
                       size={16}
-                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                      className="mt-0.5 shrink-0 text-[#aa7323] dark:text-[#d9a928]"
                     />
                     <div className="min-w-0">
-                      <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
+                        <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase dark:text-[#b7c3d4]">
                         Teléfono
                       </p>
-                      <p className="m-0 mt-1 text-sm font-semibold tabular-nums text-[#16243c]">
+                        <p className="m-0 mt-1 text-sm font-semibold tabular-nums text-[#16243c] dark:text-[#f3f6fa]">
                         {formatearTelefono(solicitudSeleccionada.Telefono) || "—"}
                       </p>
                     </div>
@@ -1369,22 +1384,22 @@ const mensaje =
                 </section>
               </div>
 
-              <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
+              <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4 dark:bg-[#0f1d33]">
                 <EtiquetaSeccion>Motivo</EtiquetaSeccion>
-                <p className="m-0 min-w-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c]">
+                <p className="m-0 min-w-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c] dark:text-[#f3f6fa]">
                   {solicitudSeleccionada.Motivo || "—"}
                 </p>
               </section>
 
               <div className="grid items-stretch gap-4 md:grid-cols-2">
-              <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
+              <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4 dark:bg-[#0f1d33]">
                 <EtiquetaSeccion>Comprobante de pago</EtiquetaSeccion>
                 {solicitudSeleccionada.comprobanteUrl ? (
                   <a
                     href={solicitudSeleccionada.comprobanteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-xl border-2 border-solid border-royal-blue px-4 py-2.5 font-[Arial,Helvetica,sans-serif] text-sm font-bold text-royal-blue no-underline transition-colors duration-200 ease-out hover:border-royal-blue hover:bg-royal-blue hover:text-white focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:ring-focus-ring focus-visible:outline-none"
+                    className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-xl border-2 border-solid border-royal-blue px-4 py-2.5 font-[Arial,Helvetica,sans-serif] text-sm font-bold text-royal-blue no-underline transition-colors duration-200 ease-out hover:border-royal-blue hover:bg-royal-blue hover:text-white focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[#4da3ff] dark:text-[#8fc0ff] dark:hover:bg-royal-blue dark:hover:text-white"
                   >
                     <ImageIcon
                       size={16}
@@ -1399,7 +1414,7 @@ const mensaje =
                     />
                   </a>
                 ) : (
-                  <p className="m-0 text-sm text-[#16243c]/70">
+                  <p className="m-0 text-sm text-[#16243c]/70 dark:text-[#b7c3d4]">
                     No se adjuntó ningún comprobante.
                   </p>
                 )}
@@ -1418,7 +1433,7 @@ const mensaje =
                         aria-haspopup="listbox"
                         aria-expanded={estadoMenuAbierto}
                         onClick={() => setEstadoMenuAbierto((prev) => !prev)}
-                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-white/10 dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/10"
                       >
                         <span>
                           {solicitudSeleccionada.Estado ?? "Pendiente"}
@@ -1441,7 +1456,7 @@ const mensaje =
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -6, scale: 0.98 }}
                             transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-                            className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                            className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)] dark:border-white/10 dark:bg-[#0f1d33]"
                           >
                           {(
                             [
@@ -1483,8 +1498,8 @@ const mensaje =
                                   }}
                                   className={`flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
                                     activo
-                                      ? "bg-[#aa7323]/10 text-[#16243c]"
-                                      : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                                      ? "bg-[#aa7323]/10 text-[#16243c] dark:text-[#f3f6fa]"
+                                      : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323] dark:text-[#b7c3d4] dark:hover:bg-[#aa7323]/20 dark:hover:text-[#d9a928]"
                                   }`}
                                 >
                                   <span
