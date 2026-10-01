@@ -44,7 +44,7 @@ export function AdminSearch({
       />
       <input
         className={cn(
-          "min-h-11 w-full rounded-xl border border-border-strong bg-surface-muted py-2.5 pr-3.5 pl-10 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none",
+          "min-h-11 w-full rounded-xl border border-border-strong bg-surface-muted py-2.5 pr-3.5 pl-10 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]",
           className,
         )}
         {...props}

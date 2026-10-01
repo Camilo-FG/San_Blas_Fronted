@@ -31,7 +31,7 @@ const rangoFechasValido = (desde: string, hasta: string): boolean => {
 };
 
 const claseCampo = (extra = "") =>
-  `min-h-10 w-full rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none ${extra}`.trim();
+  `min-h-10 w-full rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33] ${extra}`.trim();
 
 export function ExportarDonacionesModal({
   onClose,

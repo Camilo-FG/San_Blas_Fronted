@@ -794,7 +794,7 @@ const GestionEventos = () => {
                   onChange={(event) =>
                     setRegistrosPorPagina(Number(event.target.value))
                   }
-                  className="min-h-10 min-w-0 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                  className="min-h-10 min-w-0 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                   aria-label="Cantidad de registros por página"
                 >
                   {TAMANOS_PAGINA.map((tamano) => (
