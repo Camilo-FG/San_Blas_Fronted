@@ -16,6 +16,7 @@ import {
   IdCard,
   Eye,
   Search,
+  SlidersHorizontal,
   Loader2,
   Mail,
   X,
@@ -1027,6 +1028,11 @@ const mensaje =
                   : "border-border-strong"
               }`}
             >
+              <SlidersHorizontal
+                size={16}
+                strokeWidth={2}
+                className="shrink-0 text-[#aa7323] dark:text-[#d9a928]"
+              />
               <span>{filtroEstado || "Todos"}</span>
               <ChevronDown
                 size={16}
