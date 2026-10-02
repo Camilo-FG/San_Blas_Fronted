@@ -1252,9 +1252,9 @@ const mensaje =
       <AnimatePresence>
         {(solicitudSeleccionada || isRejectModalOpen) && (
           <motion.div
-            className="fixed inset-0 z-[1300] bg-[#060f20]"
+            className="fixed inset-0 z-[1300] bg-[#060f20] backdrop-blur-[6px]"
             initial={{ opacity: 0 }}
-            animate={{ opacity: isConfirmRejectOpen ? 0 : 0.7 }}
+            animate={{ opacity: isConfirmRejectOpen ? 0 : 0.78 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             aria-hidden="true"
@@ -1300,7 +1300,7 @@ const mensaje =
           >
             <div className="flex min-h-full items-end justify-center md:items-center md:p-4">
             <div
-              className="relative z-10 w-full rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px] dark:bg-[#0a1425]"
+              className="relative z-10 w-full rounded-[16px] bg-white shadow-[0_32px_80px_rgba(0,0,0,0.55)] ring-1 ring-slate-900/10 md:max-w-[768px] dark:bg-[#0a1425] dark:shadow-[0_32px_80px_rgba(0,0,0,0.7)] dark:ring-white/15"
             style={{ fontFamily: "'Geist', sans-serif" }}
             role="dialog"
             aria-modal="true"
