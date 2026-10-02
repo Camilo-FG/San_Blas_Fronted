@@ -1427,7 +1427,7 @@ const mensaje =
               </section>
 
               {isAdmin && (
-              <div className="flex flex-col gap-3 rounded-[12px] border border-[#aa7323]/25 bg-[#aa7323]/[0.07] p-4">
+              <div className="flex flex-col gap-3 rounded-[12px] border border-[#aa7323]/25 bg-[#aa7323]/[0.07] p-4 dark:border-transparent dark:bg-[#0f1d33]">
                   <EtiquetaSeccion>Cambiar estado</EtiquetaSeccion>
                     <div
                       className="relative"
