@@ -1405,7 +1405,7 @@ const mensaje =
                     href={solicitudSeleccionada.comprobanteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-xl border-2 border-solid border-royal-blue px-4 py-2.5 font-[Arial,Helvetica,sans-serif] text-sm font-bold text-royal-blue no-underline transition-colors duration-200 ease-out hover:border-royal-blue hover:bg-royal-blue hover:text-white focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[#4da3ff] dark:text-[#8fc0ff] dark:hover:bg-royal-blue dark:hover:text-white"
+                    className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-xl border-2 border-solid border-royal-blue px-4 py-2.5 font-[Arial,Helvetica,sans-serif] text-sm font-bold text-royal-blue no-underline transition-colors duration-200 ease-out hover:border-royal-blue hover:bg-royal-blue hover:text-white focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[#d9a928] dark:text-white dark:shadow-[0_0_18px_rgba(217,169,40,0.35)] dark:transition-all dark:duration-300 dark:ease-out dark:hover:border-[#d9a928] dark:hover:bg-[#d9a928] dark:hover:text-black dark:hover:shadow-[0_0_24px_rgba(217,169,40,0.6)] dark:focus-visible:ring-[#d9a928]"
                   >
                     <ImageIcon
                       size={16}
