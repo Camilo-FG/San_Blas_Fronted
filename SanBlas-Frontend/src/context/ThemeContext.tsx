@@ -40,11 +40,15 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [flashId, setFlashId] = useState(0);
   const [flashVisible, setFlashVisible] = useState(false);
   const cambioTemaRef = useRef<number | null>(null);
+  const finTransicionRef = useRef<number | null>(null);
 
   useEffect(
     () => () => {
       if (cambioTemaRef.current !== null) {
         window.clearTimeout(cambioTemaRef.current);
+      }
+      if (finTransicionRef.current !== null) {
+        window.clearTimeout(finTransicionRef.current);
       }
     },
     [],
@@ -80,12 +84,21 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     if (cambioTemaRef.current !== null) {
       window.clearTimeout(cambioTemaRef.current);
     }
+    if (finTransicionRef.current !== null) {
+      window.clearTimeout(finTransicionRef.current);
+    }
+    // Activa la transición gradual de colores durante todo el cambio.
+    document.documentElement.classList.add("tema-transicionando");
     setFlashId((id) => id + 1);
     setFlashVisible(true);
     cambioTemaRef.current = window.setTimeout(() => {
       setTheme((previo) => (previo === "dark" ? "light" : "dark"));
       cambioTemaRef.current = null;
     }, 250);
+    finTransicionRef.current = window.setTimeout(() => {
+      document.documentElement.classList.remove("tema-transicionando");
+      finTransicionRef.current = null;
+    }, 1600);
   }, []);
 
   const fijarTema = useCallback((tema: TemaApp) => {
