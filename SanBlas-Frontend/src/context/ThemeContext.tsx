@@ -4,9 +4,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { motion } from "framer-motion";
 
 export type TemaApp = "light" | "dark";
 
@@ -35,6 +37,18 @@ const leerTemaInicial = (): TemaApp => {
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<TemaApp>(() => leerTemaInicial());
+  const [flashId, setFlashId] = useState(0);
+  const [flashVisible, setFlashVisible] = useState(false);
+  const cambioTemaRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (cambioTemaRef.current !== null) {
+        window.clearTimeout(cambioTemaRef.current);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     const raiz = document.documentElement;
@@ -52,7 +66,26 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   }, [theme]);
 
   const alternarTema = useCallback(() => {
-    setTheme((previo) => (previo === "dark" ? "light" : "dark"));
+    // Sin animación si el usuario prefiere movimiento reducido.
+    const movimientoReducido =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (movimientoReducido) {
+      setTheme((previo) => (previo === "dark" ? "light" : "dark"));
+      return;
+    }
+    // 1. El overlay entra en fundido; 2. cuando ya está negro opaco
+    // (fin de la entrada, ~0.21s) recién ahí cambia el tema, así el
+    // usuario nunca ve el cambio de colores.
+    if (cambioTemaRef.current !== null) {
+      window.clearTimeout(cambioTemaRef.current);
+    }
+    setFlashId((id) => id + 1);
+    setFlashVisible(true);
+    cambioTemaRef.current = window.setTimeout(() => {
+      setTheme((previo) => (previo === "dark" ? "light" : "dark"));
+      cambioTemaRef.current = null;
+    }, 250);
   }, []);
 
   const fijarTema = useCallback((tema: TemaApp) => {
@@ -70,7 +103,20 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   );
 
   return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>
+      {children}
+      {flashVisible && (
+        <motion.div
+          key={flashId}
+          className="pointer-events-none fixed inset-0 z-[9999] bg-black"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 1, 0] }}
+          transition={{ duration: 1.4, times: [0, 0.15, 0.45, 1], ease: "easeInOut" }}
+          onAnimationComplete={() => setFlashVisible(false)}
+          aria-hidden="true"
+        />
+      )}
+    </ThemeContext.Provider>
   );
 };
 
