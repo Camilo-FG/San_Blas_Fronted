@@ -287,6 +287,6 @@ input[type="date"].date-field::-webkit-calendar-picker-indicator:hover {
 .tema-transicionando *::before,
 .tema-transicionando *::after {
   transition-property: background-color, border-color, color, fill, stroke !important;
-  transition-duration: 0.6s !important;
+  transition-duration: 0.3s !important;
   transition-timing-function: ease !important;
 }
