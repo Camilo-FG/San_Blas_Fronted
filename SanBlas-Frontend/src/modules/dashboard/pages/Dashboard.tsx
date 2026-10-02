@@ -219,7 +219,7 @@ function Dashboard() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 z-50 flex h-screen w-72 shrink-0 flex-col justify-between overflow-hidden border-r border-gray-800 bg-[#050a12] text-gray-300 transition-[width,transform] duration-[800ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] lg:sticky lg:translate-x-0",
+          "fixed top-0 z-50 flex h-screen w-72 shrink-0 flex-col justify-between overflow-hidden border-r border-gray-800 bg-[#050a12] text-gray-300 transition-[width,transform] duration-300 ease-out lg:sticky lg:translate-x-0",
           menuAbierto ? "translate-x-0" : "-translate-x-full",
           barraExpandida ? "lg:w-72" : "lg:w-20",
           esConstancias && "dark:bg-[#030710]",

@@ -9,7 +9,7 @@ type ThemeSwitchProps = {
 };
 
 export function ThemeSwitch({ className, id }: ThemeSwitchProps) {
-  const { esOscuro, alternarTema } = useTheme();
+  const { esOscuro, cambiandoTema, alternarTema } = useTheme();
 
   return (
     <button
@@ -17,13 +17,15 @@ export function ThemeSwitch({ className, id }: ThemeSwitchProps) {
       type="button"
       role="switch"
       aria-checked={esOscuro}
+      aria-disabled={cambiandoTema}
+      disabled={cambiandoTema}
       aria-label={
         esOscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro"
       }
       title={esOscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
       onClick={alternarTema}
       className={cn(
-        "relative inline-flex h-8 w-[60px] shrink-0 cursor-pointer items-center rounded-full border px-1 transition-colors duration-200 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none",
+        "relative inline-flex h-8 w-[60px] shrink-0 cursor-pointer items-center rounded-full border px-1 transition-colors duration-200 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70",
         esOscuro
           ? "border-[rgba(220,230,242,0.20)] bg-[#172943]"
           : "border-royal-blue/25 bg-white/10 hover:bg-white/20",

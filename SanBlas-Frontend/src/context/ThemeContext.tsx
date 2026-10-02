@@ -17,6 +17,7 @@ const CLAVE_TEMA = "sb-theme";
 interface ThemeContextValue {
   theme: TemaApp;
   esOscuro: boolean;
+  cambiandoTema: boolean;
   alternarTema: () => void;
   fijarTema: (tema: TemaApp) => void;
 }
@@ -39,8 +40,11 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<TemaApp>(() => leerTemaInicial());
   const [flashId, setFlashId] = useState(0);
   const [flashVisible, setFlashVisible] = useState(false);
+  const [cambiandoTema, setCambiandoTema] = useState(false);
   const cambioTemaRef = useRef<number | null>(null);
   const finTransicionRef = useRef<number | null>(null);
+  // Candado: ignora clicks mientras la transición anterior sigue en curso.
+  const ocupadoRef = useRef(false);
 
   useEffect(
     () => () => {
@@ -78,15 +82,14 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       setTheme((previo) => (previo === "dark" ? "light" : "dark"));
       return;
     }
+    // Ignora clicks extra hasta que termine la transición en curso:
+    // así no se apilan overlays ni cambios de tema contradictorios.
+    if (ocupadoRef.current) return;
+    ocupadoRef.current = true;
+    setCambiandoTema(true);
     // 1. El overlay entra en fundido; 2. cuando ya está negro opaco
     // (fin de la entrada, ~0.21s) recién ahí cambia el tema, así el
     // usuario nunca ve el cambio de colores.
-    if (cambioTemaRef.current !== null) {
-      window.clearTimeout(cambioTemaRef.current);
-    }
-    if (finTransicionRef.current !== null) {
-      window.clearTimeout(finTransicionRef.current);
-    }
     // Activa la transición gradual de colores durante todo el cambio.
     document.documentElement.classList.add("tema-transicionando");
     setFlashId((id) => id + 1);
@@ -109,10 +112,11 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       theme,
       esOscuro: theme === "dark",
+      cambiandoTema,
       alternarTema,
       fijarTema,
     }),
-    [theme, alternarTema, fijarTema],
+    [theme, cambiandoTema, alternarTema, fijarTema],
   );
 
   return (
@@ -125,7 +129,11 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: [0, 1, 1, 0] }}
           transition={{ duration: 1.4, times: [0, 0.15, 0.45, 1], ease: "easeInOut" }}
-          onAnimationComplete={() => setFlashVisible(false)}
+          onAnimationComplete={() => {
+            setFlashVisible(false);
+            ocupadoRef.current = false;
+            setCambiandoTema(false);
+          }}
           aria-hidden="true"
         />
       )}
