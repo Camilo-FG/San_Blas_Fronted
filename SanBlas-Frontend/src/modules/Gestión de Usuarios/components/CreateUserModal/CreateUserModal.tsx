@@ -19,7 +19,7 @@ import { normalizarTexto } from '../../Utils/normalizarTexto';
 
 // estilos del botón de ojo para mostrar/ocultar contraseña (mismo look que el login)
 const BOTON_OJO =
-  'absolute right-2.5 inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-text-muted transition-colors hover:bg-royal-blue/5 hover:text-royal-blue focus-visible:ring-2 focus-visible:ring-royal-blue/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+  'absolute right-2.5 inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-text-muted transition-colors hover:bg-royal-blue/5 hover:text-royal-blue focus-visible:ring-2 focus-visible:ring-royal-blue/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]';
 
 interface CreateUserData {
   nombre: string;
@@ -208,8 +208,10 @@ const CreateUserModal: React.FC<Props> = ({
       onClose={guardando ? () => undefined : onClose}
       title="Crear nuevo usuario"
       cerrarAlClicFuera={false}
+      overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+      className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
     >
-      <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue">
+      <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue dark:text-[#f3f6fa]">
         Crear nuevo usuario
       </h3>
 
@@ -233,7 +235,7 @@ const CreateUserModal: React.FC<Props> = ({
               <div>
                 <Label htmlFor="nombre" required>
                   Nombre completo
-                  <span className="ml-1.5 font-normal text-text-muted">
+                  <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
                     ({field.state.value.length}/100)
                   </span>
                 </Label>
@@ -267,7 +269,7 @@ const CreateUserModal: React.FC<Props> = ({
               <div>
                 <Label htmlFor="correo" required>
                   Correo electrónico
-                  <span className="ml-1.5 font-normal text-text-muted">
+                  <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
                     ({field.state.value.length}/100)
                   </span>
                 </Label>
@@ -340,7 +342,7 @@ const CreateUserModal: React.FC<Props> = ({
                 <div>
                   <Label htmlFor="nueva-contrasena-usuario" required>
                     Contraseña
-                    <span className="ml-1.5 font-normal text-text-muted">
+                    <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
                       ({field.state.value.length}/64)
                     </span>
                   </Label>
@@ -375,18 +377,18 @@ const CreateUserModal: React.FC<Props> = ({
                   </div>
                   {valor ? ( // solo muestra la barrita si ya escribió algo
                     <div className="mt-2 flex items-center gap-2" aria-live="polite">
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong dark:bg-white/10">
                         <div
                           className={`h-full rounded-full transition-all ${fortaleza.clase}`}
                           style={{ width: `${(puntos / 4) * 100}%` }}
                         />
                       </div>
-                      <span className="text-xs font-semibold text-text-muted">
+                      <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
                         {fortaleza.texto}
                       </span>
                     </div>
                   ) : null}
-                  <p className="mt-1 text-xs text-text-muted">
+                  <p className="mt-1 text-xs text-text-muted dark:text-[#7f8da3]">
                     Incluya mayúscula, minúscula y número.
                   </p>
                   <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
@@ -459,7 +461,7 @@ const CreateUserModal: React.FC<Props> = ({
                 <div
                   role="group"
                   aria-labelledby="roles-usuario-titulo"
-                  className="flex flex-col gap-2 rounded-xl border border-border-strong bg-surface-muted p-3"
+                  className="flex flex-col gap-2 rounded-xl border border-border-strong bg-surface-muted p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
                 >
                   {opcionesSelectRol(
                     roles,
@@ -470,7 +472,7 @@ const CreateUserModal: React.FC<Props> = ({
                     return (
                       <label
                         key={rol.clave}
-                        className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-text"
+                        className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-text dark:text-[#f3f6fa]"
                       >
                         <input
                           type="checkbox"
@@ -498,11 +500,11 @@ const CreateUserModal: React.FC<Props> = ({
           </form.Field>
         </div>
 
-        <div className="mt-6 flex flex-col gap-2 border-t border-border-strong pt-4 sm:flex-row sm:justify-end">
+        <div className="mt-6 flex flex-col gap-2 border-t border-border-strong pt-4 sm:flex-row sm:justify-end dark:border-[rgba(220,230,242,0.12)]">
           <Button type="submit" variant="royal" disabled={guardando}>
             {guardando ? 'Creando...' : 'Crear usuario'}
           </Button>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={guardando}>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={guardando} className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!">
             Cancelar
           </Button>
         </div>

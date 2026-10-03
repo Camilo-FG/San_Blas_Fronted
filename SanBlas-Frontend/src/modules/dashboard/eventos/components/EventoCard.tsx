@@ -59,10 +59,10 @@ export function EventoCard({
     <article
       className={`flex h-[520px] flex-col overflow-hidden rounded-2xl border shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
         estado === "publicado-inactivo"
-          ? "border-royal-gold bg-royal-gold/20"
+          ? "border-royal-gold bg-royal-gold/20 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]"
           : estado === "borrador"
-            ? "border-slate-300 bg-slate-200"
-            : "border-border-strong bg-surface"
+            ? "border-slate-300 bg-slate-200 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]"
+            : "border-border-strong bg-surface dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]"
       }`}
     >
       <button
@@ -92,7 +92,13 @@ export function EventoCard({
 
           <Badge
             variant={VARIANTE_ESTADO_EVENTO[estado]}
-            className="absolute top-2.5 right-2.5 uppercase tracking-wide shadow-sm"
+            className={`absolute top-2.5 right-2.5 uppercase tracking-wide shadow-sm ${
+              estado === "publicado-activo"
+                ? "dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]"
+                : estado === "borrador"
+                  ? "dark:border-[#f2a34a] dark:bg-[rgba(242,163,74,0.10)] dark:text-[#f2a34a]"
+                  : "dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]"
+            }`}
           >
             {ETIQUETA_ESTADO_EVENTO[estado]}
           </Badge>
@@ -100,12 +106,12 @@ export function EventoCard({
 
         <div className="flex min-h-0 flex-1 flex-col gap-2 p-3.5">
           <div className="min-h-[3.2rem]">
-            <h3 className="m-0 line-clamp-2 text-base font-extrabold leading-snug text-slate-900">
+            <h3 className="m-0 line-clamp-2 text-base font-extrabold leading-snug text-slate-900 dark:text-[#f3f6fa]">
               {evento.titulo}
             </h3>
           </div>
 
-          <div className="flex flex-col gap-1 text-sm text-text-muted">
+          <div className="flex flex-col gap-1 text-sm text-text-muted dark:text-[#b7c3d4]">
             <p className="m-0 flex items-center gap-1.5">
               <CalendarDays size={14} className="shrink-0 text-royal-gold" />
               <span className="truncate">{formatearFechaCalendario(evento.fechaInicio)}</span>
@@ -126,7 +132,7 @@ export function EventoCard({
             </p>
           </div>
 
-          <p className="m-0 line-clamp-3 min-h-[3.9rem] flex-1 text-sm leading-relaxed text-text-muted">
+          <p className="m-0 line-clamp-3 min-h-[3.9rem] flex-1 text-sm leading-relaxed text-text-muted dark:text-[#b7c3d4]">
             {evento.descripcion}
           </p>
         </div>

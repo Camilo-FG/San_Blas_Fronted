@@ -144,13 +144,14 @@ function getRoleLabel(role?: string | null): string {
 
 function Dashboard() {
   const { user, logout, tienePermiso } = useAuth();
-  const { esOscuro, alternarTema } = useTheme();
+  const { esOscuro, cambiandoTema, alternarTema } = useTheme();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [barraExpandida, setBarraExpandida] = useState(false);
-  const esConstancias =
-    pathname === Rutas.dashboardUrl.constanciasSacramentos;
+  const esAdmin =
+    pathname === Rutas.dashboard ||
+    pathname.startsWith(`${Rutas.dashboard}/`);
   const pageInfo = pageTitles[pathname] ?? {
     title: "Panel administrativo",
     subtitle: "Parroquia San Blas",
@@ -178,7 +179,7 @@ function Dashboard() {
       <div
         className={cn(
           "relative flex min-h-screen flex-col bg-gray-50 lg:flex-row",
-          esConstancias && "dark:bg-[#040b16] dark:text-[#f3f6fa]",
+          esAdmin && "dark:bg-[#040b16] dark:text-[#f3f6fa]",
         )}
         style={{ "--sidebar-width": barraExpandida ? "18rem" : "5rem" } as CSSProperties}
       >
@@ -222,7 +223,7 @@ function Dashboard() {
           "fixed top-0 z-50 flex h-screen w-72 shrink-0 flex-col justify-between overflow-hidden border-r border-gray-800 bg-[#050a12] text-gray-300 transition-[width,transform] duration-300 ease-out lg:sticky lg:translate-x-0",
           menuAbierto ? "translate-x-0" : "-translate-x-full",
           barraExpandida ? "lg:w-72" : "lg:w-20",
-          esConstancias && "dark:bg-[#030710]",
+          esAdmin && "dark:bg-[#030710]",
         )}
         onMouseEnter={() => setBarraExpandida(true)}
         onMouseLeave={() => setBarraExpandida(false)}
@@ -321,9 +322,11 @@ function Dashboard() {
             <button
               type="button"
               aria-label="Cambiar tema de color"
+              aria-disabled={cambiandoTema}
+              disabled={cambiandoTema}
               onClick={alternarTema}
               className={cn(
-                "flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-full border py-2 pl-2 pr-3.5 text-gray-300 transition-colors hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                "flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-full border py-2 pl-2 pr-3.5 text-gray-300 transition-colors hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-70",
                 barraExpandida
                   ? "border-white/10 bg-black/40 hover:border-white/20"
                   : "border-transparent bg-transparent lg:pr-0",
@@ -386,21 +389,21 @@ function Dashboard() {
       <main
         className={cn(
           "h-[calc(100vh-50px)] flex-1 overflow-y-auto p-4 sm:p-6 lg:h-screen lg:p-8",
-          esConstancias && "dark:bg-[#040b16]",
+          esAdmin && "dark:bg-[#040b16]",
         )}
       >
         {pathname !== Rutas.dashboard && (
           <header
             className={cn(
               "mb-3 rounded-[20px] border border-border bg-surface p-4 shadow-sm sm:p-5 lg:mb-4",
-              esConstancias &&
+              esAdmin &&
                 "dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]",
             )}
           >
             <p
               className={cn(
                 "mb-1 text-[0.72rem] leading-tight font-extrabold tracking-[0.14em] text-brand-gold uppercase",
-                esConstancias && "dark:text-[#d9a928]",
+                esAdmin && "dark:text-[#d9a928]",
               )}
             >
               Administración
@@ -408,7 +411,7 @@ function Dashboard() {
             <h1
               className={cn(
                 "mb-1 font-heading text-lg leading-tight text-brand-blue lg:text-2xl",
-                esConstancias && "dark:text-[#f3f6fa]",
+                esAdmin && "dark:text-[#f3f6fa]",
               )}
             >
               {pageInfo.title}
@@ -416,7 +419,7 @@ function Dashboard() {
             <p
               className={cn(
                 "max-w-3xl text-sm text-text-secondary",
-                esConstancias && "dark:text-[#b7c3d4]",
+                esAdmin && "dark:text-[#b7c3d4]",
               )}
             >
               {pageInfo.subtitle}

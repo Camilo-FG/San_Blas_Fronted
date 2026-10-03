@@ -97,7 +97,7 @@ const GestionUsuarios = () => {
     return (
         <AdminModule>
             <div
-                className="flex gap-1 border-b border-border-strong"
+                className="flex gap-1 border-b border-border-strong dark:border-[rgba(220,230,242,0.12)]"
                 role="tablist"
                 aria-label="Secciones de gestión de usuarios"
             >
@@ -115,8 +115,8 @@ const GestionUsuarios = () => {
                             className={cn(
                                 'cursor-pointer border-0 border-b-2 bg-transparent px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus-ring',
                                 activa
-                                    ? 'border-royal-blue text-royal-blue'
-                                    : 'border-transparent text-text-muted hover:text-royal-blue',
+                                    ? 'border-royal-blue text-royal-blue dark:border-[#d9a928] dark:text-[#d9a928]'
+                                    : 'border-transparent text-text-muted hover:text-royal-blue dark:text-[#7f8da3] dark:hover:text-[#d9a928]',
                             )}
                             onClick={() => setPestana(item.id)}
                         >

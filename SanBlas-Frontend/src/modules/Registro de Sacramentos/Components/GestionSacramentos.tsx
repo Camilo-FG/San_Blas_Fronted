@@ -116,7 +116,7 @@ const GestionSacramentos = () => {
         </h2>
       </div>
 
-      <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm">
+      <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
         <AdminSearch
           type="text"
           placeholder="Cédula (0-0000-0000)"
@@ -144,14 +144,14 @@ const GestionSacramentos = () => {
 
       {query.isPending && (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <Loader2 size={32} className="animate-spin text-text-muted" />
-          <p className="m-0 text-sm text-text-secondary">Buscando registros...</p>
+          <Loader2 size={32} className="animate-spin text-text-muted dark:text-[#7f8da3]" />
+          <p className="m-0 text-sm text-text-secondary dark:text-[#b7c3d4]">Buscando registros...</p>
         </div>
       )}
 
       {query.error && !query.isPending && (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-danger-bg bg-danger-bg/40 px-6 py-16 text-center">
-          <p className="m-0 text-sm font-medium text-danger">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-danger-bg bg-danger-bg/40 px-6 py-16 text-center dark:border-[#e66a6a]/30 dark:bg-[rgba(230,106,106,0.10)]">
+          <p className="m-0 text-sm font-medium text-danger dark:text-[#e66a6a]">
             Ocurrió un error al realizar la búsqueda
           </p>
         </div>
