@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Button } from "./Button";
 import { Modal } from "./Modal";
 import { LineaDoradaTitulo } from "./LineaDoradaTitulo";
+import { cn } from "./cn";
 
 type ConfirmacionAccionModalProps = {
   open: boolean;
@@ -18,6 +19,11 @@ type ConfirmacionAccionModalProps = {
   // opcionales para acciones destructivas (p. ej. eliminar): icono de advertencia y botón rojo
   iconoAdvertencia?: boolean;
   confirmVariant?: "danger" | "royal";
+  // opcionales para personalizar el contenedor (p. ej. modo oscuro por llamada)
+  className?: string;
+  overlayClassName?: string;
+  // opcional para personalizar el botón Cancelar por llamada
+  cancelClassName?: string;
 };
 
 export function ConfirmacionAccionModal({
@@ -33,6 +39,9 @@ export function ConfirmacionAccionModal({
   onCancel,
   iconoAdvertencia = false,
   confirmVariant = "royal",
+  className,
+  overlayClassName,
+  cancelClassName,
 }: ConfirmacionAccionModalProps) {
   if (!open) return null;
 
@@ -44,6 +53,8 @@ export function ConfirmacionAccionModal({
       title={title}
       sinFondo
       cerrarAlClicFuera={false}
+      className={className}
+      overlayClassName={overlayClassName}
     >
       <div className="flex min-h-44 flex-col">
         {iconoAdvertencia && (
@@ -87,7 +98,10 @@ export function ConfirmacionAccionModal({
           </Button>
           <Button
             variant="secondary"
-            className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+            className={cn(
+              "rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out",
+              cancelClassName,
+            )}
             onClick={onCancel}
             disabled={isPending}
           >

@@ -1539,9 +1539,10 @@ const mensaje =
           sinFondo
           overlayClassName={
             isConfirmRejectOpen
-              ? "fixed inset-0 z-[1350] backdrop-blur-[6px]"
-              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+              ? "fixed inset-0 z-[1350] backdrop-blur-[6px] dark:bg-black/60"
+              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
           }
+          className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
         >
           <motion.div
             key={isConfirmRejectOpen ? "confirmar" : "formulario"}
@@ -1553,7 +1554,7 @@ const mensaje =
             <div className="flex min-h-44 flex-col">
               <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
               <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
-                <p className="text-sm leading-relaxed text-text-secondary">
+                <p className="text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
                   ¿Estás seguro/a que quieres rechazar esta solicitud de
                   sacramento? Una vez rechazada, su estado no podrá ser cambiado.
                 </p>
@@ -1579,7 +1580,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                 </Button>
                 <Button
                   variant="secondary"
-                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                   onClick={handleCancelConfirmReject}
                   disabled={isSubmitting}
                 >
@@ -1590,7 +1591,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
           ) : (
             <div className="flex min-h-44 flex-col gap-4">
               <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
-              <p className="text-sm text-text-secondary">
+              <p className="text-sm text-text-secondary dark:text-[#b7c3d4]">
                 Seleccione el motivo de rechazo en la lista. El campo de texto es
                 opcional para agregar un detalle.
               </p>
@@ -1600,24 +1601,24 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                   aria-haspopup="listbox"
                   aria-expanded={motivoMenuAbierto}
                   onClick={() => setMotivoMenuAbierto((prev) => !prev)}
-                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 ${
+                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
                     motivoMenuAbierto
-                      ? "border-blue-400 bg-surface"
+                      ? "border-blue-400 bg-surface dark:border-[#d9a928] dark:bg-[#0f1d33]"
                       : "border-border-strong"
                   }`}
                 >
                   <span
                     className={
                       rejectionReasonSelect
-                        ? "font-semibold text-[#16243c]"
-                        : "font-medium text-slate-700"
+                        ? "font-semibold text-[#16243c] dark:text-[#f3f6fa]"
+                        : "font-medium text-slate-700 dark:text-[#b7c3d4]"
                     }
                   >
                     {rejectionReasonSelect || "Seleccione un motivo"}
                   </span>
                   <ChevronDown
                     size={16}
-                    className={`shrink-0 text-slate-900 transition-transform duration-200 ${
+                    className={`shrink-0 text-slate-900 transition-transform duration-200 dark:text-[#7f8da3] ${
                       motivoMenuAbierto ? "rotate-180" : ""
                     }`}
                   />
@@ -1637,7 +1638,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -6, scale: 0.98 }}
                         transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-                        className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                        className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
                       >
                         {rejectionReasons.map((reason) => (
                           <li key={reason} role="option" aria-selected={rejectionReasonSelect === reason}>
@@ -1650,8 +1651,8 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                               }}
                               className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
                                 rejectionReasonSelect === reason
-                                  ? "bg-[#aa7323]/10 text-[#16243c]"
-                                  : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                                  ? "bg-[#aa7323]/10 text-[#16243c] dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                                  : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323] dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
                               }`}
                             >
                               {reason}
@@ -1686,7 +1687,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                     className={`m-0 ml-auto text-xs ${
                       rejectionReasonText.length >= 150
                         ? "font-semibold text-red-600"
-                        : "text-text-muted"
+                        : "text-text-muted dark:text-[#7f8da3]"
                     }`}
                   >
                     {rejectionReasonText.length}/150
@@ -1703,7 +1704,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                 </Button>
                 <Button
                   variant="secondary"
-                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                   onClick={handleCloseRejectModal}
                   disabled={isSubmitting}
                 >
@@ -1727,6 +1728,9 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
         isPending={aprobarSolicitud.isPending}
         onConfirm={handleApproveConfirm}
         onCancel={handleCancelApprove}
+        overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_p.text-text-secondary]:text-[#b7c3d4] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+        cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
       />
 
       <AnimatePresence>
