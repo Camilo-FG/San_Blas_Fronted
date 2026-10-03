@@ -260,6 +260,8 @@ const TableSacramentos = () => {
   const modalBodyRef = useRef<HTMLDivElement>(null);
   const [filtroEstadoMenuAbierto, setFiltroEstadoMenuAbierto] = useState(false);
   const filtroEstadoMenuRef = useRef<HTMLDivElement>(null);
+  const [tamanoPaginaMenuAbierto, setTamanoPaginaMenuAbierto] = useState(false);
+  const tamanoPaginaMenuRef = useRef<HTMLDivElement>(null);
   const ultimoMaxIdRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -281,6 +283,12 @@ const TableSacramentos = () => {
         !motivoMenuRef.current.contains(event.target as Node)
       ) {
         setMotivoMenuAbierto(false);
+      }
+      if (
+        tamanoPaginaMenuRef.current &&
+        !tamanoPaginaMenuRef.current.contains(event.target as Node)
+      ) {
+        setTamanoPaginaMenuAbierto(false);
       }
     };
     document.addEventListener("mousedown", handleClickFuera);
@@ -1826,7 +1834,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
       {!isInitialLoading && table.getRowModel().rows.length > 0 && (
         <AdminTableFooter
           pegadoAbajo
-          className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]"
+          className="overflow-x-visible dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]"
         >
           <span className="text-sm text-text-muted dark:text-[#7f8da3]">
             Mostrando{" "}
@@ -1842,21 +1850,65 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
           <AdminPagination>
             <label className="mr-1 flex items-center gap-2 text-sm text-text-muted dark:text-[#7f8da3]">
               Registros por página
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
-                aria-label="Cantidad de registros por página"
-              >
-                {PAGE_SIZES.map((tamano) => (
-                  <option
-                    key={tamano}
-                    value={tamano}
+              <span className="relative inline-flex" ref={tamanoPaginaMenuRef}>
+                <button
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={tamanoPaginaMenuAbierto}
+                  onClick={() =>
+                    setTamanoPaginaMenuAbierto((prev) => !prev)
+                  }
+                  className={`flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
+                    tamanoPaginaMenuAbierto
+                      ? "border-blue-400 bg-surface dark:border-[#d9a928]"
+                      : "border-border-strong"
+                  }`}
+                  aria-label="Cantidad de registros por página"
+                >
+                  <span className="min-w-6 text-center">{pageSize}</span>
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2.5}
+                    className={`shrink-0 transition-transform duration-200 ${
+                      tamanoPaginaMenuAbierto ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {tamanoPaginaMenuAbierto && (
+                  <ul
+                    role="listbox"
+                    aria-label="Cantidad de registros por página"
+                    className="absolute right-0 bottom-full z-50 mb-1.5 w-full min-w-[72px] overflow-hidden rounded-xl border border-border-strong bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:shadow-[0_16px_40px_rgba(0,0,0,0.4)]"
                   >
-                    {tamano}
-                  </option>
-                ))}
-              </select>
+                    {PAGE_SIZES.map((tamano) => {
+                      const activo = pageSize === tamano;
+                      return (
+                        <li
+                          key={tamano}
+                          role="option"
+                          aria-selected={activo}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPageSize(tamano);
+                              setTamanoPaginaMenuAbierto(false);
+                            }}
+                            className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold tabular-nums transition-colors ${
+                              activo
+                                ? "bg-royal-blue/10 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                                : "text-slate-700 hover:bg-royal-blue/5 dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
+                            }`}
+                          >
+                            {tamano}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </span>
             </label>
             <AdminPaginationButton
               type="button"
