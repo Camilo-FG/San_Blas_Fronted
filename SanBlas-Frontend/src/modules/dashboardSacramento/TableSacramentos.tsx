@@ -1739,6 +1739,8 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
             onClose={handleCancelArchivar}
             title="Confirmar archivado"
             sinFondo
+            overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+            className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
           >
           <div className="flex min-h-44 flex-col">
             <LineaDoradaTitulo
@@ -1746,9 +1748,9 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
               resto="ramental"
             />
             <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
-              <p className="text-sm leading-relaxed text-text-secondary">
+              <p className="text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
                 ¿Estás seguro/a que quieres archivar la solicitud de{" "}
-                <strong className="font-semibold text-text">
+                <strong className="font-semibold text-text dark:text-[#f3f6fa]">
                   {nombreCompleto(solicitudAArchivar)}
                 </strong>
                 ? Podrás restaurarla desde la vista de archivadas.
@@ -1764,7 +1766,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
               </Button>
               <Button
                 variant="secondary"
-                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                 onClick={handleCancelArchivar}
               >
                 Cancelar
@@ -1781,6 +1783,8 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
             onClose={handleCancelArchivarTodas}
             title="Confirmar archivado masivo"
             sinFondo
+            overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+            className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
           >
           <div className="flex min-h-44 flex-col">
             <LineaDoradaTitulo
@@ -1788,9 +1792,9 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
               resto="esadas"
             />
             <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
-              <p className="text-sm leading-relaxed text-text-secondary">
+              <p className="text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
                 Se archivarán las{" "}
-                <strong className="font-semibold text-text">
+                <strong className="font-semibold text-text dark:text-[#f3f6fa]">
                   {filasArchivables.length}
                 </strong>{" "}
                 solicitudes aprobadas o rechazadas de la lista. Las pendientes
@@ -1808,7 +1812,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
               </Button>
               <Button
                 variant="secondary"
-                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                 onClick={handleCancelArchivarTodas}
               >
                 Cancelar
