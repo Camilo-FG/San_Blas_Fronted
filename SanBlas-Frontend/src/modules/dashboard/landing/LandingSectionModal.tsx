@@ -69,6 +69,10 @@ export default function LandingSectionModal({
   const [previewAmpliada, setPreviewAmpliada] = useState(false);
   const [visorVisible, setVisorVisible] = useState(false);
   const [campoResaltado, setCampoResaltado] = useState<string | null>(null);
+  // intento de guardado actual; sirve pa saber cuándo llevar el scroll al
+  // primer campo con error sin interferir mientras el usuario escribe
+  const [intentoGuardado, setIntentoGuardado] = useState(0);
+  const intentoProcesadoRef = useRef(0);
   const reducirMovimiento = useReducedMotion();
   const transicionVisor = reducirMovimiento
     ? { duration: 0 }
@@ -188,6 +192,20 @@ export default function LandingSectionModal({
       if (reintento) window.clearTimeout(reintento);
     };
   }, [campoResaltado, previewAmpliada, visorVisible]);
+
+  // al intentar guardar con errores, hace scroll hasta el primer campo con
+  // problema; no vuelve a scrollear mientras el usuario corrige (mismo intento)
+  useEffect(() => {
+    if (intentoGuardado === 0) return;
+    const primerConError = fields.find((field) => errores[field.name]);
+    if (!primerConError) return;
+    if (intentoProcesadoRef.current === intentoGuardado) return;
+    intentoProcesadoRef.current = intentoGuardado;
+    const nodo = document.getElementById(
+      `landing-field-${primerConError.name}`,
+    );
+    nodo?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [intentoGuardado, errores, fields]);
 
   const camposFormulario = fields.map((field) => {
     const value = values[field.name] ?? "";
@@ -490,6 +508,7 @@ export default function LandingSectionModal({
         onClick={(event) => event.stopPropagation()}
         onSubmit={(event) => {
           event.preventDefault();
+          setIntentoGuardado((valor) => valor + 1);
           onSave();
         }}
       >
