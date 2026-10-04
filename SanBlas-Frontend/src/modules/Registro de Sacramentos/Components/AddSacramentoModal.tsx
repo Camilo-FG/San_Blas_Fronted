@@ -35,10 +35,6 @@ const PARENTESCOS: ParentescoAbuelo[] = [
   'abuela_materna',
 ];
 
-// Cache en memoria de las cédulas ya consultadas para evitar re-llamar a la API
-// (Hacienda vía GoMeta) cada vez que se pierde el foco en el mismo campo.
-const cacheCedulas = new Map<string, Awaited<ReturnType<typeof obtenerDatosCedula>>>();
-
 const inputClass = (hasError = false) =>
   cn(
     'w-full rounded-md border px-3 py-2.5 text-sm transition-colors focus:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928]',
@@ -91,29 +87,93 @@ const personaVacia = (): PersonaForm => ({
   segundoApellido: '',
 });
 
+const CLAVE_BORRADOR = 'sanblas.borrador.registro-sacramentos';
+
+type BorradorSacramento = {
+  tipo: TipoSacramento;
+  idParroquia: string;
+  idPresbitero: string;
+  fechaSacramento: string;
+  observaciones: string;
+  bautizado: PersonaForm;
+  padre: PersonaForm;
+  madre: PersonaForm;
+  padrino: PersonaForm;
+  madrina: PersonaForm;
+  abuelos: (PersonaForm & { parentesco: ParentescoAbuelo })[];
+  persona: PersonaForm;
+  contrayente1: PersonaForm;
+  contrayente2: PersonaForm;
+  detalleBautismo: { fechaNacimiento: string; horaNacimiento: string; lugarNacimiento: string; libro: string; folio: string; asiento: string };
+  detalleMatrimonio: { libro: string; folio: string };
+};
+
+const borradorVacio = (): BorradorSacramento => ({
+  tipo: 'bautismo', idParroquia: '', idPresbitero: '', fechaSacramento: '', observaciones: '',
+  bautizado: personaVacia(), padre: personaVacia(), madre: personaVacia(), padrino: personaVacia(), madrina: personaVacia(), abuelos: [], persona: personaVacia(), contrayente1: personaVacia(), contrayente2: personaVacia(),
+  detalleBautismo: { fechaNacimiento: '', horaNacimiento: '', lugarNacimiento: '', libro: '', folio: '', asiento: '' },
+  detalleMatrimonio: { libro: '', folio: '' },
+});
+
+// Lee únicamente borradores con la estructura esperada para no romper el formulario si localStorage se corrompe.
+const leerBorradorSacramento = (): BorradorSacramento | null => {
+  try {
+    const contenido = localStorage.getItem(CLAVE_BORRADOR);
+    if (!contenido) return null;
+    const borrador = JSON.parse(contenido) as BorradorSacramento;
+    if (!TIPOS.includes(borrador.tipo) || !borrador.bautizado || !Array.isArray(borrador.abuelos)) return null;
+    return borrador;
+  } catch {
+    return null;
+  }
+};
+
+// Persiste solo cambios reales; un formulario vacío no deja basura guardada en el navegador.
+const guardarBorradorSacramento = (borrador: BorradorSacramento) => {
+  try {
+    if (JSON.stringify(borrador) === JSON.stringify(borradorVacio())) {
+      localStorage.removeItem(CLAVE_BORRADOR);
+      return;
+    }
+    localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(borrador));
+  } catch {
+    // Si el navegador bloquea el almacenamiento, el formulario sigue funcionando normal.
+  }
+};
+
+const borrarBorradorSacramento = () => {
+  try {
+    localStorage.removeItem(CLAVE_BORRADOR);
+  } catch {
+    // Sin almacenamiento disponible no hay borrador que borrar.
+  }
+};
+
 const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) => {
   const { showToast } = useToast();
   const { data: parroquias, isPending: cargandoParroquias } = useListarParroquias();
   const { data: presbiteros, isPending: cargandoPresbiteros } = useListarPresbiteros();
+  const [borradorInicial] = useState(leerBorradorSacramento);
 
-  const [tipo, setTipo] = useState<TipoSacramento>('bautismo');
-  const [idParroquia, setIdParroquia] = useState('');
-  const [idPresbitero, setIdPresbitero] = useState('');
-  const [fechaSacramento, setFechaSacramento] = useState('');
-  const [observaciones, setObservaciones] = useState('');
+  const [tipo, setTipo] = useState<TipoSacramento>(borradorInicial?.tipo ?? 'bautismo');
+  const [idParroquia, setIdParroquia] = useState(borradorInicial?.idParroquia ?? '');
+  const [idPresbitero, setIdPresbitero] = useState(borradorInicial?.idPresbitero ?? '');
+  const [fechaSacramento, setFechaSacramento] = useState(borradorInicial?.fechaSacramento ?? '');
+  const [observaciones, setObservaciones] = useState(borradorInicial?.observaciones ?? '');
   const [saving, setSaving] = useState(false);
+  const [campoCedulaCargando, setCampoCedulaCargando] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [bautizado, setBautizado] = useState<PersonaForm>(personaVacia);
-  const [padre, setPadre] = useState<PersonaForm>(personaVacia);
-  const [madre, setMadre] = useState<PersonaForm>(personaVacia);
-  const [padrino, setPadrino] = useState<PersonaForm>(personaVacia);
-  const [madrina, setMadrina] = useState<PersonaForm>(personaVacia);
-  const [abuelos, setAbuelos] = useState<(PersonaForm & { parentesco: ParentescoAbuelo })[]>([]);
-  const [persona, setPersona] = useState<PersonaForm>(personaVacia);
-  const [contrayente1, setContrayente1] = useState<PersonaForm>(personaVacia);
-  const [contrayente2, setContrayente2] = useState<PersonaForm>(personaVacia);
-  const [detalleBautismo, setDetalleBautismo] = useState({
+  const [bautizado, setBautizado] = useState<PersonaForm>(borradorInicial?.bautizado ?? personaVacia);
+  const [padre, setPadre] = useState<PersonaForm>(borradorInicial?.padre ?? personaVacia);
+  const [madre, setMadre] = useState<PersonaForm>(borradorInicial?.madre ?? personaVacia);
+  const [padrino, setPadrino] = useState<PersonaForm>(borradorInicial?.padrino ?? personaVacia);
+  const [madrina, setMadrina] = useState<PersonaForm>(borradorInicial?.madrina ?? personaVacia);
+  const [abuelos, setAbuelos] = useState<(PersonaForm & { parentesco: ParentescoAbuelo })[]>(borradorInicial?.abuelos ?? []);
+  const [persona, setPersona] = useState<PersonaForm>(borradorInicial?.persona ?? personaVacia);
+  const [contrayente1, setContrayente1] = useState<PersonaForm>(borradorInicial?.contrayente1 ?? personaVacia);
+  const [contrayente2, setContrayente2] = useState<PersonaForm>(borradorInicial?.contrayente2 ?? personaVacia);
+  const [detalleBautismo, setDetalleBautismo] = useState(borradorInicial?.detalleBautismo ?? {
     fechaNacimiento: '',
     horaNacimiento: '',
     lugarNacimiento: '',
@@ -121,7 +181,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     folio: '',
     asiento: '',
   });
-  const [detalleMatrimonio, setDetalleMatrimonio] = useState({
+  const [detalleMatrimonio, setDetalleMatrimonio] = useState(borradorInicial?.detalleMatrimonio ?? {
     libro: '',
     folio: '',
   });
@@ -130,28 +190,37 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   useFocusTrap(modalRef, isOpen);
 
   useEffect(() => {
-    if (!isOpen) {
-      setTipo('bautismo');
-      setIdParroquia('');
-      setIdPresbitero('');
-      setFechaSacramento('');
-      setObservaciones('');
-      setBautizado(personaVacia());
-      setPadre(personaVacia());
-      setMadre(personaVacia());
-      setPadrino(personaVacia());
-      setMadrina(personaVacia());
-      setAbuelos([]);
-      setPersona(personaVacia());
-      setContrayente1(personaVacia());
-      setContrayente2(personaVacia());
-      setDetalleBautismo({ fechaNacimiento: '', horaNacimiento: '', lugarNacimiento: '', libro: '', folio: '', asiento: '' });
-      setDetalleMatrimonio({ libro: '', folio: '' });
-      setErrors({});
-    }
-  }, [isOpen]);
+    guardarBorradorSacramento({ tipo, idParroquia, idPresbitero, fechaSacramento, observaciones, bautizado, padre, madre, padrino, madrina, abuelos, persona, contrayente1, contrayente2, detalleBautismo, detalleMatrimonio });
+  }, [tipo, idParroquia, idPresbitero, fechaSacramento, observaciones, bautizado, padre, madre, padrino, madrina, abuelos, persona, contrayente1, contrayente2, detalleBautismo, detalleMatrimonio]);
 
   if (!isOpen) return null;
+
+  // Reinicia el formulario y elimina el borrador para empezar una inscripción nueva.
+  const limpiarProgreso = (mostrarMensaje = true) => {
+    const vacio = borradorVacio();
+    borrarBorradorSacramento();
+    setTipo(vacio.tipo);
+    setIdParroquia(vacio.idParroquia);
+    setIdPresbitero(vacio.idPresbitero);
+    setFechaSacramento(vacio.fechaSacramento);
+    setObservaciones(vacio.observaciones);
+    setBautizado(vacio.bautizado);
+    setPadre(vacio.padre);
+    setMadre(vacio.madre);
+    setPadrino(vacio.padrino);
+    setMadrina(vacio.madrina);
+    setAbuelos(vacio.abuelos);
+    setPersona(vacio.persona);
+    setContrayente1(vacio.contrayente1);
+    setContrayente2(vacio.contrayente2);
+    setDetalleBautismo(vacio.detalleBautismo);
+    setDetalleMatrimonio(vacio.detalleMatrimonio);
+    setCampoCedulaCargando(null);
+    setErrors({});
+    if (mostrarMensaje) {
+      showToast('Progreso eliminado. Puede iniciar una inscripción nueva.', 'success');
+    }
+  };
 
   // Orden estricto de la cadena: bautismo -> comunion -> confirmacion -> matrimonio.
   const ORDEN: TipoSacramento[] = ['bautismo', 'comunion', 'confirmacion', 'matrimonio'];
@@ -219,33 +288,34 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     }));
   };
 
-  // Al completar la cédula, consulta la API de cédulas (Hacienda vía GoMeta) y
-  // autocompleta nombre y apellidos solo si esos campos están vacíos.
-  // Usa un cache en memoria para no re-llamar a la API por la misma cédula.
+  // Al completar la cédula, consulta la API y llena solo los campos que el usuario no haya escrito.
   const autocompletarPorCedula = async (
     setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
     cedula: string,
     persona: PersonaForm,
+    campo: string,
   ) => {
     const digitos = cedulaDigitosValidos(cedula);
     if (digitos.length !== 9) return;
     // Si nombre y apellidos ya están llenos, no tiene sentido consultar.
     if (persona.nombre.trim() && persona.primerApellido.trim()) return;
-    // Cache: evita re-llamar a la API para una cédula ya consultada.
-    if (cacheCedulas.has(cedula)) return;
-    const datos = await obtenerDatosCedula(cedula);
-    cacheCedulas.set(cedula, datos ?? null);
-    if (!datos) return;
-    setter((prev) => ({
-      ...prev,
-      nombre: prev.nombre.trim() ? prev.nombre : datos.nombre,
-      primerApellido: prev.primerApellido.trim()
-        ? prev.primerApellido
-        : datos.primerApellido,
-      segundoApellido: prev.segundoApellido.trim()
-        ? prev.segundoApellido
-        : datos.segundoApellido,
-    }));
+    setCampoCedulaCargando(campo);
+    try {
+      const datos = await obtenerDatosCedula(cedula);
+      if (!datos) return;
+      setter((prev) => ({
+        ...prev,
+        nombre: prev.nombre.trim() ? prev.nombre : datos.nombre,
+        primerApellido: prev.primerApellido.trim()
+          ? prev.primerApellido
+          : datos.primerApellido,
+        segundoApellido: prev.segundoApellido.trim()
+          ? prev.segundoApellido
+          : datos.segundoApellido,
+      }));
+    } finally {
+      setCampoCedulaCargando((actual) => (actual === campo ? null : actual));
+    }
   };
 
   const setAbueloCampo = (idx: number, campo: keyof PersonaForm, valor: string) => {
@@ -262,27 +332,31 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     );
   };
 
-  // Autocompleta nombre y apellidos de un abuelo a partir de su cédula (usa cache).
+  // Autocompleta nombre y apellidos de un abuelo a partir de su cédula.
   const autocompletarAbueloPorCedula = async (idx: number, abuelo: PersonaForm & { parentesco: ParentescoAbuelo }) => {
     const digitos = cedulaDigitosValidos(abuelo.cedula);
     if (digitos.length !== 9) return;
     if (abuelo.nombre.trim() && abuelo.primerApellido.trim()) return;
-    if (cacheCedulas.has(abuelo.cedula)) return;
-    const datos = await obtenerDatosCedula(abuelo.cedula);
-    cacheCedulas.set(abuelo.cedula, datos ?? null);
-    if (!datos) return;
-    setAbuelos((prev) =>
-      prev.map((a, i) =>
-        i === idx
-          ? {
-              ...a,
-              nombre: a.nombre.trim() ? a.nombre : datos.nombre,
-              primerApellido: a.primerApellido.trim() ? a.primerApellido : datos.primerApellido,
-              segundoApellido: a.segundoApellido.trim() ? a.segundoApellido : datos.segundoApellido,
-            }
-          : a,
-      ),
-    );
+    const campo = `abuelo-${idx}`;
+    setCampoCedulaCargando(campo);
+    try {
+      const datos = await obtenerDatosCedula(abuelo.cedula);
+      if (!datos) return;
+      setAbuelos((prev) =>
+        prev.map((a, i) =>
+          i === idx
+            ? {
+                ...a,
+                nombre: a.nombre.trim() ? a.nombre : datos.nombre,
+                primerApellido: a.primerApellido.trim() ? a.primerApellido : datos.primerApellido,
+                segundoApellido: a.segundoApellido.trim() ? a.segundoApellido : datos.segundoApellido,
+              }
+            : a,
+        ),
+      );
+    } finally {
+      setCampoCedulaCargando((actual) => (actual === campo ? null : actual));
+    }
   };
 
   const setDetalleBautismoCampo = (campo: 'libro' | 'folio' | 'asiento', valor: string) =>
@@ -413,6 +487,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     setSaving(true);
     try {
       await onSave(construirDto());
+      limpiarProgreso(false);
       onClose();
     } catch (err: any) {
       if (err?.response?.status === 409) {
@@ -440,16 +515,28 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     <div className="mb-5">
       <Label>{titulo}</Label>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div>
+        <div className="relative">
           <Input
             type="text"
             placeholder="Cédula (0-0000-0000)"
             maxLength={12}
-            className={inputClass(Boolean(errors[`${prefijo}Cedula`]))}
+            className={cn(inputClass(Boolean(errors[`${prefijo}Cedula`])), 'pr-10')}
             value={persona.cedula}
-            onChange={(e) => setPersonaCampo(setter, 'cedula', e.target.value)}
-            onBlur={() => void autocompletarPorCedula(setter, persona.cedula, persona)}
+            onChange={(e) => {
+              const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
+              setPersonaCampo(setter, 'cedula', e.target.value);
+              if (cedulaDigitosValidos(cedula).length === 9) {
+                void autocompletarPorCedula(setter, cedula, { ...persona, cedula }, prefijo);
+              }
+            }}
+            onBlur={() => void autocompletarPorCedula(setter, persona.cedula, persona, prefijo)}
           />
+          {campoCedulaCargando === prefijo && (
+            <Loader2
+              aria-label="Buscando datos de la cédula"
+              className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue"
+            />
+          )}
         </div>
         <div>
           <Input
@@ -516,7 +603,10 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
                 ))}
               </select>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} onChange={(e) => setAbueloCampo(idx, 'cedula', e.target.value)} onBlur={() => void autocompletarAbueloPorCedula(idx, ab)} />
+                <div className="relative">
+                  <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} className="pr-10" onChange={(e) => setAbueloCampo(idx, 'cedula', e.target.value)} onBlur={() => void autocompletarAbueloPorCedula(idx, ab)} />
+                  {campoCedulaCargando === `abuelo-${idx}` && <Loader2 aria-label="Buscando datos de la cédula" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue" />}
+                </div>
                 <Input type="text" placeholder="Nombre" maxLength={30} value={ab.nombre} onChange={(e) => setAbueloCampo(idx, 'nombre', e.target.value)} />
                 <Input type="text" placeholder="Primer apellido" maxLength={30} value={ab.primerApellido} onChange={(e) => setAbueloCampo(idx, 'primerApellido', e.target.value)} />
                 <Input type="text" placeholder="Segundo apellido" maxLength={30} value={ab.segundoApellido} onChange={(e) => setAbueloCampo(idx, 'segundoApellido', e.target.value)} />
@@ -596,16 +686,21 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
         className="flex max-h-[90vh] w-[90%] max-w-[800px] flex-col overflow-hidden rounded-xl bg-white dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-gray-200 bg-surface-muted px-6 py-5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
-          <h2 className="m-0 text-lg text-slate-800 dark:text-[#f3f6fa]">INSCRIPCIÓN SACRAMENTAL</h2>
-          <button
-            type="button"
-            aria-label="Cerrar"
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
-            onClick={onClose}
-          >
-            ×
-          </button>
+        <div className="flex flex-col gap-3 border-b border-gray-200 bg-surface-muted px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
+          <h2 className="m-0 text-base text-slate-800 sm:text-lg dark:text-[#f3f6fa]">INSCRIPCIÓN SACRAMENTAL</h2>
+          <div className="flex items-center justify-between gap-2 sm:justify-end">
+            <Button type="button" variant="secondary" className="min-h-8 rounded-lg px-3 py-1 text-xs dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!" onClick={limpiarProgreso} disabled={saving}>
+              LIMPIAR PROGRESO
+            </Button>
+            <button
+              type="button"
+              aria-label="Cerrar"
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
+              onClick={onClose}
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         <div className="flex gap-2 border-b border-gray-200 px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
@@ -706,11 +801,11 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
             )}
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
-            <Button type="submit" variant="royal" disabled={saving || catalogoCargando}>
+          <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-surface-muted px-4 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
+            <Button type="submit" variant="royal" className="w-full sm:w-auto" disabled={saving || catalogoCargando}>
               {saving ? 'GUARDANDO...' : 'INSCRIBIR ACTA'}
             </Button>
-            <Button type="button" variant="secondary" onClick={onClose} disabled={saving} className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!">
+            <Button type="button" variant="secondary" className="w-full sm:w-auto dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!" onClick={onClose} disabled={saving}>
               CANCELAR
             </Button>
           </div>

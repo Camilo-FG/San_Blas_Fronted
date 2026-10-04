@@ -70,6 +70,10 @@ export default function LandingSectionModal({
   const [previewAmpliada, setPreviewAmpliada] = useState(false);
   const [visorVisible, setVisorVisible] = useState(false);
   const [campoResaltado, setCampoResaltado] = useState<string | null>(null);
+  // intento de guardado actual; sirve pa saber cuándo llevar el scroll al
+  // primer campo con error sin interferir mientras el usuario escribe
+  const [intentoGuardado, setIntentoGuardado] = useState(0);
+  const intentoProcesadoRef = useRef(0);
   const reducirMovimiento = useReducedMotion();
   const { esOscuro } = useTheme();
   const transicionVisor = reducirMovimiento
@@ -191,6 +195,20 @@ export default function LandingSectionModal({
     };
   }, [campoResaltado, previewAmpliada, visorVisible]);
 
+  // al intentar guardar con errores, hace scroll hasta el primer campo con
+  // problema; no vuelve a scrollear mientras el usuario corrige (mismo intento)
+  useEffect(() => {
+    if (intentoGuardado === 0) return;
+    const primerConError = fields.find((field) => errores[field.name]);
+    if (!primerConError) return;
+    if (intentoProcesadoRef.current === intentoGuardado) return;
+    intentoProcesadoRef.current = intentoGuardado;
+    const nodo = document.getElementById(
+      `landing-field-${primerConError.name}`,
+    );
+    nodo?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [intentoGuardado, errores, fields]);
+
   const camposFormulario = fields.map((field) => {
     const value = values[field.name] ?? "";
     const fieldId = `landing-field-${field.name}`;
@@ -234,7 +252,6 @@ export default function LandingSectionModal({
                 onChange(field.name, values[field.name] ?? "");
               }
             }}
-            onClearExisting={() => onChange(field.name, "")}
           />
         </div>
       );
@@ -277,7 +294,7 @@ export default function LandingSectionModal({
         <Label htmlFor={fieldId} required={esObligatorio}>
           {field.label}
         </Label>
-        {field.hint && (
+        {field.hint && field.format !== "ibanCr" && (
           <p className="mb-1.5 text-sm text-text-muted dark:text-[#b7c3d4]">{field.hint}</p>
         )}
         <Input
@@ -288,12 +305,23 @@ export default function LandingSectionModal({
           placeholder={field.placeholder}
           hasError={Boolean(mensajeError)}
           aria-invalid={Boolean(mensajeError)}
-          aria-describedby={mensajeError ? errorId : undefined}
+          aria-describedby={
+            field.format === "ibanCr"
+              ? `${fieldId}-formato${mensajeError ? ` ${errorId}` : ""}`
+              : mensajeError
+                ? errorId
+                : undefined
+          }
           onFocus={marcarEnPreview}
           onClick={marcarEnPreview}
           onBlur={quitarResalte}
           onChange={(event) => escribirEnCampo(event.target.value)}
         />
+        {field.format === "ibanCr" && field.hint && (
+          <p id={`${fieldId}-formato`} className="mt-1.5 text-sm text-text-muted">
+            {field.hint}
+          </p>
+        )}
         <CharacterCounter value={value} maxLength={field.maxLength} />
         <FieldError id={errorId} message={mensajeError} />
       </div>
@@ -485,6 +513,7 @@ export default function LandingSectionModal({
         onClick={(event) => event.stopPropagation()}
         onSubmit={(event) => {
           event.preventDefault();
+          setIntentoGuardado((valor) => valor + 1);
           onSave();
         }}
       >

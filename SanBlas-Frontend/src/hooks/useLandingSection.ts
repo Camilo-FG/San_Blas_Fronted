@@ -1,69 +1,37 @@
 import { useEffect, useState } from "react";
-import { API_BASE_URL } from "../config/api";
+import { useQuery } from "@tanstack/react-query";
 import type { LandingSectionKey } from "../services/landingService";
-
-async function fetchLandingSection<T extends Record<string, unknown>>(
-  sectionKey: LandingSectionKey,
-): Promise<T | null> {
-  try {
-  const response = await fetch(
-    `${API_BASE_URL.replace(/\/+$/, "")}/landing/${sectionKey}`,
-  );
-    if (!response.ok) return null;
-    const payload = (await response.json()) as { data?: T };
-    return payload.data ?? null;
-  } catch {
-    return null;
-  }
-}
+import { obtenerSeccionLanding } from "../services/landingService";
 
 export function useLandingSection<T extends Record<string, unknown>>(
   sectionKey: LandingSectionKey,
   fallback: T,
   options?: { defer?: boolean },
 ) {
-  const [data, setData] = useState<T>(fallback);
   const defer = options?.defer ?? false;
+  const [ready, setReady] = useState(!defer);
 
   useEffect(() => {
-    let active = true;
-
-    const cargar = async () => {
-      const section = await fetchLandingSection<T>(sectionKey);
-      if (!active || !section) return;
-
-      const merged = { ...fallback, ...section };
-      setData((current) =>
-        JSON.stringify(current) === JSON.stringify(merged) ? current : merged,
-      );
-    };
-
     let idleId: number | undefined;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-    const programarCarga = () => {
-      if (defer && "requestIdleCallback" in window) {
+    if (!defer) {
+      setReady(true);
+      return;
+    }
+
+    if ("requestIdleCallback" in window) {
         idleId = window.requestIdleCallback(
           () => {
-            if (active) void cargar();
+            setReady(true);
           },
           { timeout: 2500 },
         );
-        return;
-      }
-
-      timeoutId = setTimeout(
-        () => {
-          if (active) void cargar();
-        },
-        defer ? 1200 : 0,
-      );
-    };
-
-    programarCarga();
+    } else {
+      timeoutId = setTimeout(() => setReady(true), 1200);
+    }
 
     return () => {
-      active = false;
       if (idleId !== undefined && "cancelIdleCallback" in window) {
         window.cancelIdleCallback(idleId);
       }
@@ -71,7 +39,15 @@ export function useLandingSection<T extends Record<string, unknown>>(
         clearTimeout(timeoutId);
       }
     };
-  }, [sectionKey, defer]);
+  }, [defer]);
 
-  return { data };
+  const { data: section } = useQuery({
+    queryKey: ["landing", sectionKey],
+    queryFn: () => obtenerSeccionLanding<T>(sectionKey),
+    enabled: ready,
+    staleTime: 60_000,
+    gcTime: 30 * 60_000,
+  });
+
+  return { data: { ...fallback, ...section?.data } };
 }

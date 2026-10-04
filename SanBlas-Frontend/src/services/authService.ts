@@ -1,12 +1,16 @@
 import {
   apiClient,
   handleApiError,
-  setAuthToken,
 } from "./apiClient";
-import { getCurrentUser, type AuthUser } from "./authSession";
+import {
+  getCurrentUser,
+  logout as clearSession,
+  setCurrentUser,
+  type AuthUser,
+} from "./authSession";
 
 export type { AuthUser } from "./authSession";
-export { getCurrentUser, logout } from "./authSession";
+export { getCurrentUser } from "./authSession";
 
 export interface LoginCredentials {
   email: string;
@@ -14,7 +18,7 @@ export interface LoginCredentials {
 }
 
 export interface LoginResponse {
-  accessToken: string;
+  user: AuthUser;
 }
 
 export const login = async (
@@ -26,10 +30,40 @@ export const login = async (
       password: credentials.password,
     });
 
-    setAuthToken(data.accessToken);
-    return getCurrentUser()!;
+    setCurrentUser(data.user);
+    return data.user;
   } catch (error) {
     handleApiError(error);
+  }
+};
+
+let restorePromise: Promise<AuthUser | null> | null = null;
+
+// Recupera la sesión desde la cookie HttpOnly una vez por carga de la app.
+export const restoreSession = async (): Promise<AuthUser | null> => {
+  if (getCurrentUser()) return getCurrentUser();
+  restorePromise ??= apiClient
+    .get<LoginResponse>("/auth/session")
+    .then(({ data }) => {
+      setCurrentUser(data.user);
+      return data.user;
+    })
+    .catch(() => {
+      clearSession();
+      return null;
+    })
+    .finally(() => {
+      restorePromise = null;
+    });
+
+  return restorePromise;
+};
+
+export const logout = async (): Promise<void> => {
+  try {
+    await apiClient.post("/auth/logout");
+  } finally {
+    clearSession();
   }
 };
 

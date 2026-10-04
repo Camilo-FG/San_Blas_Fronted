@@ -11,6 +11,9 @@ export const TELEFONO_LANDING_REGEX = /^[\d+\s()-]{7,40}$/;
 export const YOUTUBE_EMBED_REGEX =
   /^https:\/\/www\.youtube\.com\/embed\/[A-Za-z0-9_-]+(?:\?.*)?$/;
 export const CORREO_LANDING_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const IBAN_CR_REGEX = /^CR\d{20}$/i;
+const MENSAJE_IBAN_CR =
+  "La cuenta bancaria debe ser un IBAN de Costa Rica. Ejemplo: CR67015100012345678901";
 
 const MENSAJES_REQUERIDO: Record<string, string> = {
   subtitle: "El encabezado es obligatorio.",
@@ -34,6 +37,7 @@ const MENSAJES_REQUERIDO: Record<string, string> = {
   requisitos: "Incluya al menos un requisito.",
   charlas: "Las charlas prebautismales son obligatorias.",
   solicitud: "El texto de solicitud es obligatorio.",
+  cuentaBancaria: "La cuenta bancaria es obligatoria.",
 };
 
 function mensajeRequerido(sectionKey: LandingSectionKey, name: string): string {
@@ -111,6 +115,7 @@ function mensajeLongitud(
     ubicacion: "La ubicación no puede superar 120 caracteres.",
     charlas: "Las charlas prebautismales no pueden superar 300 caracteres.",
     solicitud: "El texto de solicitud no puede superar 300 caracteres.",
+    cuentaBancaria: MENSAJE_IBAN_CR,
   };
 
   return (
@@ -190,6 +195,11 @@ export function validarFormularioLanding(
 
     if (field.format === "phone" && !TELEFONO_LANDING_REGEX.test(valor)) {
       errores[field.name] = "El teléfono no tiene un formato válido.";
+      continue;
+    }
+
+    if (field.format === "ibanCr" && !IBAN_CR_REGEX.test(valor)) {
+      errores[field.name] = MENSAJE_IBAN_CR;
       continue;
     }
 

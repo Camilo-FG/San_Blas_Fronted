@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Edit3, RotateCcw } from "lucide-react";
 import {
   actualizarSeccionLanding,
@@ -30,6 +31,8 @@ import type { ArchivoImagen } from "../../solicSacramento/components/SubidaImage
 
 function GestionLanding() {
   const { showToast } = useToast();
+  // invalida el caché del sitio público pa que lo recién guardado se vea ya
+  const queryClient = useQueryClient();
   const [sections, setSections] = useState<LandingSectionResponse[]>([]);
   const [editingKey, setEditingKey] = useState<LandingSectionKey | null>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -114,6 +117,8 @@ function GestionLanding() {
       for (const item of actualizadas) mapa.set(item.sectionKey, item);
       return Array.from(mapa.values());
     });
+    // marca como viejo el caché del home pa que refleje el reset ya mismo
+    void queryClient.invalidateQueries({ queryKey: ["landing"] });
   };
 
   const restablecerSeccion = async () => {
@@ -166,6 +171,12 @@ function GestionLanding() {
         }
         archivos[nombre] = archivo.file;
       }
+
+      if (archivos.imageUrl) {
+        // El archivo nuevo reemplaza la URL anterior; nunca mandamos ambas señales.
+        delete payload.imageUrl;
+        delete payload.eliminarImagen;
+      }
       const updated = await actualizarSeccionLanding(
         editingKey,
         payload,
@@ -184,6 +195,9 @@ function GestionLanding() {
         }
         return [...current, updated];
       });
+      // sin esto el home seguía mostrando la sección vieja hasta que venciera
+      // el caché de React Query (hasta 10 min)
+      void queryClient.invalidateQueries({ queryKey: ["landing"] });
       Object.values(archivosImagen).forEach((archivo) => {
         if (archivo?.preview) URL.revokeObjectURL(archivo.preview);
       });
