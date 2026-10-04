@@ -158,7 +158,7 @@ const GestionSacramentos = () => {
       )}
 
       {mostrarEstadoVacio && (
-        <div className="rounded-xl border border-border-strong bg-surface">
+        <div className="rounded-xl border border-border-strong bg-surface dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
           <SacramentoEmptyState />
         </div>
       )}
