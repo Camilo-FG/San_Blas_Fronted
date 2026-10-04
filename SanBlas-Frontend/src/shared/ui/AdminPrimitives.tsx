@@ -22,7 +22,7 @@ export function AdminToolbar({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-2xl border border-border-strong bg-surface p-4 shadow-sm md:flex-row md:flex-wrap md:items-center",
+        "flex flex-col gap-3 rounded-2xl border border-border-strong bg-surface p-4 shadow-sm md:flex-row md:flex-wrap md:items-center dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none",
         className,
       )}
       {...props}
@@ -44,7 +44,7 @@ export function AdminSearch({
       />
       <input
         className={cn(
-          "min-h-11 w-full rounded-xl border border-border-strong bg-surface-muted py-2.5 pr-3.5 pl-10 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none",
+          "min-h-11 w-full rounded-xl border border-border-strong bg-surface-muted py-2.5 pr-3.5 pl-10 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]",
           className,
         )}
         {...props}
@@ -61,7 +61,7 @@ export function AdminTablePanel({
   return (
     <div
       className={cn(
-        "overflow-x-auto rounded-2xl border border-border-strong bg-surface shadow-sm",
+        "overflow-x-auto rounded-2xl border border-border-strong bg-surface shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none",
         className,
       )}
       {...props}
@@ -78,7 +78,7 @@ export function AdminTable({
 }: HTMLAttributes<HTMLTableElement>) {
   return (
     <table
-      className={cn("w-full border-collapse text-sm", className)}
+      className={cn("w-full border-collapse text-sm dark:bg-[#0a1425]", className)}
       {...props}
     >
       {children}
@@ -92,7 +92,7 @@ export function AdminTableHead({
   ...props
 }: HTMLAttributes<HTMLTableSectionElement>) {
   return (
-    <thead className={cn("bg-surface-muted", className)} {...props}>
+    <thead className={cn("bg-surface-muted dark:bg-[#0f1d33]", className)} {...props}>
       {children}
     </thead>
   );
@@ -106,7 +106,7 @@ export function AdminTableHeaderCell({
   return (
     <th
       className={cn(
-        "border-b border-border-strong px-4 py-3.5 text-left text-xs font-extrabold tracking-wide text-royal-blue uppercase whitespace-nowrap",
+        "border-b border-border-strong px-4 py-3.5 text-left text-xs font-extrabold tracking-wide text-royal-blue uppercase whitespace-nowrap dark:border-[rgba(220,230,242,0.12)] dark:text-[#f3f6fa]",
         className,
       )}
       {...props}
@@ -124,7 +124,7 @@ export function AdminTableCell({
   return (
     <td
       className={cn(
-        "border-b border-slate-100 px-4 py-3.5 align-middle text-slate-700",
+        "border-b border-slate-100 px-4 py-3.5 align-middle text-slate-700 dark:border-white/[0.08] dark:text-[#f3f6fa]",
         className,
       )}
       {...props}
@@ -140,7 +140,13 @@ export function AdminTableRow({
   ...props
 }: HTMLAttributes<HTMLTableRowElement>) {
   return (
-    <tr className={cn("hover:bg-surface-muted", className)} {...props}>
+    <tr
+      className={cn(
+        "hover:bg-surface-muted dark:bg-[#0a1425] dark:hover:bg-white/[0.035]",
+        className,
+      )}
+      {...props}
+    >
       {children}
     </tr>
   );
@@ -169,7 +175,7 @@ export function AdminTableFooter({
       className={cn(
         "mt-3.5 flex min-w-0 flex-wrap items-center justify-between gap-3 overflow-x-hidden px-1 pt-3.5 text-sm text-text-muted",
         pegadoAbajo &&
-          "fixed right-0 bottom-0 left-0 z-20 mt-0 border-t border-border bg-gray-50/95 px-4 pt-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-[left] duration-[800ms] [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] sm:px-6 lg:left-[var(--sidebar-width,16rem)] lg:px-8",
+          "fixed right-0 bottom-0 left-0 z-20 mt-0 border-t border-border bg-gray-50/95 px-4 pt-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-[left] duration-300 ease-out sm:px-6 lg:left-[var(--sidebar-width,16rem)] lg:px-8",
           "fixed right-0 bottom-0 left-0 z-20 mt-0 border-t border-border bg-gray-50/95 px-4 pt-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))] max-sm:flex-col max-sm:items-stretch max-sm:gap-2.5 sm:px-6 lg:left-64 lg:px-8",
         className,
       )}

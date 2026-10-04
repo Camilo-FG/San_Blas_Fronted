@@ -25,7 +25,7 @@ export function LineaDoradaTitulo({
   return (
     <div ref={refContenedor} className="relative w-fit">
       <h2
-        className="m-0 mt-1 pb-2 text-lg leading-tight font-semibold tracking-tight text-[#16243c]"
+        className="m-0 mt-1 pb-2 text-lg leading-tight font-semibold tracking-tight text-[#16243c] dark:text-[#f3f6fa]"
         style={{ fontFamily: "'Geist', sans-serif" }}
       >
         <span ref={refTexto}>{parteSubrayada}</span>

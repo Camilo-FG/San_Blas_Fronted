@@ -63,6 +63,17 @@ const getEstadoBadgeVariant = (estado?: string): BadgeVariant => {
   return "warning";
 };
 
+const getEstadoBadgeDark = (estado?: string): string => {
+  const normalized = (estado || "pendiente").toLowerCase();
+  if (normalized === "aprobado")
+    return "dark:border-[rgba(53,214,160,0.35)] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]";
+  if (normalized === "rechazado")
+    return "dark:border-[rgba(230,106,106,0.35)] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]";
+  if (normalized === "archivado")
+    return "dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]";
+  return "dark:border-[rgba(242,163,74,0.35)] dark:bg-[rgba(242,163,74,0.10)] dark:text-[#f2a34a]";
+};
+
 const normalizeText = (value: unknown) =>
   String(value ?? "")
     .normalize("NFD")
@@ -118,6 +129,11 @@ export default function GestionDonaciones(): React.JSX.Element {
   const [motivoError, setMotivoError] = useState<string | null>(null);
   const [motivoMenuAbierto, setMotivoMenuAbierto] = useState(false);
   const motivoMenuRef = useRef<HTMLDivElement>(null);
+  const [tamanoPaginaMenuAbierto, setTamanoPaginaMenuAbierto] = useState(false);
+  const tamanoPaginaMenuRef = useRef<HTMLDivElement>(null);
+  const [tamanoPaginaHistMenuAbierto, setTamanoPaginaHistMenuAbierto] =
+    useState(false);
+  const tamanoPaginaHistMenuRef = useRef<HTMLDivElement>(null);
   const [approvalDetail, setApprovalDetail] = useState("");
   const [vista, setVista] = useState<"solicitudes" | "historial">(
     "solicitudes",
@@ -224,7 +240,12 @@ export default function GestionDonaciones(): React.JSX.Element {
   ]);
 
   useEffect(() => {
-    if (!motivoMenuAbierto) return;
+    if (
+      !motivoMenuAbierto &&
+      !tamanoPaginaMenuAbierto &&
+      !tamanoPaginaHistMenuAbierto
+    )
+      return;
 
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -233,11 +254,23 @@ export default function GestionDonaciones(): React.JSX.Element {
       ) {
         setMotivoMenuAbierto(false);
       }
+      if (
+        tamanoPaginaMenuRef.current &&
+        !tamanoPaginaMenuRef.current.contains(event.target as Node)
+      ) {
+        setTamanoPaginaMenuAbierto(false);
+      }
+      if (
+        tamanoPaginaHistMenuRef.current &&
+        !tamanoPaginaHistMenuRef.current.contains(event.target as Node)
+      ) {
+        setTamanoPaginaHistMenuAbierto(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [motivoMenuAbierto]);
+  }, [motivoMenuAbierto, tamanoPaginaMenuAbierto, tamanoPaginaHistMenuAbierto]);
 
   const handleSoloLetrasNombre = (valor: string) =>
     valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "").slice(0, 30);
@@ -497,7 +530,7 @@ export default function GestionDonaciones(): React.JSX.Element {
   };
 
   const renderEstadoBadge = (estado?: string) => (
-    <Badge variant={getEstadoBadgeVariant(estado)}>
+    <Badge variant={getEstadoBadgeVariant(estado)} className={getEstadoBadgeDark(estado)}>
       {estado || "Pendiente"}
     </Badge>
   );
@@ -572,15 +605,15 @@ export default function GestionDonaciones(): React.JSX.Element {
         <NotificacionSolicitudesNuevas cantidad={solicitudesNuevas} />
       )}
 
-      <div className="flex w-full flex-wrap items-center gap-1 rounded-xl border border-border-strong bg-surface p-1 shadow-sm">
+      <div className="flex w-full flex-wrap items-center gap-1 rounded-xl border border-border-strong bg-surface p-1 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
         <button
           type="button"
           onClick={() => setVista("solicitudes")}
           aria-pressed={vista === "solicitudes"}
           className={`inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border-0 px-4 text-sm transition-colors ${
             vista === "solicitudes"
-              ? "bg-[#003366] font-semibold text-white"
-              : "bg-transparent font-medium text-text-secondary hover:bg-surface-muted"
+              ? "bg-[#003366] font-semibold text-white dark:bg-[#d9a928] dark:text-[#040b16] dark:shadow-[0_0_18px_rgba(217,169,40,0.35)]"
+              : "bg-transparent font-medium text-text-secondary hover:bg-surface-muted dark:text-[#b7c3d4] dark:hover:bg-[rgba(217,169,40,0.14)] dark:hover:text-[#d9a928]"
           }`}
         >
           <Inbox size={16} />
@@ -592,8 +625,8 @@ export default function GestionDonaciones(): React.JSX.Element {
           aria-pressed={vista === "historial"}
           className={`inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border-0 px-4 text-sm transition-colors ${
             vista === "historial"
-              ? "bg-[#003366] font-semibold text-white"
-              : "bg-transparent font-medium text-text-secondary hover:bg-surface-muted"
+              ? "bg-[#003366] font-semibold text-white dark:bg-[#d9a928] dark:text-[#040b16] dark:shadow-[0_0_18px_rgba(217,169,40,0.35)]"
+              : "bg-transparent font-medium text-text-secondary hover:bg-surface-muted dark:text-[#b7c3d4] dark:hover:bg-[rgba(217,169,40,0.14)] dark:hover:text-[#d9a928]"
           }`}
         >
           <Archive size={16} />
@@ -602,7 +635,7 @@ export default function GestionDonaciones(): React.JSX.Element {
         <button
           type="button"
           onClick={() => setExportModalAbierto(true)}
-          className="ml-auto inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border-0 bg-surface px-4 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-muted"
+          className="ml-auto inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border-0 bg-surface px-4 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-muted dark:bg-[#0f1d33] dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
           aria-label="Exportar tabla"
         >
           <Download size={16} />
@@ -612,7 +645,7 @@ export default function GestionDonaciones(): React.JSX.Element {
 
       {vista === "solicitudes" && (
         <>
-      <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm">
+      <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
         <AdminSearch
           type="text"
           placeholder="Nombre o apellidos"
@@ -632,24 +665,24 @@ export default function GestionDonaciones(): React.JSX.Element {
           aria-label="Filtrar por correo"
         />
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-text-muted">Desde</span>
+          <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">Desde</span>
           <input
             type="date"
             value={fechaDesde}
             max={fechaHasta || undefined}
             onChange={(e) => setFechaDesde(e.target.value)}
-            className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 dark:text-[#f3f6fa] transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
             aria-label="Filtrar solicitudes desde fecha"
           />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-text-muted">Hasta</span>
+          <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">Hasta</span>
           <input
             type="date"
             value={fechaHasta}
             min={fechaDesde || undefined}
             onChange={(e) => setFechaHasta(e.target.value)}
-            className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 dark:text-[#f3f6fa] transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
             aria-label="Filtrar solicitudes hasta fecha"
           />
         </label>
@@ -657,7 +690,7 @@ export default function GestionDonaciones(): React.JSX.Element {
           type="button"
           onClick={limpiarFiltrosSolicitudes}
           disabled={!hayFiltrosSolicitudesActivos}
-          className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-sm font-semibold text-slate-900 dark:text-[#f3f6fa] dark:text-[#f3f6fa] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] transition-colors hover:bg-surface-muted dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] disabled:cursor-not-allowed disabled:opacity-40 dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
           aria-label="Limpiar filtros de solicitudes"
         >
           <RotateCcw size={15} strokeWidth={2} />
@@ -666,7 +699,7 @@ export default function GestionDonaciones(): React.JSX.Element {
       </div>
 
       {fechaDesde && fechaHasta && !rangoFechasValido(fechaDesde, fechaHasta) && (
-        <p className="m-0 text-xs font-semibold text-red-600">
+        <p className="m-0 text-xs font-semibold text-red-600 dark:text-[#e66a6a]">
           La fecha de inicio no puede ser mayor que la fecha de fin
         </p>
       )}
@@ -675,9 +708,9 @@ export default function GestionDonaciones(): React.JSX.Element {
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <Loader2
             size={32}
-            className="animate-spin text-text-muted"
+            className="animate-spin text-text-muted dark:text-[#7f8da3]"
           />
-          <p className="m-0 text-sm text-text-secondary">
+          <p className="m-0 text-sm text-text-secondary dark:text-[#b7c3d4] dark:text-[#b7c3d4]">
             Buscando registros...
           </p>
         </div>
@@ -686,19 +719,19 @@ export default function GestionDonaciones(): React.JSX.Element {
       {error && !cargando && <ErrorMessage message={error} />}
 
       {mostrarEstadoVacio && (
-        <div className="rounded-xl border border-border-strong bg-surface">
+        <div className="rounded-xl border border-border-strong bg-surface dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
           <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-surface-muted">
+            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-surface-muted dark:bg-[#0f1d33]">
               <Search
                 size={28}
                 strokeWidth={1.5}
-                className="text-text-muted"
+                className="text-text-muted dark:text-[#7f8da3]"
               />
             </span>
-            <p className="m-0 max-w-md text-lg font-semibold text-text-secondary">
+            <p className="m-0 max-w-md text-lg font-semibold text-text-secondary dark:text-[#b7c3d4]">
               No se encontraron registros
             </p>
-            <p className="m-0 max-w-md text-sm text-text-muted">
+            <p className="m-0 max-w-md text-sm text-text-muted dark:text-[#7f8da3]">
               Intente con menos filtros o verifique la información ingresada
             </p>
           </div>
@@ -734,7 +767,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                         <span
                           className={
                             donacion.anonimo
-                              ? "font-medium italic text-slate-400"
+                              ? "font-medium italic text-slate-400 dark:text-[#7f8da3]"
                               : "font-medium"
                           }
                         >
@@ -752,7 +785,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                       </AdminTableCell>
                       <AdminTableCell>
                         {donacion.telefono || (
-                          <span className="text-slate-400 italic">
+                          <span className="text-slate-400 dark:text-[#7f8da3] italic">
                             No provisto
                           </span>
                         )}
@@ -765,7 +798,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                           type="button"
                           onClick={() => abrirDetalle(donacion)}
                           aria-label="Ver solicitud"
-                          className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                          className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary dark:text-[#7f8da3] transition-colors hover:bg-info-bg hover:text-info dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                         >
                           <Eye
                             size={17}
@@ -820,37 +853,84 @@ export default function GestionDonaciones(): React.JSX.Element {
             ))}
           </div>
 
-          <AdminTableFooter pegadoAbajo>
-            <span className="text-sm text-text-muted">
+          <AdminTableFooter pegadoAbajo className="overflow-x-visible dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]">
+            <span className="text-sm text-text-muted dark:text-[#7f8da3]">
               Mostrando{" "}
-              <strong className="text-text tabular-nums">
+              <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                 {primerRegistro}-{ultimoRegistro}
               </strong>{" "}
               de{" "}
-              <strong className="text-text tabular-nums">
+              <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                 {donacionesFiltradas.length}
               </strong>{" "}
               registros
             </span>
             <AdminPagination className="flex-wrap">
-              <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+              <label className="mr-1 flex items-center gap-2 text-sm text-text-muted dark:text-[#7f8da3]">
                 Registros por página
-                <select
-                  value={registrosPorPagina}
-                  onChange={(event) =>
-                    setRegistrosPorPagina(Number(event.target.value))
-                  }
-                  className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
-                  aria-label="Cantidad de registros por página"
-                >
-                  {TAMANOS_PAGINA.map((tamano) => (
-                    <option key={tamano} value={tamano}>
-                      {tamano}
-                    </option>
-                  ))}
-                </select>
+                <span className="relative inline-flex" ref={tamanoPaginaMenuRef}>
+                  <button
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={tamanoPaginaMenuAbierto}
+                    onClick={() =>
+                      setTamanoPaginaMenuAbierto((prev) => !prev)
+                    }
+                    className={`flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
+                      tamanoPaginaMenuAbierto
+                        ? "border-blue-400 bg-surface dark:border-[#d9a928]"
+                        : "border-border-strong"
+                    }`}
+                    aria-label="Cantidad de registros por página"
+                  >
+                    <span className="min-w-6 text-center">
+                      {registrosPorPagina}
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      strokeWidth={2.5}
+                      className={`shrink-0 transition-transform duration-200 ${
+                        tamanoPaginaMenuAbierto ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {tamanoPaginaMenuAbierto && (
+                    <ul
+                      role="listbox"
+                      aria-label="Cantidad de registros por página"
+                      className="absolute right-0 bottom-full z-50 mb-1.5 w-full min-w-[72px] overflow-hidden rounded-xl border border-border-strong bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+                    >
+                      {TAMANOS_PAGINA.map((tamano) => {
+                        const activo = registrosPorPagina === tamano;
+                        return (
+                          <li
+                            key={tamano}
+                            role="option"
+                            aria-selected={activo}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRegistrosPorPagina(tamano);
+                                setTamanoPaginaMenuAbierto(false);
+                              }}
+                              className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold tabular-nums transition-colors ${
+                                activo
+                                  ? "bg-royal-blue/10 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                                  : "text-slate-700 hover:bg-royal-blue/5 dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
+                              }`}
+                            >
+                              {tamano}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </span>
               </label>
               <AdminPaginationButton
+                className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
                 type="button"
                 onClick={() =>
                   setPaginaActual((pagina) => Math.max(1, pagina - 1))
@@ -860,13 +940,14 @@ export default function GestionDonaciones(): React.JSX.Element {
               >
                 <ChevronLeft size={16} strokeWidth={2} />
               </AdminPaginationButton>
-              <span className="text-sm whitespace-nowrap text-text-muted">
+              <span className="text-sm whitespace-nowrap text-text-muted dark:text-[#7f8da3]">
                 Página{" "}
-                <strong className="text-text tabular-nums">{paginaActual}</strong>{" "}
+                <strong className="text-text tabular-nums dark:text-[#f3f6fa]">{paginaActual}</strong>{" "}
                 de{" "}
-                <strong className="text-text tabular-nums">{totalPaginas}</strong>
+                <strong className="text-text tabular-nums dark:text-[#f3f6fa]">{totalPaginas}</strong>
               </span>
               <AdminPaginationButton
+                className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
                 type="button"
                 onClick={() =>
                   setPaginaActual((pagina) => Math.min(totalPaginas, pagina + 1))
@@ -885,7 +966,7 @@ export default function GestionDonaciones(): React.JSX.Element {
 
       {vista === "historial" && (
         <div className="flex w-full flex-col gap-4">
-          <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm">
+          <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
             <AdminSearch
               type="text"
               placeholder="Nombre o apellidos"
@@ -911,7 +992,7 @@ export default function GestionDonaciones(): React.JSX.Element {
               aria-label="Filtrar historial por correo"
             />
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-text-muted">
+              <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
                 Tipo
               </span>
               <select
@@ -924,7 +1005,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                       | "rechazado",
                   )
                 }
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 dark:text-[#f3f6fa] transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial por tipo"
               >
                 <option value="todos">Todos</option>
@@ -933,7 +1014,7 @@ export default function GestionDonaciones(): React.JSX.Element {
               </select>
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-text-muted">
+              <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
                 Desde
               </span>
               <input
@@ -941,12 +1022,12 @@ export default function GestionDonaciones(): React.JSX.Element {
                 value={historialFechaDesde}
                 max={historialFechaHasta || undefined}
                 onChange={(e) => setHistorialFechaDesde(e.target.value)}
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 dark:text-[#f3f6fa] transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial desde fecha"
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-text-muted">
+              <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
                 Hasta
               </span>
               <input
@@ -954,7 +1035,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                 value={historialFechaHasta}
                 min={historialFechaDesde || undefined}
                 onChange={(e) => setHistorialFechaHasta(e.target.value)}
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 dark:text-[#f3f6fa] transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial hasta fecha"
               />
             </label>
@@ -962,7 +1043,7 @@ export default function GestionDonaciones(): React.JSX.Element {
               type="button"
               onClick={limpiarFiltrosHistorial}
               disabled={!hayFiltrosHistorialActivos}
-              className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-sm font-semibold text-slate-900 dark:text-[#f3f6fa] dark:text-[#f3f6fa] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] transition-colors hover:bg-surface-muted dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] disabled:cursor-not-allowed disabled:opacity-40 dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
               aria-label="Limpiar filtros del historial"
             >
               <RotateCcw size={15} strokeWidth={2} />
@@ -973,15 +1054,15 @@ export default function GestionDonaciones(): React.JSX.Element {
           {historialFechaDesde &&
             historialFechaHasta &&
             !rangoFechasValido(historialFechaDesde, historialFechaHasta) && (
-              <p className="m-0 text-xs font-semibold text-red-600">
+              <p className="m-0 text-xs font-semibold text-red-600 dark:text-[#e66a6a]">
                 La fecha de inicio no puede ser mayor que la fecha de fin
               </p>
             )}
 
           {historialCargando && (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-              <Loader2 size={32} className="animate-spin text-text-muted" />
-              <p className="m-0 text-sm text-text-secondary">
+              <Loader2 size={32} className="animate-spin text-text-muted dark:text-[#7f8da3]" />
+              <p className="m-0 text-sm text-text-secondary dark:text-[#b7c3d4] dark:text-[#b7c3d4]">
                 Cargando historial...
               </p>
             </div>
@@ -1038,7 +1119,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                             </AdminTableCell>
                             <AdminTableCell>
                               <span
-                                className="line-clamp-2 block text-sm text-text-secondary"
+                                className="line-clamp-2 block text-sm text-text-secondary dark:text-[#b7c3d4] dark:text-[#b7c3d4]"
                                 title={
                                   donacion.estado === "Aprobado"
                                     ? donacion.detalleAprobacion ||
@@ -1062,7 +1143,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                                   setHistorialSeleccionada(donacion)
                                 }
                                 aria-label="Ver historial de esta donación"
-                                className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                                className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary dark:text-[#7f8da3] transition-colors hover:bg-info-bg hover:text-info dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                               >
                                 <Eye
                                   size={17}
@@ -1114,39 +1195,88 @@ export default function GestionDonaciones(): React.JSX.Element {
                   ))}
                 </div>
 
-                <AdminTableFooter pegadoAbajo>
-                  <span className="text-sm text-text-muted">
+                <AdminTableFooter pegadoAbajo className="overflow-x-visible dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]">
+                  <span className="text-sm text-text-muted dark:text-[#7f8da3]">
                     Mostrando{" "}
-                    <strong className="text-text tabular-nums">
+                    <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                       {primerHistorialRegistro}-{ultimoHistorialRegistro}
                     </strong>{" "}
                     de{" "}
-                    <strong className="text-text tabular-nums">
+                    <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                       {historial.length}
                     </strong>{" "}
                     registros
                   </span>
                   <AdminPagination className="flex-wrap">
-                    <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+                    <label className="mr-1 flex items-center gap-2 text-sm text-text-muted dark:text-[#7f8da3]">
                       Registros por página
-                      <select
-                        value={historialRegistrosPorPagina}
-                        onChange={(event) =>
-                          setHistorialRegistrosPorPagina(
-                            Number(event.target.value),
-                          )
-                        }
-                        className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
-                        aria-label="Cantidad de registros por página"
+                      <span
+                        className="relative inline-flex"
+                        ref={tamanoPaginaHistMenuRef}
                       >
-                        {TAMANOS_PAGINA.map((tamano) => (
-                          <option key={tamano} value={tamano}>
-                            {tamano}
-                          </option>
-                        ))}
-                      </select>
+                        <button
+                          type="button"
+                          aria-haspopup="listbox"
+                          aria-expanded={tamanoPaginaHistMenuAbierto}
+                          onClick={() =>
+                            setTamanoPaginaHistMenuAbierto((prev) => !prev)
+                          }
+                          className={`flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
+                            tamanoPaginaHistMenuAbierto
+                              ? "border-blue-400 bg-surface dark:border-[#d9a928]"
+                              : "border-border-strong"
+                          }`}
+                          aria-label="Cantidad de registros por página"
+                        >
+                          <span className="min-w-6 text-center">
+                            {historialRegistrosPorPagina}
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            strokeWidth={2.5}
+                            className={`shrink-0 transition-transform duration-200 ${
+                              tamanoPaginaHistMenuAbierto ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+                        {tamanoPaginaHistMenuAbierto && (
+                          <ul
+                            role="listbox"
+                            aria-label="Cantidad de registros por página"
+                            className="absolute right-0 bottom-full z-50 mb-1.5 w-full min-w-[72px] overflow-hidden rounded-xl border border-border-strong bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+                          >
+                            {TAMANOS_PAGINA.map((tamano) => {
+                              const activo =
+                                historialRegistrosPorPagina === tamano;
+                              return (
+                                <li
+                                  key={tamano}
+                                  role="option"
+                                  aria-selected={activo}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setHistorialRegistrosPorPagina(tamano);
+                                      setTamanoPaginaHistMenuAbierto(false);
+                                    }}
+                                    className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold tabular-nums transition-colors ${
+                                      activo
+                                        ? "bg-royal-blue/10 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                                        : "text-slate-700 hover:bg-royal-blue/5 dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
+                                    }`}
+                                  >
+                                    {tamano}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </span>
                     </label>
                     <AdminPaginationButton
+                      className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
                       type="button"
                       onClick={() =>
                         setHistorialPagina((pagina) =>
@@ -1158,17 +1288,18 @@ export default function GestionDonaciones(): React.JSX.Element {
                     >
                       <ChevronLeft size={16} strokeWidth={2} />
                     </AdminPaginationButton>
-                    <span className="text-sm whitespace-nowrap text-text-muted">
+                    <span className="text-sm whitespace-nowrap text-text-muted dark:text-[#7f8da3]">
                       Página{" "}
-                      <strong className="text-text tabular-nums">
+                      <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                         {historialPagina}
                       </strong>{" "}
                       de{" "}
-                      <strong className="text-text tabular-nums">
+                      <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                         {totalHistorialPaginas}
                       </strong>
                     </span>
                     <AdminPaginationButton
+                      className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
                       type="button"
                       onClick={() =>
                         setHistorialPagina((pagina) =>
@@ -1190,7 +1321,7 @@ export default function GestionDonaciones(): React.JSX.Element {
       <AnimatePresence>
         {donacionSeleccionada && (
           <motion.div
-            className="fixed inset-0 z-[1300] bg-[#060f20]"
+            className="fixed inset-0 z-[1300] bg-[#060f20] dark:bg-black/60"
             initial={{ opacity: 0 }}
             animate={{ opacity: confirmacion ? 0 : 0.7 }}
             exit={{ opacity: 0 }}
@@ -1206,6 +1337,8 @@ export default function GestionDonaciones(): React.JSX.Element {
           title={`Historial de DON-${historialSeleccionada.id}`}
           sinFondo
           cerrarConEsc
+          className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+          overlayClassName="dark:bg-black/60"
         >
           <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
@@ -1213,18 +1346,18 @@ export default function GestionDonaciones(): React.JSX.Element {
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border-strong bg-surface-muted p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border-strong bg-surface-muted p-4 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
                 <div className="flex flex-col gap-1">
-                  <p className="m-0 text-lg font-semibold text-slate-900">
+                  <p className="m-0 text-lg font-semibold text-slate-900 dark:text-[#f3f6fa]">
                     {historialSeleccionada.nombre}
                   </p>
-                  <p className="m-0 text-sm text-text-secondary">
+                  <p className="m-0 text-sm text-text-secondary dark:text-[#b7c3d4] dark:text-[#b7c3d4]">
                     {historialSeleccionada.correo}
                     {historialSeleccionada.telefono
                       ? ` · ${historialSeleccionada.telefono}`
                       : ""}
                   </p>
-                  <p className="m-0 text-xs text-text-muted">
+                  <p className="m-0 text-xs text-text-muted dark:text-[#7f8da3]">
                     Fecha de ingreso:{" "}
                     {formatearFecha(
                       historialSeleccionada.fechaIngreso ?? "",
@@ -1235,35 +1368,35 @@ export default function GestionDonaciones(): React.JSX.Element {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <p className="m-0 text-xs font-bold tracking-wide text-text-muted uppercase">
+                <p className="m-0 text-xs font-bold tracking-wide text-text-muted dark:text-[#7f8da3] uppercase">
                   Detalle de la donación
                 </p>
-                <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+                <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4] dark:text-[#b7c3d4]">
                   {historialSeleccionada.detalle}
                 </p>
               </div>
 
               {historialSeleccionada.estado === "Aprobado" ? (
-                <div className="flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <div className="flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-[rgba(53,214,160,0.35)] dark:bg-[rgba(53,214,160,0.10)]">
                   <Badge variant="success">Aprobado</Badge>
-                  <p className="m-0 text-sm text-emerald-900">
+                  <p className="m-0 text-sm text-emerald-900 dark:text-[#35d6a0]">
                     {historialSeleccionada.detalleAprobacion ||
                       "Sin comentario de aprobación"}
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 p-4">
+                <div className="flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-[rgba(230,106,106,0.35)] dark:bg-[rgba(230,106,106,0.10)]">
                   <Badge variant="danger">Rechazado</Badge>
-                  <p className="m-0 text-sm font-semibold text-red-900">
+                  <p className="m-0 text-sm font-semibold text-red-900 dark:text-[#e66a6a]">
                     {historialSeleccionada.motivoRechazo || "Motivo no especificado"}
                   </p>
                   {historialSeleccionada.detalleRechazo && (
-                    <p className="m-0 text-sm text-red-800">
+                    <p className="m-0 text-sm text-red-800 dark:text-[#e66a6a]">
                       {historialSeleccionada.detalleRechazo}
                     </p>
                   )}
                   {historialSeleccionada.fechaRechazo && (
-                    <p className="m-0 text-xs text-red-700">
+                    <p className="m-0 text-xs text-red-700 dark:text-[#e66a6a]">
                       Rechazado el{" "}
                       {formatearFecha(historialSeleccionada.fechaRechazo)}
                     </p>
@@ -1291,6 +1424,8 @@ export default function GestionDonaciones(): React.JSX.Element {
           title="Confirmar aprobación"
           sinFondo
           cerrarAlClicFuera={false}
+          className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+          overlayClassName="dark:bg-black/60"
         >
           <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
@@ -1299,7 +1434,7 @@ export default function GestionDonaciones(): React.JSX.Element {
           >
             <div className="flex min-h-44 flex-col gap-4">
               <LineaDoradaTitulo parteSubrayada="Aprobar donativo" />
-              <p className="text-sm leading-relaxed text-text-secondary">
+              <p className="text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4] dark:text-[#b7c3d4]">
                 ¿Estás seguro/a que quieres aprobar este donativo? Una vez
                 aprobado su estado no podrá ser cambiado.
               </p>
@@ -1313,15 +1448,15 @@ export default function GestionDonaciones(): React.JSX.Element {
               />
               <div className="-mt-2 flex items-baseline justify-between gap-2">
                 {tieneCaracteresInvalidos(approvalDetail) && (
-                  <p className="m-0 text-xs font-semibold text-red-600">
+                  <p className="m-0 text-xs font-semibold text-red-600 dark:text-[#e66a6a]">
                     Los caracteres especiales no están permitidos
                   </p>
                 )}
                 <p
                   className={`m-0 ml-auto text-xs ${
                     approvalDetail.length >= 150
-                      ? "font-semibold text-red-600"
-                      : "text-text-muted"
+                      ? "font-semibold text-red-600 dark:text-[#e66a6a]"
+                      : "text-text-muted dark:text-[#7f8da3]"
                   }`}
                 >
                   {approvalDetail.length}/150
@@ -1352,7 +1487,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                 </Button>
                 <Button
                   variant="secondary"
-                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                   onClick={cancelarConfirmacion}
                   disabled={guardando}
                 >
@@ -1371,10 +1506,11 @@ export default function GestionDonaciones(): React.JSX.Element {
           }
           title={isConfirmRejectOpen ? "Confirmar rechazo" : "Rechazar donativo"}
           sinFondo
+          className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
           overlayClassName={
             isConfirmRejectOpen
-              ? "fixed inset-0 z-[1350] backdrop-blur-[6px]"
-              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+              ? "fixed inset-0 z-[1350] backdrop-blur-[6px] dark:bg-black/60"
+              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
           }
         >
           <motion.div
@@ -1387,7 +1523,7 @@ export default function GestionDonaciones(): React.JSX.Element {
               <div className="flex min-h-44 flex-col">
                 <LineaDoradaTitulo parteSubrayada="Rechazar donativo" />
                 <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
-                  <p className="text-sm leading-relaxed text-text-secondary">
+                  <p className="text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4] dark:text-[#b7c3d4]">
                     ¿Estás seguro/a que quieres rechazar este donativo? Una vez
                     rechazado, su estado no podrá ser cambiado.
                   </p>
@@ -1410,7 +1546,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                   </Button>
                   <Button
                     variant="secondary"
-                    className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                    className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                     onClick={handleCancelConfirmReject}
                     disabled={guardando}
                   >
@@ -1421,7 +1557,7 @@ export default function GestionDonaciones(): React.JSX.Element {
             ) : (
               <div className="flex min-h-44 flex-col gap-4">
                 <LineaDoradaTitulo parteSubrayada="Rechazar donativo" />
-                <p className="text-sm text-text-secondary">
+                <p className="text-sm text-text-secondary dark:text-[#b7c3d4] dark:text-[#b7c3d4]">
                   Seleccione el motivo de rechazo en la lista. El campo de texto
                   es opcional para agregar un detalle.
                 </p>
@@ -1431,24 +1567,24 @@ export default function GestionDonaciones(): React.JSX.Element {
                     aria-haspopup="listbox"
                     aria-expanded={motivoMenuAbierto}
                     onClick={() => setMotivoMenuAbierto((prev) => !prev)}
-                    className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 ${
+                    className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 dark:text-[#f3f6fa] transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
                       motivoMenuAbierto
-                        ? "border-blue-400 bg-surface"
+                        ? "border-blue-400 bg-surface dark:border-[#d9a928] dark:bg-[#0f1d33]"
                         : "border-border-strong"
                     }`}
                   >
                     <span
                       className={
                         rejectionReasonSelect
-                          ? "font-semibold text-[#16243c]"
-                          : "font-medium text-slate-700"
+                          ? "font-semibold text-[#16243c] dark:text-[#f3f6fa]"
+                          : "font-medium text-slate-700 dark:text-[#b7c3d4]"
                       }
                     >
                       {rejectionReasonSelect || "Seleccione un motivo"}
                     </span>
                     <ChevronDown
                       size={16}
-                      className={`shrink-0 text-slate-900 transition-transform duration-200 ${
+                      className={`shrink-0 text-slate-900 dark:text-[#f3f6fa] transition-transform duration-200 ${
                         motivoMenuAbierto ? "rotate-180" : ""
                       }`}
                     />
@@ -1468,7 +1604,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -6, scale: 0.98 }}
                           transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-                          className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                          className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)]"
                         >
                           {rejectionReasons.map((reason) => (
                             <li
@@ -1485,8 +1621,8 @@ export default function GestionDonaciones(): React.JSX.Element {
                                 }}
                                 className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
                                   rejectionReasonSelect === reason
-                                    ? "bg-[#aa7323]/10 text-[#16243c]"
-                                    : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                                    ? "bg-[#aa7323]/10 text-[#16243c] dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                                    : "text-[#16243c] dark:text-[#f3f6fa] hover:bg-[#aa7323]/15 hover:text-[#aa7323] dark:hover:bg-[rgba(217,169,40,0.14)] dark:hover:text-[#d9a928]"
                                 }`}
                               >
                                 {reason}
@@ -1508,20 +1644,20 @@ export default function GestionDonaciones(): React.JSX.Element {
                 />
                 <div className="-mt-2 flex items-baseline justify-between gap-2">
                   {motivoError && (
-                    <p className="m-0 text-xs font-semibold text-red-600">
+                    <p className="m-0 text-xs font-semibold text-red-600 dark:text-[#e66a6a]">
                       {motivoError}
                     </p>
                   )}
                   {tieneCaracteresInvalidos(rejectionReasonText) && (
-                    <p className="m-0 text-xs font-semibold text-red-600">
+                    <p className="m-0 text-xs font-semibold text-red-600 dark:text-[#e66a6a]">
                       Los caracteres especiales no están permitidos
                     </p>
                   )}
                   <p
                     className={`m-0 ml-auto text-xs ${
                       rejectionReasonText.length >= 150
-                        ? "font-semibold text-red-600"
-                        : "text-text-muted"
+                        ? "font-semibold text-red-600 dark:text-[#e66a6a]"
+                        : "text-text-muted dark:text-[#7f8da3]"
                     }`}
                   >
                     {rejectionReasonText.length}/150
@@ -1541,7 +1677,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                   </Button>
                   <Button
                     variant="secondary"
-                    className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                    className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                     onClick={() => cerrarRechazo()}
                     disabled={guardando}
                   >

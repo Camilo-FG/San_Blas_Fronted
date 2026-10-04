@@ -88,9 +88,9 @@ interface UserListProps {
 const TAMANOS_PAGINA = [10, 25, 50] as const;
 const ACCENTO_ADMIN = '#003366'; // acento de las tarjetas de usuarios en móvil
 const BOTON_ICONO_TABLA =
-    'inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
+    'inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]';
 const BOTON_ICONO_ELIMINAR =
-    'inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-40';
+    'inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-40 dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]';
 
 const columnHelper = createColumnHelper<Usuario>();
 
@@ -194,19 +194,19 @@ export const UserList = ({
             columnHelper.accessor('userName', {
                 header: 'Nombre de Usuario',
                 cell: (info) => (
-                    <span className="font-medium text-text">{info.getValue()}</span>
+                    <span className="font-medium text-text dark:text-[#f3f6fa]">{info.getValue()}</span>
                 ),
             }),
             columnHelper.accessor('email', {
                 header: 'Email',
                 cell: (info) => (
-                    <span className="text-text-secondary">{info.getValue()}</span>
+                    <span className="text-text-secondary dark:text-[#b7c3d4]">{info.getValue()}</span>
                 ),
             }),
             columnHelper.accessor('phoneNumber', {
                 header: 'Teléfono',
                 cell: (info) => (
-                    <span className="tabular-nums text-text-secondary">
+                    <span className="tabular-nums text-text-secondary dark:text-[#b7c3d4]">
                         {info.getValue() || '—'}
                     </span>
                 ),
@@ -214,13 +214,20 @@ export const UserList = ({
             columnHelper.accessor('role', {
                 header: 'Rol',
                 cell: (info) => (
-                    <span className="text-text-secondary">{etiquetaRol(info.getValue(), roles)}</span>
+                    <span className="text-text-secondary dark:text-[#b7c3d4]">{etiquetaRol(info.getValue(), roles)}</span>
                 ),
             }),
             columnHelper.accessor('state', {
                 header: 'Estado',
                 cell: (info) => (
-                    <Badge variant={info.getValue() ? 'success' : 'danger'}>
+                    <Badge
+                        variant={info.getValue() ? 'success' : 'danger'}
+                        className={
+                            info.getValue()
+                                ? 'dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]'
+                                : 'dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]'
+                        }
+                    >
                         {info.getValue() ? 'Activo' : 'Inactivo'}
                     </Badge>
                 ),
@@ -228,7 +235,7 @@ export const UserList = ({
             columnHelper.accessor('creationDate', {
                 header: 'Fecha de Creación',
                 cell: (info) => (
-                    <span className="tabular-nums text-text-secondary">
+                    <span className="tabular-nums text-text-secondary dark:text-[#b7c3d4]">
                         {formatFechaCreacion(info.getValue())}
                     </span>
                 ),
@@ -320,7 +327,11 @@ export const UserList = ({
                 <div className="relative flex items-center gap-2">
                     <Button
                         variant={mostrarFiltros ? 'primary' : 'secondary'}
-                        className="shrink-0 gap-1.5"
+                        className={
+                            mostrarFiltros
+                                ? 'shrink-0 gap-1.5 dark:border-[rgba(53,214,160,0.35)] dark:bg-[#0f1d33] dark:text-[#35d6a0]'
+                                : 'shrink-0 gap-1.5 dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!'
+                        }
                         onClick={() => setMostrarFiltros((p) => !p)}
                     >
                         <SlidersHorizontal size={16} />
@@ -341,7 +352,7 @@ export const UserList = ({
                 <p
                     role="status"
                     aria-live="polite"
-                    className="m-0 flex items-center gap-2 text-sm text-text-muted"
+                    className="m-0 flex items-center gap-2 text-sm text-text-muted dark:text-[#7f8da3]"
                 >
                     <Loader2 size={16} className="animate-spin" />
                     Buscando usuarios...
@@ -349,9 +360,9 @@ export const UserList = ({
             )}
 
             {mostrarFiltros && (
-                <div className="flex flex-col gap-3 rounded-xl border border-border-strong bg-surface-muted p-4 sm:flex-row sm:items-end">
+                <div className="flex flex-col gap-3 rounded-xl border border-border-strong bg-surface-muted p-4 sm:flex-row sm:items-end dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
                     <div className="flex-1">
-                        <label className="mb-1.5 block text-xs font-bold text-text-muted uppercase">
+                        <label className="mb-1.5 block text-xs font-bold text-text-muted uppercase dark:text-[#7f8da3]">
                             Rol
                         </label>
                         <Select
@@ -368,7 +379,7 @@ export const UserList = ({
                         </Select>
                     </div>
                     <div className="flex-1">
-                        <label className="mb-1.5 block text-xs font-bold text-text-muted uppercase">
+                        <label className="mb-1.5 block text-xs font-bold text-text-muted uppercase dark:text-[#7f8da3]">
                             Estado
                         </label>
                         <Select
@@ -402,7 +413,7 @@ export const UserList = ({
                         {(filtroRolTemp || filtroEstadoTemp) && (
                             <Button
                                 variant="secondary"
-                                className="min-h-10 gap-1"
+                                className="min-h-10 gap-1 dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                                 onClick={() => {
                                     setFiltroRolTemp('');
                                     setFiltroEstadoTemp('');
@@ -538,7 +549,14 @@ export const UserList = ({
                                         title={usuario.userName}
                                         subtitle={etiquetaRol(usuario.role, roles)}
                                         badges={
-                                            <Badge variant={usuario.state ? 'success' : 'danger'}>
+                                            <Badge
+                                                variant={usuario.state ? 'success' : 'danger'}
+                                                className={
+                                                    usuario.state
+                                                        ? 'dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]'
+                                                        : 'dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]'
+                                                }
+                                            >
                                                 {usuario.state ? 'Activo' : 'Inactivo'}
                                             </Badge>
                                         }
@@ -588,22 +606,25 @@ export const UserList = ({
                         )}
                     </div>
 
-                    <AdminTableFooter pegadoAbajo>
-                        <span className="text-sm text-text-muted">
+                    <AdminTableFooter
+                        pegadoAbajo
+                        className="overflow-x-visible dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]"
+                    >
+                        <span className="text-sm text-text-muted dark:text-[#7f8da3]">
                             Mostrando{' '}
-                            <strong className="text-text tabular-nums">
+                            <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                                 {primerRegistro}-{ultimoRegistro}
                             </strong>{' '}
-                            de <strong className="text-text tabular-nums">{total}</strong> registros
+                            de <strong className="text-text tabular-nums dark:text-[#f3f6fa]">{total}</strong> registros
                         </span>
                         <AdminPagination>
-                            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+                            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted dark:text-[#7f8da3]">
                                 <span className="max-sm:hidden">Registros por página</span>
                                 <span className="sm:hidden">Por página</span>
                                 <select
                                     value={limite}
                                     onChange={(e) => setLimite(Number(e.target.value))}
-                                    className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                                    className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                                     aria-label="Cantidad de registros por página"
                                 >
                                     {TAMANOS_PAGINA.map((tamano) => (
@@ -618,19 +639,21 @@ export const UserList = ({
                                 onClick={() => setPagina(pagina - 1)}
                                 disabled={!canPreviousPage}
                                 aria-label="Página anterior"
+                                className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
                             >
                                 <ChevronLeft size={16} strokeWidth={2} />
                             </AdminPaginationButton>
-                            <span className="text-sm whitespace-nowrap text-text-muted">
+                            <span className="text-sm whitespace-nowrap text-text-muted dark:text-[#7f8da3]">
                                 Página{' '}
-                                <strong className="text-text tabular-nums">{pagina}</strong> de{' '}
-                                <strong className="text-text tabular-nums">{totalPages || 1}</strong>
+                                <strong className="text-text tabular-nums dark:text-[#f3f6fa]">{pagina}</strong> de{' '}
+                                <strong className="text-text tabular-nums dark:text-[#f3f6fa]">{totalPages || 1}</strong>
                             </span>
                             <AdminPaginationButton
                                 type="button"
                                 onClick={() => setPagina(pagina + 1)}
                                 disabled={!canNextPage}
                                 aria-label="Página siguiente"
+                                className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
                             >
                                 <ChevronRight size={16} strokeWidth={2} />
                             </AdminPaginationButton>
@@ -643,7 +666,8 @@ export const UserList = ({
                 <Modal
                     onClose={() => setUsuarioSeleccionado(null)}
                     title={`Perfil de ${usuarioSeleccionado.userName}`}
-                    className="max-w-2xl p-0"
+                    className="max-w-2xl p-0 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+                    overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
                 >
                     <PerfilUsuarioCard
                         usuario={usuarioSeleccionado}
@@ -666,7 +690,7 @@ export const UserList = ({
                     usuarioAEliminar ? (
                         <>
                             ¿Está seguro de eliminar a{' '}
-                            <strong className="font-semibold text-text">
+                            <strong className="font-semibold text-text dark:text-[#f3f6fa]">
                                 {usuarioAEliminar.userName}
                             </strong>
                             ? Esta acción no se puede deshacer: la cuenta quedará
@@ -679,6 +703,9 @@ export const UserList = ({
                 confirmLabel="Sí, eliminar"
                 pendingLabel="Eliminando..."
                 isPending={eliminando}
+                overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+                className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_p.text-text-secondary]:text-[#b7c3d4] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+                cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                 onConfirm={() => {
                     void (async () => {
                         if (!usuarioAEliminar) return;

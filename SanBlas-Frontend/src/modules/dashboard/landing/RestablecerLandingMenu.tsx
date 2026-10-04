@@ -93,6 +93,7 @@ export default function RestablecerLandingMenu({
       <div className="relative" ref={contenedorRef}>
         <Button
           variant="secondary"
+          className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
           onClick={() => setAbierto((prev) => !prev)}
           aria-expanded={abierto}
           aria-haspopup="true"
@@ -106,26 +107,26 @@ export default function RestablecerLandingMenu({
         </Button>
 
         {abierto && (
-          <div className="absolute right-0 z-30 mt-2 w-72 rounded-2xl border border-border-strong bg-surface p-3 shadow-lg">
-            <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-muted">
+          <div className="absolute right-0 z-30 mt-2 w-72 rounded-2xl border border-border-strong bg-surface p-3 shadow-lg dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
+            <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-muted dark:hover:bg-white/[0.035]">
               <input
                 type="checkbox"
                 className="size-4 accent-royal-blue"
                 checked={todoMarcado}
                 onChange={alternarTodo}
               />
-              <span className="text-sm font-bold text-royal-blue">
+              <span className="text-sm font-bold text-royal-blue dark:text-[#d9a928]">
                 Restablecer todo
               </span>
             </label>
 
-            <div className="my-1 h-px bg-border" />
+            <div className="my-1 h-px bg-border dark:bg-white/10" />
 
             <div className="flex max-h-64 flex-col overflow-y-auto">
               {LANDING_SECTIONS.map((section) => (
                 <label
                   key={section.key}
-                  className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-muted"
+                  className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-muted dark:hover:bg-white/[0.035]"
                 >
                   <input
                     type="checkbox"
@@ -133,7 +134,7 @@ export default function RestablecerLandingMenu({
                     checked={seleccion.includes(section.key)}
                     onChange={() => alternar(section.key)}
                   />
-                  <span className="text-sm text-text-secondary">
+                  <span className="text-sm text-text-secondary dark:text-[#b7c3d4]">
                     {section.label}
                   </span>
                 </label>
@@ -169,6 +170,9 @@ export default function RestablecerLandingMenu({
         }
         onConfirm={confirmarRestablecer}
         onCancel={() => setConfirmando(false)}
+        overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+        cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
       />
     </div>
   );

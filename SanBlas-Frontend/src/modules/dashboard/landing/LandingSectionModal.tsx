@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Eye, Maximize2, X } from "lucide-react";
 import FocusTrap from "focus-trap-react";
 import type { LandingSectionKey } from "../../../services/landingService";
+import { useTheme } from "../../../context/ThemeContext";
 import type { LandingFieldConfig } from "./landingSectionConfig";
 import { Button, ErrorMessage, FieldError, Input, Label, Textarea } from "../../../shared/ui";
 import {
@@ -43,7 +44,7 @@ function CharacterCounter({
   if (!maxLength) return null;
 
   return (
-    <span className="mt-1 block text-xs text-slate-400" aria-live="polite">
+    <span className="mt-1 block text-xs text-slate-400 dark:text-[#7f8da3]" aria-live="polite">
       {value.length}/{maxLength} caracteres
     </span>
   );
@@ -74,6 +75,7 @@ export default function LandingSectionModal({
   const [intentoGuardado, setIntentoGuardado] = useState(0);
   const intentoProcesadoRef = useRef(0);
   const reducirMovimiento = useReducedMotion();
+  const { esOscuro } = useTheme();
   const transicionVisor = reducirMovimiento
     ? { duration: 0 }
     : { duration: 0.38, ease: [0.22, 1, 0.36, 1] as const };
@@ -233,6 +235,7 @@ export default function LandingSectionModal({
         <div key={field.name}>
           <SubidaImagen
             id={fieldId}
+            darkMode={esOscuro}
             label={field.label}
             hint={field.hint}
             value={archivoCampo}
@@ -261,7 +264,7 @@ export default function LandingSectionModal({
             {field.label}
           </Label>
           {field.hint && (
-            <p className="mb-1.5 text-sm text-text-muted">{field.hint}</p>
+            <p className="mb-1.5 text-sm text-text-muted dark:text-[#b7c3d4]">{field.hint}</p>
           )}
           <Textarea
             id={fieldId}
@@ -292,7 +295,7 @@ export default function LandingSectionModal({
           {field.label}
         </Label>
         {field.hint && field.format !== "ibanCr" && (
-          <p className="mb-1.5 text-sm text-text-muted">{field.hint}</p>
+          <p className="mb-1.5 text-sm text-text-muted dark:text-[#b7c3d4]">{field.hint}</p>
         )}
         <Input
           id={fieldId}
@@ -446,7 +449,7 @@ export default function LandingSectionModal({
   };
 
   const pieFormulario = (
-    <footer className="mt-auto flex shrink-0 flex-col gap-2.5 border-t border-border-strong bg-surface px-4 py-3 md:flex-row md:justify-end">
+    <footer className="mt-auto flex shrink-0 flex-col gap-2.5 border-t border-border-strong bg-surface px-4 py-3 md:flex-row md:justify-end dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
       <Button type="submit" variant="royal" disabled={guardando}>
         {guardando ? "Guardando..." : "Guardar"}
       </Button>
@@ -454,6 +457,7 @@ export default function LandingSectionModal({
         <Button
           type="button"
           variant="secondary"
+          className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
           onClick={() => setVisorVisible(true)}
         >
           <Eye size={16} />
@@ -463,6 +467,7 @@ export default function LandingSectionModal({
       <Button
         type="button"
         variant="secondary"
+        className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
         onClick={onClose}
         disabled={guardando}
       >
@@ -484,7 +489,7 @@ export default function LandingSectionModal({
         }}
       >
         <div
-          className={`fixed inset-0 z-[1200] flex justify-center bg-slate-900/55 ${
+          className={`fixed inset-0 z-[1200] flex justify-center bg-slate-900/55 dark:bg-black/60 ${
             visorVisible
               ? "items-center p-3 md:p-5"
               : "items-end md:items-center md:p-4"
@@ -515,19 +520,19 @@ export default function LandingSectionModal({
         <motion.section
           layout={!reducirMovimiento}
           transition={transicionVisor}
-          className={`flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl bg-surface shadow-[0_24px_50px_rgba(15,23,42,0.28)] ${
+          className={`flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-transparent bg-surface shadow-[0_24px_50px_rgba(15,23,42,0.28)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] ${
             visorVisible
               ? "flex-1 md:w-[min(52%,640px)] md:max-w-[640px] md:flex-none"
               : "max-h-[92vh] md:max-h-[88vh]"
           }`}
         >
-          <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border-strong px-4 py-3.5">
-            <h3 id={titleId} className="m-0 text-lg font-bold text-royal-blue">
+          <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border-strong px-4 py-3.5 dark:border-[rgba(220,230,242,0.12)]">
+            <h3 id={titleId} className="m-0 text-lg font-bold text-royal-blue dark:text-[#d9a928]">
               Personalizar {title}
             </h3>
             <button
               type="button"
-              className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
               onClick={onClose}
               aria-label="Cerrar editor"
               disabled={guardando}
@@ -559,7 +564,7 @@ export default function LandingSectionModal({
               onAnimationComplete={() => {
                 window.dispatchEvent(new Event("resize"));
               }}
-              className="flex min-h-[220px] min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-surface shadow-[0_24px_50px_rgba(15,23,42,0.28)] max-md:aspect-video md:min-h-0"
+              className="flex min-h-[220px] min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-transparent bg-surface shadow-[0_24px_50px_rgba(15,23,42,0.28)] max-md:aspect-video md:min-h-0 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)]"
             >
               <header className="flex shrink-0 items-center justify-between gap-2 bg-royal-blue px-4 py-3.5">
                 <h3 className="m-0 text-sm font-extrabold tracking-[0.16em] text-royal-gold uppercase">
@@ -602,7 +607,7 @@ export default function LandingSectionModal({
         {previewAmpliada && (
           <motion.div
             key="visor-ampliado"
-            className="fixed inset-0 z-[1300] flex items-center justify-center bg-slate-950/75 p-3 md:p-8"
+            className="fixed inset-0 z-[1300] flex items-center justify-center bg-slate-950/75 p-3 md:p-8 dark:bg-black/60"
             role="presentation"
             initial={reducirMovimiento ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -666,7 +671,7 @@ export default function LandingSectionModal({
                   className={`absolute top-3 right-3 z-10 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl transition-colors ${
                     esHero
                       ? "bg-white/15 text-white hover:bg-white/25"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
                   }`}
                   onClick={() => setPreviewAmpliada(false)}
                   aria-label="Cerrar vista previa"

@@ -4,9 +4,9 @@ import { AdminTable, AdminTableCell, AdminTableHead, AdminTableHeaderCell, Admin
 const GetListConfirmacion = () => {
   const { data, isPending, error } = useGetListConfirma();
 
-  if (isPending) return <p>Cargando confirmaciones...</p>;
-  if (error) return <p>Error: {error.message}</p>;
-  if (!data || data.length === 0) return <p>No hay confirmaciones registradas</p>;
+  if (isPending) return <p className="text-text-secondary dark:text-[#b7c3d4]">Cargando confirmaciones...</p>;
+  if (error) return <p className="text-sm font-medium text-danger dark:text-[#e66a6a]">Error: {error.message}</p>;
+  if (!data || data.length === 0) return <p className="text-text-secondary dark:text-[#b7c3d4]">No hay confirmaciones registradas</p>;
 
   return (
     <AdminTablePanel className="w-full overflow-x-auto">
