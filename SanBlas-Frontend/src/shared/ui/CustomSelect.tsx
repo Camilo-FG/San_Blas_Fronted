@@ -19,6 +19,10 @@ type CustomSelectProps = {
   maxVisibleOptions?: number;
   menuHaciaArriba?: boolean;
   ref?: Ref<HTMLButtonElement>;
+  // opcionales para personalizar por llamada (p. ej. modo oscuro solo en admin)
+  triggerClassName?: string;
+  menuClassName?: string;
+  optionClassName?: string;
 };
 
 const OPTION_HEIGHT = 40;
@@ -36,6 +40,9 @@ export function CustomSelect({
   maxVisibleOptions,
   menuHaciaArriba = false,
   ref,
+  triggerClassName,
+  menuClassName,
+  optionClassName,
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const [focusIndex, setFocusIndex] = useState(-1);
@@ -251,6 +258,7 @@ export function CustomSelect({
           hasError
             ? "border-red-400"
             : "border-[#16243c]/25 hover:bg-slate-200",
+          triggerClassName,
         )}
       >
         <span className={selected ? "" : "text-slate-400"}>
@@ -286,6 +294,7 @@ export function CustomSelect({
             className={cn(
               "absolute left-0 z-[9999] w-full overflow-auto rounded-[8px] border-2 border-[#16243c]/25 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]",
               menuHaciaArriba ? "bottom-full mb-1.5" : "top-full mt-1.5",
+              menuClassName,
             )}
             style={{ maxHeight }}
           >
@@ -306,6 +315,7 @@ export function CustomSelect({
                         : activo
                           ? "bg-[#aa7323]/10 text-[#16243c]"
                           : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]",
+                      optionClassName,
                     )}
                   >
                     {option.label}

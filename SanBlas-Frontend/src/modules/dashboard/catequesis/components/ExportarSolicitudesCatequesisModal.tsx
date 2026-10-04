@@ -74,6 +74,9 @@ export function ExportarSolicitudesCatequesisModal({
               value={nivel}
               disabled={exportando}
               className="dark:text-[#f3f6fa]"
+              triggerClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035]"
+              menuClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+              optionClassName="dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
               onChange={(valor) =>
                 setNivel(valor as NivelExportacionCatequesis)
               }
@@ -95,6 +98,9 @@ export function ExportarSolicitudesCatequesisModal({
               value={estado}
               disabled={exportando}
               className="dark:text-[#f3f6fa]"
+              triggerClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035]"
+              menuClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+              optionClassName="dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
               onChange={(valor) =>
                 setEstado(valor as EstadoExportacionCatequesis)
               }
@@ -115,6 +121,9 @@ export function ExportarSolicitudesCatequesisModal({
               value={filial}
               disabled={exportando}
               className="dark:text-[#f3f6fa]"
+              triggerClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035]"
+              menuClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+              optionClassName="dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
               onChange={(valor) =>
                 setFilial(valor as OpcionesExportacionCatequesis["filial"])
               }

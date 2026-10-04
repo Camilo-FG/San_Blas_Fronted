@@ -31,6 +31,22 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
     }
   }, [isAuthenticated, navigate, redirectTo, user]);
 
+  useEffect(() => {
+    // El login siempre va en modo claro: se suspende la clase `dark`
+    // mientras esta página está montada y se restaura al salir.
+    const raiz = document.documentElement;
+    const estabaOscuro = raiz.classList.contains("dark");
+    const esquemaPrevio = raiz.style.colorScheme;
+    raiz.classList.remove("dark");
+    raiz.style.colorScheme = "light";
+    return () => {
+      if (estabaOscuro) {
+        raiz.classList.add("dark");
+      }
+      raiz.style.colorScheme = esquemaPrevio;
+    };
+  }, []);
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);

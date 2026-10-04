@@ -16,6 +16,7 @@ import {
 import type { Evento } from "../../../../services/eventosService";
 import type { EventoPayload } from "../../../../services/eventosService";
 import { extraerFechaCalendario } from "../../../../shared/utils/fechas";
+import { useTheme } from "../../../../context/ThemeContext";
 import { EventoCard } from "../components/EventoCard";
 import {
   ETIQUETA_ESTADO_EVENTO,
@@ -240,6 +241,7 @@ const GestionEventos = () => {
     cargarEventoPorId,
   } = useGestionEventos();
   const { showToast } = useToast();
+  const { esOscuro } = useTheme();
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstadoEvento>("todos");
@@ -779,7 +781,7 @@ const GestionEventos = () => {
               />
             ))}
           </div>
-          <AdminTableFooter pegadoAbajo>
+          <AdminTableFooter pegadoAbajo className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]">
             <span className="min-w-0 text-sm leading-snug text-text-muted dark:text-[#7f8da3]">
               Mostrando{" "}
               <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
@@ -821,6 +823,7 @@ const GestionEventos = () => {
                   }
                   disabled={paginaActual <= 1}
                   aria-label="Página anterior"
+                  className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
                 >
                   <ChevronLeft
                     size={16}
@@ -846,6 +849,7 @@ const GestionEventos = () => {
                   }
                   disabled={paginaActual >= totalPaginas}
                   aria-label="Página siguiente"
+                  className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
                 >
                   <ChevronRight
                     size={16}
@@ -877,7 +881,7 @@ const GestionEventos = () => {
               </Button>
               <Button
                 variant="secondary"
-                className="max-sm:w-full"
+                className="max-sm:w-full dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                 onClick={() => solicitarEliminar(eventoSeleccionado)}
                 disabled={guardando}
               >
@@ -1053,6 +1057,7 @@ const GestionEventos = () => {
 
               <SubidaImagen
                 id="imagen-evento"
+                darkMode={esOscuro}
                 label="Imagen del evento"
                 hint="Opcional. JPG, PNG o WEBP de hasta 5 MB."
                 textoArrastrar="Arrastra y suelta archivos aquí"

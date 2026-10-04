@@ -85,15 +85,15 @@ export function PerfilUsuarioCard({
   };
 
   return (
-    <Card className={cn("p-0", className)}>
+    <Card className={cn("p-0 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]", className)}>
       <div
         className={cn(
-          "flex flex-col gap-4 border-b border-border-strong px-5 py-5 sm:flex-row sm:items-center sm:gap-5",
+          "flex flex-col gap-4 border-b border-border-strong px-5 py-5 sm:flex-row sm:items-center sm:gap-5 dark:border-[rgba(220,230,242,0.12)]",
           espacioParaCerrar && "pr-16",
         )}
       >
         <div
-          className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#003366]/10 text-[#003366]"
+          className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#003366]/10 text-[#003366] dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
           aria-hidden="true"
         >
           <User size={28} />
@@ -137,7 +137,7 @@ export function PerfilUsuarioCard({
         {campos.map((campo) => (
           <div
             key={campo.etiqueta}
-            className="border-b border-border-strong px-5 py-4 last:border-b-0 sm:odd:border-r sm:[&:nth-last-child(-n+2)]:border-b-0"
+            className="border-b border-border-strong px-5 py-4 last:border-b-0 sm:odd:border-r sm:[&:nth-last-child(-n+2)]:border-b-0 dark:border-[rgba(220,230,242,0.12)]"
           >
             <dt className="m-0 text-xs font-bold tracking-wide text-text-muted uppercase dark:text-[#7f8da3]">
               {campo.etiqueta}

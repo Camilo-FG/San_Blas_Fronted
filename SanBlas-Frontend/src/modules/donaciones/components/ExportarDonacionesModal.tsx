@@ -151,6 +151,9 @@ export function ExportarDonacionesModal({
                 { label: "Aprobadas", value: "aprobado" },
                 { label: "Rechazadas", value: "rechazado" },
               ]}
+              triggerClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035]"
+              menuClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+              optionClassName="dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
             />
           </label>
 

@@ -265,6 +265,7 @@ function GestionLanding() {
                 </Button>
                 <Button
                   variant="secondary"
+                  className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                   onClick={() => setSeccionARestablecer(section.key)}
                   aria-label={`Restablecer ${section.label}`}
                 >

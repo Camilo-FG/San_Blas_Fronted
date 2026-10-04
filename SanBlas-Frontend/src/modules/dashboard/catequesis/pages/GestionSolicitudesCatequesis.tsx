@@ -1119,6 +1119,7 @@ function GestionSolicitudesCatequesis() {
             onClick={goToPreviousPage}
             disabled={!canPreviousPage}
             aria-label="Página anterior"
+            className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
           >
             <ChevronLeft size={16} strokeWidth={2} />
           </AdminPaginationButton>
@@ -1134,6 +1135,7 @@ function GestionSolicitudesCatequesis() {
             onClick={goToNextPage}
             disabled={!canNextPage}
             aria-label="Página siguiente"
+            className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
           >
             <ChevronRight size={16} strokeWidth={2} />
           </AdminPaginationButton>
@@ -1677,6 +1679,7 @@ function GestionSolicitudesCatequesis() {
                       }
                       disabled={historialPagina <= 1}
                       aria-label="Página anterior"
+                      className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
                     >
                       <ChevronLeft size={16} strokeWidth={2} />
                     </AdminPaginationButton>
@@ -1699,6 +1702,7 @@ function GestionSolicitudesCatequesis() {
                       }
                       disabled={historialPagina >= totalHistorialPaginas}
                       aria-label="Página siguiente"
+                      className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
                     >
                       <ChevronRight size={16} strokeWidth={2} />
                     </AdminPaginationButton>

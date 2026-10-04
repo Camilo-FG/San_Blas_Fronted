@@ -129,6 +129,11 @@ export default function GestionDonaciones(): React.JSX.Element {
   const [motivoError, setMotivoError] = useState<string | null>(null);
   const [motivoMenuAbierto, setMotivoMenuAbierto] = useState(false);
   const motivoMenuRef = useRef<HTMLDivElement>(null);
+  const [tamanoPaginaMenuAbierto, setTamanoPaginaMenuAbierto] = useState(false);
+  const tamanoPaginaMenuRef = useRef<HTMLDivElement>(null);
+  const [tamanoPaginaHistMenuAbierto, setTamanoPaginaHistMenuAbierto] =
+    useState(false);
+  const tamanoPaginaHistMenuRef = useRef<HTMLDivElement>(null);
   const [approvalDetail, setApprovalDetail] = useState("");
   const [vista, setVista] = useState<"solicitudes" | "historial">(
     "solicitudes",
@@ -235,7 +240,12 @@ export default function GestionDonaciones(): React.JSX.Element {
   ]);
 
   useEffect(() => {
-    if (!motivoMenuAbierto) return;
+    if (
+      !motivoMenuAbierto &&
+      !tamanoPaginaMenuAbierto &&
+      !tamanoPaginaHistMenuAbierto
+    )
+      return;
 
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -244,11 +254,23 @@ export default function GestionDonaciones(): React.JSX.Element {
       ) {
         setMotivoMenuAbierto(false);
       }
+      if (
+        tamanoPaginaMenuRef.current &&
+        !tamanoPaginaMenuRef.current.contains(event.target as Node)
+      ) {
+        setTamanoPaginaMenuAbierto(false);
+      }
+      if (
+        tamanoPaginaHistMenuRef.current &&
+        !tamanoPaginaHistMenuRef.current.contains(event.target as Node)
+      ) {
+        setTamanoPaginaHistMenuAbierto(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [motivoMenuAbierto]);
+  }, [motivoMenuAbierto, tamanoPaginaMenuAbierto, tamanoPaginaHistMenuAbierto]);
 
   const handleSoloLetrasNombre = (valor: string) =>
     valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "").slice(0, 30);
@@ -583,7 +605,7 @@ export default function GestionDonaciones(): React.JSX.Element {
         <NotificacionSolicitudesNuevas cantidad={solicitudesNuevas} />
       )}
 
-      <div className="flex w-full flex-wrap items-center gap-1 rounded-xl border border-border-strong bg-surface p-1 shadow-sm">
+      <div className="flex w-full flex-wrap items-center gap-1 rounded-xl border border-border-strong bg-surface p-1 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
         <button
           type="button"
           onClick={() => setVista("solicitudes")}
@@ -623,7 +645,7 @@ export default function GestionDonaciones(): React.JSX.Element {
 
       {vista === "solicitudes" && (
         <>
-      <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm">
+      <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
         <AdminSearch
           type="text"
           placeholder="Nombre o apellidos"
@@ -697,9 +719,9 @@ export default function GestionDonaciones(): React.JSX.Element {
       {error && !cargando && <ErrorMessage message={error} />}
 
       {mostrarEstadoVacio && (
-        <div className="rounded-xl border border-border-strong bg-surface">
+        <div className="rounded-xl border border-border-strong bg-surface dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
           <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-surface-muted">
+            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-surface-muted dark:bg-[#0f1d33]">
               <Search
                 size={28}
                 strokeWidth={1.5}
@@ -831,7 +853,7 @@ export default function GestionDonaciones(): React.JSX.Element {
             ))}
           </div>
 
-          <AdminTableFooter pegadoAbajo className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]">
+          <AdminTableFooter pegadoAbajo className="overflow-x-visible dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]">
             <span className="text-sm text-text-muted dark:text-[#7f8da3]">
               Mostrando{" "}
               <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
@@ -846,20 +868,66 @@ export default function GestionDonaciones(): React.JSX.Element {
             <AdminPagination className="flex-wrap">
               <label className="mr-1 flex items-center gap-2 text-sm text-text-muted dark:text-[#7f8da3]">
                 Registros por página
-                <select
-                  value={registrosPorPagina}
-                  onChange={(event) =>
-                    setRegistrosPorPagina(Number(event.target.value))
-                  }
-                  className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 dark:text-[#f3f6fa] transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
-                  aria-label="Cantidad de registros por página"
-                >
-                  {TAMANOS_PAGINA.map((tamano) => (
-                    <option key={tamano} value={tamano}>
-                      {tamano}
-                    </option>
-                  ))}
-                </select>
+                <span className="relative inline-flex" ref={tamanoPaginaMenuRef}>
+                  <button
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={tamanoPaginaMenuAbierto}
+                    onClick={() =>
+                      setTamanoPaginaMenuAbierto((prev) => !prev)
+                    }
+                    className={`flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
+                      tamanoPaginaMenuAbierto
+                        ? "border-blue-400 bg-surface dark:border-[#d9a928]"
+                        : "border-border-strong"
+                    }`}
+                    aria-label="Cantidad de registros por página"
+                  >
+                    <span className="min-w-6 text-center">
+                      {registrosPorPagina}
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      strokeWidth={2.5}
+                      className={`shrink-0 transition-transform duration-200 ${
+                        tamanoPaginaMenuAbierto ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {tamanoPaginaMenuAbierto && (
+                    <ul
+                      role="listbox"
+                      aria-label="Cantidad de registros por página"
+                      className="absolute right-0 bottom-full z-50 mb-1.5 w-full min-w-[72px] overflow-hidden rounded-xl border border-border-strong bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+                    >
+                      {TAMANOS_PAGINA.map((tamano) => {
+                        const activo = registrosPorPagina === tamano;
+                        return (
+                          <li
+                            key={tamano}
+                            role="option"
+                            aria-selected={activo}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRegistrosPorPagina(tamano);
+                                setTamanoPaginaMenuAbierto(false);
+                              }}
+                              className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold tabular-nums transition-colors ${
+                                activo
+                                  ? "bg-royal-blue/10 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                                  : "text-slate-700 hover:bg-royal-blue/5 dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
+                              }`}
+                            >
+                              {tamano}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </span>
               </label>
               <AdminPaginationButton
                 className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
@@ -898,7 +966,7 @@ export default function GestionDonaciones(): React.JSX.Element {
 
       {vista === "historial" && (
         <div className="flex w-full flex-col gap-4">
-          <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm">
+          <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
             <AdminSearch
               type="text"
               placeholder="Nombre o apellidos"
@@ -1127,7 +1195,7 @@ export default function GestionDonaciones(): React.JSX.Element {
                   ))}
                 </div>
 
-                <AdminTableFooter pegadoAbajo className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]">
+                <AdminTableFooter pegadoAbajo className="overflow-x-visible dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]">
                   <span className="text-sm text-text-muted dark:text-[#7f8da3]">
                     Mostrando{" "}
                     <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
@@ -1142,22 +1210,70 @@ export default function GestionDonaciones(): React.JSX.Element {
                   <AdminPagination className="flex-wrap">
                     <label className="mr-1 flex items-center gap-2 text-sm text-text-muted dark:text-[#7f8da3]">
                       Registros por página
-                      <select
-                        value={historialRegistrosPorPagina}
-                        onChange={(event) =>
-                          setHistorialRegistrosPorPagina(
-                            Number(event.target.value),
-                          )
-                        }
-                        className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 dark:text-[#f3f6fa] transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
-                        aria-label="Cantidad de registros por página"
+                      <span
+                        className="relative inline-flex"
+                        ref={tamanoPaginaHistMenuRef}
                       >
-                        {TAMANOS_PAGINA.map((tamano) => (
-                          <option key={tamano} value={tamano}>
-                            {tamano}
-                          </option>
-                        ))}
-                      </select>
+                        <button
+                          type="button"
+                          aria-haspopup="listbox"
+                          aria-expanded={tamanoPaginaHistMenuAbierto}
+                          onClick={() =>
+                            setTamanoPaginaHistMenuAbierto((prev) => !prev)
+                          }
+                          className={`flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
+                            tamanoPaginaHistMenuAbierto
+                              ? "border-blue-400 bg-surface dark:border-[#d9a928]"
+                              : "border-border-strong"
+                          }`}
+                          aria-label="Cantidad de registros por página"
+                        >
+                          <span className="min-w-6 text-center">
+                            {historialRegistrosPorPagina}
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            strokeWidth={2.5}
+                            className={`shrink-0 transition-transform duration-200 ${
+                              tamanoPaginaHistMenuAbierto ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+                        {tamanoPaginaHistMenuAbierto && (
+                          <ul
+                            role="listbox"
+                            aria-label="Cantidad de registros por página"
+                            className="absolute right-0 bottom-full z-50 mb-1.5 w-full min-w-[72px] overflow-hidden rounded-xl border border-border-strong bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+                          >
+                            {TAMANOS_PAGINA.map((tamano) => {
+                              const activo =
+                                historialRegistrosPorPagina === tamano;
+                              return (
+                                <li
+                                  key={tamano}
+                                  role="option"
+                                  aria-selected={activo}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setHistorialRegistrosPorPagina(tamano);
+                                      setTamanoPaginaHistMenuAbierto(false);
+                                    }}
+                                    className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold tabular-nums transition-colors ${
+                                      activo
+                                        ? "bg-royal-blue/10 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                                        : "text-slate-700 hover:bg-royal-blue/5 dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
+                                    }`}
+                                  >
+                                    {tamano}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </span>
                     </label>
                     <AdminPaginationButton
                       className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"

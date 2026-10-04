@@ -524,7 +524,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
             </div>
           ))}
         </div>
-        <Button type="button" variant="secondary" onClick={agregarAbuelo} className="mt-2">
+        <Button type="button" variant="secondary" onClick={agregarAbuelo} className="mt-2 dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!">
           + Agregar abuelo
         </Button>
       </div>

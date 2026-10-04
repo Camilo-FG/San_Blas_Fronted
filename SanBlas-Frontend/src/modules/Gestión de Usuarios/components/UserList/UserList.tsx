@@ -327,7 +327,11 @@ export const UserList = ({
                 <div className="relative flex items-center gap-2">
                     <Button
                         variant={mostrarFiltros ? 'primary' : 'secondary'}
-                        className="shrink-0 gap-1.5"
+                        className={
+                            mostrarFiltros
+                                ? 'shrink-0 gap-1.5 dark:border-[rgba(53,214,160,0.35)] dark:bg-[#0f1d33] dark:text-[#35d6a0]'
+                                : 'shrink-0 gap-1.5 dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!'
+                        }
                         onClick={() => setMostrarFiltros((p) => !p)}
                     >
                         <SlidersHorizontal size={16} />

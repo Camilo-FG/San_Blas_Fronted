@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Eye, Maximize2, X } from "lucide-react";
 import FocusTrap from "focus-trap-react";
 import type { LandingSectionKey } from "../../../services/landingService";
+import { useTheme } from "../../../context/ThemeContext";
 import type { LandingFieldConfig } from "./landingSectionConfig";
 import { Button, ErrorMessage, FieldError, Input, Label, Textarea } from "../../../shared/ui";
 import {
@@ -70,6 +71,7 @@ export default function LandingSectionModal({
   const [visorVisible, setVisorVisible] = useState(false);
   const [campoResaltado, setCampoResaltado] = useState<string | null>(null);
   const reducirMovimiento = useReducedMotion();
+  const { esOscuro } = useTheme();
   const transicionVisor = reducirMovimiento
     ? { duration: 0 }
     : { duration: 0.38, ease: [0.22, 1, 0.36, 1] as const };
@@ -215,6 +217,7 @@ export default function LandingSectionModal({
         <div key={field.name}>
           <SubidaImagen
             id={fieldId}
+            darkMode={esOscuro}
             label={field.label}
             hint={field.hint}
             value={archivoCampo}
