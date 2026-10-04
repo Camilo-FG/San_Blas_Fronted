@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import {
   createRootRoute,
   createRoute,
@@ -21,6 +21,7 @@ import {
   type AuthUser,
 } from "../services/authSession";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
+import { useTheme } from "../context/ThemeContext";
 
 const Home = lazyWithRetry(() => import("../modules/landing/pages/HomePage"));
 
@@ -98,6 +99,16 @@ function RootLayout() {
     pathname.startsWith(`${Rutas.login}/`) ||
     pathname === Rutas.recuperarContrasena ||
     pathname === Rutas.restablecerContrasena;
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    // El modo oscuro solo existe dentro del dashboard administrativo:
+    // en el sitio público y el login siempre va claro.
+    const raiz = document.documentElement;
+    const oscuro = theme === "dark" && isDashboard;
+    raiz.classList.toggle("dark", oscuro);
+    raiz.style.colorScheme = oscuro ? "dark" : "light";
+  }, [theme, isDashboard]);
 
   return (
     <div className="flex min-h-screen flex-col">

@@ -59,13 +59,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   );
 
   useEffect(() => {
-    const raiz = document.documentElement;
-    if (theme === "dark") {
-      raiz.classList.add("dark");
-    } else {
-      raiz.classList.remove("dark");
-    }
-    raiz.style.colorScheme = theme;
+    // Solo persiste la preferencia; la clase `dark` la aplica RootLayout
+    // únicamente bajo /dashboard para que lo público siempre vaya claro.
     try {
       window.localStorage.setItem(CLAVE_TEMA, theme);
     } catch {
