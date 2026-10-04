@@ -111,7 +111,7 @@ const GestionSacramentos = () => {
   return (
     <AdminModule className="w-full gap-3!">
       <div>
-        <h2 className="m-0 font-heading text-lg font-extrabold text-royal-blue">
+        <h2 className="m-0 font-heading text-lg font-extrabold text-royal-blue dark:text-white">
           CONSULTA DE REGISTROS SACRAMENTALES
         </h2>
       </div>
@@ -150,8 +150,8 @@ const GestionSacramentos = () => {
       )}
 
       {query.error && !query.isPending && (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-danger-bg bg-danger-bg/40 px-6 py-16 text-center dark:border-[#e66a6a]/30 dark:bg-[rgba(230,106,106,0.10)]">
-          <p className="m-0 text-sm font-medium text-danger dark:text-[#e66a6a]">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-danger-bg bg-danger-bg/40 px-6 py-16 text-center dark:border-[#ff6b6b]/50 dark:bg-[#e03131]">
+          <p className="m-0 text-sm font-medium text-danger dark:text-white">
             Ocurrió un error al realizar la búsqueda
           </p>
         </div>

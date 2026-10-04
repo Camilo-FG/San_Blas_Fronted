@@ -1385,18 +1385,18 @@ export default function GestionDonaciones(): React.JSX.Element {
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-[rgba(230,106,106,0.35)] dark:bg-[rgba(230,106,106,0.10)]">
+                <div className="flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-[#ff6b6b]/50 dark:bg-[#e03131]">
                   <Badge variant="danger">Rechazado</Badge>
-                  <p className="m-0 text-sm font-semibold text-red-900 dark:text-[#e66a6a]">
+                  <p className="m-0 text-sm font-semibold text-red-900 dark:text-white">
                     {historialSeleccionada.motivoRechazo || "Motivo no especificado"}
                   </p>
                   {historialSeleccionada.detalleRechazo && (
-                    <p className="m-0 text-sm text-red-800 dark:text-[#e66a6a]">
+                    <p className="m-0 text-sm text-red-800 dark:text-white">
                       {historialSeleccionada.detalleRechazo}
                     </p>
                   )}
                   {historialSeleccionada.fechaRechazo && (
-                    <p className="m-0 text-xs text-red-700 dark:text-[#e66a6a]">
+                    <p className="m-0 text-xs text-red-700 dark:text-white">
                       Rechazado el{" "}
                       {formatearFecha(historialSeleccionada.fechaRechazo)}
                     </p>
