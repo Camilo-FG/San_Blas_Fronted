@@ -1,8 +1,19 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import Rutas from "../../../routes/Rutas";
+import { useLandingSection } from "../../../hooks/useLandingSection";
+import { CONTACTO_DEFAULT } from "../constants/contactoDefaults";
 
 const LOGO_URL = "/logo.png";
 const FACEBOOK_URL = "https://www.facebook.com/ParroquiaNicoya1544";
+
+// Respaldo si la sección de contacto aún no cargó o el backend no responde.
+// La descripción queda quemada por decisión: no viene de la sección.
+const CONTACTO_FALLBACK = {
+    telefono: CONTACTO_DEFAULT.telefono,
+    correo: CONTACTO_DEFAULT.correo,
+    ubicacion: CONTACTO_DEFAULT.ubicacion,
+    facebook: FACEBOOK_URL,
+};
 
 function FacebookIcon() {
     return (
@@ -27,6 +38,20 @@ function scrollToHero() {
 function Footer() {
     const navigate = useNavigate();
     const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+    // Contacto sincronizado con la sección "contacto" del landing (carga diferida
+    // pa no frenar el primer pintado; mientras tanto se muestra el respaldo).
+    const { data: contacto } = useLandingSection("contacto", CONTACTO_FALLBACK, {
+        defer: true,
+    });
+    const texto = (valor: unknown, respaldo: string): string => {
+        const limpio = String(valor ?? "").trim();
+        return limpio || respaldo;
+    };
+    const telefono = texto(contacto.telefono, CONTACTO_FALLBACK.telefono);
+    const correo = texto(contacto.correo, CONTACTO_FALLBACK.correo);
+    const ubicacion = texto(contacto.ubicacion, CONTACTO_FALLBACK.ubicacion);
+    const facebookUrl = texto(contacto.facebook, CONTACTO_FALLBACK.facebook);
 
     const handleGoToHero = (event: React.MouseEvent<HTMLAnchorElement>) => {
         event.preventDefault();
@@ -104,12 +129,11 @@ function Footer() {
                     <h3 className="mb-3 text-xs font-black uppercase tracking-[2px] text-royal-gold">
                         Contacto
                     </h3>
-                    <p className="mb-2 text-[13px] leading-normal text-white/72">Nicoya, Guanacaste</p>
-                    <p className="mb-2 text-[13px] leading-normal text-white/72">Costa Rica</p>
-                    <p className="mb-2 text-[13px] leading-normal text-white/72">Tel: +506 0000-0000</p>
-                    <p className="mb-2 text-[13px] leading-normal text-white/72">Correo: parroquiasanblas@gmail.com</p>
+                    <p className="mb-2 text-[13px] leading-normal text-white/72">{ubicacion}</p>
+                    <p className="mb-2 text-[13px] leading-normal text-white/72">Tel: {telefono}</p>
+                    <p className="mb-2 text-[13px] leading-normal text-white/72">Correo: {correo}</p>
                     <a
-                        href={FACEBOOK_URL}
+                        href={facebookUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mt-3 inline-flex size-10 items-center justify-center rounded-full border border-royal-gold/45 text-white no-underline transition-all hover:-translate-y-px hover:border-[#1877f2] hover:bg-[#1877f2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-royal-gold focus-visible:outline-offset-[3px]"
