@@ -299,10 +299,11 @@ function GestionLanding() {
         parteSubrayada="Restablecer"
         resto=" sección"
         iconoAdvertencia
-        confirmVariant="danger"
+        confirmVariant="royal"
         confirmLabel="Restablecer"
         pendingLabel="Restableciendo..."
         isPending={restableciendo}
+        confirmClassName="dark:bg-[#d9a928]! dark:text-[#040b16]! dark:shadow-[0_0_18px_rgba(217,169,40,0.35)]! dark:hover:bg-[#d9a928]! dark:hover:shadow-[0_0_24px_rgba(217,169,40,0.55)]! dark:enabled:hover:text-[#040b16]!"
         mensaje={`Se restablecerá "${
           LANDING_SECTIONS.find((s) => s.key === seccionARestablecer)?.label ??
           ""

@@ -24,6 +24,8 @@ type ConfirmacionAccionModalProps = {
   overlayClassName?: string;
   // opcional para personalizar el botón Cancelar por llamada
   cancelClassName?: string;
+  // opcional para personalizar el botón Confirmar por llamada
+  confirmClassName?: string;
 };
 
 export function ConfirmacionAccionModal({
@@ -42,6 +44,7 @@ export function ConfirmacionAccionModal({
   className,
   overlayClassName,
   cancelClassName,
+  confirmClassName,
 }: ConfirmacionAccionModalProps) {
   if (!open) return null;
 
@@ -76,11 +79,12 @@ export function ConfirmacionAccionModal({
         <div className="flex shrink-0 justify-end gap-2">
           <Button
             variant={confirmVariant}
-            className={
+            className={cn(
               esDestructivo
                 ? "rounded-lg! duration-400 ease-in-out"
-                : "rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
-            }
+                : "rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]",
+              confirmClassName,
+            )}
             onClick={onConfirm}
             disabled={isPending}
           >
