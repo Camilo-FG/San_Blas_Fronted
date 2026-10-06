@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2, SlidersHorizontal } from 'lucide-react';
 import { useBuscarSacramentosNuevos } from '../hooks/hooksNuevos/useBuscarSacramentosNuevos';
 import { useCrearSacramentoNuevo } from '../hooks/hooksNuevos/useCrearSacramentoNuevo';
 import { useActualizarSacramentoNuevo } from '../hooks/hooksNuevos/useActualizarSacramentoNuevo';
@@ -18,6 +18,11 @@ const GestionSacramentos = () => {
   const [nombreInput, setNombreInput] = useState('');
   const [cedulaInput, setCedulaInput] = useState('');
   const [filtros, setFiltros] = useState({ nombre: '', cedula: '' });
+  const [mostrarFiltrosBusqueda, setMostrarFiltrosBusqueda] = useState(false);
+  const [libroInput, setLibroInput] = useState('');
+  const [folioInput, setFolioInput] = useState('');
+  const [asientoInput, setAsientoInput] = useState('');
+  const [filtrosActa, setFiltrosActa] = useState({ libro: '', folio: '', asiento: '' });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -31,6 +36,9 @@ const GestionSacramentos = () => {
   const query = useBuscarSacramentosNuevos({
     nombre: filtros.nombre || undefined,
     cedula: filtros.cedula || undefined,
+    libro: filtrosActa.libro || undefined,
+    folio: filtrosActa.folio || undefined,
+    asiento: filtrosActa.asiento || undefined,
     page,
     pageSize,
   });
@@ -47,10 +55,15 @@ const GestionSacramentos = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setFiltros({ nombre: nombreInput.trim(), cedula: cedulaInput.replace(/\D/g, '') });
+      setFiltrosActa({
+        libro: libroInput.trim(),
+        folio: folioInput.trim(),
+        asiento: asientoInput.trim(),
+      });
       setPage(1);
     }, 400);
     return () => clearTimeout(timer);
-  }, [nombreInput, cedulaInput]);
+  }, [nombreInput, cedulaInput, libroInput, folioInput, asientoInput]);
 
   const aplicarMascaraCedula = (valor: string) => {
     const digitos = valor.replace(/\D/g, '').slice(0, 9);
@@ -104,14 +117,25 @@ const GestionSacramentos = () => {
     }
   };
 
-  const hayBusquedaActiva = filtros.nombre !== '' || filtros.cedula !== '';
+  const hayBusquedaActiva =
+    filtros.nombre !== '' ||
+    filtros.cedula !== '' ||
+    filtrosActa.libro !== '' ||
+    filtrosActa.folio !== '' ||
+    filtrosActa.asiento !== '';
+
+  const limpiarFiltrosActa = () => {
+    setLibroInput('');
+    setFolioInput('');
+    setAsientoInput('');
+  };
   const mostrarEstadoVacio =
     !query.isPending && !query.error && (query.data?.items.length ?? 0) === 0 && hayBusquedaActiva;
 
   return (
     <AdminModule className="w-full gap-3!">
       <div>
-        <h2 className="m-0 font-heading text-lg font-extrabold text-royal-blue">
+        <h2 className="m-0 font-heading text-lg font-extrabold text-royal-blue dark:text-white">
           CONSULTA DE REGISTROS SACRAMENTALES
         </h2>
       </div>
@@ -134,6 +158,21 @@ const GestionSacramentos = () => {
         />
         <Button
           type="button"
+          onClick={() => setMostrarFiltrosBusqueda((prev) => !prev)}
+          variant="secondary"
+          aria-expanded={mostrarFiltrosBusqueda}
+          className="shrink-0 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:[&_svg]:text-[#d9a928]"
+        >
+          <SlidersHorizontal size={15} strokeWidth={1.8} />
+          Filtros de búsqueda
+          <ChevronDown
+            size={16}
+            strokeWidth={2.5}
+            className={`transition-transform duration-200 ${mostrarFiltrosBusqueda ? "rotate-180" : ""}`}
+          />
+        </Button>
+        <Button
+          type="button"
           onClick={() => setAddModalOpen(true)}
           variant="royal"
           className="shrink-0"
@@ -141,6 +180,43 @@ const GestionSacramentos = () => {
           + Agregar
         </Button>
       </div>
+
+      {mostrarFiltrosBusqueda && (
+        <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
+          <AdminSearch
+            type="text"
+            placeholder="Libro"
+            value={libroInput}
+            onChange={(e) => setLibroInput(e.target.value.slice(0, 100))}
+            className="min-w-[140px] flex-1"
+            aria-label="Filtrar por libro del acta de bautismo"
+          />
+          <AdminSearch
+            type="text"
+            placeholder="Folio"
+            value={folioInput}
+            onChange={(e) => setFolioInput(e.target.value.slice(0, 100))}
+            className="min-w-[140px] flex-1"
+            aria-label="Filtrar por folio del acta de bautismo"
+          />
+          <AdminSearch
+            type="text"
+            placeholder="Asiento"
+            value={asientoInput}
+            onChange={(e) => setAsientoInput(e.target.value.slice(0, 100))}
+            className="min-w-[140px] flex-1"
+            aria-label="Filtrar por asiento del acta de bautismo"
+          />
+          <Button
+            type="button"
+            onClick={limpiarFiltrosActa}
+            variant="secondary"
+            className="shrink-0 dark:border-[rgba(220,230,242,0.12)] dark:bg-transparent dark:text-[#f3f6fa] dark:hover:bg-white/[0.035]"
+          >
+            Limpiar
+          </Button>
+        </div>
+      )}
 
       {query.isPending && (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
@@ -150,8 +226,8 @@ const GestionSacramentos = () => {
       )}
 
       {query.error && !query.isPending && (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-danger-bg bg-danger-bg/40 px-6 py-16 text-center dark:border-[#e66a6a]/30 dark:bg-[rgba(230,106,106,0.10)]">
-          <p className="m-0 text-sm font-medium text-danger dark:text-[#e66a6a]">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-danger-bg bg-danger-bg/40 px-6 py-16 text-center dark:border-[#ff6b6b]/50 dark:bg-[#e03131]">
+          <p className="m-0 text-sm font-medium text-danger dark:text-white">
             Ocurrió un error al realizar la búsqueda
           </p>
         </div>

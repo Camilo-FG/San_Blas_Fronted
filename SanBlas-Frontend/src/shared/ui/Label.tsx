@@ -10,7 +10,7 @@ export function Label({ className, children, required, ...props }: LabelProps) {
   return (
     <label
       className={cn(
-        "mb-1.5 block text-sm font-semibold text-slate-800",
+        "mb-1.5 block text-sm font-semibold text-slate-800 dark:text-white",
         className,
       )}
       {...props}

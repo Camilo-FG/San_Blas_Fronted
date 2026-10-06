@@ -1789,15 +1789,15 @@ function GestionSolicitudesCatequesis() {
                   </div>
                 </div>
               ) : (
-                <div className="flex gap-2.5 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-[#e66a6a]/30 dark:bg-[rgba(230,106,106,0.10)]">
-                  <XCircle size={17} className="mt-0.5 shrink-0 text-red-700 dark:text-[#e66a6a]" />
+                <div className="flex gap-2.5 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-[#ff6b6b]/50 dark:bg-[#e03131]">
+                  <XCircle size={17} className="mt-0.5 shrink-0 text-red-700 dark:text-white" />
                   <div>
-                    <p className="m-0 text-sm font-semibold text-red-900 dark:text-[#e66a6a]">
+                    <p className="m-0 text-sm font-semibold text-red-900 dark:text-white">
                       {historialSeleccionada.observacionAdministrativa ||
                         "Motivo no especificado"}
                     </p>
                     {historialSeleccionada.fechaActualizacionEstado && (
-                      <p className="m-0 mt-1 text-xs text-red-700 dark:text-[#e66a6a]">
+                      <p className="m-0 mt-1 text-xs text-red-700 dark:text-white">
                         Rechazado el{" "}
                         {formatFechaIngreso(
                           historialSeleccionada.fechaActualizacionEstado,

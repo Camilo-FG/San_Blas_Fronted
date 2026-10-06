@@ -517,7 +517,7 @@ export function DetalleSolicitudCatequesisModal({
                 )}
 
                 {estado === "rechazado" && (
-                  <div className="flex gap-2.5 rounded-[12px] border border-red-300 bg-red-50 p-4 text-sm leading-relaxed text-red-800 dark:border-[#e66a6a]/30 dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]">
+                  <div className="flex gap-2.5 rounded-[12px] border border-red-300 bg-red-50 p-4 text-sm leading-relaxed text-red-800 dark:border-[#ff6b6b]/50 dark:bg-[#e03131] dark:text-white">
                     <XCircle size={17} className="mt-0.5 shrink-0" />
                     <div>
                       <p className="m-0 font-semibold">Solicitud rechazada.</p>

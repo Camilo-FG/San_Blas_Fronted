@@ -49,7 +49,7 @@ export function ErrorMessage({
   return (
     <p
       className={cn(
-        "rounded-xl bg-danger-bg px-4 py-3 text-sm text-danger",
+        "rounded-xl bg-danger-bg px-4 py-3 text-sm text-danger dark:bg-[#e03131] dark:text-white",
         className,
       )}
       role="alert"
