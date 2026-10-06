@@ -132,6 +132,17 @@ function esUrlHttp(valor: string): boolean {
   }
 }
 
+// El mapa solo funciona embebido en un iframe: el link debe traer output=embed
+// (Compartir → Incorporar mapa). Un link normal pasa como URL pero deja el mapa en blanco.
+export function esUrlMapaEmbedValida(valor: string): boolean {
+  if (!esUrlHttp(valor)) return false;
+  try {
+    return new URL(valor).searchParams.get("output") === "embed";
+  } catch {
+    return false;
+  }
+}
+
 function lineas(valor: string): string[] {
   return valor
     .split("\n")
@@ -218,11 +229,14 @@ export function validarFormularioLanding(
       continue;
     }
 
-    if (field.format === "url" && !esUrlHttp(valor)) {
-      errores[field.name] =
-        field.name === "mapaUrl"
-          ? "La URL del mapa no es válida."
+    if (field.format === "url") {
+      const esMapa = field.name === "mapaUrl";
+      const valida = esMapa ? esUrlMapaEmbedValida(valor) : esUrlHttp(valor);
+      if (!valida) {
+        errores[field.name] = esMapa
+          ? "La URL del mapa debe ser embebible (incluir output=embed)."
           : "La URL no es válida.";
+      }
     }
   }
 
