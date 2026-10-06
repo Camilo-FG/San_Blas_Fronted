@@ -336,6 +336,26 @@ export const LANDING_SECTIONS: LandingSectionConfig[] = [
             type: "image" as FieldType,
             hint: "JPG, JPEG, PNG o WEBP (máx. 5 MB)",
           },
+          {
+            name: `servicio${n}DetalleSubtitulo`,
+            label: `Servicio ${n} — Detalle: subtítulo`,
+            type: "text" as FieldType,
+            maxLength: 120,
+            required: false,
+            hint: "Detalle que se abre al seleccionar el servicio. Si lo usa, complete los 5 campos del detalle.",
+          },
+          { name: `servicio${n}DetalleDescripcion`, label: `Servicio ${n} — Detalle: descripción ampliada`, type: "textarea" as FieldType, maxLength: 300, rows: 3, required: false },
+          { name: `servicio${n}DetalleHorario`, label: `Servicio ${n} — Detalle: horario`, type: "text" as FieldType, maxLength: 300, required: false },
+          {
+            name: `servicio${n}DetalleRequisitos`,
+            label: `Servicio ${n} — Detalle: requisitos`,
+            type: "lines" as FieldType,
+            maxLength: 200,
+            rows: 4,
+            required: false,
+            hint: "Un requisito por línea (máx. 200 caracteres).",
+          },
+          { name: `servicio${n}DetalleContacto`, label: `Servicio ${n} — Detalle: contacto`, type: "text" as FieldType, maxLength: 200, required: false },
         ];
       }).flat(),
     ],
@@ -478,10 +498,16 @@ export const sectionDataToForm = (
       form[`servicio${n}Boton`] = String(item.buttonLabel ?? "");
       form[`servicio${n}Enlace`] = String(item.linkTo ?? "");
       form[`servicio${n}Imagen`] = String(item.imageUrl ?? "");
-      // detalle del modal: no se edita en el CMS pero se conserva al guardar
-      form[`servicio${n}Detalle`] = item.modalDetails
-        ? JSON.stringify(item.modalDetails)
+      // detalle del modal del servicio (editable)
+      const detalle = (item.modalDetails ?? {}) as Record<string, unknown>;
+      const requisitos = Array.isArray(detalle.requirements)
+        ? (detalle.requirements as unknown[]).map((linea) => String(linea)).join("\n")
         : "";
+      form[`servicio${n}DetalleSubtitulo`] = String(detalle.subtitle ?? "");
+      form[`servicio${n}DetalleDescripcion`] = String(detalle.description ?? "");
+      form[`servicio${n}DetalleHorario`] = String(detalle.schedule ?? "");
+      form[`servicio${n}DetalleRequisitos`] = requisitos;
+      form[`servicio${n}DetalleContacto`] = String(detalle.contact ?? "");
     }
     return form;
   }
@@ -632,13 +658,23 @@ export const formToSectionData = (
       if (enlace) item.linkTo = enlace;
       const imagen = (form[`servicio${i}Imagen`] ?? "").trim();
       if (imagen) item.imageUrl = imagen;
-      const detalle = (form[`servicio${i}Detalle`] ?? "").trim();
-      if (detalle) {
-        try {
-          item.modalDetails = JSON.parse(detalle);
-        } catch {
-          // si el detalle guardado viene corrupto simplemente se omite
-        }
+      const subtitulo = (form[`servicio${i}DetalleSubtitulo`] ?? "").trim();
+      const descripcionAmpliada = (form[`servicio${i}DetalleDescripcion`] ?? "").trim();
+      const horario = (form[`servicio${i}DetalleHorario`] ?? "").trim();
+      const contacto = (form[`servicio${i}DetalleContacto`] ?? "").trim();
+      const requisitos = lines(form[`servicio${i}DetalleRequisitos`] ?? "");
+      const hayDetalle =
+        Boolean(subtitulo || descripcionAmpliada || horario || contacto) ||
+        requisitos.length > 0;
+      // la validación garantiza que el detalle venga completo; si no, se omite
+      if (hayDetalle) {
+        item.modalDetails = {
+          subtitle: subtitulo,
+          description: descripcionAmpliada,
+          schedule: horario,
+          requirements: requisitos,
+          contact: contacto,
+        };
       }
       items.push(item);
     }
