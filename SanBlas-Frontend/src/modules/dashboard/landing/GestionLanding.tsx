@@ -180,7 +180,8 @@ function GestionLanding() {
       const updated = await actualizarSeccionLanding(
         editingKey,
         payload,
-        archivos.imageUrl,
+        // el PDF de catequesis viaja como "archivo" al endpoint con-archivo
+        archivos.imageUrl ?? archivos.lineamientosUrl,
         archivos,
       );
 

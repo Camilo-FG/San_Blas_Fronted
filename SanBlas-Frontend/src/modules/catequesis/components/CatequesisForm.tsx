@@ -19,6 +19,7 @@ import {
   type ArchivoImagen,
 } from "../../solicSacramento/components/SubidaImagen";
 import { soloLetras } from "../../../shared/utils/formValidation";
+import { useLandingSection } from "../../../hooks/useLandingSection";
 import { leerBorradorInscripcionCatequesis, guardarBorradorInscripcionCatequesis, borrarBorradorInscripcionCatequesis } from "../utils/borradorInscripcionCatequesis";
 
 interface CatequesisFormProps {
@@ -307,6 +308,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const progressBarRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [modoTeclado, setModoTeclado] = useState(false);
+
+  // SINPE y PDF de lineamientos se editan desde la gestión del landing;
+  // el fallback es lo que estaba hardcodeado antes por si el backend no responde
+  const { data: landingCatequesis } = useLandingSection("catequesis", {
+    sinpe: "8878-3025",
+    lineamientosUrl: "/lineamientos-catequesis-24-25.pdf",
+  });
 
   useEffect(() => {
     const formulario = formRef.current;
@@ -1930,7 +1938,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <strong>{MONTO_INSCRIPCION_CATEQUESIS}</strong>.
             </p>
             <p>
-              <strong>SINPE Parroquia:</strong> 8878-3025
+              <strong>SINPE Parroquia:</strong> {landingCatequesis.sinpe}
             </p>
             <p>
               <strong>Enviar comprobante al:</strong> 6416-7863
@@ -2010,7 +2018,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             </p>
 
             <a
-              href="/lineamientos-catequesis-24-25.pdf"
+              href={landingCatequesis.lineamientosUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-flex font-bold text-royal-blue underline underline-offset-[3px] hover:text-royal-gold-muted"

@@ -65,6 +65,11 @@ const textoFormatosAceptados = (tipos: string[], maxSizeMB: number) => {
 
 const MAX_DEFAULT_MB = 5;
 
+// detecta URLs de documento (PDF local o de Cloudinary raw) pa no intentar
+// renderizarlas como imagen en la vista previa
+const esUrlDocumento = (url?: string | null): boolean =>
+  Boolean(url && (url.includes("/raw/upload/") || /\.pdf(\?|#|$)/i.test(url)));
+
 export const SubidaImagen = ({
   value,
   onChange,
@@ -138,7 +143,10 @@ export const SubidaImagen = ({
   const usarTarjeta =
     varianteVistaPrevia === "tarjeta" && Boolean(value || existingPreview);
   const vistaTarjeta = value?.preview ?? existingPreview ?? null;
-  const esImagenTarjeta = value ? value.file.type.startsWith("image/") : true;
+  // las URLs de PDF no sirven como <img>, así que se muestran con el icono de documento
+  const esImagenTarjeta = value
+    ? value.file.type.startsWith("image/")
+    : !esUrlDocumento(existingPreview);
 
   return (
     <div
@@ -225,7 +233,7 @@ export const SubidaImagen = ({
             )}
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <p className={`truncate text-sm font-semibold text-[#16243c]${darkMode ? " dark:text-[#f3f6fa]" : ""}`}>
-                {value?.file.name ?? "Imagen actual"}
+                {value?.file.name ?? (esImagenTarjeta ? "Imagen actual" : "PDF actual")}
               </p>
               {value && (
                 <p className={`m-0 text-[0.72rem] text-text-muted${darkMode ? " dark:text-[#7f8da3]" : ""}`}>
