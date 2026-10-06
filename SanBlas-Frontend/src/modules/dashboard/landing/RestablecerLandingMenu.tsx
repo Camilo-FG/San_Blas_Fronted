@@ -142,8 +142,8 @@ export default function RestablecerLandingMenu({
             </div>
 
             <Button
-              variant="danger"
-              className="mt-2 w-full"
+              variant="royal"
+              className="mt-2 w-full dark:bg-[#d9a928] dark:text-[#040b16] dark:shadow-[0_0_18px_rgba(217,169,40,0.35)] dark:hover:bg-[#d9a928] dark:hover:shadow-[0_0_24px_rgba(217,169,40,0.55)]"
               disabled={seleccion.length === 0}
               onClick={() => setConfirmando(true)}
             >
@@ -159,10 +159,11 @@ export default function RestablecerLandingMenu({
         parteSubrayada="Restablecer"
         resto=" configuración"
         iconoAdvertencia
-        confirmVariant="danger"
+        confirmVariant="royal"
         confirmLabel="Restablecer"
         pendingLabel="Restableciendo..."
         isPending={procesando}
+        confirmClassName="dark:bg-[#d9a928]! dark:text-[#040b16]! dark:shadow-[0_0_18px_rgba(217,169,40,0.35)]! dark:hover:bg-[#d9a928]! dark:hover:shadow-[0_0_24px_rgba(217,169,40,0.55)]! dark:enabled:hover:text-[#040b16]!"
         mensaje={
           seleccion.length === todas.length
             ? "Se restablecerán TODAS las secciones del landing a su configuración original. Esta acción no se puede deshacer."
