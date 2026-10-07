@@ -120,18 +120,6 @@ export function PerfilUsuarioCard({
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5 sm:ml-auto">
-          {nombresRoles.map((nombreRol) => (
-            <Badge
-              key={nombreRol}
-              variant="neutral"
-              className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]"
-            >
-              <span className="inline-flex items-center gap-1">
-                <Shield size={12} />
-                {nombreRol}
-              </span>
-            </Badge>
-          ))}
           <Badge
             variant={activo ? "success" : "danger"}
             className={
