@@ -139,7 +139,7 @@ const UpdateUserModal: React.FC<Props> = ({
     if (!v) return 'El nombre es requerido.';
     if (usuario && v === normalizarTexto(usuario.userName)) return undefined;
     if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
-    if (v.length > 100) return 'El nombre no puede superar los 100 caracteres.';
+    if (v.length > 60) return 'El nombre no puede superar los 60 caracteres.';
     if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v)) return 'El nombre solo puede contener letras.';
     if (
       users.some(
@@ -156,6 +156,7 @@ const UpdateUserModal: React.FC<Props> = ({
   const validarCorreo = (value: string) => {
     const v = normalizarTexto(value);
     if (!v) return 'El correo es requerido.';
+    if (v.length > 40) return 'El correo no puede superar los 40 caracteres.';
     if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v)) {
       // Tiene .com/.es/.org en medio pero con caracteres después (ej: usuario@ga.com12).
       if (/\.(com|es|org)(?![a-zA-Z])/i.test(v)) {
@@ -204,7 +205,7 @@ const UpdateUserModal: React.FC<Props> = ({
       title="Editar usuario"
       cerrarAlClicFuera={false}
       overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
-      className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+      className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] dark:[scrollbar-color:#475569_transparent]"
     >
       <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue dark:text-[#f3f6fa]">
         Editar usuario
@@ -228,9 +229,9 @@ const UpdateUserModal: React.FC<Props> = ({
             {(field) => (
               <div>
                 <Label htmlFor="u-nombre">
-                  Nombre completo
+                  Nombre de usuario
                   <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
-                    ({field.state.value.length}/100)
+                    ({field.state.value.length}/60)
                   </span>
                 </Label>
                 <Input
@@ -239,12 +240,16 @@ const UpdateUserModal: React.FC<Props> = ({
                   placeholder="Ej: Juan Pérez González"
                   value={field.state.value}
                   hasError={field.state.meta.errors.length > 0}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) =>
+                    field.handleChange(
+                      e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''),
+                    )
+                  }
                   onBlur={() => {
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
-                  maxLength={100}
+                  maxLength={60}
                 />
                 <FieldError message={field.state.meta.errors[0]} />
               </div>
@@ -264,7 +269,7 @@ const UpdateUserModal: React.FC<Props> = ({
                 <Label htmlFor="u-correo">
                   Correo electrónico
                   <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
-                    ({field.state.value.length}/100)
+                    ({field.state.value.length}/40)
                   </span>
                 </Label>
                 <Input
@@ -273,12 +278,16 @@ const UpdateUserModal: React.FC<Props> = ({
                   placeholder="Ej: ejemplo@correo.com"
                   value={field.state.value}
                   hasError={field.state.meta.errors.length > 0}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) =>
+                    field.handleChange(
+                      e.target.value.replace(/[^a-zA-Z0-9._%+\-@]/g, ''),
+                    )
+                  }
                   onBlur={() => {
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
-                  maxLength={100}
+                  maxLength={40}
                 />
                 <FieldError message={field.state.meta.errors[0]} />
               </div>
@@ -350,7 +359,11 @@ const UpdateUserModal: React.FC<Props> = ({
                         placeholder="Dejar vacío para no cambiar"
                         value={field.state.value}
                         hasError={field.state.meta.errors.length > 0}
-                        onChange={(e) => field.handleChange(e.target.value)}
+                        onChange={(e) =>
+                          field.handleChange(
+                            e.target.value.replace(/[^a-zA-Z0-9]/g, ''),
+                          )
+                        }
                         onBlur={() => {
                           field.handleChange(field.state.value.trim());
                           field.handleBlur();
