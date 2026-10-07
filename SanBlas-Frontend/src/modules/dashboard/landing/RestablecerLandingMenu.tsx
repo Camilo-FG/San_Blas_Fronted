@@ -158,7 +158,6 @@ export default function RestablecerLandingMenu({
         title="Restablecer configuración"
         parteSubrayada="Restablecer"
         resto=" configuración"
-        iconoAdvertencia
         confirmVariant="royal"
         confirmLabel="Restablecer"
         pendingLabel="Restableciendo..."
