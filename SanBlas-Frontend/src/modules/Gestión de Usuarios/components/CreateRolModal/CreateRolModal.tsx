@@ -77,14 +77,22 @@ export default function CreateRolModal({
           <form.Field
             name="nombre"
             validators={{
-              onBlur: ({ value }) =>
-                normalizarTexto(value)
-                  ? undefined
-                  : "El nombre del rol es obligatorio.",
-              onSubmit: ({ value }) =>
-                normalizarTexto(value)
-                  ? undefined
-                  : "El nombre del rol es obligatorio.",
+              onBlur: ({ value }) => {
+                const v = normalizarTexto(value);
+                if (!v) return 'El nombre del rol es obligatorio.';
+                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+$/.test(v)) {
+                  return 'El nombre solo puede contener letras y números.';
+                }
+                return undefined;
+              },
+              onSubmit: ({ value }) => {
+                const v = normalizarTexto(value);
+                if (!v) return 'El nombre del rol es obligatorio.';
+                if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+$/.test(v)) {
+                  return 'El nombre solo puede contener letras y números.';
+                }
+                return undefined;
+              },
             }}
           >
             {(field) => (
@@ -99,7 +107,14 @@ export default function CreateRolModal({
                   maxLength={80}
                   placeholder="Ej: Secretaría"
                   disabled={guardando}
-                  onChange={(event) => field.handleChange(event.target.value)}
+                  onChange={(event) =>
+                    field.handleChange(
+                      event.target.value.replace(
+                        /[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]/g,
+                        '',
+                      ),
+                    )
+                  }
                   onBlur={() => {
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
@@ -110,7 +125,31 @@ export default function CreateRolModal({
             )}
           </form.Field>
 
-          <form.Field name="descripcion">
+          <form.Field
+            name="descripcion"
+            validators={{
+              onBlur: ({ value }) => {
+                const v = normalizarTexto(value);
+                if (
+                  v &&
+                  !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s.,;:!?¡¿()'"\-–—]*$/.test(v)
+                ) {
+                  return 'La descripción contiene caracteres no permitidos.';
+                }
+                return undefined;
+              },
+              onSubmit: ({ value }) => {
+                const v = normalizarTexto(value);
+                if (
+                  v &&
+                  !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s.,;:!?¡¿()'"\-–—]*$/.test(v)
+                ) {
+                  return 'La descripción contiene caracteres no permitidos.';
+                }
+                return undefined;
+              },
+            }}
+          >
             {(field) => (
               <div>
                 <Label htmlFor="rol-descripcion">Descripción</Label>
@@ -121,12 +160,20 @@ export default function CreateRolModal({
                   maxLength={400}
                   placeholder="Qué hace este rol en la parroquia."
                   disabled={guardando}
-                  onChange={(event) => field.handleChange(event.target.value)}
+                  onChange={(event) =>
+                    field.handleChange(
+                      event.target.value.replace(
+                        /[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s.,;:!?¡¿()'"\-–—]/g,
+                        '',
+                      ),
+                    )
+                  }
                   onBlur={() => {
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
                 />
+                <FieldError message={field.state.meta.errors[0] as string | undefined} />
               </div>
             )}
           </form.Field>
