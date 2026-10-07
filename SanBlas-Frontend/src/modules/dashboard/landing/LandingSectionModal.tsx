@@ -5,7 +5,7 @@ import FocusTrap from "focus-trap-react";
 import type { LandingSectionKey } from "../../../services/landingService";
 import { useTheme } from "../../../context/ThemeContext";
 import type { LandingFieldConfig } from "./landingSectionConfig";
-import { Button, ErrorMessage, FieldError, Input, Label, Textarea } from "../../../shared/ui";
+import { Button, FieldError, Input, Label, Textarea } from "../../../shared/ui";
 import {
   SubidaImagen,
   type ArchivoImagen,
@@ -25,7 +25,6 @@ interface LandingSectionModalProps {
   fields: LandingFieldConfig[];
   values: Record<string, string>;
   errores?: Record<string, string>;
-  errorMensaje?: string | null;
   guardando: boolean;
   archivosImagen?: Record<string, ArchivoImagen | null>;
   onArchivoChange?: (name: string, archivo: ArchivoImagen | null) => void;
@@ -50,13 +49,58 @@ function CharacterCounter({
   );
 }
 
+// Caracteres raros bloqueados en texto general (guiones y resto legítimo pasan).
+const CARACTERES_RAROS_REGEX = /[<>{}\[\]\\|^~`]/g;
+
+// +506 escrito a mano por el usuario es prefijo país y no cuenta;
+// nunca se agrega solo. Todo lo demás son dígitos locales (máx. 8).
+function formatearTelefonoCR(valor: string): string {
+  const limpio = valor.replace(/[^0-9+\s()\-]/g, "");
+  const conPrefijo = /^\+506/.test(limpio.trim());
+  const digitos = limpio.replace(/\D/g, "");
+  const locales = (conPrefijo ? digitos.slice(3) : digitos).slice(0, 8);
+  const formateado =
+    locales.length > 4
+      ? `${locales.slice(0, 4)}-${locales.slice(4)}`
+      : locales;
+  if (!locales) return conPrefijo ? "+506" : "";
+  return conPrefijo ? `+506 ${formateado}` : formateado;
+}
+
+function contarDigitosLocales(valor: string): number {
+  const digitos = valor.replace(/\D/g, "");
+  const conPrefijo = /^\+506/.test(valor.trim());
+  return (conPrefijo ? digitos.slice(3) : digitos).slice(0, 8).length;
+}
+
+// Sanea según el formato del campo para no romper sus validadores
+// (landingValidation.ts): cada formato conserva exactamente los caracteres
+// que su regex acepta; el texto general solo pierde los raros.
+function sanearValorLanding(
+  field: LandingFieldConfig,
+  valor: string,
+): string {
+  switch (field.format) {
+    case "email":
+      return valor.replace(/[^a-zA-Z0-9._%+\-@]/g, "");
+    case "phone":
+      return formatearTelefonoCR(valor);
+    case "ibanCr":
+      return valor.replace(/[^a-zA-Z0-9]/g, "");
+    case "youtube":
+    case "url":
+      return valor.replace(/[<>"{}|\\^`\s]/g, "");
+    default:
+      return valor.replace(CARACTERES_RAROS_REGEX, "");
+  }
+}
+
 export default function LandingSectionModal({
   title,
   sectionKey,
   fields,
   values,
   errores = {},
-  errorMensaje,
   guardando,
   archivosImagen = {},
   onArchivoChange,
@@ -226,7 +270,7 @@ export default function LandingSectionModal({
     };
     const escribirEnCampo = (valor: string) => {
       if (puedeResaltar) setCampoResaltado(null);
-      onChange(field.name, valor);
+      onChange(field.name, sanearValorLanding(field, valor));
     };
     const quitarResalte = () => {
       if (!puedeResaltar) return;
@@ -355,7 +399,16 @@ export default function LandingSectionModal({
             {field.hint}
           </p>
         )}
-        <CharacterCounter value={value} maxLength={field.maxLength} />
+        {field.format === "phone" ? (
+          <span
+            className="mt-1 block text-xs text-slate-400 dark:text-[#7f8da3]"
+            aria-live="polite"
+          >
+            {contarDigitosLocales(value)}/8 dígitos
+          </span>
+        ) : (
+          <CharacterCounter value={value} maxLength={field.maxLength} />
+        )}
         <FieldError id={errorId} message={mensajeError} />
       </div>
     );
@@ -574,7 +627,6 @@ export default function LandingSectionModal({
             </button>
           </header>
           <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-5 sm:px-6">
-            {errorMensaje && <ErrorMessage message={errorMensaje} />}
             {camposFormulario}
           </div>
           {pieFormulario}
