@@ -62,8 +62,23 @@ function sanearValorLanding(
   switch (field.format) {
     case "email":
       return valor.replace(/[^a-zA-Z0-9._%+\-@]/g, "");
-    case "phone":
-      return valor.replace(/[^0-9+\s()\-]/g, "");
+    case "phone": {
+      const limpio = valor.replace(/[^0-9+\s()\-]/g, "");
+      // +506 es prefijo país y no cuenta: 8 dígitos locales como máximo.
+      const digitos = limpio.replace(/\D/g, "");
+      const maxDigitos = digitos.startsWith("506") ? 11 : 8;
+      if (digitos.length <= maxDigitos) return limpio;
+      let conservar = maxDigitos;
+      let resultado = "";
+      for (const caracter of limpio) {
+        if (/\d/.test(caracter)) {
+          if (conservar === 0) continue;
+          conservar -= 1;
+        }
+        resultado += caracter;
+      }
+      return resultado;
+    }
     case "ibanCr":
       return valor.replace(/[^a-zA-Z0-9]/g, "");
     case "youtube":
