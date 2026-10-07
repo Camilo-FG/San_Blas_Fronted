@@ -1,9 +1,12 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { ApiError } from "../../../services/apiClient";
-import { restablecerContrasena } from "../../../services/authService";
+import {
+  restablecerContrasena,
+  validarEnlaceRecuperacion,
+} from "../../../services/authService";
 import Rutas from "../../../routes/Rutas";
 import { Button, FieldError, Input, Label, cn } from "../../../shared/ui";
 import SeoHead from "../../../seo/SeoHead";
@@ -11,6 +14,12 @@ import {
   mensajeErrorConfirmacion,
   mensajeErrorContrasena,
 } from "../validarContrasena";
+
+const TOKEN_RECUPERACION = /^[A-Za-z0-9_-]{43,128}$/;
+const MENSAJE_FORMATO =
+  "El enlace no es válido. Solicita uno nuevo desde recuperar contraseña.";
+
+type EstadoEnlace = "comprobando" | "valido" | "rechazado" | "sin-conexion";
 
 interface RestablecerContrasenaPageProps {
   token: string;
@@ -35,7 +44,42 @@ export default function RestablecerContrasenaPage({
   const [listo, setListo] = useState(false);
   const [loading, setLoading] = useState(false);
   const reducirMovimiento = useReducedMotion();
-  const tokenValido = /^[A-Za-z0-9_-]{43,128}$/.test(token);
+  const formatoValido = TOKEN_RECUPERACION.test(token);
+  const [estadoEnlace, setEstadoEnlace] = useState<EstadoEnlace>(
+    formatoValido ? "comprobando" : "rechazado",
+  );
+  const [mensajeEnlace, setMensajeEnlace] = useState(
+    formatoValido ? "" : MENSAJE_FORMATO,
+  );
+  const [reintento, setReintento] = useState(0);
+
+  useEffect(() => {
+    if (!formatoValido) return;
+    let vigente = true;
+    setEstadoEnlace("comprobando");
+
+    validarEnlaceRecuperacion(token)
+      .then(() => {
+        if (vigente) setEstadoEnlace("valido");
+      })
+      .catch((err: unknown) => {
+        if (!vigente) return;
+        const mensaje =
+          err instanceof ApiError
+            ? err.message
+            : "No se pudo comprobar el enlace. Intente nuevamente.";
+        setMensajeEnlace(mensaje);
+        setEstadoEnlace(
+          err instanceof ApiError && err.status === 400
+            ? "rechazado"
+            : "sin-conexion",
+        );
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, [formatoValido, reintento, token]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -45,7 +89,7 @@ export default function RestablecerContrasenaPage({
     const errorRepeticion = mensajeErrorConfirmacion(confirmPassword, password);
     setErrorContrasena(errorClave);
     setErrorConfirmacion(errorRepeticion);
-    if (errorClave || errorRepeticion || !tokenValido) return;
+    if (errorClave || errorRepeticion || estadoEnlace !== "valido") return;
 
     setLoading(true);
     try {
@@ -60,6 +104,16 @@ export default function RestablecerContrasenaPage({
         err instanceof ApiError
           ? err.message
           : "No se pudo restablecer la contraseña. Intente nuevamente.";
+      if (
+        err instanceof ApiError &&
+        err.status === 400 &&
+        mensaje !== "Las contraseñas no coinciden" &&
+        !mensaje.startsWith("La contraseña debe")
+      ) {
+        setMensajeEnlace(mensaje);
+        setEstadoEnlace("rechazado");
+        return;
+      }
       setErrorEnvio(mensaje);
     } finally {
       setLoading(false);
@@ -111,10 +165,28 @@ export default function RestablecerContrasenaPage({
                 Ir a iniciar sesión
               </Link>
             </div>
-          ) : !tokenValido ? (
+          ) : estadoEnlace === "comprobando" ? (
+            <p className="m-0 text-base leading-relaxed text-text-muted" role="status">
+              Comprobando el enlace...
+            </p>
+          ) : estadoEnlace === "sin-conexion" ? (
             <div className="flex flex-col gap-6" role="alert">
               <p className="m-0 text-base leading-relaxed text-text-muted">
-                El enlace no es válido. Solicita uno nuevo desde recuperar contraseña.
+                {mensajeEnlace}
+              </p>
+              <Button
+                type="button"
+                variant="royal"
+                className="w-full min-h-12 text-base"
+                onClick={() => setReintento((valor) => valor + 1)}
+              >
+                Reintentar
+              </Button>
+            </div>
+          ) : estadoEnlace === "rechazado" ? (
+            <div className="flex flex-col gap-6" role="alert">
+              <p className="m-0 text-base leading-relaxed text-text-muted">
+                {mensajeEnlace}
               </p>
               <Link
                 to={Rutas.recuperarContrasena}
