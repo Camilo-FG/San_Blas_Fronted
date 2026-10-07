@@ -252,7 +252,7 @@ const CreateUserModal: React.FC<Props> = ({
             {(field) => (
               <div>
                 <Label htmlFor="nombre" required>
-                  Nombre completo
+                  Nombre de usuario
                   <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
                     ({field.state.value.length}/60)
                   </span>
