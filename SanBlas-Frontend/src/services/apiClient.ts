@@ -209,4 +209,6 @@ export const handleApiError = (error: unknown): never => {
 const isTechnicalApiMessage = (message: string): boolean =>
   /(query failed|syntax error|typeorm|exception|stack|sql|postgres|ECONN|internal server error|at \w+\()/i.test(
     message,
-  );
+  ) ||
+  // 401 crudo de proxies/CDN sin body del backend: cae al mensaje amable por estado
+  /^\s*unauthorized\s*$/i.test(message);

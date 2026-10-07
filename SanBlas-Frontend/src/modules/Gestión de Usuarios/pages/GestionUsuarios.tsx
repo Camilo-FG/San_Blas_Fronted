@@ -194,6 +194,11 @@ const GestionUsuarios = () => {
                             users={users}
                             roles={roles}
                             onCrearRol={() => setModalRolAbierto(true)}
+                            onRolEliminado={() => {
+                                void refetchRoles();
+                                void refetch();
+                                void refetchPagina();
+                            }}
                         />
                     )}
                 </div>

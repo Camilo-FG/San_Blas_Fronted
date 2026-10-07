@@ -53,7 +53,16 @@ export function PerfilUsuarioCard({
 
   const nombre = usuario.userName || usuario.email || "Usuario";
   const correo = usuario.email || "—";
-  const rol = etiquetaRol(usuario.role, roles);
+  // Todos los roles de la cuenta (no solo el primero): si la lista viene
+  // vacía se usa el rol singular como respaldo para no mostrar vacío.
+  const clavesRoles =
+    usuario.roles && usuario.roles.length > 0
+      ? usuario.roles
+      : usuario.role
+        ? [usuario.role]
+        : [];
+  const nombresRoles = clavesRoles.map((clave) => etiquetaRol(clave, roles));
+  const rol = nombresRoles.join(", ") || "—";
 
   const esUsuarioActual =
     (usuarioSesion?.id != null && usuario.id === usuarioSesion.id) ||
@@ -111,15 +120,18 @@ export function PerfilUsuarioCard({
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5 sm:ml-auto">
-          <Badge
-            variant="neutral"
-            className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]"
-          >
-            <span className="inline-flex items-center gap-1">
-              <Shield size={12} />
-              {rol}
-            </span>
-          </Badge>
+          {nombresRoles.map((nombreRol) => (
+            <Badge
+              key={nombreRol}
+              variant="neutral"
+              className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]"
+            >
+              <span className="inline-flex items-center gap-1">
+                <Shield size={12} />
+                {nombreRol}
+              </span>
+            </Badge>
+          ))}
           <Badge
             variant={activo ? "success" : "danger"}
             className={
