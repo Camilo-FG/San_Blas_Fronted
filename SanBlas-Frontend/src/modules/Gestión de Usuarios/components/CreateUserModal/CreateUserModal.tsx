@@ -365,7 +365,11 @@ const CreateUserModal: React.FC<Props> = ({
                       placeholder="Escriba una contraseña"
                       value={field.state.value}
                       hasError={field.state.meta.errors.length > 0}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) =>
+                        field.handleChange(
+                          e.target.value.replace(/[^a-zA-Z0-9]/g, ''),
+                        )
+                      }
                       onBlur={() => {
                         field.handleChange(field.state.value.trim());
                         field.handleBlur();
@@ -430,7 +434,11 @@ const CreateUserModal: React.FC<Props> = ({
                     placeholder="Repita la contraseña"
                     value={field.state.value}
                     hasError={field.state.meta.errors.length > 0}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                    onChange={(e) =>
+                      field.handleChange(
+                        e.target.value.replace(/[^a-zA-Z0-9]/g, ''),
+                      )
+                    }
                     onBlur={() => {
                       field.handleChange(field.state.value.trim());
                       field.handleBlur();
