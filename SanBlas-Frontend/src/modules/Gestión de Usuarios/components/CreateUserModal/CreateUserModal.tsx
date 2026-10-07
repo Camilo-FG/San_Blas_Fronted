@@ -86,7 +86,8 @@ const CreateUserModal: React.FC<Props> = ({
       telefono: '',
       contraseña: '',
       confirmarContraseña: '',
-      roles: ['user'],
+      // sin rol precargado: 'user' ya no se ofrece y el validador obliga a elegir uno visible
+      roles: [] as string[],
     },
     onSubmit: async ({ value }) => {
       const ok = await onSave({
@@ -156,7 +157,7 @@ const CreateUserModal: React.FC<Props> = ({
     const v = normalizarTexto(value);
     if (!v) return 'El nombre es requerido.';
     if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
-    if (v.length > 100) return 'El nombre no puede superar los 100 caracteres.';
+    if (v.length > 60) return 'El nombre no puede superar los 60 caracteres.';
     if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v)) return 'El nombre solo puede contener letras.';
     return undefined;
   };
@@ -164,6 +165,7 @@ const CreateUserModal: React.FC<Props> = ({
   const validarCorreo = (value: string) => {
     const v = normalizarTexto(value);
     if (!v) return 'El correo es requerido.';
+    if (v.length > 40) return 'El correo no puede superar los 40 caracteres.';
     if (!validateEmail(v)) return 'Solo se permiten dominios .com, .es o .org';
     if (users.some((u) => u.email.toLowerCase() === v.toLowerCase())) {
       return 'Ya existe una cuenta con este correo.';
@@ -197,7 +199,7 @@ const CreateUserModal: React.FC<Props> = ({
     return undefined;
   };
 
-  // al menos un rol obligatorio; se precarga 'user' por defecto
+  // al menos un rol obligatorio (sin precarga: el usuario debe elegir uno visible)
   const validarRoles = (value: string[]) => {
     if (!value || value.length === 0) return 'Seleccione al menos un rol.';
     return undefined;
@@ -209,7 +211,7 @@ const CreateUserModal: React.FC<Props> = ({
       title="Crear nuevo usuario"
       cerrarAlClicFuera={false}
       overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
-      className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+      className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] dark:[scrollbar-color:#475569_transparent]"
     >
       <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue dark:text-[#f3f6fa]">
         Crear nuevo usuario
@@ -236,7 +238,7 @@ const CreateUserModal: React.FC<Props> = ({
                 <Label htmlFor="nombre" required>
                   Nombre completo
                   <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
-                    ({field.state.value.length}/100)
+                    ({field.state.value.length}/60)
                   </span>
                 </Label>
                 <Input
@@ -245,12 +247,16 @@ const CreateUserModal: React.FC<Props> = ({
                   placeholder="Ej: Juan Pérez González"
                   value={field.state.value}
                   hasError={field.state.meta.errors.length > 0}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) =>
+                    field.handleChange(
+                      e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''),
+                    )
+                  }
                   onBlur={() => {
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
-                  maxLength={100}
+                  maxLength={60}
                   disabled={guardando}
                 />
                 <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
@@ -270,7 +276,7 @@ const CreateUserModal: React.FC<Props> = ({
                 <Label htmlFor="correo" required>
                   Correo electrónico
                   <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
-                    ({field.state.value.length}/100)
+                    ({field.state.value.length}/40)
                   </span>
                 </Label>
                   <Input
@@ -280,12 +286,16 @@ const CreateUserModal: React.FC<Props> = ({
                     placeholder="Ej: ejemplo@correo.com"
                   value={field.state.value}
                   hasError={field.state.meta.errors.length > 0}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) =>
+                    field.handleChange(
+                      e.target.value.replace(/[^a-zA-Z0-9._%+\-@]/g, ''),
+                    )
+                  }
                   onBlur={() => {
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
-                  maxLength={100}
+                  maxLength={40}
                   disabled={guardando}
                 />
                 <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
