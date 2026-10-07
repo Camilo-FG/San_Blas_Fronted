@@ -50,6 +50,31 @@ function CharacterCounter({
   );
 }
 
+// Caracteres raros bloqueados en texto general (guiones y resto legítimo pasan).
+const CARACTERES_RAROS_REGEX = /[<>{}\[\]\\|^~`]/g;
+
+// Sanea según el formato del campo para no romper sus validadores
+// (landingValidation.ts): cada formato conserva exactamente los caracteres
+// que su regex acepta; el texto general solo pierde los raros.
+function sanearValorLanding(
+  field: LandingFieldConfig,
+  valor: string,
+): string {
+  switch (field.format) {
+    case "email":
+      return valor.replace(/[^a-zA-Z0-9._%+\-@]/g, "");
+    case "phone":
+      return valor.replace(/[^0-9+\s()\-]/g, "");
+    case "ibanCr":
+      return valor.replace(/[^a-zA-Z0-9]/g, "");
+    case "youtube":
+    case "url":
+      return valor.replace(/[<>"{}|\\^`\s]/g, "");
+    default:
+      return valor.replace(CARACTERES_RAROS_REGEX, "");
+  }
+}
+
 export default function LandingSectionModal({
   title,
   sectionKey,
@@ -226,7 +251,7 @@ export default function LandingSectionModal({
     };
     const escribirEnCampo = (valor: string) => {
       if (puedeResaltar) setCampoResaltado(null);
-      onChange(field.name, valor);
+      onChange(field.name, sanearValorLanding(field, valor));
     };
     const quitarResalte = () => {
       if (!puedeResaltar) return;
