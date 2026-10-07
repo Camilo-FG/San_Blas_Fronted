@@ -300,7 +300,6 @@ function GestionLanding() {
         title="Restablecer sección"
         parteSubrayada="Restablecer"
         resto=" sección"
-        iconoAdvertencia
         confirmVariant="royal"
         confirmLabel="Restablecer"
         pendingLabel="Restableciendo..."

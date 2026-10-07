@@ -120,18 +120,6 @@ export function PerfilUsuarioCard({
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5 sm:ml-auto">
-          {nombresRoles.map((nombreRol) => (
-            <Badge
-              key={nombreRol}
-              variant="neutral"
-              className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]"
-            >
-              <span className="inline-flex items-center gap-1">
-                <Shield size={12} />
-                {nombreRol}
-              </span>
-            </Badge>
-          ))}
           <Badge
             variant={activo ? "success" : "danger"}
             className={
@@ -163,7 +151,8 @@ export function PerfilUsuarioCard({
         {esUsuarioActual ? (
           <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
             <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
-            No puede desactivar su propia cuenta desde aquí.
+            No puede desactivar su propia cuenta, para desactivar, por favor
+            comuníquese con el personal secretario.
           </p>
         ) : !activo ? (
           <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
