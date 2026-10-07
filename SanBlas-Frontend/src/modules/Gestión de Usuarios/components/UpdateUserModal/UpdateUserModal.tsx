@@ -147,7 +147,16 @@ const UpdateUserModal: React.FC<Props> = ({
   const validarCorreo = (value: string) => {
     const v = normalizarTexto(value);
     if (!v) return 'El correo es requerido.';
-    if (!validateEmail(v)) return 'Solo se permiten dominios .com, .es o .org';
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v)) {
+      // Tiene .com/.es/.org en medio pero con caracteres después (ej: usuario@ga.com12).
+      if (/\.(com|es|org)(?![a-zA-Z])/i.test(v)) {
+        return 'El correo debe terminar en .com, .es o .org, sin caracteres después del dominio.';
+      }
+      return 'Formato de correo inválido. Ej: usuario@correo.com.';
+    }
+    if (!validateEmail(v)) {
+      return 'El correo debe terminar en .com, .es o .org, sin caracteres después del dominio.';
+    }
     if (
       users.some(
         (u) => u.email.toLowerCase() === v.toLowerCase() && u.id !== usuario?.id,
