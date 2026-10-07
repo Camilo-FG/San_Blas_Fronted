@@ -5,7 +5,7 @@ import FocusTrap from "focus-trap-react";
 import type { LandingSectionKey } from "../../../services/landingService";
 import { useTheme } from "../../../context/ThemeContext";
 import type { LandingFieldConfig } from "./landingSectionConfig";
-import { Button, ErrorMessage, FieldError, Input, Label, Textarea } from "../../../shared/ui";
+import { Button, FieldError, Input, Label, Textarea } from "../../../shared/ui";
 import {
   SubidaImagen,
   type ArchivoImagen,
@@ -25,7 +25,6 @@ interface LandingSectionModalProps {
   fields: LandingFieldConfig[];
   values: Record<string, string>;
   errores?: Record<string, string>;
-  errorMensaje?: string | null;
   guardando: boolean;
   archivosImagen?: Record<string, ArchivoImagen | null>;
   onArchivoChange?: (name: string, archivo: ArchivoImagen | null) => void;
@@ -81,7 +80,6 @@ export default function LandingSectionModal({
   fields,
   values,
   errores = {},
-  errorMensaje,
   guardando,
   archivosImagen = {},
   onArchivoChange,
@@ -599,7 +597,6 @@ export default function LandingSectionModal({
             </button>
           </header>
           <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-5 sm:px-6">
-            {errorMensaje && <ErrorMessage message={errorMensaje} />}
             {camposFormulario}
           </div>
           {pieFormulario}

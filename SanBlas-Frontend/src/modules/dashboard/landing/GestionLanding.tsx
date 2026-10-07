@@ -88,6 +88,9 @@ function GestionLanding() {
     });
     setArchivosImagen({});
     setEditingKey(null);
+    // Que un fallo de guardado no quede pegado como banner en la página:
+    // ya se avisó por toast y por campo.
+    setError(null);
   };
 
   const handleArchivoChange = (name: string, archivo: ArchivoImagen | null) => {
@@ -155,7 +158,6 @@ function GestionLanding() {
       const erroresLocales = validarFormularioLanding(editingKey, formValues);
       if (Object.keys(erroresLocales).length > 0) {
         setErroresCampo(erroresLocales);
-        setError(Object.values(erroresLocales)[0] ?? null);
         return;
       }
       setErroresCampo({});
@@ -322,7 +324,6 @@ function GestionLanding() {
           fields={activeConfig.fields}
           values={formValues}
           errores={erroresCampo}
-          errorMensaje={error}
           guardando={guardando}
           archivosImagen={archivosImagen}
           onArchivoChange={handleArchivoChange}
