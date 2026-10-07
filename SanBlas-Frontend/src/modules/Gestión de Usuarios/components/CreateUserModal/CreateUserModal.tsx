@@ -159,6 +159,13 @@ const CreateUserModal: React.FC<Props> = ({
     if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
     if (v.length > 60) return 'El nombre no puede superar los 60 caracteres.';
     if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v)) return 'El nombre solo puede contener letras.';
+    if (
+      users.some(
+        (u) => normalizarTexto(u.userName).toLowerCase() === v.toLowerCase(),
+      )
+    ) {
+      return 'Ya existe un usuario con este nombre.';
+    }
     return undefined;
   };
 

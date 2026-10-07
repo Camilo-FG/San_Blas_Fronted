@@ -141,6 +141,15 @@ const UpdateUserModal: React.FC<Props> = ({
     if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
     if (v.length > 100) return 'El nombre no puede superar los 100 caracteres.';
     if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v)) return 'El nombre solo puede contener letras.';
+    if (
+      users.some(
+        (u) =>
+          u.id !== usuario?.id &&
+          normalizarTexto(u.userName).toLowerCase() === v.toLowerCase(),
+      )
+    ) {
+      return 'Ya existe un usuario con este nombre.';
+    }
     return undefined;
   };
 
