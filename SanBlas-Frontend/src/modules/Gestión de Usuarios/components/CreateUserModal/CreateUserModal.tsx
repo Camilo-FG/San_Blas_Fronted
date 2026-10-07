@@ -4,7 +4,6 @@ import { Eye, EyeOff } from 'lucide-react';
 import { type Usuario } from '../../../../types/Usuario';
 import {
   opcionesSelectRol,
-  ROLES_ASIGNABLES,
   type Rol,
 } from '../../../../types/Rol';
 import { useAuth } from '../../../../context/AuthContext';
@@ -115,10 +114,15 @@ const CreateUserModal: React.FC<Props> = ({
   const esSecretarioSesion = rolesSesion.some(
     (rol) => rol.toLowerCase() === 'secretario',
   );
-  // solo un secretario puede otorgar el rol secretario
-  const rolesPermitidos = esSecretarioSesion
-    ? [...ROLES_ASIGNABLES]
-    : ROLES_ASIGNABLES.filter((rol) => rol !== 'secretario');
+  // Todos los roles del backend, no solo los del sistema: se excluye
+  // 'user' siempre y 'secretario' salvo sesión de secretario, que es
+  // quien único puede otorgarlo.
+  const rolesAsignables = roles
+    .map((rol) => rol.clave)
+    .filter(
+      (clave) =>
+        clave !== 'user' && (esSecretarioSesion || clave !== 'secretario'),
+    );
 
   useEffect(() => {
     if (!isOpen) {
@@ -158,7 +162,7 @@ const CreateUserModal: React.FC<Props> = ({
     if (!v) return 'El nombre es requerido.';
     if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
     if (v.length > 60) return 'El nombre no puede superar los 60 caracteres.';
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v)) return 'El nombre solo puede contener letras.';
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+$/.test(v)) return 'El nombre solo puede contener letras y números.';
     if (
       users.some(
         (u) => normalizarTexto(u.userName).toLowerCase() === v.toLowerCase(),
@@ -265,7 +269,7 @@ const CreateUserModal: React.FC<Props> = ({
                   hasError={field.state.meta.errors.length > 0}
                   onChange={(e) =>
                     field.handleChange(
-                      e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''),
+                      e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]/g, ''),
                     )
                   }
                   onBlur={() => {
@@ -495,12 +499,12 @@ const CreateUserModal: React.FC<Props> = ({
                 <div
                   role="group"
                   aria-labelledby="roles-usuario-titulo"
-                  className="flex flex-col gap-2 rounded-xl border border-border-strong bg-surface-muted p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+                  className="flex max-h-48 flex-col gap-2 overflow-y-auto rounded-xl border border-border-strong bg-surface-muted p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
                 >
                   {opcionesSelectRol(
                     roles,
                     undefined,
-                    rolesPermitidos,
+                    rolesAsignables,
                   ).map((rol) => {
                     const marcado = field.state.value.includes(rol.clave);
                     return (

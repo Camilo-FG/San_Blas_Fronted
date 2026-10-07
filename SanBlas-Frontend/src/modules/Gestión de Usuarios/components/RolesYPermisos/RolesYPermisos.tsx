@@ -1,19 +1,53 @@
-import { Shield, ShieldCheck, UserRound } from 'lucide-react';
-import { Badge, Button } from '../../../../shared/ui';
+import { useState } from 'react';
+import { Shield, ShieldCheck, Trash2, UserRound } from 'lucide-react';
+import { Badge, Button, ConfirmacionAccionModal, useToast } from '../../../../shared/ui';
 import { etiquetaPermiso, type Rol } from '../../../../types/Rol';
 import type { Usuario } from '../../../../types/Usuario';
+import { useDeleteRol } from '../../hooks/hooksUsuarios/useDeleteRol';
 
 interface RolesYPermisosProps {
   users: Usuario[];
   roles: Rol[];
   onCrearRol: () => void;
+  onRolEliminado?: () => void;
 }
+
+// Claves que nunca se pueden eliminar desde el panel (espejo del backend).
+const CLAVES_NO_ELIMINABLES = [
+  'admin',
+  'user',
+  'secretario',
+  'catequista',
+  'gestor-eventos',
+  'gestor-donaciones',
+];
 
 export function RolesYPermisos({
   users,
   roles,
   onCrearRol,
+  onRolEliminado,
 }: RolesYPermisosProps) {
+  const { showToast } = useToast();
+  const { eliminarRol, loading: eliminando } = useDeleteRol();
+  const [rolAEliminar, setRolAEliminar] = useState<Rol | null>(null);
+
+  const cuentasConRol = (clave: string) =>
+    users.filter(
+      (usuario) => usuario.role === clave || usuario.roles?.includes(clave),
+    ).length;
+
+  const handleConfirmarEliminar = async () => {
+    if (!rolAEliminar) return;
+    const resultado = await eliminarRol(rolAEliminar.id);
+    if (!resultado.ok) {
+      showToast(resultado.mensaje, 'error');
+      return;
+    }
+    showToast('Rol eliminado correctamente', 'success');
+    setRolAEliminar(null);
+    onRolEliminado?.();
+  };
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -34,9 +68,7 @@ export function RolesYPermisos({
         ) : (
           roles.map((rol) => {
           const Icon = rol.clave === 'admin' ? ShieldCheck : UserRound;
-          const asignados = users.filter(
-            (usuario) => usuario.role === rol.clave,
-          ).length;
+          const asignados = cuentasConRol(rol.clave);
 
           return (
             <article
@@ -57,16 +89,34 @@ export function RolesYPermisos({
                     </p>
                   </div>
                 </div>
-                <Badge
-                  variant={rol.clave === 'admin' ? 'info' : 'neutral'}
-                  className={
-                    rol.clave === 'admin'
-                      ? 'dark:border-[#f2a34a] dark:bg-[rgba(242,163,74,0.10)] dark:text-[#f2a34a]'
-                      : 'dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]'
-                  }
-                >
-                  {asignados} {asignados === 1 ? 'cuenta' : 'cuentas'}
-                </Badge>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <Badge
+                    variant={rol.clave === 'admin' ? 'info' : 'neutral'}
+                    className={
+                      rol.clave === 'admin'
+                        ? 'dark:border-[#f2a34a] dark:bg-[rgba(242,163,74,0.10)] dark:text-[#f2a34a]'
+                        : 'dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]'
+                    }
+                  >
+                    {asignados} {asignados === 1 ? 'cuenta' : 'cuentas'}
+                  </Badge>
+                  {!rol.esSistema && !CLAVES_NO_ELIMINABLES.includes(rol.clave) && (
+                    <button
+                      type="button"
+                      onClick={() => setRolAEliminar(rol)}
+                      disabled={asignados > 0}
+                      title={
+                        asignados > 0
+                          ? 'No se puede eliminar: tiene cuentas asignadas'
+                          : `Eliminar rol ${rol.nombre}`
+                      }
+                      aria-label={`Eliminar rol ${rol.nombre}`}
+                      className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-40 dark:text-[#7f8da3] dark:hover:bg-[rgba(230,106,106,0.12)] dark:hover:text-[#e66a6a]"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
               </header>
 
               {rol.descripcion ? (
@@ -102,6 +152,38 @@ export function RolesYPermisos({
         })
         )}
       </div>
+
+      <ConfirmacionAccionModal
+        open={rolAEliminar !== null}
+        title="Eliminar rol"
+        parteSubrayada="Eliminar rol"
+        resto={rolAEliminar ? ` ${rolAEliminar.nombre}` : ''}
+        iconoAdvertencia
+        confirmVariant="danger"
+        confirmLabel="Sí, eliminar"
+        pendingLabel="Eliminando..."
+        isPending={eliminando}
+        mensaje={
+          rolAEliminar ? (
+            <>
+              ¿Está seguro de eliminar el rol{' '}
+              <strong className="font-semibold text-text dark:text-[#f3f6fa]">
+                {rolAEliminar.nombre}
+              </strong>
+              ? Esta acción no se puede deshacer.
+            </>
+          ) : (
+            ''
+          )
+        }
+        onConfirm={() => void handleConfirmarEliminar()}
+        onCancel={() => {
+          if (!eliminando) setRolAEliminar(null);
+        }}
+        overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_p.text-text-secondary]:text-[#b7c3d4] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+        cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
+      />
     </div>
   );
 }
