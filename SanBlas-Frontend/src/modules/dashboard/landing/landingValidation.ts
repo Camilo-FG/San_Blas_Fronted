@@ -161,6 +161,9 @@ export function validarFormularioLanding(
 
   for (const field of config.fields) {
     if (field.type === "image") continue;
+    // el PDF no se valida acá: su URL ya viene del backend (o del fallback
+    // del repo) y si viene vacía la respalda el DTO del backend al guardar
+    if (field.type === "file") continue;
     // los bloques de horarios se validan aparte (bloque 1 obligatorio, 2-4 opcionales)
     if (sectionKey === "horarios" && /^bloque\d+(Titulo|Filas)$/.test(field.name)) {
       continue;

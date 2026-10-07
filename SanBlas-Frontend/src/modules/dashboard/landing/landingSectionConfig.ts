@@ -10,7 +10,7 @@ import { HORARIOS_DEFAULT } from "../../landing/horariosContent";
  * Longitudes y formatos alineados con los DTOs del backend
  * (update-landing-section.dto.ts). Cambiar una regla implica actualizar ambos lados.
  */
-export type FieldType = "text" | "textarea" | "url" | "image" | "lines";
+export type FieldType = "text" | "textarea" | "url" | "image" | "file" | "lines";
 export type LandingFieldFormat = "email" | "phone" | "youtube" | "url" | "ibanCr";
 
 export interface LandingFieldConfig {
@@ -380,6 +380,30 @@ export const LANDING_SECTIONS: LandingSectionConfig[] = [
       { name: "banco", label: "Banco", type: "text", maxLength: 80 },
     ],
   },
+  {
+    key: "catequesis",
+    label: "Formulario de Catequesis",
+    description:
+      "Número SINPE del pago de inscripción y PDF de lineamientos (último paso del formulario).",
+    fields: [
+      {
+        name: "sinpe",
+        label: "SINPE de la parroquia",
+        type: "text",
+        maxLength: 40,
+        format: "phone",
+        placeholder: "8878-3025",
+        hint: "Número al que se paga la inscripción (paso 6 del formulario).",
+      },
+      {
+        name: "lineamientosUrl",
+        label: "PDF de lineamientos",
+        type: "file",
+        maxLength: 300,
+        hint: "PDF (máx. 5 MB)",
+      },
+    ],
+  },
 ];
 
 export const sectionDataToForm = (
@@ -518,6 +542,15 @@ export const sectionDataToForm = (
     form.sinpe = String(data.sinpe ?? "");
     form.cuentaBancaria = String(data.cuentaBancaria ?? "");
     form.banco = String(data.banco ?? "");
+    return form;
+  }
+
+  if (key === "catequesis") {
+    // fallback local pa que el editor nunca abra vacío aunque falte la fila en BD
+    form.sinpe = String(data.sinpe ?? "8878-3025");
+    form.lineamientosUrl = String(
+      data.lineamientosUrl ?? "/lineamientos-catequesis-24-25.pdf",
+    );
     return form;
   }
 
@@ -693,6 +726,16 @@ export const formToSectionData = (
       sinpe: form.sinpe,
       cuentaBancaria: form.cuentaBancaria,
       banco: form.banco,
+    };
+  }
+
+  if (key === "catequesis") {
+    return {
+      sinpe: form.sinpe,
+      // si todavía no hay PDF guardado se manda el por defecto del repo;
+      // cuando se suba uno nuevo, el backend pisa esta URL con la de Cloudinary
+      lineamientosUrl:
+        form.lineamientosUrl.trim() || "/lineamientos-catequesis-24-25.pdf",
     };
   }
 

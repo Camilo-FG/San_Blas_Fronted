@@ -8,6 +8,7 @@ import Rutas from "../../../routes/Rutas";
 import { Button, FieldError, Input, Label } from "../../../shared/ui";
 import SeoHead from "../../../seo/SeoHead";
 import { mensajeErrorCorreo } from "../validarCorreo";
+import { esErrorDeRed, MENSAJE_SIN_INTERNET_ENLACE } from "../mensajesConexion";
 
 const MENSAJE_CONFIRMACION =
   "Si existe una cuenta asociada a este correo, recibirás instrucciones para recuperar tu contraseña.";
@@ -33,14 +34,21 @@ export default function RecuperarContrasenaPage() {
     }
 
     setErrorCampo(null);
+
+    if (!navigator.onLine) {
+      setErrorEnvio(MENSAJE_SIN_INTERNET_ENLACE);
+      return;
+    }
+
     setLoading(true);
 
     try {
       await solicitarRecuperacionContrasena(email);
       setEnviado(true);
     } catch (err) {
-      const mensaje =
-        err instanceof ApiError
+      const mensaje = esErrorDeRed(err)
+        ? MENSAJE_SIN_INTERNET_ENLACE
+        : err instanceof ApiError
           ? err.message
           : "No se pudo enviar la solicitud. Intente nuevamente.";
       setErrorEnvio(mensaje);

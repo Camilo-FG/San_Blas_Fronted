@@ -7,7 +7,6 @@ import type {
 import type { OpcionesExportacionDonaciones } from "../components/ExportarDonacionesModal";
 
 export type FilaExportacionDonacion = {
-  id: number;
   fecha: string;
   fechaTexto: string;
   nombre: string;
@@ -60,7 +59,6 @@ export function filtrarDonacionesParaExportar(
 
   const filas: FilaExportacionDonacion[] = [
     ...donaciones.map((d): FilaExportacionDonacion => ({
-      id: d.id,
       fecha: d.fecha,
       fechaTexto: formatearFechaCorta(d.fecha),
       nombre: d.nombre || "",
@@ -70,7 +68,6 @@ export function filtrarDonacionesParaExportar(
       estado: normalizarEstado(d.estado),
     })),
     ...historial.map((h): FilaExportacionDonacion => ({
-      id: h.id,
       fecha: h.fechaIngreso || "",
       fechaTexto: formatearFechaCorta(h.fechaIngreso),
       nombre: h.nombre || "",
@@ -102,8 +99,8 @@ const escaparCSV = (valor: string | number): string => {
     : texto;
 };
 
+// ni el PDF ni el CSV incluyen la columna ID (lo pidió la parroquia)
 const ENCABEZADOS = [
-  "ID",
   "Fecha",
   "Nombre",
   "Correo",
@@ -117,7 +114,6 @@ export function construirCSVDonaciones(
 ): string {
   const lineas = filas.map((fila) =>
     [
-      fila.id,
       fila.fechaTexto,
       fila.nombre,
       fila.correo,
@@ -210,7 +206,6 @@ export function generarPDFDonaciones(
     startY: 100,
     head: [ENCABEZADOS],
     body: filas.map((fila) => [
-      fila.id,
       fila.fechaTexto,
       fila.nombre,
       fila.correo,
@@ -236,17 +231,17 @@ export function generarPDFDonaciones(
       halign: "center",
     },
     alternateRowStyles: { fillColor: [...GRIS_FILA] },
+    // sin la columna ID los índices corren uno: 0=Fecha ... 5=Estado
     columnStyles: {
-      0: { cellWidth: 42, halign: "center" },
-      1: { cellWidth: 68, halign: "center" },
-      2: { cellWidth: 105 },
-      3: { cellWidth: 135 },
-      4: { cellWidth: 72, halign: "center" },
-      5: { cellWidth: "auto" },
-      6: { cellWidth: 78, halign: "center" },
+      0: { cellWidth: 68, halign: "center" },
+      1: { cellWidth: 105 },
+      2: { cellWidth: 135 },
+      3: { cellWidth: 72, halign: "center" },
+      4: { cellWidth: "auto" },
+      5: { cellWidth: 78, halign: "center" },
     },
     didParseCell: (data) => {
-      if (data.section !== "body" || data.column.index !== 6) return;
+      if (data.section !== "body" || data.column.index !== 5) return;
       const valor = String(data.cell.raw ?? "").toLowerCase();
       data.cell.styles.fontStyle = "bold";
       if (valor === "aprobado") data.cell.styles.textColor = [...VERDE];

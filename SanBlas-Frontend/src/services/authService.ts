@@ -79,6 +79,16 @@ export const solicitarRecuperacionContrasena = async (
   }
 };
 
+export const validarEnlaceRecuperacion = async (
+  token: string,
+): Promise<void> => {
+  try {
+    await apiClient.post("/auth/validar-enlace-recuperacion", { token });
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
 export const restablecerContrasena = async (datos: {
   token: string;
   password: string;

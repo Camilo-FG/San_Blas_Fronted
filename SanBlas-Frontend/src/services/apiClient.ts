@@ -63,6 +63,9 @@ apiClient.interceptors.response.use(
       const isRestablecerRequest = url
         .toLowerCase()
         .includes("/auth/restablecer-contrasena");
+      const isValidarEnlaceRequest = url
+        .toLowerCase()
+        .includes("/auth/validar-enlace-recuperacion");
 
       if (
         config &&
@@ -72,6 +75,7 @@ apiClient.interceptors.response.use(
         !isLogoutRequest &&
         !isRecuperarRequest &&
         !isRestablecerRequest &&
+        !isValidarEnlaceRequest &&
         !config._retry
       ) {
         config._retry = true;
@@ -86,7 +90,7 @@ apiClient.interceptors.response.use(
         }
       }
 
-      if (!isLoginRequest && !isRefreshRequest && !isSessionRequest && !isLogoutRequest && !isRecuperarRequest && !isRestablecerRequest) {
+      if (!isLoginRequest && !isRefreshRequest && !isSessionRequest && !isLogoutRequest && !isRecuperarRequest && !isRestablecerRequest && !isValidarEnlaceRequest) {
         clearAuthToken();
         const currentPath = window.location.pathname;
         if (!currentPath.startsWith("/login") && !redirigiendoAlLogin) {

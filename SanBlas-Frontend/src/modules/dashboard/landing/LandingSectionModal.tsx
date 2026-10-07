@@ -214,8 +214,12 @@ export default function LandingSectionModal({
     const fieldId = `landing-field-${field.name}`;
     const errorId = `${fieldId}-error`;
     const mensajeError = errores[field.name];
-    const esObligatorio = field.type !== "image" && field.required !== false;
-    const puedeResaltar = tieneVisor && field.type !== "image";
+    const esObligatorio =
+      field.type !== "image" &&
+      field.type !== "file" &&
+      field.required !== false;
+    const puedeResaltar =
+      tieneVisor && field.type !== "image" && field.type !== "file";
     const marcarEnPreview = () => {
       if (!puedeResaltar) return;
       setCampoResaltado(field.name);
@@ -253,6 +257,35 @@ export default function LandingSectionModal({
               }
             }}
           />
+        </div>
+      );
+    }
+
+    // documento (PDF): mismo flujo que una imagen pero solo acepta PDF y se
+    // muestra como archivo en vez de como vista previa de imagen
+    if (field.type === "file") {
+      const archivoCampo = archivosImagen[field.name] ?? null;
+      return (
+        <div key={field.name}>
+          <SubidaImagen
+            id={fieldId}
+            darkMode={esOscuro}
+            label={field.label}
+            hint={field.hint}
+            value={archivoCampo}
+            existingPreview={value || null}
+            tiposPermitidos={["application/pdf"]}
+            varianteVistaPrevia="tarjeta"
+            textoArrastrar="Arrastre el PDF aquí"
+            textoBoton="Seleccionar PDF"
+            onChange={(archivo) => {
+              onArchivoChange?.(field.name, archivo);
+              if (archivo) {
+                onChange(field.name, values[field.name] ?? "");
+              }
+            }}
+          />
+          <FieldError id={errorId} message={mensajeError} />
         </div>
       );
     }
