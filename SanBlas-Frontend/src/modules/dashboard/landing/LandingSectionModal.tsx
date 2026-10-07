@@ -52,6 +52,27 @@ function CharacterCounter({
 // Caracteres raros bloqueados en texto general (guiones y resto legítimo pasan).
 const CARACTERES_RAROS_REGEX = /[<>{}\[\]\\|^~`]/g;
 
+// +506 escrito a mano por el usuario es prefijo país y no cuenta;
+// nunca se agrega solo. Todo lo demás son dígitos locales (máx. 8).
+function formatearTelefonoCR(valor: string): string {
+  const limpio = valor.replace(/[^0-9+\s()\-]/g, "");
+  const conPrefijo = /^\+506/.test(limpio.trim());
+  const digitos = limpio.replace(/\D/g, "");
+  const locales = (conPrefijo ? digitos.slice(3) : digitos).slice(0, 8);
+  const formateado =
+    locales.length > 4
+      ? `${locales.slice(0, 4)}-${locales.slice(4)}`
+      : locales;
+  if (!locales) return conPrefijo ? "+506" : "";
+  return conPrefijo ? `+506 ${formateado}` : formateado;
+}
+
+function contarDigitosLocales(valor: string): number {
+  const digitos = valor.replace(/\D/g, "");
+  const conPrefijo = /^\+506/.test(valor.trim());
+  return (conPrefijo ? digitos.slice(3) : digitos).slice(0, 8).length;
+}
+
 // Sanea según el formato del campo para no romper sus validadores
 // (landingValidation.ts): cada formato conserva exactamente los caracteres
 // que su regex acepta; el texto general solo pierde los raros.
@@ -62,23 +83,8 @@ function sanearValorLanding(
   switch (field.format) {
     case "email":
       return valor.replace(/[^a-zA-Z0-9._%+\-@]/g, "");
-    case "phone": {
-      const limpio = valor.replace(/[^0-9+\s()\-]/g, "");
-      // +506 es prefijo país y no cuenta: 8 dígitos locales como máximo.
-      const digitos = limpio.replace(/\D/g, "");
-      const maxDigitos = digitos.startsWith("506") ? 11 : 8;
-      if (digitos.length <= maxDigitos) return limpio;
-      let conservar = maxDigitos;
-      let resultado = "";
-      for (const caracter of limpio) {
-        if (/\d/.test(caracter)) {
-          if (conservar === 0) continue;
-          conservar -= 1;
-        }
-        resultado += caracter;
-      }
-      return resultado;
-    }
+    case "phone":
+      return formatearTelefonoCR(valor);
     case "ibanCr":
       return valor.replace(/[^a-zA-Z0-9]/g, "");
     case "youtube":
@@ -393,7 +399,16 @@ export default function LandingSectionModal({
             {field.hint}
           </p>
         )}
-        <CharacterCounter value={value} maxLength={field.maxLength} />
+        {field.format === "phone" ? (
+          <span
+            className="mt-1 block text-xs text-slate-400 dark:text-[#7f8da3]"
+            aria-live="polite"
+          >
+            {contarDigitosLocales(value)}/8 dígitos
+          </span>
+        ) : (
+          <CharacterCounter value={value} maxLength={field.maxLength} />
+        )}
         <FieldError id={errorId} message={mensajeError} />
       </div>
     );
