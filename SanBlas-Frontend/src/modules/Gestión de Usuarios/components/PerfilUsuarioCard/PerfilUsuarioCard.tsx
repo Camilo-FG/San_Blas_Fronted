@@ -151,7 +151,8 @@ export function PerfilUsuarioCard({
         {esUsuarioActual ? (
           <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
             <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
-            No puede desactivar su propia cuenta desde aquí.
+            No puede desactivar su propia cuenta, para desactivar, por favor
+            comuníquese con el personal secretario.
           </p>
         ) : !activo ? (
           <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
