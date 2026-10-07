@@ -148,6 +148,23 @@ const getEstadoBadgeVariant = (estado?: string | null): BadgeVariant => {
   }
 };
 
+function CampoHistorial({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
+        {label}
+      </span>
+      <span className="text-sm text-slate-900 dark:text-[#f3f6fa]">{value}</span>
+    </div>
+  );
+}
+
 const getEstadoBadgeDark = (estado?: string | null) => {
   const estadoNormalizado = normalizarEstado(estado);
   if (estadoNormalizado === "aprobado")
@@ -166,9 +183,6 @@ function GestionSolicitudesCatequesis() {
   const [filtroFilial, setFiltroFilial] = useState<"todos" | string>("todos");
   const [filtroTextoLibre, setFiltroTextoLibre] = useState("");
   const [filtroEncargado, setFiltroEncargado] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState<
-    "todos" | "pendiente" | "aprobado" | "rechazado"
-  >("todos");
   const [exportModalAbierto, setExportModalAbierto] = useState(false);
   const [filtroNivelMenuAbierto, setFiltroNivelMenuAbierto] = useState(false);
   const [filtroFilialMenuAbierto, setFiltroFilialMenuAbierto] = useState(false);
@@ -185,10 +199,10 @@ function GestionSolicitudesCatequesis() {
   const [limite, setLimite] =
     useState<(typeof TAMANOS_PAGINA_SOLICITUDES)[number]>(10);
 
-  // Filtros que el backend soporta (estado, encargado, q, nivel, filial)
+  // La lista de solicitudes solo trae pendientes. Aprobadas y rechazadas
+  // se consultan en el historial.
   const filtros = useMemo(
     () => ({
-      estado: filtroEstado === "todos" ? undefined : filtroEstado,
       encargado: debouncedEncargado || undefined,
       q: debouncedQ || undefined,
       nivel: filtroNivel === "todos" ? undefined : filtroNivel,
@@ -197,7 +211,6 @@ function GestionSolicitudesCatequesis() {
       limit: limite,
     }),
     [
-      filtroEstado,
       debouncedEncargado,
       debouncedQ,
       filtroNivel,
@@ -321,14 +334,12 @@ function GestionSolicitudesCatequesis() {
   ]);
 
   const hayFiltrosActivos =
-    filtroEstado !== "todos" ||
     filtroNivel !== "todos" ||
     filtroFilial !== "todos" ||
     filtroTextoLibre.trim() !== "" ||
     filtroEncargado.trim() !== "";
 
   const limpiarFiltros = () => {
-    setFiltroEstado("todos");
     setFiltroNivel("todos");
     setFiltroFilial("todos");
     setFiltroTextoLibre("");
@@ -648,7 +659,7 @@ function GestionSolicitudesCatequesis() {
 
   useEffect(() => {
     setPagina(1);
-  }, [filtroTextoLibre, filtroEncargado, filtroEstado, filtroNivel, filtroFilial]);
+  }, [filtroTextoLibre, filtroEncargado, filtroNivel, filtroFilial]);
 
   return (
     <AdminModule className="gap-3!">
@@ -740,25 +751,6 @@ function GestionSolicitudesCatequesis() {
 
       <AdminToolbar className="p-3!">
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={filtroEstado}
-            onChange={(event) =>
-              setFiltroEstado(
-                event.target.value as
-                  | "todos"
-                  | "pendiente"
-                  | "aprobado"
-                  | "rechazado",
-              )
-            }
-            className="min-h-11 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
-            aria-label="Filtrar por estado"
-          >
-            <option value="todos">Todos los estados</option>
-            <option value="pendiente">Pendiente</option>
-            <option value="aprobado">Aprobada</option>
-            <option value="rechazado">Rechazada</option>
-          </select>
           <input
             type="text"
             value={filtroTextoLibre}
@@ -1716,66 +1708,89 @@ function GestionSolicitudesCatequesis() {
       {historialSeleccionada && (
         <Modal
           onClose={() => setHistorialSeleccionada(null)}
-          title={`Historial de CAT-${historialSeleccionada.id}`}
+          title={historialSeleccionada.nombreCatequizando || "Sin nombre"}
           sinFondo
+          tamano="xl"
           cerrarConEsc
           overlayClassName="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
-          className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+          className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
         >
           <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="flex flex-col gap-4">
-              <div className="pr-14">
-                <LineaDoradaTitulo
-                  parteSubrayada={`Historial de CAT-${historialSeleccionada.id}`}
-                />
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border-strong bg-surface-muted p-4 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
+            <div className="flex flex-col gap-5 pr-10">
+              <div className="flex flex-col gap-2">
+                <p className="m-0 text-xs font-semibold tracking-wide text-text-muted uppercase dark:text-[#7f8da3]">
+                  Historial de catequesis
+                </p>
                 <div className="flex flex-col gap-1">
-                  <p className="m-0 text-lg font-semibold text-slate-900 dark:text-[#f3f6fa]">
-                    {historialSeleccionada.nombreCatequizando || "Sin nombre"}
-                  </p>
-                  <p className="m-0 text-sm text-text-secondary dark:text-[#b7c3d4]">
-                    {obtenerEtiquetaNivelCatequesis(
-                      historialSeleccionada.nivelAInscribirse,
-                    )}
-                    {historialSeleccionada.centroCatequesis
-                      ? ` · ${historialSeleccionada.centroCatequesis}`
-                      : ""}
-                  </p>
-                  <p className="m-0 text-xs text-text-muted dark:text-[#7f8da3]">
-                    Fecha de solicitud:{" "}
-                    {formatFechaIngreso(
-                      historialSeleccionada.fechaSolicitud ?? "",
-                    )}
-                  </p>
-                  {historialSeleccionada.telefonoEncargada && (
-                    <p className="m-0 text-xs text-text-muted dark:text-[#7f8da3]">
-                      Teléfono: {historialSeleccionada.telefonoEncargada}
-                    </p>
-                  )}
-                  {historialSeleccionada.nombreEncargado && (
-                    <p className="m-0 text-xs text-text-muted dark:text-[#7f8da3]">
-                      Encargado: {historialSeleccionada.nombreEncargado}
-                    </p>
-                  )}
-                  {historialSeleccionada.revisor && (
-                    <p className="m-0 text-xs text-text-muted dark:text-[#7f8da3]">
-                      Revisor: {historialSeleccionada.revisor}
-                    </p>
-                  )}
+                  <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
+                    Nombre catequizando
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="m-0 font-heading text-2xl text-slate-900 dark:text-[#f3f6fa]">
+                      {historialSeleccionada.nombreCatequizando || "Sin nombre"}
+                    </h2>
+                    <Badge
+                      variant={getEstadoBadgeVariant(historialSeleccionada.estado)}
+                      className={getEstadoBadgeDark(historialSeleccionada.estado)}
+                    >
+                      {obtenerTextoEstado(historialSeleccionada.estado)}
+                    </Badge>
+                  </div>
                 </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <CampoHistorial
+                  label="Nivel"
+                  value={
+                    historialSeleccionada.nivelAInscribirse
+                      ? obtenerEtiquetaNivelCatequesis(
+                          historialSeleccionada.nivelAInscribirse,
+                        )
+                      : "—"
+                  }
+                />
+                <CampoHistorial
+                  label="Filial"
+                  value={historialSeleccionada.centroCatequesis?.trim() || "—"}
+                />
+                <CampoHistorial
+                  label="Fecha de solicitud"
+                  value={formatFechaIngreso(historialSeleccionada.fechaSolicitud)}
+                />
+                <CampoHistorial
+                  label="Encargado"
+                  value={historialSeleccionada.nombreEncargado?.trim() || "—"}
+                />
+                <CampoHistorial
+                  label="Teléfono"
+                  value={
+                    formatearTelefono(historialSeleccionada.telefonoEncargada) ||
+                    "—"
+                  }
+                />
+                <CampoHistorial
+                  label="Revisor"
+                  value={historialSeleccionada.revisor?.trim() || "—"}
+                />
               </div>
 
               {normalizarEstado(historialSeleccionada.estado) === "aprobado" ? (
                 <div className="flex gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-[#35d6a0]/30 dark:bg-[rgba(53,214,160,0.10)]">
-                  <CheckCircle size={17} className="mt-0.5 shrink-0 text-emerald-700 dark:text-[#35d6a0]" />
+                  <CheckCircle
+                    size={17}
+                    className="mt-0.5 shrink-0 text-emerald-700 dark:text-[#35d6a0]"
+                  />
                   <div>
-                    <p className="m-0 text-sm text-emerald-900 dark:text-[#35d6a0]">
-                      {historialSeleccionada.observacionAdministrativa ||
+                    <p className="m-0 text-sm font-semibold text-emerald-900 dark:text-[#35d6a0]">
+                      Aprobación
+                    </p>
+                    <p className="m-0 mt-1 text-sm text-emerald-900 dark:text-[#d7f8ec]">
+                      {historialSeleccionada.observacionAdministrativa?.trim() ||
                         "Sin comentario de aprobación"}
                     </p>
                     {historialSeleccionada.fechaActualizacionEstado && (
@@ -1789,15 +1804,21 @@ function GestionSolicitudesCatequesis() {
                   </div>
                 </div>
               ) : (
-                <div className="flex gap-2.5 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-[#ff6b6b]/50 dark:bg-[#e03131]">
-                  <XCircle size={17} className="mt-0.5 shrink-0 text-red-700 dark:text-white" />
+                <div className="flex gap-2.5 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-[#e66a6a]/30 dark:bg-[rgba(230,106,106,0.10)]">
+                  <XCircle
+                    size={17}
+                    className="mt-0.5 shrink-0 text-red-700 dark:text-[#e66a6a]"
+                  />
                   <div>
-                    <p className="m-0 text-sm font-semibold text-red-900 dark:text-white">
-                      {historialSeleccionada.observacionAdministrativa ||
+                    <p className="m-0 text-sm font-semibold text-red-900 dark:text-[#e66a6a]">
+                      Rechazo
+                    </p>
+                    <p className="m-0 mt-1 text-sm text-red-900 dark:text-[#f8d0d0]">
+                      {historialSeleccionada.observacionAdministrativa?.trim() ||
                         "Motivo no especificado"}
                     </p>
                     {historialSeleccionada.fechaActualizacionEstado && (
-                      <p className="m-0 mt-1 text-xs text-red-700 dark:text-white">
+                      <p className="m-0 mt-1 text-xs text-red-700 dark:text-[#e66a6a]">
                         Rechazado el{" "}
                         {formatFechaIngreso(
                           historialSeleccionada.fechaActualizacionEstado,

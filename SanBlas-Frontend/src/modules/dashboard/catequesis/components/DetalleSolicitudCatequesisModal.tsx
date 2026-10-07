@@ -186,7 +186,7 @@ export function DetalleSolicitudCatequesisModal({
     <AdminRecordDetailSheet
       open
       title={nombreCompleto(solicitud.catequizando) || "Sin nombre"}
-      subtitle={`Solicitud de catequesis · ${solicitud.codigoSolicitud || `CAT-${solicitud.id}`}`}
+      subtitle="Solicitud de catequesis"
       badges={
         <Badge
           variant={getEstadoBadgeVariant(estado)}
@@ -340,12 +340,6 @@ export function DetalleSolicitudCatequesisModal({
                       label="Nivel"
                       value={obtenerEtiquetaNivelCatequesis(
                         solicitud.catequesis?.nivelAInscribirse,
-                      )}
-                    />
-                    <Campo
-                      label="Código"
-                      value={valorOGuion(
-                        solicitud.codigoSolicitud || `CAT-${solicitud.id}`,
                       )}
                     />
                     <Campo
