@@ -133,6 +133,12 @@ function aplicarBorradorAlFormulario(guardado: unknown): CatequesisEnrollmentDat
       direccion: {
         ...base.catequizando.direccion,
         ...(esRegistro(catequizando.direccion) ? catequizando.direccion : {}),
+        // borradores viejos podían tener más de 150: se recortan al cargar
+        direccionExacta: limitarDireccionGuardada(
+          esRegistro(catequizando.direccion)
+            ? catequizando.direccion.direccionExacta
+            : null,
+        ),
       },
       adecuacion: {
         ...base.catequizando.adecuacion,
@@ -149,6 +155,9 @@ function aplicarBorradorAlFormulario(guardado: unknown): CatequesisEnrollmentDat
       direccion: {
         ...base.madreCatequizando.direccion,
         ...(esRegistro(madre.direccion) ? madre.direccion : {}),
+        direccionExacta: limitarDireccionGuardada(
+          esRegistro(madre.direccion) ? madre.direccion.direccionExacta : null,
+        ),
       },
     },
     padreCatequizando: {
@@ -157,6 +166,9 @@ function aplicarBorradorAlFormulario(guardado: unknown): CatequesisEnrollmentDat
       direccion: {
         ...base.padreCatequizando.direccion,
         ...(esRegistro(padre.direccion) ? padre.direccion : {}),
+        direccionExacta: limitarDireccionGuardada(
+          esRegistro(padre.direccion) ? padre.direccion.direccionExacta : null,
+        ),
       },
     },
     inscripcion: {
@@ -180,6 +192,8 @@ const infoBoxClass =
 const MAX_CHARACTERS = 50;
 const MAX_CHARACTERS_NOMBRE = 20;
 const MAX_CHARACTERS_DESCRIPCION = 300;
+// la dirección exacta es lo único que se pasó a 150; el contador la usa pa mostrar (x/150)
+const MAX_CHARACTERS_DIRECCION = 150;
 
 // Fecha de corte para el cálculo de edad del catequizando: 31 de agosto del año en curso.
 const FECHA_CORTE_EDAD = (() => {
@@ -203,7 +217,10 @@ const limitarCaracteres = (valor: string): string =>
   valor.slice(0, MAX_CHARACTERS);
 const limitarPalabras = limitarCaracteres;
 const limitarDireccion = (valor: string): string =>
-  valor.replace(/[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ0-9\s,.\-#]/g, "").slice(0, 250);
+  valor.replace(/[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ0-9\s,.\-#]/g, "").slice(0, MAX_CHARACTERS_DIRECCION);
+// recorta una dirección guardada en borradores viejos; acepta unknown porque así viene el JSON
+const limitarDireccionGuardada = (valor: unknown): string | null =>
+  typeof valor === "string" ? limitarDireccion(valor) : null;
 const limitarDescripcion = (valor: string): string =>
   valor.replace(/[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ0-9\s,.\-#()/\u00A0]/g, "").slice(0, MAX_CHARACTERS_DESCRIPCION);
 const limitarCorreo = (valor: string): string =>
@@ -1098,7 +1115,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="text"
                 placeholder="Ej: 200 m norte de la iglesia, casa azul"
-                maxLength={250}
+                maxLength={MAX_CHARACTERS_DIRECCION}
                 value={form.catequizando.direccion.direccionExacta || ""}
                 onChange={(e) =>
                   updateForm(
@@ -1109,7 +1126,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.catequizando.direccion.direccionExacta || ""}
-                max={250}
+                max={MAX_CHARACTERS_DIRECCION}
                 error={errors.direccionExacta}
               />
             </div>
@@ -1642,7 +1659,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="text"
                 placeholder="Ej: 200 m norte de la iglesia, casa azul"
-                maxLength={250}
+                maxLength={MAX_CHARACTERS_DIRECCION}
                 value={form.madreCatequizando.direccion.direccionExacta || ""}
                 onChange={(e) =>
                   updateForm(
@@ -1653,7 +1670,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.madreCatequizando.direccion.direccionExacta || ""}
-                max={250}
+                max={MAX_CHARACTERS_DIRECCION}
                 error={errors.direccionMadre}
               />
             </div>
@@ -1870,7 +1887,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="text"
                 placeholder="Ej: 200 m norte de la iglesia, casa azul"
-                maxLength={250}
+                maxLength={MAX_CHARACTERS_DIRECCION}
                 value={form.padreCatequizando.direccion.direccionExacta || ""}
                 onChange={(e) =>
                   updateForm(
@@ -1881,7 +1898,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.padreCatequizando.direccion.direccionExacta || ""}
-                max={250}
+                max={MAX_CHARACTERS_DIRECCION}
                 error={errors.direccionPadre}
               />
             </div>
