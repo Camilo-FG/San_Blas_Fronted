@@ -1,5 +1,6 @@
-import { useEffect, useId, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
+import FocusTrap from "focus-trap-react";
 
 interface AdminRecordDetailSheetProps {
   open: boolean;
@@ -33,6 +34,7 @@ export function AdminRecordDetailSheet({
   cerrarConEsc = true,
 }: AdminRecordDetailSheetProps) {
   const titleId = useId();
+  const dialogoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -53,13 +55,27 @@ export function AdminRecordDetailSheet({
   if (!open) return null;
 
   return (
+    <FocusTrap
+      focusTrapOptions={{
+        clickOutsideDeactivates: false,
+        escapeDeactivates: () => {
+          if (cerrarConEsc) onClose();
+          return cerrarConEsc;
+        },
+        allowOutsideClick: () => true,
+        initialFocus: () => dialogoRef.current ?? false,
+        fallbackFocus: () => dialogoRef.current ?? document.body,
+      }}
+    >
     <div
       className="fixed inset-0 z-[1300] flex items-end justify-center bg-slate-900/55 md:items-center md:p-4"
       role="presentation"
       onClick={cerrarAlClicFuera ? onClose : undefined}
     >
       <div
-        className="relative flex max-h-[94vh] w-full flex-col rounded-t-[18px] bg-surface shadow-[0_-8px_30px_rgba(15,23,42,0.18)] md:max-h-[92vh] md:min-h-[78vh] md:max-w-5xl md:rounded-[18px]"
+        ref={dialogoRef}
+        tabIndex={-1}
+        className="relative flex max-h-[94vh] w-full flex-col rounded-t-[18px] bg-surface shadow-[0_-8px_30px_rgba(15,23,42,0.18)] focus:outline-none md:max-h-[92vh] md:min-h-[78vh] md:max-w-5xl md:rounded-[18px]"
         role="dialog"
         aria-modal="true"
         aria-labelledby={hideHeader ? undefined : titleId}
@@ -136,5 +152,6 @@ export function AdminRecordDetailSheet({
         )}
       </div>
     </div>
+    </FocusTrap>
   );
 }

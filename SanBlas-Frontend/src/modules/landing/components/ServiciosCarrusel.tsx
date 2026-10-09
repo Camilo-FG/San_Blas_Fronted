@@ -45,7 +45,12 @@ interface ServiceItem {
 
 // los datos guardados en la BD no traen id ni icono: se completan por posición
 function mapearServicios(items: ServicioGuardado[]): ServiceItem[] {
-  return items.map((item, index) => ({
+  const enlaceBautismo = "/solicitudes-catequesis-bautismo";
+  const lista = items.some((item) => item.linkTo === enlaceBautismo)
+    ? items
+    : insertarCatequesisBautismo(items);
+
+  return lista.map((item, index) => ({
     id: `servicio-${index + 1}`,
     title: item.title,
     description: item.description,
@@ -56,6 +61,20 @@ function mapearServicios(items: ServicioGuardado[]): ServiceItem[] {
     linkTo: item.linkTo,
     modalDetails: item.modalDetails,
   }));
+}
+
+function insertarCatequesisBautismo(items: ServicioGuardado[]): ServicioGuardado[] {
+  const extra = SERVICIOS_DEFAULT.items.find(
+    (item) => item.linkTo === "/solicitudes-catequesis-bautismo",
+  );
+  if (!extra) return items;
+  const indiceCatequesis = items.findIndex(
+    (item) => item.linkTo === "/solicitudes-catequesis",
+  );
+  if (indiceCatequesis === -1) return [...items, extra];
+  const copia = [...items];
+  copia.splice(indiceCatequesis + 1, 0, extra);
+  return copia;
 }
 const carouselButtonClass =
   "relative z-[1] flex w-full cursor-pointer items-center justify-center rounded-[14px] border border-royal-blue bg-royal-blue px-4 py-3.5 text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-white no-underline transition-all hover:-translate-y-0.5 hover:border-royal-blue-dark hover:bg-royal-blue-dark focus-visible:outline focus-visible:outline-3 focus-visible:outline-royal-gold/45 focus-visible:outline-offset-[3px] max-[420px]:px-3.5 max-[420px]:py-3 max-[420px]:text-[10px]";
@@ -189,7 +208,10 @@ export default function ServiciosCarousel() {
   );
 
   return (
-    <section className="border-y border-[#f0f0f0] bg-surface py-24 max-[900px]:py-[76px] max-sm:py-[60px]">
+    <section
+      id="servicios"
+      className="scroll-mt-24 border-y border-[#f0f0f0] bg-surface py-24 max-[900px]:py-[76px] max-sm:py-[60px]"
+    >
       <div className="mx-auto max-w-[1320px] px-6 max-sm:px-4">
         <ScrollReveal className="mx-auto mb-12 max-w-[620px] text-center max-sm:mb-8" amount={0.35}>
           <span className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.25em] text-royal-gold max-sm:text-[10px] max-sm:tracking-[0.18em]">

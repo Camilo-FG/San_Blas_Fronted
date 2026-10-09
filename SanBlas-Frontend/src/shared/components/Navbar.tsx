@@ -191,6 +191,20 @@ function Navbar() {
                 >
                   Matrícula a Catequesis
                 </Link>
+                <Link
+                  to={Rutas.solicitudesCica}
+                  className={submenuLinkClass}
+                  onClick={cerrarMenu}
+                >
+                  Catequesis de adultos (CICA)
+                </Link>
+                <Link
+                  to={Rutas.FormsolicitudesCatequesisBautismo}
+                  className={submenuLinkClass}
+                  onClick={cerrarMenu}
+                >
+                  Catequesis para el bautismo
+                </Link>
 
                 <Link
                   to={Rutas.SolicitudesSacramentos}
@@ -381,6 +395,20 @@ function Navbar() {
                       onClick={cerrarMenu}
                     >
                       Matrícula a Catequesis
+                    </Link>
+                    <Link
+                      to={Rutas.solicitudesCica}
+                      className="py-[7px] text-[13px] font-bold uppercase text-white/82 no-underline transition-colors hover:text-royal-gold"
+                      onClick={cerrarMenu}
+                    >
+                      Catequesis de adultos (CICA)
+                    </Link>
+                    <Link
+                      to={Rutas.FormsolicitudesCatequesisBautismo}
+                      className="py-[7px] text-[13px] font-bold uppercase text-white/82 no-underline transition-colors hover:text-royal-gold"
+                      onClick={cerrarMenu}
+                    >
+                      Catequesis para el bautismo
                     </Link>
                   </div>
 

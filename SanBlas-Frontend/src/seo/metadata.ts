@@ -1,4 +1,4 @@
-﻿import Rutas from '../routes/Rutas';
+import Rutas from '../routes/Rutas';
 
 const SITE = 'https://sanblasfrontend.netlify.app';
 
@@ -35,6 +35,18 @@ export const pageMetadata: Record<string, PageMeta> = {
     description: 'Inscriba a sus hijos en la catequesis infantil o juvenil de la Parroquia San Blas de Nicoya. Informaci\u00f3n sobre niveles y requisitos.',
     canonical: SITE + '/solicitudes-catequesis',
     breadcrumbs: [{ name: 'Inicio', path: '/' }, { name: 'Catequesis', path: '/solicitudes-catequesis' }],
+  },
+  [Rutas.solicitudesCica]: {
+    title: 'Catequesis de adultos (CICA) | Parroquia San Blas de Nicoya',
+    description: 'Inscripci\u00f3n a la Catequesis de Iniciaci\u00f3n Cristiana de Adultos de la Parroquia San Blas de Nicoya.',
+    canonical: SITE + '/solicitudes-cica',
+    breadcrumbs: [{ name: 'Inicio', path: '/' }, { name: 'CICA', path: '/solicitudes-cica' }],
+  },
+  [Rutas.FormsolicitudesCatequesisBautismo]: {
+    title: 'Catequesis para el bautismo | Parroquia San Blas de Nicoya',
+    description: 'Inscripci\u00f3n a la catequesis que padres, madres y padrinos deben completar antes de bautizar en la Parroquia San Blas de Nicoya.',
+    canonical: SITE + '/solicitudes-catequesis-bautismo',
+    breadcrumbs: [{ name: 'Inicio', path: '/' }, { name: 'Catequesis para el bautismo', path: '/solicitudes-catequesis-bautismo' }],
   },
   [Rutas.donacionesPublicas]: {
     title: 'Donaciones | Parroquia San Blas de Nicoya',

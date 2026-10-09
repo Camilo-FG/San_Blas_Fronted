@@ -5,12 +5,13 @@ import {
   createRouter,
   Outlet,
   redirect,
+  useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
 
 import Navbar from "../shared/components/Navbar";
 import Footer from "../modules/landing/components/Footer";
-import { PageLoader } from "../shared/ui";
+import { PageLoader, useToast } from "../shared/ui";
 import LandingLoader from "../modules/landing/components/LandingLoader";
 import Rutas from "./Rutas";
 import {
@@ -40,6 +41,10 @@ const SolicSacramento = lazyWithRetry(
 const CatequesisPage = lazyWithRetry(
   () => import("../modules/catequesis/pages/CatequesisPage"),
 );
+const CicaPage = lazyWithRetry(() => import("../modules/cica/pages/CicaPage"));
+const CatequesisBautismoPage = lazyWithRetry(
+  () => import("../modules/catequesisBautismo/pages/CatequesisBautismoPage"),
+);
 const LoginPage = lazyWithRetry(() => import("../modules/auth/pages/LoginPage"));
 const RecuperarContrasenaPage = lazyWithRetry(
   () => import("../modules/auth/pages/RecuperarContrasenaPage"),
@@ -57,6 +62,13 @@ const DashboardHome = lazyWithRetry(
 const GestionSolicitudesCatequesis = lazyWithRetry(
   () =>
     import("../modules/dashboard/catequesis/pages/GestionSolicitudesCatequesis"),
+);
+const GestionSolicitudesCica = lazyWithRetry(
+  () => import("../modules/dashboard/cica/pages/GestionSolicitudesCica"),
+);
+const GestionCatequesisBautismo = lazyWithRetry(
+  () =>
+    import("../modules/dashboard/catequesisBautismo/pages/GestionCatequesisBautismo"),
 );
 const DashSacra = lazyWithRetry(() => import("../modules/dashboardSacramento/dashSacra"));
 const GestionDonaciones = lazyWithRetry(
@@ -128,10 +140,44 @@ const rootRoute = createRootRoute({
   component: RootLayout,
 });
 
+let avisoDeRutaMostrado = false;
+
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.home,
-  component: withSuspense(Home, LandingLoader),
+  validateSearch: (search: Record<string, unknown>) => ({
+    aviso: search.aviso === "ruta" ? ("ruta" as const) : undefined,
+  }),
+  component: function InicioConAviso() {
+    const { aviso } = homeRoute.useSearch();
+    const navigate = useNavigate();
+    const { showToast } = useToast();
+
+    useEffect(() => {
+      if (aviso !== "ruta") {
+        avisoDeRutaMostrado = false;
+        return;
+      }
+      if (avisoDeRutaMostrado) return;
+      avisoDeRutaMostrado = true;
+      showToast(
+        "Esa dirección no existe. Le mostramos los servicios de la parroquia.",
+        "warning",
+      );
+      navigate({
+        to: Rutas.home,
+        hash: "servicios",
+        search: { aviso: undefined },
+        replace: true,
+      });
+    }, [aviso, navigate, showToast]);
+
+    return (
+      <Suspense fallback={<LandingLoader />}>
+        <Home />
+      </Suspense>
+    );
+  },
 });
 
 const sobreNosotrosRoute = createRoute({
@@ -166,6 +212,18 @@ const formsolicitudesCatequesisRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.FormsolicitudesCatequesis,
   component: withSuspense(CatequesisPage, LandingLoader),
+});
+
+const solicitudesCicaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.solicitudesCica,
+  component: withSuspense(CicaPage, LandingLoader),
+});
+
+const solicitudesCatequesisBautismoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.FormsolicitudesCatequesisBautismo,
+  component: withSuspense(CatequesisBautismoPage, LandingLoader),
 });
 
 const loginRoute = createRoute({
@@ -290,6 +348,20 @@ const solicitudesCatequesisRoute = createRoute({
   beforeLoad: requierePermiso("catequesis"),
 });
 
+const cicaAdminRoute = createRoute({
+  getParentRoute: () => dashboardRoute,
+  path: Rutas.dashboardPath.cica,
+  component: withSuspense(GestionSolicitudesCica),
+  beforeLoad: requierePermiso("catequesis"),
+});
+
+const catequesisBautismoAdminRoute = createRoute({
+  getParentRoute: () => dashboardRoute,
+  path: Rutas.dashboardPath.catequesisBautismo,
+  component: withSuspense(GestionCatequesisBautismo),
+  beforeLoad: requierePermiso("catequesis"),
+});
+
 const donacionesAdminRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: Rutas.dashboardPath.donaciones,
@@ -348,6 +420,19 @@ const perfilRoute = createRoute({
   component: withSuspense(MiPerfil),
 });
 
+const rutaDesconocidaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "$",
+  beforeLoad: () => {
+    throw redirect({
+      to: Rutas.home,
+      hash: "servicios",
+      search: { aviso: "ruta" },
+      replace: true,
+    });
+  },
+});
+
 const routeTree = rootRoute.addChildren([
   homeRoute,
   sobreNosotrosRoute,
@@ -356,15 +441,20 @@ const routeTree = rootRoute.addChildren([
   donacionesPublicasRoute,
   solicitudesSacramentosRoute,
   formsolicitudesCatequesisRoute,
+  solicitudesCicaRoute,
+  solicitudesCatequesisBautismoRoute,
   bautizosRoute,
   horariosRoute,
   eventosPublicosRoute,
   loginRoute,
   recuperarContrasenaRoute,
   restablecerContrasenaRoute,
+  rutaDesconocidaRoute,
   dashboardRoute.addChildren([
     dashboardHomeRoute,
     solicitudesCatequesisRoute,
+    cicaAdminRoute,
+    catequesisBautismoAdminRoute,
     registroSacramentosRoute,
     constanciasSacramentosRoute,
     donacionesAdminRoute,

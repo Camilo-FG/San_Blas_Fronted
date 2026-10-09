@@ -26,6 +26,9 @@ type ConfirmacionAccionModalProps = {
   cancelClassName?: string;
   // opcional para personalizar el botón Confirmar por llamada
   confirmClassName?: string;
+  // contenido extra, por ejemplo el motivo del rechazo
+  children?: ReactNode;
+  confirmDisabled?: boolean;
 };
 
 export function ConfirmacionAccionModal({
@@ -45,6 +48,8 @@ export function ConfirmacionAccionModal({
   overlayClassName,
   cancelClassName,
   confirmClassName,
+  children,
+  confirmDisabled = false,
 }: ConfirmacionAccionModalProps) {
   if (!open) return null;
 
@@ -71,10 +76,11 @@ export function ConfirmacionAccionModal({
           parteSubrayada={parteSubrayada}
           resto={resto}
         />
-        <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center px-8 py-4 text-center">
           <p className="text-sm leading-relaxed text-text-secondary">
             {mensaje}
           </p>
+          {children}
         </div>
         <div className="flex shrink-0 justify-end gap-2">
           <Button
@@ -86,7 +92,7 @@ export function ConfirmacionAccionModal({
               confirmClassName,
             )}
             onClick={onConfirm}
-            disabled={isPending}
+            disabled={isPending || confirmDisabled}
           >
             {isPending ? (
               <>

@@ -1,6 +1,7 @@
 import SeoHead from "../../../seo/SeoHead";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type CSSProperties } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard,
   FileSpreadsheet,
@@ -14,6 +15,7 @@ import {
   Moon,
   Sun,
   X,
+  ChevronDown,
 } from "lucide-react";
 
 import Rutas from "../../../routes/Rutas";
@@ -27,6 +29,7 @@ const navLinks: {
   label: string;
   icon: typeof LayoutDashboard;
   permiso: PermisoRolId;
+  hijos?: { to: string; label: string }[];
 }[] = [
   { to: Rutas.dashboard, label: "Resumen", icon: LayoutDashboard, permiso: "panel" },
   {
@@ -43,9 +46,17 @@ const navLinks: {
   },
   {
     to: Rutas.dashboardUrl.solicitudesCatequesis,
-    label: "Solicitudes de Catequesis",
+    label: "Catequesis",
     icon: BookOpen,
     permiso: "catequesis",
+    hijos: [
+      {
+        to: Rutas.dashboardUrl.solicitudesCatequesis,
+        label: "Infantiles y juveniles",
+      },
+      { to: Rutas.dashboardUrl.cica, label: "CICA" },
+      { to: Rutas.dashboardUrl.catequesisBautismo, label: "Bautismo" },
+    ],
   },
   {
     to: Rutas.dashboardUrl.donaciones,
@@ -90,6 +101,14 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
     title: "Solicitudes de catequesis",
     subtitle: "Gestione inscripciones, documentos y aprobaciones de catequesis.",
   },
+  [Rutas.dashboardUrl.cica]: {
+    title: "Catequesis de adultos (CICA)",
+    subtitle: "Revise las inscripciones de adultos y apruebe o rechace cada solicitud.",
+  },
+  [Rutas.dashboardUrl.catequesisBautismo]: {
+    title: "Catequesis para el bautismo",
+    subtitle: "Certifique la catequesis que padres y padrinos completan antes de bautizar.",
+  },
   [Rutas.dashboardUrl.donaciones]: {
     title: "Gestión de donaciones",
     subtitle: "Consulte y actualice las donaciones registradas.",
@@ -113,7 +132,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
 };
 
 const menuItemBaseClassName =
-  "group relative flex w-full items-center gap-3 rounded-lg border-l-4 py-3 pr-4 pl-1 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out hover:translate-x-1.5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
+  "group relative flex w-full items-center gap-2.5 rounded-lg border-l-4 py-2 pr-4 pl-1 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out hover:translate-x-1.5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
 const menuItemInactiveClassName =
   "border-transparent text-gray-400 hover:bg-white/5 hover:text-white dark:hover:bg-transparent";
@@ -125,6 +144,14 @@ const menuItemActiveClassName =
 // el wash dorado hace fade por opacidad (GPU) y las letras heredan el negro
 const menuItemActiveExpandedClassName =
   "border-transparent bg-transparent text-[#0a1628]";
+
+function esRutaDeCatequesis(pathname: string) {
+  return [
+    Rutas.dashboardUrl.solicitudesCatequesis,
+    Rutas.dashboardUrl.cica,
+    Rutas.dashboardUrl.catequesisBautismo,
+  ].some((ruta) => pathname === ruta || pathname.startsWith(`${ruta}/`));
+}
 
 function getUserInitial(email?: string | null): string {
   if (!email) return "A";
@@ -149,6 +176,9 @@ function Dashboard() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [barraExpandida, setBarraExpandida] = useState(false);
+  const [catequesisAbierta, setCatequesisAbierta] = useState(() =>
+    esRutaDeCatequesis(pathname),
+  );
   const esAdmin =
     pathname === Rutas.dashboard ||
     pathname.startsWith(`${Rutas.dashboard}/`);
@@ -159,6 +189,10 @@ function Dashboard() {
 
   useEffect(() => {
     setMenuAbierto(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (esRutaDeCatequesis(pathname)) setCatequesisAbierta(true);
   }, [pathname]);
 
   useEffect(() => {
@@ -230,7 +264,7 @@ function Dashboard() {
         aria-label="Menú del panel administrativo"
       >
         <div>
-          <div className={cn("border-b border-gray-800 px-5 py-6", !barraExpandida && "lg:flex lg:h-[88px] lg:items-center lg:justify-start lg:p-0 lg:pl-5")}>
+          <div className={cn("border-b border-gray-800 px-5 py-5", !barraExpandida && "lg:flex lg:h-[88px] lg:items-center lg:justify-start lg:p-0 lg:pl-5")}>
             <Link
               to={Rutas.home}
               aria-label="Ir al sitio de la parroquia"
@@ -251,16 +285,131 @@ function Dashboard() {
             </Link>
           </div>
 
-          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {navLinks
               .filter((link) => tienePermiso(link.permiso))
               .map((link) => {
               const Icon = link.icon;
+              const esDonaciones = link.to === Rutas.dashboardUrl.donaciones;
+
+              if (link.hijos) {
+                const enSeccion = link.hijos.some(
+                  (hijo) =>
+                    pathname === hijo.to || pathname.startsWith(`${hijo.to}/`),
+                );
+                const pastillaCompleta = enSeccion && !catequesisAbierta;
+                const pastillaIcono = enSeccion && !barraExpandida;
+
+                return (
+                  <div key={link.label}>
+                    <button
+                      type="button"
+                      aria-expanded={catequesisAbierta}
+                      aria-controls="submenu-catequesis"
+                      onClick={() => setCatequesisAbierta((abierta) => !abierta)}
+                      className={cn(
+                        menuItemBaseClassName,
+                        "cursor-pointer border-0 bg-transparent",
+                        !barraExpandida && "lg:pr-0",
+                        pastillaCompleta
+                          ? menuItemActiveExpandedClassName
+                          : menuItemInactiveClassName,
+                      )}
+                    >
+                      <span className="flex min-w-0 flex-1 items-center gap-2.5 self-stretch rounded-lg">
+                        {(pastillaCompleta || pastillaIcono) && (
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              "pointer-events-none absolute left-1 top-1/2 h-9 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-300 ease-out",
+                              pastillaCompleta && !pastillaIcono && "w-[calc(100%-4px)]",
+                              !pastillaCompleta && pastillaIcono && "hidden w-9 lg:block",
+                              pastillaCompleta && pastillaIcono && "w-[calc(100%-4px)] lg:w-9",
+                            )}
+                          />
+                        )}
+                        <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-transparent">
+                          <Icon
+                            className={cn(
+                              "h-[18px] w-[18px] shrink-0 transition-all duration-200",
+                              pastillaCompleta
+                                ? "text-[#0a1628]"
+                                : pastillaIcono
+                                  ? "text-gray-500 lg:text-[#0a1628]"
+                                  : enSeccion
+                                    ? "text-white"
+                                    : "text-gray-500 group-hover:text-white",
+                            )}
+                            strokeWidth={enSeccion ? 2.25 : 1.75}
+                          />
+                        </span>
+                        <span
+                          className={cn(
+                            "relative whitespace-nowrap",
+                            !barraExpandida && "lg:hidden",
+                          )}
+                        >
+                          {link.label}
+                        </span>
+                        <ChevronDown
+                          aria-hidden="true"
+                          className={cn(
+                            "relative ml-auto h-4 w-4 shrink-0 transition-transform duration-200",
+                            catequesisAbierta && "rotate-180",
+                            !barraExpandida && "lg:hidden",
+                          )}
+                        />
+                      </span>
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {catequesisAbierta && (
+                        <motion.div
+                          id="submenu-catequesis"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                          className={cn("overflow-hidden", !barraExpandida && "lg:hidden")}
+                        >
+                          <div className="space-y-0.5 pt-1">
+                            {link.hijos.map((hijo) => {
+                              const hijoActivo =
+                                pathname === hijo.to ||
+                                pathname.startsWith(`${hijo.to}/`);
+
+                              return (
+                                <Link
+                                  key={hijo.to}
+                                  to={hijo.to}
+                                  className={cn(
+                                    "relative flex w-full items-center rounded-lg py-2 pr-3 pl-12 text-left text-sm font-semibold no-underline transition-colors focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+                                    hijoActivo
+                                      ? "text-[#0a1628]"
+                                      : "text-gray-400 hover:text-white",
+                                  )}
+                                >
+                                  {hijoActivo && (
+                                    <span
+                                      aria-hidden="true"
+                                      className="pointer-events-none absolute inset-y-0 right-1 left-1 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)]"
+                                    />
+                                  )}
+                                  <span className="relative whitespace-nowrap">{hijo.label}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              }
+
               const activo =
                 link.to === Rutas.dashboard
                   ? pathname === link.to
                   : pathname === link.to || pathname.startsWith(`${link.to}/`);
-              const esDonaciones = link.to === Rutas.dashboardUrl.donaciones;
 
               return (
                 <Link
@@ -280,24 +429,24 @@ function Dashboard() {
                 >
                   <span
                     className={cn(
-                      "flex min-w-0 flex-1 items-center gap-3 self-stretch rounded-lg",
+                      "flex min-w-0 flex-1 items-center gap-2.5 self-stretch rounded-lg",
                     )}
                   >
                   {activo && (
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "pointer-events-none absolute left-1 top-1/2 h-10 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-300 ease-out",
-                        barraExpandida ? "w-[calc(100%-4px)]" : "w-10",
+                        "pointer-events-none absolute left-1 top-1/2 h-9 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-300 ease-out",
+                        barraExpandida ? "w-[calc(100%-4px)]" : "w-9",
                       )}
                     />
                   )}
                   <span
-                    className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-transparent"
+                    className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-transparent"
                   >
                     <Icon
                       className={cn(
-                        "h-5 w-5 shrink-0 transition-all duration-200",
+                        "h-[18px] w-[18px] shrink-0 transition-all duration-200",
                         activo
                           ? "text-[#0a1628]"
                           : esDonaciones
@@ -326,15 +475,15 @@ function Dashboard() {
               disabled={cambiandoTema}
               onClick={alternarTema}
               className={cn(
-                "flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-full border py-2 pl-2 pr-3.5 text-gray-300 transition-colors hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-70",
+                "flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-full border py-1.5 pl-1.5 pr-3.5 text-gray-300 transition-colors hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-70",
                 barraExpandida
                   ? "border-white/10 bg-black/40 hover:border-white/20"
                   : "border-transparent bg-transparent lg:pr-0",
               )}
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center">
-                <Moon size={20} className={cn("shrink-0", !esOscuro && "hidden")} />
-                <Sun size={20} className={cn("shrink-0", esOscuro && "hidden")} />
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center">
+                <Moon size={18} className={cn("shrink-0", !esOscuro && "hidden")} />
+                <Sun size={18} className={cn("shrink-0", esOscuro && "hidden")} />
               </span>
               <span
                 className={cn(
