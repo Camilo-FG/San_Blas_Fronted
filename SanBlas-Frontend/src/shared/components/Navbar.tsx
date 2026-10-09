@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, LogOut, User } from "lucide-react";
+import { ChevronDown, LayoutDashboard, LogOut, User } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Rutas from "../../routes/Rutas";
 import { useAuth } from "../../context/AuthContext";
 import { etiquetaRol } from "../../types/Rol";
@@ -12,14 +13,16 @@ const navLinkClass =
   "relative py-2 text-xs font-extrabold uppercase tracking-[2px] text-white/88 no-underline transition-colors hover:text-royal-gold after:absolute after:bottom-0.5 after:left-0 after:h-0.5 after:w-0 after:bg-royal-gold after:transition-all after:duration-250 hover:after:w-full max-[1000px]:text-[11px] max-[1000px]:tracking-[1.4px]";
 
 const submenuLinkClass =
-  "block whitespace-nowrap rounded-[10px] px-3.5 py-3 text-sm font-semibold text-text no-underline transition-colors hover:bg-gray-100 hover:text-royal-gold-muted";
+  "block min-w-0 break-words rounded-[10px] px-3.5 py-3 text-sm font-semibold text-text no-underline transition-colors hover:bg-gray-100 hover:text-royal-gold-muted";
 
 function Navbar() {
   const navigate = useNavigate();
   const { isAuthenticated, isAdmin, user, logout } = useAuth();
   const [serviciosAbierto, setServiciosAbierto] = useState(false);
+  const [catequesisAbierta, setCatequesisAbierta] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [userMenuAbierto, setUserMenuAbierto] = useState(false);
+  const reducirMovimiento = useReducedMotion();
 
   const dropdownTimeout = useRef<number | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -72,16 +75,19 @@ function Navbar() {
   const cerrarServiciosConDelay = () => {
     dropdownTimeout.current = window.setTimeout(() => {
       setServiciosAbierto(false);
+      setCatequesisAbierta(false);
     }, 220);
   };
 
   const toggleServicios = () => {
+    setCatequesisAbierta(false);
     setServiciosAbierto((prev) => !prev);
   };
 
   const cerrarMenu = () => {
     setMenuAbierto(false);
     setServiciosAbierto(false);
+    setCatequesisAbierta(false);
     setUserMenuAbierto(false);
 
     if (dropdownTimeout.current) {
@@ -183,28 +189,82 @@ function Navbar() {
                 onMouseEnter={abrirServicios}
                 onMouseLeave={cerrarServiciosConDelay}
               >
-                <Link
-                  to={Rutas.FormsolicitudesCatequesis}
-                  hash="informacion"
-                  className={submenuLinkClass}
-                  onClick={cerrarMenu}
-                >
-                  Matrícula a Catequesis
-                </Link>
-                <Link
-                  to={Rutas.solicitudesCica}
-                  className={submenuLinkClass}
-                  onClick={cerrarMenu}
-                >
-                  Catequesis de adultos (CICA)
-                </Link>
-                <Link
-                  to={Rutas.FormsolicitudesCatequesisBautismo}
-                  className={submenuLinkClass}
-                  onClick={cerrarMenu}
-                >
-                  Catequesis para el bautismo
-                </Link>
+                <div className="rounded-[10px]">
+                  <button
+                    type="button"
+                    className={cn(
+                      submenuLinkClass,
+                      "flex w-full cursor-pointer items-center justify-between border-0 bg-transparent text-left",
+                    )}
+                    onClick={() => setCatequesisAbierta((abierta) => !abierta)}
+                    aria-expanded={catequesisAbierta}
+                    aria-controls="submenu-matricula-catequesis-desktop"
+                  >
+                    Matrícula a Catequesis
+                    <ChevronDown
+                      size={16}
+                      aria-hidden="true"
+                      className={cn(
+                        "shrink-0 transition-transform duration-200",
+                        catequesisAbierta && "rotate-180",
+                      )}
+                    />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {catequesisAbierta && (
+                      <motion.div
+                        id="submenu-matricula-catequesis-desktop"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{
+                          height: "auto",
+                          opacity: 1,
+                          transition: reducirMovimiento
+                            ? {
+                                height: { duration: 0 },
+                                opacity: { duration: 0.18, ease: "easeOut" },
+                              }
+                            : { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+                        }}
+                        exit={{
+                          height: 0,
+                          opacity: 0,
+                          transition: reducirMovimiento
+                            ? {
+                                height: { duration: 0 },
+                                opacity: { duration: 0.14, ease: "easeIn" },
+                              }
+                            : { duration: 0.22, ease: "easeIn" },
+                        }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex min-w-0 flex-col gap-0.5 py-1">
+                          <Link
+                            to={Rutas.FormsolicitudesCatequesis}
+                            hash="informacion"
+                            className={cn(submenuLinkClass, "py-2 text-[13px] leading-snug")}
+                            onClick={cerrarMenu}
+                          >
+                            Catequesis infantiles y juveniles
+                          </Link>
+                          <Link
+                            to={Rutas.solicitudesCica}
+                            className={cn(submenuLinkClass, "py-2 text-[13px] leading-snug")}
+                            onClick={cerrarMenu}
+                          >
+                            Catequesis de adultos (CICA)
+                          </Link>
+                          <Link
+                            to={Rutas.FormsolicitudesCatequesisBautismo}
+                            className={cn(submenuLinkClass, "py-2 text-[13px] leading-snug")}
+                            onClick={cerrarMenu}
+                          >
+                            Catequesis para el bautismo
+                          </Link>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
                 <Link
                   to={Rutas.SolicitudesSacramentos}
@@ -388,28 +448,77 @@ function Navbar() {
               {serviciosAbierto && (
                 <div className="mt-2 flex flex-col gap-1 rounded-xl border border-white/20 bg-royal-blue-dark/80 p-2 pl-3.5 shadow-inner">
                   <div className="flex flex-col gap-1">
-                    <Link
-                      to={Rutas.FormsolicitudesCatequesis}
-                      hash="informacion"
-                      className="py-[7px] text-[13px] font-bold uppercase text-white/82 no-underline transition-colors hover:text-royal-gold"
-                      onClick={cerrarMenu}
+                    <button
+                      type="button"
+                      className="flex w-full cursor-pointer items-center justify-between border-0 bg-transparent py-[7px] text-left text-[13px] font-bold uppercase text-white/90 transition-colors hover:text-royal-gold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-royal-gold"
+                      onClick={() => setCatequesisAbierta((abierta) => !abierta)}
+                      aria-expanded={catequesisAbierta}
+                      aria-controls="submenu-matricula-catequesis-mobile"
                     >
                       Matrícula a Catequesis
-                    </Link>
-                    <Link
-                      to={Rutas.solicitudesCica}
-                      className="py-[7px] text-[13px] font-bold uppercase text-white/82 no-underline transition-colors hover:text-royal-gold"
-                      onClick={cerrarMenu}
-                    >
-                      Catequesis de adultos (CICA)
-                    </Link>
-                    <Link
-                      to={Rutas.FormsolicitudesCatequesisBautismo}
-                      className="py-[7px] text-[13px] font-bold uppercase text-white/82 no-underline transition-colors hover:text-royal-gold"
-                      onClick={cerrarMenu}
-                    >
-                      Catequesis para el bautismo
-                    </Link>
+                      <ChevronDown
+                        size={16}
+                        aria-hidden="true"
+                        className={cn(
+                          "shrink-0 transition-transform duration-200",
+                          catequesisAbierta && "rotate-180",
+                        )}
+                      />
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {catequesisAbierta && (
+                        <motion.div
+                          id="submenu-matricula-catequesis-mobile"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{
+                            height: "auto",
+                            opacity: 1,
+                            transition: reducirMovimiento
+                              ? {
+                                  height: { duration: 0 },
+                                  opacity: { duration: 0.18, ease: "easeOut" },
+                                }
+                              : { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+                          }}
+                          exit={{
+                            height: 0,
+                            opacity: 0,
+                            transition: reducirMovimiento
+                              ? {
+                                  height: { duration: 0 },
+                                  opacity: { duration: 0.14, ease: "easeIn" },
+                                }
+                              : { duration: 0.22, ease: "easeIn" },
+                          }}
+                          className="overflow-hidden"
+                        >
+                          <div className="flex flex-col gap-1 py-1">
+                            <Link
+                              to={Rutas.FormsolicitudesCatequesis}
+                              hash="informacion"
+                              className="py-1.5 text-xs font-semibold text-white/75 no-underline transition-colors hover:text-royal-gold"
+                              onClick={cerrarMenu}
+                            >
+                              Catequesis infantiles y juveniles
+                            </Link>
+                            <Link
+                              to={Rutas.solicitudesCica}
+                              className="py-1.5 text-xs font-semibold text-white/75 no-underline transition-colors hover:text-royal-gold"
+                              onClick={cerrarMenu}
+                            >
+                              Catequesis de adultos (CICA)
+                            </Link>
+                            <Link
+                              to={Rutas.FormsolicitudesCatequesisBautismo}
+                              className="py-1.5 text-xs font-semibold text-white/75 no-underline transition-colors hover:text-royal-gold"
+                              onClick={cerrarMenu}
+                            >
+                              Catequesis para el bautismo
+                            </Link>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   <Link

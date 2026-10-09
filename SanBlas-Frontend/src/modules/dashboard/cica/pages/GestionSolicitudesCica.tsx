@@ -10,13 +10,13 @@ import {
   XCircle,
 } from "lucide-react";
 import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
+import { AdminPaginationBar } from "../../../../shared/components/admin/AdminPaginationBar";
+import { usePaginacionCliente } from "../../../../shared/hooks/usePaginacionCliente";
+import { useDebouncedValue } from "../../../../shared/hooks/useDebouncedValue";
 import {
   AdminModule,
-  AdminPagination,
-  AdminPaginationButton,
   AdminTable,
   AdminTableCell,
-  AdminTableFooter,
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTablePanel,
@@ -28,11 +28,16 @@ import {
   ErrorMessage,
   FieldError,
   ConfirmacionAccionModal,
-  Modal,
   Textarea,
   useToast,
 } from "../../../../shared/ui";
-import { SACRAMENTOS_CICA } from "../../../cica/sacramentosCica";
+import {
+  DetalleSolicitudCicaSheet,
+  etiquetaCivil,
+  formatearFecha,
+  nombreCompleto,
+  sacramentos,
+} from "../components/DetalleSolicitudCicaSheet";
 import {
   getEstadoBadgeClass,
   getEstadoBadgeVariant,
@@ -40,35 +45,9 @@ import {
 } from "../../../cica/estadoCica";
 import type { InscripcionCica } from "../../../cica/types";
 import { useSolicitudesCica } from "../hooks/useSolicitudesCica";
-const POR_PAGINA = 10;
-
-const etiquetaCivil: Record<string, string> = {
-  soltero: "Soltero(a)",
-  matrimonio_civil: "Matrimonio civil",
-  union_libre: "Unión libre",
-};
 
 const inputAdmin =
   "min-h-11 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]";
-
-const nombreCompleto = (persona: {
-  nombre: string;
-  apellido1: string;
-  apellido2?: string | null;
-}) =>
-  [persona.nombre, persona.apellido1, persona.apellido2].filter(Boolean).join(" ");
-
-const sacramentos = (item: InscripcionCica) =>
-  SACRAMENTOS_CICA.filter((sacramento) => item[sacramento.clave])
-    .map((sacramento) => sacramento.etiqueta)
-    .join(", ") || "—";
-
-const formatearFecha = (valor?: string | null) => {
-  if (!valor) return "—";
-  const fecha = new Date(valor);
-  if (Number.isNaN(fecha.getTime())) return valor;
-  return fecha.toLocaleDateString("es-CR");
-};
 
 const coincideBusqueda = (item: InscripcionCica, texto: string) => {
   const consulta = texto.trim().toLowerCase();
@@ -78,17 +57,6 @@ const coincideBusqueda = (item: InscripcionCica, texto: string) => {
     .toLowerCase()
     .includes(consulta);
 };
-
-function CampoDetalle({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
-        {label}
-      </span>
-      <span className="text-sm text-slate-900 dark:text-[#f3f6fa]">{value}</span>
-    </div>
-  );
-}
 
 const GestionSolicitudesCica = () => {
   const { showToast } = useToast();
@@ -108,11 +76,9 @@ const GestionSolicitudesCica = () => {
   const [motivo, setMotivo] = useState("");
   const [errorAccion, setErrorAccion] = useState<string | null>(null);
   const [confirmacion, setConfirmacion] = useState<"aprobar" | "rechazar" | null>(null);
-  const [pagina, setPagina] = useState(1);
 
-  useEffect(() => {
-    setPagina(1);
-  }, [vista, filtro, busqueda]);
+  // Debounce de la búsqueda para no recalcular filas ni resetear la página con cada tecla, igual que catequesis.
+  const busquedaDebounced = useDebouncedValue(busqueda, 400);
 
   const aprobadas = historial.filter((item) => item.estado === "Aprobada").length;
   const rechazadas = historial.filter((item) => item.estado === "Rechazada").length;
@@ -122,15 +88,18 @@ const GestionSolicitudesCica = () => {
       vista === "solicitudes"
         ? pendientes
         : historial.filter((item) => filtro === "todos" || item.estado === filtro);
-    return base.filter((item) => coincideBusqueda(item, busqueda));
-  }, [busqueda, filtro, historial, pendientes, vista]);
+    return base.filter((item) => coincideBusqueda(item, busquedaDebounced));
+  }, [busquedaDebounced, filtro, historial, pendientes, vista]);
 
-  const totalPaginas = Math.max(1, Math.ceil(filas.length / POR_PAGINA));
-  const paginaSegura = Math.min(pagina, totalPaginas);
-  const visibles = filas.slice(
-    (paginaSegura - 1) * POR_PAGINA,
-    paginaSegura * POR_PAGINA,
-  );
+  // Paginación en cliente con el hook compartido: sanea la página cuando el dataset encoge (antes el "Siguiente" se trababa).
+  const paginacion = usePaginacionCliente(filas, 10);
+  const { visibles, reiniciar } = paginacion;
+
+  // Al cambiar de vista o filtros volvemos a la primera página.
+  useEffect(() => {
+    reiniciar();
+  }, [vista, filtro, busquedaDebounced, reiniciar]);
+
   const hayFiltros = busqueda.trim() !== "" || (vista === "historial" && filtro !== "todos");
 
   const pedirAprobacion = () => {
@@ -424,171 +393,40 @@ const GestionSolicitudesCica = () => {
             ))}
           </div>
 
-          <AdminTableFooter>
-            <span className="text-sm text-text-muted dark:text-[#7f8da3]">
-              {filas.length} registro{filas.length === 1 ? "" : "s"}
-            </span>
-            <AdminPagination>
-              <AdminPaginationButton
-                type="button"
-                onClick={() => setPagina((actual) => Math.max(1, actual - 1))}
-                disabled={paginaSegura <= 1}
-                aria-label="Página anterior"
-              >
-                Anterior
-              </AdminPaginationButton>
-              <span className="text-sm text-text-muted dark:text-[#7f8da3]">
-                {paginaSegura} de {totalPaginas}
-              </span>
-              <AdminPaginationButton
-                type="button"
-                onClick={() =>
-                  setPagina((actual) => Math.min(totalPaginas, actual + 1))
-                }
-                disabled={paginaSegura >= totalPaginas}
-                aria-label="Página siguiente"
-              >
-                Siguiente
-              </AdminPaginationButton>
-            </AdminPagination>
-          </AdminTableFooter>
+          {/* Barra de paginación compartida: misma pinta que catequesis ("Mostrando X-Y de Z", selector y chevrons) */}
+          <AdminPaginationBar
+            pegadoAbajo
+            className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]"
+            desde={paginacion.desde}
+            hasta={paginacion.hasta}
+            total={paginacion.totalRegistros}
+            pagina={paginacion.pagina}
+            totalPaginas={paginacion.totalPaginas}
+            registrosPorPagina={paginacion.registrosPorPagina}
+            puedeAnterior={paginacion.puedeAnterior}
+            puedeSiguiente={paginacion.puedeSiguiente}
+            onAnterior={paginacion.anterior}
+            onSiguiente={paginacion.siguiente}
+            onCambiarRegistrosPorPagina={paginacion.cambiarRegistrosPorPagina}
+          />
         </>
       )}
 
       {seleccion && (
-        <Modal
+        <DetalleSolicitudCicaSheet
+          solicitud={seleccion}
+          accionError={errorAccion}
+          guardando={guardando}
+          cerrarConEsc={!confirmacion}
+          onAprobar={pedirAprobacion}
+          onRechazar={pedirRechazo}
           onClose={() => {
             setSeleccion(null);
             setMotivo("");
             setErrorAccion(null);
             setConfirmacion(null);
           }}
-          title={nombreCompleto(seleccion)}
-          sinFondo
-          tamano="xl"
-          cerrarConEsc={!confirmacion}
-          cerrarAlClicFuera={!confirmacion}
-          overlayClassName="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
-          className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
-        >
-          <div className="flex flex-col gap-5 pr-10">
-            <div className="flex flex-col gap-2">
-              <p className="m-0 text-xs font-semibold tracking-wide text-text-muted uppercase dark:text-[#7f8da3]">
-                Inscripción CICA
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="m-0 font-heading text-2xl text-slate-900 dark:text-[#f3f6fa]">
-                  {nombreCompleto(seleccion)}
-                </h2>
-                <Badge variant={getEstadoBadgeVariant(seleccion.estado)} className={getEstadoBadgeClass(seleccion.estado)}>
-                  {textoEstadoCica(seleccion.estado)}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <CampoDetalle label="Cédula" value={seleccion.cedula} />
-              <CampoDetalle label="Nacimiento" value={formatearFecha(seleccion.fechaNacimiento)} />
-              <CampoDetalle label="Nacionalidad" value={seleccion.nacionalidad} />
-              <CampoDetalle label="Teléfono" value={seleccion.telefono} />
-              <CampoDetalle label="Correo" value={seleccion.correo} />
-              <CampoDetalle
-                label="Estado civil"
-                value={
-                  etiquetaCivil[seleccion.estadoCivil] ?? seleccion.estadoCivil
-                }
-              />
-              <CampoDetalle
-                label="Cónyuge o compañero(a)"
-                value={
-                  seleccion.conyugeNombre
-                    ? nombreCompleto({
-                        nombre: seleccion.conyugeNombre,
-                        apellido1: seleccion.conyugeApellido1 ?? "",
-                        apellido2: seleccion.conyugeApellido2,
-                      })
-                    : "—"
-                }
-              />
-              <CampoDetalle label="Sacramentos" value={sacramentos(seleccion)} />
-              <CampoDetalle
-                label="Padre"
-                value={nombreCompleto({
-                  nombre: seleccion.padreNombre,
-                  apellido1: seleccion.padreApellido1,
-                  apellido2: seleccion.padreApellido2,
-                })}
-              />
-              <CampoDetalle
-                label="Madre"
-                value={nombreCompleto({
-                  nombre: seleccion.madreNombre,
-                  apellido1: seleccion.madreApellido1,
-                  apellido2: seleccion.madreApellido2,
-                })}
-              />
-              <CampoDetalle label="Dirección" value={seleccion.direccionHogar} />
-              <CampoDetalle
-                label="Religión"
-                value={
-                  seleccion.esCatolico
-                    ? "Católico"
-                    : seleccion.otraIglesia?.trim() || "Otra iglesia"
-                }
-              />
-              <CampoDetalle label="Observación" value={seleccion.observacion?.trim() || "—"} />
-            </div>
-
-            {seleccion.estado === "Aprobada" && (
-              <div className="flex gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-[#35d6a0]/30 dark:bg-[rgba(53,214,160,0.10)]">
-                <CheckCircle size={17} className="mt-0.5 shrink-0 text-emerald-700 dark:text-[#35d6a0]" />
-                <div>
-                  <p className="m-0 text-sm font-semibold text-emerald-900 dark:text-[#35d6a0]">Aprobación</p>
-                  <p className="m-0 mt-1 text-sm text-emerald-900 dark:text-[#d7f8ec]">
-                    {seleccion.observacionAdministrativa?.trim() || "Sin comentario de aprobación"}
-                  </p>
-                  <p className="m-0 mt-1 text-xs text-emerald-700 dark:text-[#35d6a0]">
-                    Aprobado el {formatearFecha(seleccion.fechaActualizacionEstado)}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {seleccion.estado === "Rechazada" && (
-              <div className="flex gap-2.5 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-[#e66a6a]/30 dark:bg-[rgba(230,106,106,0.10)]">
-                <XCircle size={17} className="mt-0.5 shrink-0 text-red-700 dark:text-[#e66a6a]" />
-                <div>
-                  <p className="m-0 text-sm font-semibold text-red-900 dark:text-[#e66a6a]">Rechazo</p>
-                  <p className="m-0 mt-1 text-sm text-red-900 dark:text-[#f8d0d0]">
-                    {seleccion.observacionAdministrativa?.trim() || "Motivo no especificado"}
-                  </p>
-                  <p className="m-0 mt-1 text-xs text-red-700 dark:text-[#e66a6a]">
-                    Rechazado el {formatearFecha(seleccion.fechaActualizacionEstado)}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {seleccion.estado === "Pendiente" && (
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="royal" disabled={guardando} onClick={pedirAprobacion}>
-                  <CheckCircle size={16} />
-                  Aprobar
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="rounded-lg! border! border-border-strong! duration-150 ease-out hover:bg-slate-300! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
-                  disabled={guardando}
-                  onClick={pedirRechazo}
-                >
-                  <XCircle size={16} />
-                  Rechazar
-                </Button>
-              </div>
-            )}
-          </div>
-        </Modal>
+        />
       )}
 
       <ConfirmacionAccionModal

@@ -174,9 +174,10 @@ export function AdminTableFooter({
     <div
       className={cn(
         "mt-3.5 flex min-w-0 flex-wrap items-center justify-between gap-3 overflow-x-hidden px-1 pt-3.5 text-sm text-text-muted",
+        // Antes las clases fixed eran incondicionales y hasta se acumulaban dos lg:left-* enfrentados
+        // (el cn no hace merge, así que no se podían sobreescribir). Ahora solo se pega abajo cuando se pide.
         pegadoAbajo &&
-          "fixed right-0 bottom-0 left-0 z-20 mt-0 border-t border-border bg-gray-50/95 px-4 pt-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-[left] duration-300 ease-out sm:px-6 lg:left-[var(--sidebar-width,16rem)] lg:px-8",
-          "fixed right-0 bottom-0 left-0 z-20 mt-0 border-t border-border bg-gray-50/95 px-4 pt-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))] max-sm:flex-col max-sm:items-stretch max-sm:gap-2.5 sm:px-6 lg:left-64 lg:px-8",
+          "fixed right-0 bottom-0 left-0 z-20 mt-0 border-t border-border bg-gray-50/95 px-4 pt-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))] max-sm:flex-col max-sm:items-stretch max-sm:gap-2.5 transition-[left] duration-300 ease-out sm:px-6 lg:left-[var(--sidebar-width,16rem)] lg:px-8",
         className,
       )}
       {...props}

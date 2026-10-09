@@ -54,12 +54,13 @@ export function ExportarSolicitudesCatequesisModal({
       tamano="xl"
     >
       <motion.div
+        className="w-full min-w-0"
         initial={{ opacity: 0, y: 8, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="flex min-h-[34rem] flex-col pr-10">
-          <div className="flex flex-col gap-4">
+        <div className="flex min-h-0 w-full min-w-0 flex-col">
+          <div className="flex min-w-0 flex-col gap-4">
           <LineaDoradaTitulo parteSubrayada="Exportar tabla" />
           <p className="m-0 text-sm text-text-muted dark:text-[#7f8da3]">
             Se descargará un archivo Excel (.xlsx).
@@ -138,10 +139,10 @@ export function ExportarSolicitudesCatequesisModal({
           </label>
           </div>
 
-          <div className="mt-auto flex shrink-0 justify-end gap-2 pt-8">
+          <div className="mt-auto flex min-w-0 shrink-0 flex-wrap justify-end gap-2 pt-6">
             <Button
               variant="royal"
-              className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+              className="max-w-full rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
               onClick={() => onConfirm({ nivel, estado, filial })}
               disabled={exportando}
             >
@@ -150,7 +151,7 @@ export function ExportarSolicitudesCatequesisModal({
             </Button>
             <Button
               variant="secondary"
-              className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
+              className="max-w-full rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
               onClick={onClose}
               disabled={exportando}
             >

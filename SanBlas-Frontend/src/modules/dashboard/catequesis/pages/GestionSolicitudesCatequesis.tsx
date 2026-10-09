@@ -4,8 +4,6 @@ import {
   Archive,
   CheckCircle,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   Download,
   Eye,
@@ -31,6 +29,7 @@ import {
 import { DetalleSolicitudCatequesisModal } from "../components/DetalleSolicitudCatequesisModal";
 import { ExportarSolicitudesCatequesisModal } from "../components/ExportarSolicitudesCatequesisModal";
 import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
+import { AdminPaginationBar } from "../../../../shared/components/admin/AdminPaginationBar";
 import { obtenerEtiquetaNivelCatequesis, NIVELES_CATEQUESIS } from "../../../catequesis/constants/nivelesCatequesis";
 import { FILIALES_CATEQUESIS } from "../../../catequesis/constants/filialesCatequesis";
 import { useSolicitudesCatequesis } from "../hooks/useSolicitudesCatequesis";
@@ -44,12 +43,9 @@ import { usePagination } from "../../../../shared/hooks/usePagination";
 import { useDebouncedValue } from "../../../../shared/hooks/useDebouncedValue";
 import {
   AdminModule,
-  AdminPagination,
-  AdminPaginationButton,
   AdminSearch,
   AdminTable,
   AdminTableCell,
-  AdminTableFooter,
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTablePanel,
@@ -1076,63 +1072,27 @@ function GestionSolicitudesCatequesis() {
         })}
       </div>
 
-      <AdminTableFooter pegadoAbajo className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]">
-        <span className="text-sm text-text-muted dark:text-[#7f8da3]">
-          Mostrando{" "}
-          <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
-            {primerRegistro}-{ultimoRegistro}
-          </strong>{" "}
-          de <strong className="text-text tabular-nums dark:text-[#f3f6fa]">{totalItems}</strong>{" "}
-          registros
-        </span>
-        <AdminPagination>
-          <label className="mr-1 flex items-center gap-2 text-sm text-text-muted dark:text-[#7f8da3]">
-            Registros por página
-            <select
-              value={limite}
-              onChange={(e) => {
-                setLimite(
-                  Number(e.target.value) as typeof TAMANOS_PAGINA_SOLICITUDES[number],
-                );
-                setPagina(1);
-              }}
-              className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
-              aria-label="Cantidad de registros por página"
-            >
-              {TAMANOS_PAGINA_SOLICITUDES.map((tamano) => (
-                <option key={tamano} value={tamano}>
-                  {tamano}
-                </option>
-              ))}
-            </select>
-          </label>
-          <AdminPaginationButton
-            type="button"
-            onClick={goToPreviousPage}
-            disabled={!canPreviousPage}
-            aria-label="Página anterior"
-            className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
-          >
-            <ChevronLeft size={16} strokeWidth={2} />
-          </AdminPaginationButton>
-          <span className="text-sm whitespace-nowrap text-text-muted dark:text-[#7f8da3]">
-            Página{" "}
-            <strong className="text-text tabular-nums dark:text-[#f3f6fa]">{currentPage}</strong> de{" "}
-            <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
-              {totalPages || 1}
-            </strong>
-          </span>
-          <AdminPaginationButton
-            type="button"
-            onClick={goToNextPage}
-            disabled={!canNextPage}
-            aria-label="Página siguiente"
-            className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
-          >
-            <ChevronRight size={16} strokeWidth={2} />
-          </AdminPaginationButton>
-        </AdminPagination>
-      </AdminTableFooter>
+      {/* Barra de paginación compartida (antes iba inline): misma pinta, ahora también la usan CICA y Bautismo */}
+      <AdminPaginationBar
+        pegadoAbajo
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]"
+        desde={primerRegistro}
+        hasta={ultimoRegistro}
+        total={totalItems}
+        pagina={currentPage}
+        totalPaginas={totalPages}
+        registrosPorPagina={limite}
+        tamanosPagina={TAMANOS_PAGINA_SOLICITUDES}
+        puedeAnterior={canPreviousPage}
+        puedeSiguiente={canNextPage}
+        onAnterior={goToPreviousPage}
+        onSiguiente={goToNextPage}
+        // al cambiar el tamaño volvemos a la primera, igual que antes
+        onCambiarRegistrosPorPagina={(nuevo) => {
+          setLimite(nuevo as (typeof TAMANOS_PAGINA_SOLICITUDES)[number]);
+          setPagina(1);
+        }}
+      />
       </>
       )}
 
@@ -1630,76 +1590,33 @@ function GestionSolicitudesCatequesis() {
                   ))}
                 </div>
 
-                <AdminTableFooter pegadoAbajo className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]">
-                  <span className="text-sm text-text-muted dark:text-[#7f8da3]">
-                    Mostrando{" "}
-                    <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
-                      {primerHistorialRegistro}-{ultimoHistorialRegistro}
-                    </strong>{" "}
-                    de{" "}
-                    <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
-                      {historialFiltrado.length}
-                    </strong>{" "}
-                    registros
-                  </span>
-                  <AdminPagination className="flex-wrap">
-                    <label className="mr-1 flex items-center gap-2 text-sm text-text-muted dark:text-[#7f8da3]">
-                      Registros por página
-                      <select
-                        value={historialRegistrosPorPagina}
-                        onChange={(event) =>
-                          setHistorialRegistrosPorPagina(
-                            Number(event.target.value),
-                          )
-                        }
-                        className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
-                        aria-label="Cantidad de registros por página"
-                      >
-                        {TAMANOS_PAGINA.map((tamano) => (
-                          <option key={tamano} value={tamano}>
-                            {tamano}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <AdminPaginationButton
-                      type="button"
-                      onClick={() =>
-                        setHistorialPagina((pagina) =>
-                          Math.max(1, pagina - 1),
-                        )
-                      }
-                      disabled={historialPagina <= 1}
-                      aria-label="Página anterior"
-                      className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
-                    >
-                      <ChevronLeft size={16} strokeWidth={2} />
-                    </AdminPaginationButton>
-                    <span className="text-sm whitespace-nowrap text-text-muted dark:text-[#7f8da3]">
-                      Página{" "}
-                      <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
-                        {historialPagina}
-                      </strong>{" "}
-                      de{" "}
-                      <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
-                        {totalHistorialPaginas}
-                      </strong>
-                    </span>
-                    <AdminPaginationButton
-                      type="button"
-                      onClick={() =>
-                        setHistorialPagina((pagina) =>
-                          Math.min(totalHistorialPaginas, pagina + 1),
-                        )
-                      }
-                      disabled={historialPagina >= totalHistorialPaginas}
-                      aria-label="Página siguiente"
-                      className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
-                    >
-                      <ChevronRight size={16} strokeWidth={2} />
-                    </AdminPaginationButton>
-                  </AdminPagination>
-                </AdminTableFooter>
+                {/* Barra de paginación compartida (antes iba inline): misma pinta, ahora también la usan CICA y Bautismo */}
+                <AdminPaginationBar
+                  pegadoAbajo
+                  className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]"
+                  desde={primerHistorialRegistro}
+                  hasta={ultimoHistorialRegistro}
+                  total={historialFiltrado.length}
+                  pagina={historialPagina}
+                  totalPaginas={totalHistorialPaginas}
+                  registrosPorPagina={historialRegistrosPorPagina}
+                  tamanosPagina={TAMANOS_PAGINA}
+                  puedeAnterior={historialPagina > 1}
+                  puedeSiguiente={historialPagina < totalHistorialPaginas}
+                  onAnterior={() =>
+                    setHistorialPagina((pagina) => Math.max(1, pagina - 1))
+                  }
+                  onSiguiente={() =>
+                    setHistorialPagina((pagina) =>
+                      Math.min(totalHistorialPaginas, pagina + 1),
+                    )
+                  }
+                  // antes el historial no reseteaba la página al cambiar el tamaño; ahora sí para no quedar viendo una página vacía
+                  onCambiarRegistrosPorPagina={(nuevo) => {
+                    setHistorialRegistrosPorPagina(nuevo);
+                    setHistorialPagina(1);
+                  }}
+                />
               </>
             )}
         </div>

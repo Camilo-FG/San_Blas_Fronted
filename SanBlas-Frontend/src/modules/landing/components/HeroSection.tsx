@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { BookOpen, ChevronDown, FileText } from "lucide-react";
 import Rutas from "../../../routes/Rutas";
 import { useLandingSection } from "../../../hooks/useLandingSection";
 import { ScrollReveal } from "../../../shared/ui";
@@ -19,11 +21,48 @@ const heroButtonClass =
 
 function HeroSection() {
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
+  const [dropdownAlLado, setDropdownAlLado] = useState(false);
+  const botonTramitesRef = useRef<HTMLButtonElement>(null);
+  const dropdownTramitesRef = useRef<HTMLDivElement>(null);
+  const reducirMovimiento = useReducedMotion();
   const { data } = useLandingSection("hero", HERO_DEFAULT, { defer: true });
   const heroImage =
     typeof data.imageUrl === "string" && data.imageUrl.trim()
       ? data.imageUrl.trim()
       : HERO_IMAGE;
+
+  // Si no cabe debajo del botón, ponemos el menú al costado para que no quede cortado por el borde inferior.
+  useLayoutEffect(() => {
+    if (!dropdownAbierto) {
+      setDropdownAlLado(false);
+      return;
+    }
+
+    const ajustarUbicacion = () => {
+      const boton = botonTramitesRef.current;
+      const dropdown = dropdownTramitesRef.current;
+      if (!boton || !dropdown) return;
+
+      const botonRect = boton.getBoundingClientRect();
+      const alturaDropdown = dropdown.getBoundingClientRect().height;
+      const anchoDropdown = dropdown.getBoundingClientRect().width;
+      const espacioDebajo = window.innerHeight - botonRect.bottom;
+      const quedaCortadoAbajo = espacioDebajo < alturaDropdown + 12;
+      const cabeALaDerecha = window.innerWidth - botonRect.right >= anchoDropdown + 12;
+
+      // En pantallas estrechas se abre hacia el lado con espacio disponible, evitando que se salga del viewport.
+      setDropdownAlLado(quedaCortadoAbajo && cabeALaDerecha);
+    };
+
+    ajustarUbicacion();
+    window.addEventListener("resize", ajustarUbicacion);
+    window.addEventListener("scroll", ajustarUbicacion, true);
+
+    return () => {
+      window.removeEventListener("resize", ajustarUbicacion);
+      window.removeEventListener("scroll", ajustarUbicacion, true);
+    };
+  }, [dropdownAbierto]);
 
   return (
     <section
@@ -70,29 +109,76 @@ function HeroSection() {
             onMouseLeave={() => setDropdownAbierto(false)}
           >
             <button
-              className={`${heroButtonClass} flex h-full cursor-pointer items-center gap-2 border border-white/28 bg-white/12 text-white backdrop-blur-sm hover:bg-white/22`}
+              ref={botonTramitesRef}
+              className={`${heroButtonClass} flex h-full cursor-pointer items-center gap-2.5 border border-white/28 bg-white/12 text-white backdrop-blur-sm hover:bg-white/22`}
               type="button"
+              onClick={() => setDropdownAbierto((abierto) => !abierto)}
+              aria-expanded={dropdownAbierto}
+              aria-haspopup="true"
             >
-              Trámites
-              <span>{dropdownAbierto ? "▴" : "▾"}</span>
+              <span>Trámites</span>
+              <ChevronDown
+                size={16}
+                strokeWidth={2.5}
+                aria-hidden="true"
+                className={`transition-transform duration-200 ${
+                  dropdownAbierto && dropdownAlLado ? "-rotate-90" : ""
+                }`}
+              />
             </button>
 
-            {dropdownAbierto && (
-              <div className="absolute left-0 top-full z-10 flex min-w-[220px] flex-col rounded-lg bg-surface py-2.5 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
-                <Link
-                  to={Rutas.FormsolicitudesCatequesis}
-                  className="block px-5 py-2.5 font-medium text-text no-underline transition-colors hover:bg-royal-blue/10 hover:text-royal-blue"
+            <AnimatePresence>
+              {dropdownAbierto && (
+                <motion.div
+                  key={dropdownAlLado ? "tramites-lateral" : "tramites-abajo"}
+                  ref={dropdownTramitesRef}
+                  initial={{
+                    opacity: 0,
+                    y: reducirMovimiento || dropdownAlLado ? 0 : -8,
+                    x: reducirMovimiento || !dropdownAlLado ? 0 : -8,
+                  }}
+                  animate={{ opacity: 1, x: 0, y: 0 }}
+                  exit={{ opacity: 0, y: reducirMovimiento || dropdownAlLado ? 0 : -5 }}
+                  transition={{ duration: reducirMovimiento ? 0.12 : 0.2, ease: "easeOut" }}
+                  className={`absolute z-10 w-[min(300px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#d9a928]/25 bg-[#fffdf8] text-[#16243c] shadow-[0_20px_50px_rgba(3,20,43,0.28)] ring-1 ring-black/5 ${
+                    dropdownAlLado
+                      ? "left-[calc(100%+0.75rem)] bottom-0"
+                      : "top-[calc(100%+0.75rem)] left-0"
+                  }`}
                 >
-                  Catequesis
-                </Link>
-                <Link
-                  to={Rutas.SolicitudesSacramentos}
-                  className="block px-5 py-2.5 font-medium text-text no-underline transition-colors hover:bg-royal-blue/10 hover:text-royal-blue"
-                >
-                  Solicitudes de Sacramentos
-                </Link>
-              </div>
-            )}
+                  <div className="flex flex-col gap-1 p-2">
+                    <Link
+                      to={Rutas.FormsolicitudesCatequesis}
+                      className="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-[#16243c] no-underline transition-colors hover:bg-[#003366]/[0.06] focus-visible:bg-[#003366]/[0.06] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#9a7220]"
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#003366]/[0.07] text-[#003366] transition-colors group-hover:bg-[#003366] group-hover:text-white">
+                        <BookOpen size={17} strokeWidth={1.9} aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">Catequesis</span>
+                      <ChevronDown
+                        size={15}
+                        aria-hidden="true"
+                        className="-rotate-90 shrink-0 text-[#9a7220] opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100"
+                      />
+                    </Link>
+                    <Link
+                      to={Rutas.SolicitudesSacramentos}
+                      className="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-[#16243c] no-underline transition-colors hover:bg-[#003366]/[0.06] focus-visible:bg-[#003366]/[0.06] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#9a7220]"
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#9a7220]/[0.10] text-[#8a6417] transition-colors group-hover:bg-[#9a7220] group-hover:text-white">
+                        <FileText size={17} strokeWidth={1.9} aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">Solicitudes de Sacramentos</span>
+                      <ChevronDown
+                        size={15}
+                        aria-hidden="true"
+                        className="-rotate-90 shrink-0 text-[#9a7220] opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100"
+                      />
+                    </Link>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </ScrollReveal>
