@@ -40,6 +40,16 @@ export const SERVICIOS_DEFAULT = {
       linkTo: "/solicitudes-catequesis",
     },
     {
+      title: "Catequesis de bautismo",
+      description:
+        "Inscripción a la catequesis que padres, madres y padrinos completan antes de bautizar.",
+      imageUrl:
+        "https://res.cloudinary.com/rbrda5nv/image/upload/v1789838146/landing/servicios/default/bautismo.jpg",
+      category: "Sacramentos",
+      buttonLabel: "Inscribirse a catequesis de bautismo",
+      linkTo: "/solicitudes-catequesis-bautismo",
+    },
+    {
       title: "Solicitud de Constancia",
       description:
         "Solicite constancias de Bautismo, Comunión, Confirmación o Matrimonio.",

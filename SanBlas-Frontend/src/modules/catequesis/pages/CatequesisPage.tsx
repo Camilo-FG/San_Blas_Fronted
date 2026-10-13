@@ -200,7 +200,7 @@ const CatequesisPage = () => {
               Catequesis parroquial
             </p>
             <h1 className="m-0 mt-2 font-heading text-2xl font-extrabold text-royal-blue sm:text-[30px]">
-              Matrícula a Catequesis
+              Matrícula a Catequesis infantiles y juveniles
             </h1>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
               {tabs.map((tab) => (

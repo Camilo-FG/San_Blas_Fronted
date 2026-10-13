@@ -8,6 +8,40 @@ export const CATEQUESIS_INTRO = {
 
 export const MONTO_INSCRIPCION_CATEQUESIS = "₡5.000";
 
+export const TELEFONO_COMPROBANTE_CATEQUESIS = "6416-7863";
+
+export const CATEQUESIS_ANTES_DE_INSCRIBIR = [
+  {
+    titulo: "Edad y nivel",
+    texto:
+      "La matrícula en línea abre dos grupos. Primer nivel: de 6 a 7 años. Sétimo nivel, catequesis juvenil: de 13 a 14 años. La edad se cuenta al 31 de agosto de este año. Los demás niveles se explican arriba, pero el formulario no los ofrece.",
+  },
+  {
+    titulo: "Fe de bautismo",
+    texto:
+      "Hay que adjuntar una fotografía de la constancia de bautismo, de máximo 5 MB. Sin ese archivo no se puede enviar la solicitud.",
+  },
+  {
+    titulo: "Pago",
+    texto: "",
+  },
+  {
+    titulo: "Salud",
+    texto:
+      "Si el catequizando tiene una enfermedad crónica, hay que indicarlo y describirla. Así el grupo puede cuidarlo durante los encuentros.",
+  },
+  {
+    titulo: "Lineamientos",
+    texto:
+      "Antes de enviar hay que leer el documento de lineamientos y aceptar el compromiso de horarios, asistencia y conducta.",
+  },
+  {
+    titulo: "Después de enviar",
+    texto:
+      "La solicitud queda pendiente. No es una inscripción confirmada: la parroquia la revisa y luego la aprueba o la rechaza. Conserve el comprobante de pago.",
+  },
+];
+
 export const CATEQUESIS_NIVELES_INFANTILES = [
   {
     nivel: "Nivel I",
