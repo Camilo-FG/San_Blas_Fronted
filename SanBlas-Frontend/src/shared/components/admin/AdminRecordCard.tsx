@@ -63,7 +63,7 @@ export function AdminRecordCard({
       : []);
 
   return (
-    <article className="flex flex-col gap-2.5 rounded-2xl border border-border-strong bg-surface px-3.5 py-3.5 shadow-[0_4px_14px_rgba(15,23,42,0.04)]">
+    <article className="flex flex-col gap-2.5 rounded-2xl border border-border-strong bg-surface px-3.5 py-3.5 shadow-[0_4px_14px_rgba(15,23,42,0.04)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
       <div className="grid grid-cols-[auto_1fr] items-start gap-x-3 gap-y-2.5">
         {icon && (
           <div
@@ -77,15 +77,15 @@ export function AdminRecordCard({
 
         <div className="min-w-0">
           {code && (
-            <p className="mb-0.5 text-[0.72rem] font-bold tracking-wide text-slate-400 uppercase">
+            <p className="mb-0.5 text-[0.72rem] font-bold tracking-wide text-slate-400 uppercase dark:text-[#7f8da3]">
               {code}
             </p>
           )}
-          <h3 className="line-clamp-2 text-[0.95rem] leading-snug font-bold text-slate-900">
+          <h3 className="line-clamp-2 text-[0.95rem] leading-snug font-bold text-slate-900 dark:text-[#f3f6fa]">
             {title}
           </h3>
           {subtitle && (
-            <p className="mt-1 text-[0.8rem] leading-snug text-text-muted">{subtitle}</p>
+            <p className="mt-1 text-[0.8rem] leading-snug text-text-muted dark:text-[#b7c3d4]">{subtitle}</p>
           )}
         </div>
 
@@ -95,14 +95,14 @@ export function AdminRecordCard({
       </div>
 
       {meta && meta.length > 0 && (
-        <dl className="m-0 grid grid-cols-2 gap-x-2.5 gap-y-2 rounded-xl border border-[#eef2f7] bg-surface-muted px-2.5 py-2.5">
+        <dl className="m-0 grid grid-cols-2 gap-x-2.5 gap-y-2 rounded-xl border border-[#eef2f7] bg-surface-muted px-2.5 py-2.5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
           {meta.map((item) => (
             <div key={item.label} className="min-w-0">
-              <dt className="m-0 flex items-center gap-1 text-[0.68rem] font-bold tracking-wide text-slate-400 uppercase">
+              <dt className="m-0 flex items-center gap-1 text-[0.68rem] font-bold tracking-wide text-slate-400 uppercase dark:text-[#7f8da3]">
                 {item.icon}
                 <span>{item.label}</span>
               </dt>
-              <dd className="mt-0.5 truncate text-[0.8rem] font-semibold text-slate-700">
+              <dd className="mt-0.5 truncate text-[0.8rem] font-semibold text-slate-700 dark:text-[#f3f6fa]">
                 {item.value}
               </dd>
             </div>

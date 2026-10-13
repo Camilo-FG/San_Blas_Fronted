@@ -19,6 +19,7 @@ import {
   type ArchivoImagen,
 } from "../../solicSacramento/components/SubidaImagen";
 import { soloLetras } from "../../../shared/utils/formValidation";
+import { useLandingSection } from "../../../hooks/useLandingSection";
 import { leerBorradorInscripcionCatequesis, guardarBorradorInscripcionCatequesis, borrarBorradorInscripcionCatequesis } from "../utils/borradorInscripcionCatequesis";
 
 interface CatequesisFormProps {
@@ -132,6 +133,12 @@ function aplicarBorradorAlFormulario(guardado: unknown): CatequesisEnrollmentDat
       direccion: {
         ...base.catequizando.direccion,
         ...(esRegistro(catequizando.direccion) ? catequizando.direccion : {}),
+        // borradores viejos podían tener más de 150: se recortan al cargar
+        direccionExacta: limitarDireccionGuardada(
+          esRegistro(catequizando.direccion)
+            ? catequizando.direccion.direccionExacta
+            : null,
+        ),
       },
       adecuacion: {
         ...base.catequizando.adecuacion,
@@ -148,6 +155,9 @@ function aplicarBorradorAlFormulario(guardado: unknown): CatequesisEnrollmentDat
       direccion: {
         ...base.madreCatequizando.direccion,
         ...(esRegistro(madre.direccion) ? madre.direccion : {}),
+        direccionExacta: limitarDireccionGuardada(
+          esRegistro(madre.direccion) ? madre.direccion.direccionExacta : null,
+        ),
       },
     },
     padreCatequizando: {
@@ -156,6 +166,9 @@ function aplicarBorradorAlFormulario(guardado: unknown): CatequesisEnrollmentDat
       direccion: {
         ...base.padreCatequizando.direccion,
         ...(esRegistro(padre.direccion) ? padre.direccion : {}),
+        direccionExacta: limitarDireccionGuardada(
+          esRegistro(padre.direccion) ? padre.direccion.direccionExacta : null,
+        ),
       },
     },
     inscripcion: {
@@ -179,6 +192,8 @@ const infoBoxClass =
 const MAX_CHARACTERS = 50;
 const MAX_CHARACTERS_NOMBRE = 20;
 const MAX_CHARACTERS_DESCRIPCION = 300;
+// la dirección exacta es lo único que se pasó a 150; el contador la usa pa mostrar (x/150)
+const MAX_CHARACTERS_DIRECCION = 150;
 
 // Fecha de corte para el cálculo de edad del catequizando: 31 de agosto del año en curso.
 const FECHA_CORTE_EDAD = (() => {
@@ -202,7 +217,10 @@ const limitarCaracteres = (valor: string): string =>
   valor.slice(0, MAX_CHARACTERS);
 const limitarPalabras = limitarCaracteres;
 const limitarDireccion = (valor: string): string =>
-  valor.replace(/[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ0-9\s,.\-#]/g, "").slice(0, 250);
+  valor.replace(/[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ0-9\s,.\-#]/g, "").slice(0, MAX_CHARACTERS_DIRECCION);
+// recorta una dirección guardada en borradores viejos; acepta unknown porque así viene el JSON
+const limitarDireccionGuardada = (valor: unknown): string | null =>
+  typeof valor === "string" ? limitarDireccion(valor) : null;
 const limitarDescripcion = (valor: string): string =>
   valor.replace(/[^a-zA-ZáéíóúñüÁÉÍÓÚÑÜ0-9\s,.\-#()/\u00A0]/g, "").slice(0, MAX_CHARACTERS_DESCRIPCION);
 const limitarCorreo = (valor: string): string =>
@@ -305,6 +323,32 @@ function CampoApellido({
 
 const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
   const progressBarRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [modoTeclado, setModoTeclado] = useState(false);
+
+  // SINPE y PDF de lineamientos se editan desde la gestión del landing;
+  // el fallback es lo que estaba hardcodeado antes por si el backend no responde
+  const { data: landingCatequesis } = useLandingSection("catequesis", {
+    sinpe: "8878-3025",
+    lineamientosUrl: "/lineamientos-catequesis-24-25.pdf",
+  });
+
+  useEffect(() => {
+    const formulario = formRef.current;
+    if (!formulario) return;
+    const marcarTeclado = (evento: KeyboardEvent) => {
+      if (evento.key === "Tab") setModoTeclado(true);
+    };
+    const marcarMouse = () => setModoTeclado(false);
+    window.addEventListener("keydown", marcarTeclado);
+    formulario.addEventListener("mousedown", marcarMouse);
+    formulario.addEventListener("touchstart", marcarMouse);
+    return () => {
+      window.removeEventListener("keydown", marcarTeclado);
+      formulario.removeEventListener("mousedown", marcarMouse);
+      formulario.removeEventListener("touchstart", marcarMouse);
+    };
+  }, []);
   const [borradorInicial] = useState(leerBorradorInscripcionCatequesis);
   const [mostrarAvisoBorrador, setMostrarAvisoBorrador] = useState(
     borradorInicial !== null,
@@ -411,12 +455,14 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     "inscripcion.parentesco": "parentesco",
     "madreCatequizando.nombre": "nombreMadre",
     "madreCatequizando.primerApellido": "primerApellidoMadre",
+    "madreCatequizando.segundoApellido": "segundoApellidoMadre",
     "madreCatequizando.direccion.direccionExacta": "direccionMadre",
     "madreCatequizando.direccion.ciudad": "ciudadMadre",
     "madreCatequizando.direccion.provincia": "provinciaMadre",
     "madreCatequizando.telefono": "telefonoMadre",
     "padreCatequizando.nombre": "nombrePadre",
     "padreCatequizando.primerApellido": "primerApellidoPadre",
+    "padreCatequizando.segundoApellido": "segundoApellidoPadre",
     "padreCatequizando.direccion.direccionExacta": "direccionPadre",
     "padreCatequizando.direccion.ciudad": "ciudadPadre",
     "padreCatequizando.direccion.provincia": "provinciaPadre",
@@ -437,14 +483,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     parentesco: "Seleccione el parentesco.",
     correoPersonaInscribe: "Digite el correo de la persona que inscribe.",
     telefonoPersonaInscribe: "El teléfono debe contener 8 dígitos.",
-    nombreMadre: "Digite el nombre de la madre o encargada.",
-    primerApellidoMadre: "Digite el primer apellido de la madre o encargada.",
+    nombreMadre: "Ingrese el nombre de la madre",
+    primerApellidoMadre: "Ingrese el primer apellido de la madre",
+    segundoApellidoMadre: "Ingrese el segundo apellido de la madre",
     direccionMadre: "Digite la dirección exacta.",
     ciudadMadre: "Digite la ciudad.",
     provinciaMadre: "Digite la provincia.",
     telefonoMadre: "El teléfono debe contener 8 dígitos.",
-    nombrePadre: "Digite el nombre del padre.",
-    primerApellidoPadre: "Digite el primer apellido del padre.",
+    nombrePadre: "Ingrese el nombre del padre",
+    primerApellidoPadre: "Ingrese el primer apellido del padre",
+    segundoApellidoPadre: "Ingrese el segundo apellido del padre",
     direccionPadre: "Digite la dirección exacta.",
     ciudadPadre: "Digite la ciudad.",
     provinciaPadre: "Digite la provincia.",
@@ -573,12 +621,17 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
     if (tieneMadre) {
       if (!form.madreCatequizando.nombre.trim()) {
-        newErrors.nombreMadre = "Digite el nombre de la madre o encargada.";
+        newErrors.nombreMadre = "Ingrese el nombre de la madre";
       }
 
       if (!form.madreCatequizando.primerApellido.trim()) {
         newErrors.primerApellidoMadre =
-          "Digite el primer apellido de la madre o encargada.";
+          "Ingrese el primer apellido de la madre";
+      }
+
+      if (!form.madreCatequizando.segundoApellido.trim()) {
+        newErrors.segundoApellidoMadre =
+          "Ingrese el segundo apellido de la madre";
       }
 
       if (!form.madreCatequizando.direccion.direccionExacta?.trim()) {
@@ -700,10 +753,13 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           "Indique si la madre es parte del núcleo familiar.";
       } else if (tieneMadre) {
         if (!form.madreCatequizando.nombre.trim())
-          stepErrors.nombreMadre = "Digite el nombre de la madre o encargada.";
+          stepErrors.nombreMadre = "Ingrese el nombre de la madre";
         if (!form.madreCatequizando.primerApellido.trim())
           stepErrors.primerApellidoMadre =
-            "Digite el primer apellido de la madre o encargada.";
+            "Ingrese el primer apellido de la madre";
+        if (!form.madreCatequizando.segundoApellido.trim())
+          stepErrors.segundoApellidoMadre =
+            "Ingrese el segundo apellido de la madre";
         if (!form.madreCatequizando.direccion.direccionExacta?.trim())
           stepErrors.direccionMadre = "Digite la dirección exacta.";
         if (!form.madreCatequizando.direccion.ciudad?.trim())
@@ -720,11 +776,15 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           "Indique si el padre es parte del núcleo familiar.";
       } else if (tienePadre) {
         if (!form.padreCatequizando.nombre.trim()) {
-          stepErrors.nombrePadre = "Digite el nombre del padre.";
+          stepErrors.nombrePadre = "Ingrese el nombre del padre";
         }
         if (!form.padreCatequizando.primerApellido.trim()) {
           stepErrors.primerApellidoPadre =
-            "Digite el primer apellido del padre.";
+            "Ingrese el primer apellido del padre";
+        }
+        if (!form.padreCatequizando.segundoApellido.trim()) {
+          stepErrors.segundoApellidoPadre =
+            "Ingrese el segundo apellido del padre";
         }
         if (!form.padreCatequizando.direccion.direccionExacta?.trim())
           stepErrors.direccionPadre = "Digite la dirección exacta.";
@@ -800,7 +860,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
 
   return (
     <form
-      className="mx-auto mt-6 flex w-full max-w-[1100px] flex-col gap-5 px-3.5 sm:mt-10 sm:gap-7 sm:px-5"
+      ref={formRef}
+      className="foco-solo-teclado mx-auto mt-6 flex w-full max-w-[1100px] flex-col gap-5 px-3.5 sm:mt-10 sm:gap-7 sm:px-5"
+      data-kb={modoTeclado || undefined}
       onSubmit={handleSubmit}
     >
       <div ref={progressBarRef} className="rounded-[18px] border border-border bg-surface p-4 shadow-sm sm:rounded-[22px] sm:p-5">
@@ -1053,7 +1115,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="text"
                 placeholder="Ej: 200 m norte de la iglesia, casa azul"
-                maxLength={250}
+                maxLength={MAX_CHARACTERS_DIRECCION}
                 value={form.catequizando.direccion.direccionExacta || ""}
                 onChange={(e) =>
                   updateForm(
@@ -1064,7 +1126,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.catequizando.direccion.direccionExacta || ""}
-                max={250}
+                max={MAX_CHARACTERS_DIRECCION}
                 error={errors.direccionExacta}
               />
             </div>
@@ -1522,12 +1584,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.madreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
-              {errors.nombreMadre && (
-                <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  {errors.nombreMadre}
-                </p>
-              )}
+              <WordCounter value={form.madreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} error={errors.nombreMadre} />
             </div>
 
             <CampoApellido
@@ -1542,8 +1599,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
             <CampoApellido
               label="Segundo apellido"
+              required
               placeholder="Ej: Vargas"
               value={form.madreCatequizando.segundoApellido}
+              error={errors.segundoApellidoMadre}
               onChange={(valor) =>
                 updateForm("madreCatequizando.segundoApellido", valor)
               }
@@ -1600,7 +1659,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="text"
                 placeholder="Ej: 200 m norte de la iglesia, casa azul"
-                maxLength={250}
+                maxLength={MAX_CHARACTERS_DIRECCION}
                 value={form.madreCatequizando.direccion.direccionExacta || ""}
                 onChange={(e) =>
                   updateForm(
@@ -1611,7 +1670,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.madreCatequizando.direccion.direccionExacta || ""}
-                max={250}
+                max={MAX_CHARACTERS_DIRECCION}
                 error={errors.direccionMadre}
               />
             </div>
@@ -1753,12 +1812,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                   )
                 }
               />
-              <WordCounter value={form.padreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} />
-              {errors.nombrePadre && (
-                <p data-field-error className="m-0 text-xs font-medium text-red-600">
-                  {errors.nombrePadre}
-                </p>
-              )}
+              <WordCounter value={form.padreCatequizando.nombre} max={MAX_CHARACTERS_NOMBRE} error={errors.nombrePadre} />
             </div>
 
             <CampoApellido
@@ -1773,8 +1827,10 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             />
             <CampoApellido
               label="Segundo apellido"
+              required
               placeholder="Ej: Vargas"
               value={form.padreCatequizando.segundoApellido}
+              error={errors.segundoApellidoPadre}
               onChange={(valor) =>
                 updateForm("padreCatequizando.segundoApellido", valor)
               }
@@ -1831,7 +1887,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <Input
                 type="text"
                 placeholder="Ej: 200 m norte de la iglesia, casa azul"
-                maxLength={250}
+                maxLength={MAX_CHARACTERS_DIRECCION}
                 value={form.padreCatequizando.direccion.direccionExacta || ""}
                 onChange={(e) =>
                   updateForm(
@@ -1842,7 +1898,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               />
               <WordCounter
                 value={form.padreCatequizando.direccion.direccionExacta || ""}
-                max={250}
+                max={MAX_CHARACTERS_DIRECCION}
                 error={errors.direccionPadre}
               />
             </div>
@@ -1899,7 +1955,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
               <strong>{MONTO_INSCRIPCION_CATEQUESIS}</strong>.
             </p>
             <p>
-              <strong>SINPE Parroquia:</strong> 8878-3025
+              <strong>SINPE Parroquia:</strong> {landingCatequesis.sinpe}
             </p>
             <p>
               <strong>Enviar comprobante al:</strong> 6416-7863
@@ -1979,7 +2035,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
             </p>
 
             <a
-              href="/lineamientos-catequesis-24-25.pdf"
+              href={landingCatequesis.lineamientosUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-flex font-bold text-royal-blue underline underline-offset-[3px] hover:text-royal-gold-muted"

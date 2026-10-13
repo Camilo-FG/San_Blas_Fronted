@@ -4,9 +4,9 @@ import { AdminTable, AdminTableCell, AdminTableHead, AdminTableHeaderCell, Admin
 const GetListComunion = () => {
   const { data, isPending, error } = useGetListComunion();
 
-  if (isPending) return <p>Cargando comuniones...</p>;
-  if (error) return <p>Error: {error.message}</p>;
-  if (!data || data.length === 0) return <p>No hay comuniones registradas</p>;
+  if (isPending) return <p className="text-text-secondary dark:text-[#b7c3d4]">Cargando comuniones...</p>;
+  if (error) return <p className="text-sm font-medium text-danger dark:text-[#e66a6a]">Error: {error.message}</p>;
+  if (!data || data.length === 0) return <p className="text-text-secondary dark:text-[#b7c3d4]">No hay comuniones registradas</p>;
 
   return (
     <AdminTablePanel className="w-full overflow-x-auto">

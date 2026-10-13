@@ -42,6 +42,9 @@ export interface BuscarSacramentosParams {
   tipo?: TipoSacramento;
   fechaDesde?: string;
   fechaHasta?: string;
+  libro?: string;
+  folio?: string;
+  asiento?: string;
   page?: number;
   pageSize?: number;
   sortBy?: 'fecha' | 'nombre' | 'tipo';

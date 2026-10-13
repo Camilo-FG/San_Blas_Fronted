@@ -38,3 +38,11 @@ export const crearRol = async (payload: CrearRolPayload): Promise<Rol> => {
     handleApiError(error);
   }
 };
+
+export const deleteRol = async (id: number): Promise<void> => {
+  try {
+    await apiClient.delete(`/roles/${id}`);
+  } catch (error) {
+    handleApiError(error);
+  }
+};

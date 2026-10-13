@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-royal-blue: #003366;
   --color-royal-blue-dark: #0b4f8a;
@@ -145,6 +147,28 @@
     box-sizing: border-box;
   }
 
+  :root {
+    --navy-950: #040b16;
+    --navy-900: #0b192d;
+    --navy-800: #0a1425;
+    --navy-700: #0f1d33;
+    --navy-600: #12345c;
+    --gold: #d9a928;
+    --gold-soft: rgba(217, 169, 40, 0.14);
+    --gold-glow: rgba(217, 169, 40, 0.32);
+    --text-primary: #f3f6fa;
+    --text-secondary: #b7c3d4;
+    --text-muted: #7f8da3;
+    --border: rgba(220, 230, 242, 0.12);
+    --success: #35d6a0;
+    --warning: #f2a34a;
+    --danger: #e66a6a;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
   html {
     scroll-behavior: smooth;
   }
@@ -227,4 +251,42 @@ input[type="date"].date-field::-webkit-calendar-picker-indicator:hover {
       0 0 0 1px #0b4f8a,
       0 0 14px 1px rgb(47 126 196 / 0.7);
   }
+}
+
+/* Contenedores con .foco-solo-teclado: el aro de foco aparece SOLO con
+   teclado (TAB), nunca con mouse. Los navegadores activan :focus-visible
+   en inputs de texto también con click, por eso la modalidad se detecta
+   por JS (data-kb en el contenedor).
+   Estas reglas van sin @layer para prevalecer sobre los utilities. */
+.foco-solo-teclado input:focus,
+.foco-solo-teclado textarea:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: #d1d5db;
+}
+.foco-solo-teclado input.border-red-400:focus,
+.foco-solo-teclado textarea.border-red-400:focus {
+  border-color: #f87171;
+}
+.foco-solo-teclado[data-kb="true"] input:focus,
+.foco-solo-teclado[data-kb="true"] textarea:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgb(147 197 253 / 0.55);
+}
+.foco-solo-teclado[data-kb="true"] input.border-red-400:focus,
+.foco-solo-teclado[data-kb="true"] textarea.border-red-400:focus {
+  border-color: #f87171;
+  box-shadow: 0 0 0 3px rgb(248 113 113 / 0.45);
+}
+
+/* Transición gradual de colores al cambiar de tema. La clase la pone y
+   quita ThemeContext solo durante el cambio; solo anima color (nada de
+   layout, transform ni opacidad) para no interferir con animaciones. */
+.tema-transicionando,
+.tema-transicionando *,
+.tema-transicionando *::before,
+.tema-transicionando *::after {
+  transition-property: background-color, border-color, color, fill, stroke !important;
+  transition-duration: 0.3s !important;
+  transition-timing-function: ease !important;
 }

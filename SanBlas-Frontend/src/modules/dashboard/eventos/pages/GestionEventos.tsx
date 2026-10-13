@@ -16,6 +16,7 @@ import {
 import type { Evento } from "../../../../services/eventosService";
 import type { EventoPayload } from "../../../../services/eventosService";
 import { extraerFechaCalendario } from "../../../../shared/utils/fechas";
+import { useTheme } from "../../../../context/ThemeContext";
 import { EventoCard } from "../components/EventoCard";
 import {
   ETIQUETA_ESTADO_EVENTO,
@@ -214,8 +215,8 @@ const ContadorLetras = ({
     <span
       className={
         alLimite
-          ? "mt-1 block text-right text-xs font-semibold text-danger"
-          : "mt-1 block text-right text-xs text-slate-400"
+          ? "mt-1 block text-right text-xs font-semibold text-danger dark:text-[#e66a6a]"
+          : "mt-1 block text-right text-xs text-slate-400 dark:text-[#7f8da3]"
       }
       aria-live="polite"
     >
@@ -240,6 +241,7 @@ const GestionEventos = () => {
     cargarEventoPorId,
   } = useGestionEventos();
   const { showToast } = useToast();
+  const { esOscuro } = useTheme();
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstadoEvento>("todos");
@@ -622,10 +624,16 @@ const GestionEventos = () => {
 
   const renderEstadoBadge = (evento: Evento) => {
     const estado = obtenerEstadoEvento(evento);
+    const pillDark =
+      estado === "publicado-activo"
+        ? "dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]"
+        : estado === "borrador"
+          ? "dark:border-[#f2a34a] dark:bg-[rgba(242,163,74,0.10)] dark:text-[#f2a34a]"
+          : "dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]";
     return (
       <Badge
         variant={VARIANTE_ESTADO_EVENTO[estado]}
-        className="uppercase tracking-wide shadow-sm"
+        className={`uppercase tracking-wide shadow-sm ${pillDark}`}
       >
         {ETIQUETA_ESTADO_EVENTO[estado]}
       </Badge>
@@ -773,20 +781,20 @@ const GestionEventos = () => {
               />
             ))}
           </div>
-          <AdminTableFooter pegadoAbajo>
-            <span className="min-w-0 text-sm leading-snug text-text-muted">
+          <AdminTableFooter pegadoAbajo className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]">
+            <span className="min-w-0 text-sm leading-snug text-text-muted dark:text-[#7f8da3]">
               Mostrando{" "}
-              <strong className="text-text tabular-nums">
+              <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                 {primerRegistro}-{ultimoRegistro}
               </strong>{" "}
               de{" "}
-              <strong className="text-text tabular-nums">
+              <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                 {eventosFiltrados.length}
               </strong>{" "}
               registros
             </span>
             <AdminPagination>
-              <label className="mr-1 flex min-w-0 items-center gap-2 text-sm text-text-muted max-sm:mr-0">
+              <label className="mr-1 flex min-w-0 items-center gap-2 text-sm text-text-muted max-sm:mr-0 dark:text-[#7f8da3]">
                 <span className="max-sm:hidden">Registros por página</span>
                 <span className="sm:hidden">Por página</span>
                 <select
@@ -794,7 +802,7 @@ const GestionEventos = () => {
                   onChange={(event) =>
                     setRegistrosPorPagina(Number(event.target.value))
                   }
-                  className="min-h-10 min-w-0 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                  className="min-h-10 min-w-0 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                   aria-label="Cantidad de registros por página"
                 >
                   {TAMANOS_PAGINA.map((tamano) => (
@@ -815,19 +823,20 @@ const GestionEventos = () => {
                   }
                   disabled={paginaActual <= 1}
                   aria-label="Página anterior"
+                  className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
                 >
                   <ChevronLeft
                     size={16}
                     strokeWidth={2}
                   />
                 </AdminPaginationButton>
-                <span className="text-sm whitespace-nowrap text-text-muted">
+                <span className="text-sm whitespace-nowrap text-text-muted dark:text-[#7f8da3]">
                   Página{" "}
-                  <strong className="text-text tabular-nums">
+                  <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                     {paginaActual}
                   </strong>{" "}
                   de{" "}
-                  <strong className="text-text tabular-nums">
+                  <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                     {totalPaginas}
                   </strong>
                 </span>
@@ -840,6 +849,7 @@ const GestionEventos = () => {
                   }
                   disabled={paginaActual >= totalPaginas}
                   aria-label="Página siguiente"
+                  className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
                 >
                   <ChevronRight
                     size={16}
@@ -871,7 +881,7 @@ const GestionEventos = () => {
               </Button>
               <Button
                 variant="secondary"
-                className="max-sm:w-full"
+                className="max-sm:w-full dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                 onClick={() => solicitarEliminar(eventoSeleccionado)}
                 disabled={guardando}
               >
@@ -891,14 +901,15 @@ const GestionEventos = () => {
           }}
           title={editandoId ? "Editar evento" : "Nuevo evento"}
           cerrarAlClicFuera={false}
+          className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
         >
-          <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue">
+          <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue dark:text-[#d9a928]">
             {editandoId ? "Editar evento" : "Nuevo evento"}
           </h3>
           {cargandoEdicion ? (
             <div className="flex flex-col items-center justify-center py-10">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-royal-blue border-t-transparent" />
-              <p className="mt-4 text-sm text-slate-500">
+              <p className="mt-4 text-sm text-slate-500 dark:text-[#7f8da3]">
                 Cargando datos del evento...
               </p>
             </div>
@@ -1046,6 +1057,7 @@ const GestionEventos = () => {
 
               <SubidaImagen
                 id="imagen-evento"
+                darkMode={esOscuro}
                 label="Imagen del evento"
                 hint="Opcional. JPG, PNG o WEBP de hasta 5 MB."
                 textoArrastrar="Arrastra y suelta archivos aquí"
@@ -1105,6 +1117,7 @@ const GestionEventos = () => {
                 <Button
                   type="button"
                   variant="secondary"
+                  className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                   onClick={cerrarModal}
                   disabled={guardando}
                 >
@@ -1126,6 +1139,9 @@ const GestionEventos = () => {
         isPending={guardando}
         onConfirm={() => void confirmarPublicar()}
         onCancel={cancelarConfirmacion}
+        overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+        cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
       />
 
       <ConfirmacionAccionModal
@@ -1138,6 +1154,9 @@ const GestionEventos = () => {
         isPending={guardando}
         onConfirm={() => void confirmarActivar()}
         onCancel={cancelarConfirmacion}
+        overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+        cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
       />
 
       <ConfirmacionAccionModal
@@ -1150,6 +1169,9 @@ const GestionEventos = () => {
         isPending={guardando}
         onConfirm={() => void confirmarDesactivar()}
         onCancel={cancelarConfirmacion}
+        overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+        cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
       />
 
       <ConfirmacionAccionModal
@@ -1162,6 +1184,9 @@ const GestionEventos = () => {
         isPending={guardando}
         onConfirm={() => void confirmarEliminar()}
         onCancel={cancelarConfirmacion}
+        overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+        cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
       />
     </AdminModule>
   );

@@ -1,5 +1,6 @@
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { claseResaltePreview } from "./previewResalte";
+import { esUrlMapaEmbedValida } from "./landingValidation";
 
 interface ContactoPreviewProps {
   eyebrow: string;
@@ -129,11 +130,11 @@ export function ContactoPreview({
           data-campo-preview="mapaUrl"
           className={`min-h-[180px] overflow-hidden rounded-xl border border-[#e8edf2] bg-slate-100 ${claseResaltePreview(campoResaltado === "mapaUrl")}`}
         >
-          {mapaUrl.trim() ? (
+          {esUrlMapaEmbedValida(mapaUrl.trim()) ? (
             <iframe
               title="Vista previa del mapa"
               className="block size-full min-h-[180px] border-0"
-              src={mapaUrl}
+              src={mapaUrl.trim()}
               loading="lazy"
             />
           ) : (

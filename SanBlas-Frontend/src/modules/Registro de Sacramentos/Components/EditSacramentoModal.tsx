@@ -51,9 +51,9 @@ const cacheCedulas = new Map<string, Awaited<ReturnType<typeof obtenerDatosCedul
 
 const inputClass = (hasError = false) =>
   cn(
-    'w-full rounded-md border px-3 py-2.5 text-sm transition-colors focus:outline-none',
+    'w-full rounded-md border px-3 py-2.5 text-sm transition-colors focus:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928]',
     hasError
-      ? 'border-red-500 bg-red-50 focus:border-red-600'
+      ? 'border-red-500 bg-red-50 focus:border-red-600 dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)]'
       : 'border-gray-300 focus:border-blue-600',
   );
 
@@ -76,7 +76,7 @@ const MENSAJES: Record<string, string> = {
 
 const ErrorMsg = ({ errors, clave }: { errors: Record<string, string>; clave: string }) =>
   errors[clave] ? (
-    <span className="mt-1 block text-xs font-semibold text-red-500">⚠ {errors[clave]}</span>
+    <span className="mt-1 block text-xs font-semibold text-red-500 dark:text-[#e66a6a]">⚠ {errors[clave]}</span>
   ) : null;
 
 const formatearCedulaCR = (valor: string): string => {
@@ -623,7 +623,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
         <Label>Abuelos (opcional)</Label>
         <div className="space-y-3">
           {bautismo.abuelos.map((ab, idx) => (
-            <div key={idx} className="rounded-md border border-gray-200 p-3">
+            <div key={idx} className="rounded-md border border-gray-200 p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
               <select
                 value={ab.parentesco}
                 onChange={(e) =>
@@ -634,7 +634,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
                     ),
                   }))
                 }
-                className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:focus:border-[#d9a928]"
               >
                 {PARENTESCOS.map((p) => (
                   <option
@@ -697,7 +697,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
 
   const renderMatrimonio = () => (
     <>
-      <p className="mb-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+      <p className="mb-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]">
         El primer contrayente es la persona inscrita en el Bautismo; solo ingrese el cónyuge.
       </p>
       {renderPersonaCampos('Cónyuge', matrimonio.contrayente2, (updater) => setMatrimonio((prev) => ({ ...prev, contrayente2: updater(prev.contrayente2) })), 'contrayente2')}
@@ -719,15 +719,15 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
   const cargandoFicha = ficha.isPending || detalleQuery.isPending;
 
   return (
-    <div ref={modalRef} className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div ref={modalRef} className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 dark:bg-black/60" onClick={onClose}>
       <div
-        className="flex max-h-[90vh] w-[90%] max-w-[820px] flex-col overflow-hidden rounded-xl bg-white"
+        className="flex max-h-[90vh] w-[90%] max-w-[820px] flex-col overflow-hidden rounded-xl bg-white dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-surface-muted px-6 py-5">
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-surface-muted px-6 py-5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
           <div>
-            <h2 className="m-0 text-lg text-slate-800">EDITAR ACTA SACRAMENTAL</h2>
-            <p className="m-0 mt-0.5 text-sm text-slate-500">
+            <h2 className="m-0 text-lg text-slate-800 dark:text-[#f3f6fa]">EDITAR ACTA SACRAMENTAL</h2>
+            <p className="m-0 mt-0.5 text-sm text-slate-500 dark:text-[#7f8da3]">
               {personaSacramental?.persona
                 ? [personaSacramental.persona.nombre, personaSacramental.persona.primerApellido].filter(Boolean).join(' ') +
                   (personaSacramental.persona.cedula ? ` · ${personaSacramental.persona.cedula}` : '')
@@ -736,14 +736,15 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
           </div>
           <button
             type="button"
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100"
+            aria-label="Cerrar"
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
             onClick={onClose}
           >
             ×
           </button>
         </div>
 
-        <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-gray-200 px-6">
+        <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-gray-200 px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
           {TIPOS.map((t) => {
             const disponible = habilitado(t);
             return (
@@ -759,11 +760,11 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
                 className={cn(
                   'shrink-0 border-0 bg-transparent px-5 py-3 text-sm font-medium transition-colors',
                   !disponible
-                    ? 'cursor-not-allowed text-gray-300'
-                    : 'cursor-pointer text-gray-500 hover:text-blue-600',
+                    ? 'cursor-not-allowed text-gray-300 dark:text-[#7f8da3]'
+                    : 'cursor-pointer text-gray-500 hover:text-blue-600 dark:text-[#b7c3d4] dark:hover:text-[#d9a928]',
                   activeTab === t &&
                     disponible &&
-                    'border-b-2 border-blue-600 text-blue-600',
+                    'border-b-2 border-blue-600 text-blue-600 dark:border-[#d9a928] dark:text-[#d9a928]',
                 )}
                 onClick={() => {
                   setActiveTab(t);
@@ -777,7 +778,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
         </div>
 
         {cargandoFicha ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center gap-2 py-12 text-sm text-text-secondary">
+          <div className="flex min-h-0 flex-1 items-center justify-center gap-2 py-12 text-sm text-text-secondary dark:text-[#b7c3d4]">
             <Loader2 size={20} className="animate-spin" /> Cargando ficha...
           </div>
         ) : (
@@ -838,14 +839,14 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
                 <div>
                   <Label>Observaciones</Label>
                   <Input type="text" maxLength={500} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
-                  <p className="m-0 mt-1 text-right text-xs text-slate-400">
+                  <p className="m-0 mt-1 text-right text-xs text-slate-400 dark:text-[#7f8da3]">
                     {observaciones.length}/500 caracteres
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="flex shrink-0 justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4">
+            <div className="flex shrink-0 justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
               <Button type="submit" variant="royal" disabled={saving}>
                 {saving
                   ? 'GUARDANDO...'
@@ -853,7 +854,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
                     ? 'GUARDAR CAMBIOS'
                     : `REGISTRAR ${TIPO_SACRAMENTO_LABEL[activeTab].toUpperCase()}`}
               </Button>
-              <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
+              <Button type="button" variant="secondary" onClick={onClose} disabled={saving} className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!">
                 CANCELAR
               </Button>
             </div>

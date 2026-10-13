@@ -26,12 +26,13 @@ export const etiquetaRol = (clave: string, roles: Rol[] = []) =>
   (clave === "admin" ? "Administrador" : clave === "user" ? "Usuario" : clave);
 
 // roles que se ofrecen al crear/editar usuarios en el panel (espejo del enum del backend)
+// NOTA: 'user' no se ofrece (los usuarios existentes con ese rol siguen funcionando;
+// solo se oculta para nuevas asignaciones)
 export const ROLES_ASIGNABLES = [
   "secretario",
   "catequista",
   "gestor-eventos",
   "gestor-donaciones",
-  "user",
 ] as const;
 
 export type PermisoRolId = (typeof PERMISOS_ROL)[number]["id"];

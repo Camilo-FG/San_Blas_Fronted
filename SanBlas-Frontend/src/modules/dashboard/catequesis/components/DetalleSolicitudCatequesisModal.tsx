@@ -1,10 +1,7 @@
-import type { ReactNode } from "react";
 import {
   CalendarDays,
   CheckCircle,
-  ExternalLink,
   GraduationCap,
-  Image as ImageIcon,
   Mail,
   MapPin,
   Phone,
@@ -14,8 +11,16 @@ import {
 
 import { obtenerEtiquetaNivelCatequesis } from "../../../catequesis/constants/nivelesCatequesis";
 import { formatearFechaEnvio } from "../../../../shared/utils/fechas";
-import { resolveUploadedFileUrl } from "../../../../utils/files";
 import { AdminRecordDetailSheet } from "../../../../shared/components/admin/AdminRecordDetailSheet";
+import {
+  Campo,
+  EnlaceArchivo,
+  Separador,
+  TituloSeccion,
+  claseTarjeta,
+  claseTarjetaClara,
+  valorOGuion,
+} from "../../../../shared/components/admin/AdminDetalleSecciones";
 import {
   Badge,
   Button,
@@ -81,94 +86,8 @@ const nombreCompleto = (
 ) =>
   `${persona?.nombre ?? ""} ${persona?.apellidos ?? ""}`.trim() || "—";
 
-const valorOGuion = (valor?: string | number | null) => {
-  if (valor === 0) return "0";
-  if (valor === null || valor === undefined) return "—";
-  const texto = String(valor).trim();
-  return texto || "—";
-};
-
-const claseTarjetaClara =
-  "flex flex-col gap-4 rounded-2xl bg-[#f1f5fa] p-5";
-const claseTarjeta =
-  "flex flex-col gap-4 rounded-2xl bg-[#e4eaf3] p-5";
-
-function TituloSeccion({ children }: { children: ReactNode }) {
-  return (
-    <h4 className="m-0 flex items-center gap-2.5 text-sm font-bold text-royal-blue">
-      <span className="h-4 w-1 rounded-full bg-[#94a3b8]" aria-hidden="true" />
-      {children}
-    </h4>
-  );
-}
-
-function Separador() {
-  return <div className="h-px w-full bg-[#16243c]/10" />;
-}
-
-function Campo({
-  label,
-  value,
-  icon,
-  tabular = false,
-}: {
-  label: string;
-  value: ReactNode;
-  icon?: ReactNode;
-  tabular?: boolean;
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      {icon ? (
-        <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-white/80 text-[#aa7323]">
-          {icon}
-        </span>
-      ) : null}
-      <div className="min-w-0 pt-0.5">
-        <p className="m-0 text-xs font-medium text-slate-500">{label}</p>
-        <p
-          className={`m-0 mt-0.5 break-words text-[0.95rem] font-semibold leading-snug text-[#16243c] ${
-            tabular ? "tabular-nums" : ""
-          }`}
-        >
-          {value}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function EnlaceArchivo({
-  archivo,
-  label,
-}: {
-  archivo?: File | string | null;
-  label: string;
-}) {
-  const href =
-    typeof archivo === "string" ? resolveUploadedFileUrl(archivo) : null;
-
-  if (!href) {
-    return (
-      <p className="m-0 text-sm text-[#16243c]/70">
-        No se adjuntó ningún archivo.
-      </p>
-    );
-  }
-
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-xl border-2 border-solid border-royal-blue px-4 py-2.5 font-[Arial,Helvetica,sans-serif] text-sm font-bold text-royal-blue no-underline transition-colors duration-200 ease-out hover:border-royal-blue hover:bg-royal-blue hover:text-white focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:ring-focus-ring focus-visible:outline-none"
-    >
-      <ImageIcon size={16} strokeWidth={2} className="shrink-0" />
-      {label}
-      <ExternalLink size={14} strokeWidth={2} className="shrink-0 opacity-70" />
-    </a>
-  );
-}
+// Componentes de detalle (TituloSeccion, Campo, Separador, EnlaceArchivo) ahora viven en
+// shared/components/admin/AdminDetalleSecciones para reutilizarlos en CICA y Bautismo.
 
 export function DetalleSolicitudCatequesisModal({
   solicitud,
@@ -186,9 +105,18 @@ export function DetalleSolicitudCatequesisModal({
     <AdminRecordDetailSheet
       open
       title={nombreCompleto(solicitud.catequizando) || "Sin nombre"}
-      subtitle={`Solicitud de catequesis · ${solicitud.codigoSolicitud || `CAT-${solicitud.id}`}`}
+      subtitle="Solicitud de catequesis"
       badges={
-        <Badge variant={getEstadoBadgeVariant(estado)}>
+        <Badge
+          variant={getEstadoBadgeVariant(estado)}
+          className={
+            estado === "aprobado"
+              ? "dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]"
+              : estado === "rechazado"
+                ? "dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]"
+                : "dark:border-[#f2a34a] dark:bg-[rgba(242,163,74,0.10)] dark:text-[#f2a34a]"
+          }
+        >
           {obtenerTextoEstado(solicitud.estado)}
         </Badge>
       }
@@ -196,7 +124,7 @@ export function DetalleSolicitudCatequesisModal({
       onClose={onClose}
       actions={
         estado !== "pendiente" ? (
-          <p className="m-0 text-sm font-medium text-[#16243c]">
+          <p className="m-0 text-sm font-medium text-[#16243c] dark:text-[#b7c3d4]">
             {obtenerTextoEstado(solicitud.estado)}
             {estado === "aprobado" || estado === "rechazado"
               ? " (permanente)"
@@ -214,7 +142,7 @@ export function DetalleSolicitudCatequesisModal({
             </Button>
             <Button
               variant="secondary"
-              className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
+              className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300! dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
               disabled={guardando}
               onClick={onRechazar}
             >
@@ -231,7 +159,7 @@ export function DetalleSolicitudCatequesisModal({
                 <div className="grid items-stretch gap-4 md:grid-cols-2">
                   <section className={claseTarjetaClara}>
                     <TituloSeccion>Catequizando</TituloSeccion>
-                    <p className="m-0 text-lg font-bold tracking-tight text-[#16243c]">
+                    <p className="m-0 text-lg font-bold tracking-tight text-[#16243c] dark:text-[#f3f6fa]">
                       {nombreCompleto(solicitud.catequizando)}
                     </p>
                     <Separador />
@@ -334,12 +262,6 @@ export function DetalleSolicitudCatequesisModal({
                       )}
                     />
                     <Campo
-                      label="Código"
-                      value={valorOGuion(
-                        solicitud.codigoSolicitud || `CAT-${solicitud.id}`,
-                      )}
-                    />
-                    <Campo
                       label="Fecha de ingreso"
                       value={formatearFechaEnvio(solicitud.fechaSolicitud)}
                       tabular
@@ -377,7 +299,7 @@ export function DetalleSolicitudCatequesisModal({
                 <div className="grid items-stretch gap-4 md:grid-cols-2">
                   <section className={claseTarjetaClara}>
                     <TituloSeccion>Adecuación educativa</TituloSeccion>
-                    <p className="m-0 text-sm font-semibold text-[#16243c]">
+                    <p className="m-0 text-sm font-semibold text-[#16243c] dark:text-[#f3f6fa]">
                       {solicitud.catequizando?.adecuacion
                         ?.requiereAdecuacionCentroEducativo
                         ? "Sí requiere adecuación"
@@ -387,7 +309,7 @@ export function DetalleSolicitudCatequesisModal({
                       ?.requiereAdecuacionCentroEducativo && (
                       <>
                         <Separador />
-                        <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c]">
+                        <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c] dark:text-[#b7c3d4]">
                           {valorOGuion(
                             solicitud.catequizando?.adecuacion
                               ?.descripcionAdecuacion,
@@ -399,7 +321,7 @@ export function DetalleSolicitudCatequesisModal({
 
                   <section className={claseTarjetaClara}>
                     <TituloSeccion>Condición de salud</TituloSeccion>
-                    <p className="m-0 text-sm font-semibold text-[#16243c]">
+                    <p className="m-0 text-sm font-semibold text-[#16243c] dark:text-[#f3f6fa]">
                       {solicitud.catequizando?.condicionSalud
                         ?.portadorEnfermedadCronica
                         ? "Porta enfermedad crónica"
@@ -409,7 +331,7 @@ export function DetalleSolicitudCatequesisModal({
                       ?.portadorEnfermedadCronica && (
                       <>
                         <Separador />
-                        <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c]">
+                        <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c] dark:text-[#b7c3d4]">
                           {valorOGuion(
                             solicitud.catequizando?.condicionSalud
                               ?.descripcionEnfermedad,
@@ -424,7 +346,7 @@ export function DetalleSolicitudCatequesisModal({
                   {nombreCompleto(solicitud.madreCatequizando) !== "—" && (
                   <section className={claseTarjetaClara}>
                     <TituloSeccion>Madre o encargada</TituloSeccion>
-                    <p className="m-0 text-base font-bold text-[#16243c]">
+                    <p className="m-0 text-base font-bold text-[#16243c] dark:text-[#f3f6fa]">
                       {nombreCompleto(solicitud.madreCatequizando)}
                     </p>
                     <Separador />
@@ -463,7 +385,7 @@ export function DetalleSolicitudCatequesisModal({
                   {nombreCompleto(solicitud.padreCatequizando) !== "—" && (
                   <section className={claseTarjetaClara}>
                     <TituloSeccion>Padre</TituloSeccion>
-                    <p className="m-0 text-base font-bold text-[#16243c]">
+                    <p className="m-0 text-base font-bold text-[#16243c] dark:text-[#f3f6fa]">
                       {nombreCompleto(solicitud.padreCatequizando)}
                     </p>
                     <Separador />
@@ -491,7 +413,7 @@ export function DetalleSolicitudCatequesisModal({
                 </section>
 
                 {estado === "aprobado" && (
-                  <div className="flex gap-2.5 rounded-[12px] border border-emerald-600/25 bg-emerald-600/10 p-4 text-sm leading-relaxed text-emerald-800">
+                  <div className="flex gap-2.5 rounded-[12px] border border-emerald-600/25 bg-emerald-600/10 p-4 text-sm leading-relaxed text-emerald-800 dark:border-[#35d6a0]/30 dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]">
                     <CheckCircle size={17} className="mt-0.5 shrink-0" />
                     <div>
                       <p className="m-0">
@@ -508,7 +430,7 @@ export function DetalleSolicitudCatequesisModal({
                 )}
 
                 {estado === "rechazado" && (
-                  <div className="flex gap-2.5 rounded-[12px] border border-red-300 bg-red-50 p-4 text-sm leading-relaxed text-red-800">
+                  <div className="flex gap-2.5 rounded-[12px] border border-red-300 bg-red-50 p-4 text-sm leading-relaxed text-red-800 dark:border-[#ff6b6b]/50 dark:bg-[#e03131] dark:text-white">
                     <XCircle size={17} className="mt-0.5 shrink-0" />
                     <div>
                       <p className="m-0 font-semibold">Solicitud rechazada.</p>

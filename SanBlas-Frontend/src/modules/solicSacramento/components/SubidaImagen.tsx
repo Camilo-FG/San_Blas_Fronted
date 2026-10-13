@@ -23,6 +23,7 @@ interface SubidaImagenProps {
   mostrarVistaPrevia?: boolean;
   tiposPermitidos?: string[];
   varianteVistaPrevia?: "predeterminada" | "tarjeta";
+  darkMode?: boolean;
 }
 
 const TIPOS_PERMITIDOS = [
@@ -64,6 +65,11 @@ const textoFormatosAceptados = (tipos: string[], maxSizeMB: number) => {
 
 const MAX_DEFAULT_MB = 5;
 
+// detecta URLs de documento (PDF local o de Cloudinary raw) pa no intentar
+// renderizarlas como imagen en la vista previa
+const esUrlDocumento = (url?: string | null): boolean =>
+  Boolean(url && (url.includes("/raw/upload/") || /\.pdf(\?|#|$)/i.test(url)));
+
 export const SubidaImagen = ({
   value,
   onChange,
@@ -80,6 +86,7 @@ export const SubidaImagen = ({
   mostrarVistaPrevia = true,
   tiposPermitidos = TIPOS_PERMITIDOS,
   varianteVistaPrevia = "predeterminada",
+  darkMode = false,
 }: SubidaImagenProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [arrastrando, setArrastrando] = useState(false);
@@ -136,7 +143,10 @@ export const SubidaImagen = ({
   const usarTarjeta =
     varianteVistaPrevia === "tarjeta" && Boolean(value || existingPreview);
   const vistaTarjeta = value?.preview ?? existingPreview ?? null;
-  const esImagenTarjeta = value ? value.file.type.startsWith("image/") : true;
+  // las URLs de PDF no sirven como <img>, así que se muestran con el icono de documento
+  const esImagenTarjeta = value
+    ? value.file.type.startsWith("image/")
+    : !esUrlDocumento(existingPreview);
 
   return (
     <div
@@ -145,13 +155,13 @@ export const SubidaImagen = ({
     >
       {(label || required) && (
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-          <Label className="text-sm font-bold text-royal-blue" required={required}>
+          <Label className={`text-sm font-bold text-royal-blue${darkMode ? " dark:text-[#b7c3d4]" : ""}`} required={required}>
             {label ?? "Comprobante de pago"}
           </Label>
           {hint ? (
-            <span className="text-xs text-gray-500">{hint}</span>
+            <span className={`text-xs text-gray-500${darkMode ? " dark:text-[#7f8da3]" : ""}`}>{hint}</span>
           ) : required && !label ? (
-            <span className="text-xs text-gray-500">
+            <span className={`text-xs text-gray-500${darkMode ? " dark:text-[#7f8da3]" : ""}`}>
               sinpe de la parroquia: 2685-3540
             </span>
           ) : null}
@@ -194,7 +204,7 @@ export const SubidaImagen = ({
             : arrastrando
               ? "border-royal-blue bg-royal-blue/5"
               : "border-slate-300 bg-[#fdfdfd] hover:border-royal-blue/70 hover:bg-royal-blue/5"
-        }`}
+        }${darkMode ? " dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]" : ""}`}
       >
         {usarTarjeta ? (
           <>
@@ -222,11 +232,11 @@ export const SubidaImagen = ({
               </div>
             )}
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <p className="truncate text-sm font-semibold text-[#16243c]">
-                {value?.file.name ?? "Imagen actual"}
+              <p className={`truncate text-sm font-semibold text-[#16243c]${darkMode ? " dark:text-[#f3f6fa]" : ""}`}>
+                {value?.file.name ?? (esImagenTarjeta ? "Imagen actual" : "PDF actual")}
               </p>
               {value && (
-                <p className="m-0 text-[0.72rem] text-text-muted">
+                <p className={`m-0 text-[0.72rem] text-text-muted${darkMode ? " dark:text-[#7f8da3]" : ""}`}>
                   {(value.file.size / 1024).toFixed(0)} KB
                 </p>
               )}
@@ -249,7 +259,7 @@ export const SubidaImagen = ({
             <div className="flex size-11 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
               <Upload size={22} />
             </div>
-            <p className="m-0 max-w-full truncate text-sm font-semibold text-slate-700">
+            <p className={`m-0 max-w-full truncate text-sm font-semibold text-slate-700${darkMode ? " dark:text-[#f3f6fa]" : ""}`}>
               {value?.file.name ?? "Imagen adjunta"}
             </p>
             <button
@@ -273,7 +283,7 @@ export const SubidaImagen = ({
                 className="max-h-32 w-auto max-w-full rounded-lg border border-slate-200 object-contain"
               />
             )}
-            <span className="max-w-full truncate text-sm font-medium text-slate-700">
+            <span className={`max-w-full truncate text-sm font-medium text-slate-700${darkMode ? " dark:text-[#f3f6fa]" : ""}`}>
               {value.file.name}
             </span>
             <button
@@ -297,20 +307,24 @@ export const SubidaImagen = ({
                 className="max-h-32 w-auto max-w-full rounded-lg border border-slate-200 object-contain"
               />
             )}
-            <span className="text-sm font-medium text-slate-700">
+            <span className={`text-sm font-medium text-slate-700${darkMode ? " dark:text-[#f3f6fa]" : ""}`}>
               Imagen actual
             </span>
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onClearExisting?.();
-              }}
-              aria-label="Eliminar imagen"
-              className="absolute right-2 top-2 flex size-7 cursor-pointer items-center justify-center rounded-full bg-slate-900/70 text-white transition-colors duration-150 ease-out hover:bg-red-600"
-            >
-              <X size={15} />
-            </button>
+            {/* sin X acá: elegir otro archivo reemplaza directo y así no se
+                borra la imagen actual por accidente al querer cambiarla */}
+            {onClearExisting && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onClearExisting();
+                }}
+                aria-label="Eliminar imagen"
+                className="absolute right-2 top-2 flex size-7 cursor-pointer items-center justify-center rounded-full bg-slate-900/70 text-white transition-colors duration-150 ease-out hover:bg-red-600"
+              >
+                <X size={15} />
+              </button>
+            )}
           </>
         ) : (
           <>
@@ -318,17 +332,17 @@ export const SubidaImagen = ({
               <Upload size={22} />
             </div>
             <div className="flex flex-col items-center gap-3">
-              <p className="m-0 text-sm font-medium text-slate-700">
+              <p className={`m-0 text-sm font-medium text-slate-700${darkMode ? " dark:text-[#b7c3d4]" : ""}`}>
                 {textoArrastrar}
               </p>
-              <p className="m-0 text-xs text-text-secondary">o</p>
+              <p className={`m-0 text-xs text-text-secondary${darkMode ? " dark:text-[#7f8da3]" : ""}`}>o</p>
               <button
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
                   inputRef.current?.click();
                 }}
-                className="cursor-pointer rounded-md border-2 border-solid border-royal-blue px-4 py-1.5 font-[Arial,Helvetica,sans-serif] text-[0.8rem] font-bold text-royal-blue transition-colors duration-200 ease-out hover:border-royal-blue hover:bg-royal-blue hover:text-white"
+                className={`cursor-pointer rounded-md border-2 border-solid border-royal-blue px-4 py-1.5 font-[Arial,Helvetica,sans-serif] text-[0.8rem] font-bold text-royal-blue transition-colors duration-200 ease-out hover:border-royal-blue hover:bg-royal-blue hover:text-white${darkMode ? " dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!" : ""}`}
               >
                 Buscar archivo
               </button>
@@ -338,16 +352,16 @@ export const SubidaImagen = ({
       </div>
 
       {formatosAceptados && (
-        <p className="m-0 text-xs text-text-secondary">{formatosAceptados}</p>
+        <p className={`m-0 text-xs text-text-secondary${darkMode ? " dark:text-[#7f8da3]" : ""}`}>{formatosAceptados}</p>
       )}
 
       {error && (
-        <span role="alert" className="text-[0.84rem] font-semibold text-red-500">
+        <span role="alert" className={`text-[0.84rem] font-semibold text-red-500${darkMode ? " dark:text-[#e66a6a]" : ""}`}>
           ⚠ {error}
         </span>
       )}
       {errorExterno && (
-        <span role="alert" className="text-[0.84rem] font-semibold text-red-500">
+        <span role="alert" className={`text-[0.84rem] font-semibold text-red-500${darkMode ? " dark:text-[#e66a6a]" : ""}`}>
           ⚠ {errorExterno}
         </span>
       )}

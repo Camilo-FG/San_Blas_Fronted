@@ -8,7 +8,8 @@ export type LandingSectionKey =
   | "horarios"
   | "bautizos"
   | "servicios"
-  | "donaciones";
+  | "donaciones"
+  | "catequesis";
 
 export interface LandingSectionResponse<T = Record<string, unknown>> {
   sectionKey: LandingSectionKey;
@@ -88,6 +89,19 @@ export const actualizarSeccionLanding = async <T = Record<string, unknown>>(
       formData.append("archivo", archivo);
       const { data: response } = await apiClient.put<LandingSectionResponse<T>>(
         `${BASE}/${sectionKey}/con-imagen`,
+        formData,
+      );
+      return response;
+    }
+
+    // el PDF de lineamientos de catequesis viaja igual que una imagen pero al
+    // endpoint de documentos (el backend lo valida como .pdf)
+    if (sectionKey === "catequesis" && archivo) {
+      const formData = new FormData();
+      formData.append("Payload", JSON.stringify({ data }));
+      formData.append("archivo", archivo);
+      const { data: response } = await apiClient.put<LandingSectionResponse<T>>(
+        `${BASE}/catequesis/con-archivo`,
         formData,
       );
       return response;

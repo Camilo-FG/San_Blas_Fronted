@@ -11,6 +11,9 @@ export const TELEFONO_LANDING_REGEX = /^[\d+\s()-]{7,40}$/;
 export const YOUTUBE_EMBED_REGEX =
   /^https:\/\/www\.youtube\.com\/embed\/[A-Za-z0-9_-]+(?:\?.*)?$/;
 export const CORREO_LANDING_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const IBAN_CR_REGEX = /^CR\d{20}$/i;
+const MENSAJE_IBAN_CR =
+  "La cuenta bancaria debe ser un IBAN de Costa Rica. Ejemplo: CR67015100012345678901";
 
 const MENSAJES_REQUERIDO: Record<string, string> = {
   subtitle: "El encabezado es obligatorio.",
@@ -34,6 +37,7 @@ const MENSAJES_REQUERIDO: Record<string, string> = {
   requisitos: "Incluya al menos un requisito.",
   charlas: "Las charlas prebautismales son obligatorias.",
   solicitud: "El texto de solicitud es obligatorio.",
+  cuentaBancaria: "La cuenta bancaria es obligatoria.",
 };
 
 function mensajeRequerido(sectionKey: LandingSectionKey, name: string): string {
@@ -111,6 +115,7 @@ function mensajeLongitud(
     ubicacion: "La ubicación no puede superar 120 caracteres.",
     charlas: "Las charlas prebautismales no pueden superar 300 caracteres.",
     solicitud: "El texto de solicitud no puede superar 300 caracteres.",
+    cuentaBancaria: MENSAJE_IBAN_CR,
   };
 
   return (
@@ -122,6 +127,17 @@ function esUrlHttp(valor: string): boolean {
   try {
     const url = new URL(valor);
     return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+// El mapa solo funciona embebido en un iframe: el link debe traer output=embed
+// (Compartir → Incorporar mapa). Un link normal pasa como URL pero deja el mapa en blanco.
+export function esUrlMapaEmbedValida(valor: string): boolean {
+  if (!esUrlHttp(valor)) return false;
+  try {
+    return new URL(valor).searchParams.get("output") === "embed";
   } catch {
     return false;
   }
@@ -145,6 +161,9 @@ export function validarFormularioLanding(
 
   for (const field of config.fields) {
     if (field.type === "image") continue;
+    // el PDF no se valida acá: su URL ya viene del backend (o del fallback
+    // del repo) y si viene vacía la respalda el DTO del backend al guardar
+    if (field.type === "file") continue;
     // los bloques de horarios se validan aparte (bloque 1 obligatorio, 2-4 opcionales)
     if (sectionKey === "horarios" && /^bloque\d+(Titulo|Filas)$/.test(field.name)) {
       continue;
@@ -188,8 +207,19 @@ export function validarFormularioLanding(
       continue;
     }
 
-    if (field.format === "phone" && !TELEFONO_LANDING_REGEX.test(valor)) {
-      errores[field.name] = "El teléfono no tiene un formato válido.";
+    if (field.format === "phone") {
+      if (valor.startsWith("0")) {
+        errores[field.name] = "El número no puede empezar con 0.";
+        continue;
+      }
+      if (!TELEFONO_LANDING_REGEX.test(valor)) {
+        errores[field.name] = "El teléfono no tiene un formato válido.";
+        continue;
+      }
+    }
+
+    if (field.format === "ibanCr" && !IBAN_CR_REGEX.test(valor)) {
+      errores[field.name] = MENSAJE_IBAN_CR;
       continue;
     }
 
@@ -202,11 +232,14 @@ export function validarFormularioLanding(
       continue;
     }
 
-    if (field.format === "url" && !esUrlHttp(valor)) {
-      errores[field.name] =
-        field.name === "mapaUrl"
-          ? "La URL del mapa no es válida."
+    if (field.format === "url") {
+      const esMapa = field.name === "mapaUrl";
+      const valida = esMapa ? esUrlMapaEmbedValida(valor) : esUrlHttp(valor);
+      if (!valida) {
+        errores[field.name] = esMapa
+          ? "La URL del mapa debe ser embebible (incluir output=embed)."
           : "La URL no es válida.";
+      }
     }
   }
 
@@ -293,6 +326,46 @@ export function validarFormularioLanding(
           "El texto del botón es obligatorio.";
       }
     }
+
+    // el detalle del modal es opcional, pero si se usa debe venir completo
+    // (el DTO del backend exige los 5 campos cuando modalDetails existe)
+    for (let i = 1; i <= 5; i += 1) {
+      const subtitulo = (values[`servicio${i}DetalleSubtitulo`] ?? "").trim();
+      const descripcionAmpliada = (
+        values[`servicio${i}DetalleDescripcion`] ?? ""
+      ).trim();
+      const horario = (values[`servicio${i}DetalleHorario`] ?? "").trim();
+      const contacto = (values[`servicio${i}DetalleContacto`] ?? "").trim();
+      const requisitos = lineas(values[`servicio${i}DetalleRequisitos`] ?? "");
+      const hayDetalle =
+        Boolean(subtitulo || descripcionAmpliada || horario || contacto) ||
+        requisitos.length > 0;
+      if (!hayDetalle) continue;
+      if (!(values[`servicio${i}Titulo`] ?? "").trim()) {
+        errores[`servicio${i}Titulo`] =
+          "Complete el título del servicio antes de agregar su detalle.";
+      }
+      if (!subtitulo) {
+        errores[`servicio${i}DetalleSubtitulo`] =
+          "El subtítulo del detalle es obligatorio.";
+      }
+      if (!descripcionAmpliada) {
+        errores[`servicio${i}DetalleDescripcion`] =
+          "La descripción ampliada del detalle es obligatoria.";
+      }
+      if (!horario) {
+        errores[`servicio${i}DetalleHorario`] =
+          "El horario del detalle es obligatorio.";
+      }
+      if (requisitos.length === 0) {
+        errores[`servicio${i}DetalleRequisitos`] =
+          "Incluya al menos un requisito del detalle.";
+      }
+      if (!contacto) {
+        errores[`servicio${i}DetalleContacto`] =
+          "El contacto del detalle es obligatorio.";
+      }
+    }
   }
 
   return errores;
@@ -327,6 +400,38 @@ export function mapearErroresLanding(
       out[
         bloque[2] === "titulo" ? `bloque${indice}Titulo` : `bloque${indice}Filas`
       ] = msg;
+      continue;
+    }
+
+    const detalleServicio = clave.match(
+      /^items\.(\d+)\.modalDetails\.(subtitle|description|schedule|requirements|contact)$/,
+    );
+    if (detalleServicio) {
+      const indice = Number(detalleServicio[1]) + 1;
+      const campos: Record<string, string> = {
+        subtitle: "DetalleSubtitulo",
+        description: "DetalleDescripcion",
+        schedule: "DetalleHorario",
+        requirements: "DetalleRequisitos",
+        contact: "DetalleContacto",
+      };
+      out[`servicio${indice}${campos[detalleServicio[2]]}`] = msg;
+      continue;
+    }
+
+    const servicio = clave.match(
+      /^items\.(\d+)\.(title|description|category|buttonLabel|linkTo)$/,
+    );
+    if (servicio) {
+      const indice = Number(servicio[1]) + 1;
+      const campos: Record<string, string> = {
+        title: "Titulo",
+        description: "Descripcion",
+        category: "Categoria",
+        buttonLabel: "Boton",
+        linkTo: "Enlace",
+      };
+      out[`servicio${indice}${campos[servicio[2]]}`] = msg;
       continue;
     }
 

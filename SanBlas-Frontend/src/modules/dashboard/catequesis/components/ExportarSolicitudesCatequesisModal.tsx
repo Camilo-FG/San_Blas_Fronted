@@ -49,29 +49,35 @@ export function ExportarSolicitudesCatequesisModal({
       title="Exportar tabla"
       sinFondo
       cerrarAlClicFuera={false}
-      className="overflow-visible"
+      className="overflow-visible dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+      overlayClassName="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
       tamano="xl"
     >
       <motion.div
+        className="w-full min-w-0"
         initial={{ opacity: 0, y: 8, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="flex min-h-[34rem] flex-col pr-10">
-          <div className="flex flex-col gap-4">
+        <div className="flex min-h-0 w-full min-w-0 flex-col">
+          <div className="flex min-w-0 flex-col gap-4">
           <LineaDoradaTitulo parteSubrayada="Exportar tabla" />
-          <p className="m-0 text-sm text-text-muted">
+          <p className="m-0 text-sm text-text-muted dark:text-[#7f8da3]">
             Se descargará un archivo Excel (.xlsx).
           </p>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-text-muted">
+            <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
               Nivel
             </span>
             <CustomSelect
               ref={nivelRef}
               value={nivel}
               disabled={exportando}
+              className="dark:text-[#f3f6fa]"
+              triggerClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035]"
+              menuClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+              optionClassName="dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
               onChange={(valor) =>
                 setNivel(valor as NivelExportacionCatequesis)
               }
@@ -86,12 +92,16 @@ export function ExportarSolicitudesCatequesisModal({
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-text-muted">
+            <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
               Estado
             </span>
             <CustomSelect
               value={estado}
               disabled={exportando}
+              className="dark:text-[#f3f6fa]"
+              triggerClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035]"
+              menuClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+              optionClassName="dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
               onChange={(valor) =>
                 setEstado(valor as EstadoExportacionCatequesis)
               }
@@ -105,12 +115,16 @@ export function ExportarSolicitudesCatequesisModal({
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-text-muted">
+            <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
               Filial
             </span>
             <CustomSelect
               value={filial}
               disabled={exportando}
+              className="dark:text-[#f3f6fa]"
+              triggerClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035]"
+              menuClassName="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+              optionClassName="dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
               onChange={(valor) =>
                 setFilial(valor as OpcionesExportacionCatequesis["filial"])
               }
@@ -125,10 +139,10 @@ export function ExportarSolicitudesCatequesisModal({
           </label>
           </div>
 
-          <div className="mt-auto flex shrink-0 justify-end gap-2 pt-8">
+          <div className="mt-auto flex min-w-0 shrink-0 flex-wrap justify-end gap-2 pt-6">
             <Button
               variant="royal"
-              className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
+              className="max-w-full rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]"
               onClick={() => onConfirm({ nivel, estado, filial })}
               disabled={exportando}
             >
@@ -137,7 +151,7 @@ export function ExportarSolicitudesCatequesisModal({
             </Button>
             <Button
               variant="secondary"
-              className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+              className="max-w-full rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
               onClick={onClose}
               disabled={exportando}
             >

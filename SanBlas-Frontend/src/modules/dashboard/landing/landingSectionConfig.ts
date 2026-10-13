@@ -10,8 +10,8 @@ import { HORARIOS_DEFAULT } from "../../landing/horariosContent";
  * Longitudes y formatos alineados con los DTOs del backend
  * (update-landing-section.dto.ts). Cambiar una regla implica actualizar ambos lados.
  */
-export type FieldType = "text" | "textarea" | "url" | "image" | "lines";
-export type LandingFieldFormat = "email" | "phone" | "youtube" | "url";
+export type FieldType = "text" | "textarea" | "url" | "image" | "file" | "lines";
+export type LandingFieldFormat = "email" | "phone" | "youtube" | "url" | "ibanCr";
 
 export interface LandingFieldConfig {
   name: string;
@@ -336,6 +336,26 @@ export const LANDING_SECTIONS: LandingSectionConfig[] = [
             type: "image" as FieldType,
             hint: "JPG, JPEG, PNG o WEBP (máx. 5 MB)",
           },
+          {
+            name: `servicio${n}DetalleSubtitulo`,
+            label: `Servicio ${n} — Detalle: subtítulo`,
+            type: "text" as FieldType,
+            maxLength: 120,
+            required: false,
+            hint: "Detalle que se abre al seleccionar el servicio. Si lo usa, complete los 5 campos del detalle.",
+          },
+          { name: `servicio${n}DetalleDescripcion`, label: `Servicio ${n} — Detalle: descripción ampliada`, type: "textarea" as FieldType, maxLength: 300, rows: 3, required: false },
+          { name: `servicio${n}DetalleHorario`, label: `Servicio ${n} — Detalle: horario`, type: "text" as FieldType, maxLength: 300, required: false },
+          {
+            name: `servicio${n}DetalleRequisitos`,
+            label: `Servicio ${n} — Detalle: requisitos`,
+            type: "lines" as FieldType,
+            maxLength: 200,
+            rows: 4,
+            required: false,
+            hint: "Un requisito por línea (máx. 200 caracteres).",
+          },
+          { name: `servicio${n}DetalleContacto`, label: `Servicio ${n} — Detalle: contacto`, type: "text" as FieldType, maxLength: 200, required: false },
         ];
       }).flat(),
     ],
@@ -348,8 +368,40 @@ export const LANDING_SECTIONS: LandingSectionConfig[] = [
       { name: "title", label: "Título", type: "text", maxLength: 80 },
       { name: "intro", label: "Introducción", type: "textarea", maxLength: 300, rows: 3 },
       { name: "sinpe", label: "SINPE Móvil", type: "text", maxLength: 40, format: "phone" },
-      { name: "cuentaBancaria", label: "Cuenta bancaria (IBAN)", type: "text", maxLength: 60 },
+      {
+        name: "cuentaBancaria",
+        label: "Cuenta bancaria (IBAN)",
+        type: "text",
+        maxLength: 22,
+        format: "ibanCr",
+        placeholder: "CR67015100012345678901",
+        hint: "Ejemplo: CR67015100012345678901 (CR seguido de 20 dígitos).",
+      },
       { name: "banco", label: "Banco", type: "text", maxLength: 80 },
+    ],
+  },
+  {
+    key: "catequesis",
+    label: "Formulario de Catequesis",
+    description:
+      "Número SINPE del pago de inscripción y PDF de lineamientos (último paso del formulario).",
+    fields: [
+      {
+        name: "sinpe",
+        label: "SINPE de la parroquia",
+        type: "text",
+        maxLength: 40,
+        format: "phone",
+        placeholder: "8878-3025",
+        hint: "Número al que se paga la inscripción (paso 6 del formulario).",
+      },
+      {
+        name: "lineamientosUrl",
+        label: "PDF de lineamientos",
+        type: "file",
+        maxLength: 300,
+        hint: "PDF (máx. 5 MB)",
+      },
     ],
   },
 ];
@@ -470,10 +522,16 @@ export const sectionDataToForm = (
       form[`servicio${n}Boton`] = String(item.buttonLabel ?? "");
       form[`servicio${n}Enlace`] = String(item.linkTo ?? "");
       form[`servicio${n}Imagen`] = String(item.imageUrl ?? "");
-      // detalle del modal: no se edita en el CMS pero se conserva al guardar
-      form[`servicio${n}Detalle`] = item.modalDetails
-        ? JSON.stringify(item.modalDetails)
+      // detalle del modal del servicio (editable)
+      const detalle = (item.modalDetails ?? {}) as Record<string, unknown>;
+      const requisitos = Array.isArray(detalle.requirements)
+        ? (detalle.requirements as unknown[]).map((linea) => String(linea)).join("\n")
         : "";
+      form[`servicio${n}DetalleSubtitulo`] = String(detalle.subtitle ?? "");
+      form[`servicio${n}DetalleDescripcion`] = String(detalle.description ?? "");
+      form[`servicio${n}DetalleHorario`] = String(detalle.schedule ?? "");
+      form[`servicio${n}DetalleRequisitos`] = requisitos;
+      form[`servicio${n}DetalleContacto`] = String(detalle.contact ?? "");
     }
     return form;
   }
@@ -484,6 +542,15 @@ export const sectionDataToForm = (
     form.sinpe = String(data.sinpe ?? "");
     form.cuentaBancaria = String(data.cuentaBancaria ?? "");
     form.banco = String(data.banco ?? "");
+    return form;
+  }
+
+  if (key === "catequesis") {
+    // fallback local pa que el editor nunca abra vacío aunque falte la fila en BD
+    form.sinpe = String(data.sinpe ?? "8878-3025");
+    form.lineamientosUrl = String(
+      data.lineamientosUrl ?? "/lineamientos-catequesis-24-25.pdf",
+    );
     return form;
   }
 
@@ -624,13 +691,23 @@ export const formToSectionData = (
       if (enlace) item.linkTo = enlace;
       const imagen = (form[`servicio${i}Imagen`] ?? "").trim();
       if (imagen) item.imageUrl = imagen;
-      const detalle = (form[`servicio${i}Detalle`] ?? "").trim();
-      if (detalle) {
-        try {
-          item.modalDetails = JSON.parse(detalle);
-        } catch {
-          // si el detalle guardado viene corrupto simplemente se omite
-        }
+      const subtitulo = (form[`servicio${i}DetalleSubtitulo`] ?? "").trim();
+      const descripcionAmpliada = (form[`servicio${i}DetalleDescripcion`] ?? "").trim();
+      const horario = (form[`servicio${i}DetalleHorario`] ?? "").trim();
+      const contacto = (form[`servicio${i}DetalleContacto`] ?? "").trim();
+      const requisitos = lines(form[`servicio${i}DetalleRequisitos`] ?? "");
+      const hayDetalle =
+        Boolean(subtitulo || descripcionAmpliada || horario || contacto) ||
+        requisitos.length > 0;
+      // la validación garantiza que el detalle venga completo; si no, se omite
+      if (hayDetalle) {
+        item.modalDetails = {
+          subtitle: subtitulo,
+          description: descripcionAmpliada,
+          schedule: horario,
+          requirements: requisitos,
+          contact: contacto,
+        };
       }
       items.push(item);
     }
@@ -649,6 +726,16 @@ export const formToSectionData = (
       sinpe: form.sinpe,
       cuentaBancaria: form.cuentaBancaria,
       banco: form.banco,
+    };
+  }
+
+  if (key === "catequesis") {
+    return {
+      sinpe: form.sinpe,
+      // si todavía no hay PDF guardado se manda el por defecto del repo;
+      // cuando se suba uno nuevo, el backend pisa esta URL con la de Cloudinary
+      lineamientosUrl:
+        form.lineamientosUrl.trim() || "/lineamientos-catequesis-24-25.pdf",
     };
   }
 

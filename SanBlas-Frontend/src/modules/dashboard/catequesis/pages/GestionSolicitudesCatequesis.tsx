@@ -4,8 +4,6 @@ import {
   Archive,
   CheckCircle,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   Download,
   Eye,
@@ -31,6 +29,7 @@ import {
 import { DetalleSolicitudCatequesisModal } from "../components/DetalleSolicitudCatequesisModal";
 import { ExportarSolicitudesCatequesisModal } from "../components/ExportarSolicitudesCatequesisModal";
 import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
+import { AdminPaginationBar } from "../../../../shared/components/admin/AdminPaginationBar";
 import { obtenerEtiquetaNivelCatequesis, NIVELES_CATEQUESIS } from "../../../catequesis/constants/nivelesCatequesis";
 import { FILIALES_CATEQUESIS } from "../../../catequesis/constants/filialesCatequesis";
 import { useSolicitudesCatequesis } from "../hooks/useSolicitudesCatequesis";
@@ -44,12 +43,9 @@ import { usePagination } from "../../../../shared/hooks/usePagination";
 import { useDebouncedValue } from "../../../../shared/hooks/useDebouncedValue";
 import {
   AdminModule,
-  AdminPagination,
-  AdminPaginationButton,
   AdminSearch,
   AdminTable,
   AdminTableCell,
-  AdminTableFooter,
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTablePanel,
@@ -148,6 +144,32 @@ const getEstadoBadgeVariant = (estado?: string | null): BadgeVariant => {
   }
 };
 
+function CampoHistorial({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
+        {label}
+      </span>
+      <span className="text-sm text-slate-900 dark:text-[#f3f6fa]">{value}</span>
+    </div>
+  );
+}
+
+const getEstadoBadgeDark = (estado?: string | null) => {
+  const estadoNormalizado = normalizarEstado(estado);
+  if (estadoNormalizado === "aprobado")
+    return "dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]";
+  if (estadoNormalizado === "rechazado")
+    return "dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]";
+  return "dark:border-[#f2a34a] dark:bg-[rgba(242,163,74,0.10)] dark:text-[#f2a34a]";
+};
+
 function GestionSolicitudesCatequesis() {
   const { showToast } = useToast();
 
@@ -157,9 +179,6 @@ function GestionSolicitudesCatequesis() {
   const [filtroFilial, setFiltroFilial] = useState<"todos" | string>("todos");
   const [filtroTextoLibre, setFiltroTextoLibre] = useState("");
   const [filtroEncargado, setFiltroEncargado] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState<
-    "todos" | "pendiente" | "aprobado" | "rechazado"
-  >("todos");
   const [exportModalAbierto, setExportModalAbierto] = useState(false);
   const [filtroNivelMenuAbierto, setFiltroNivelMenuAbierto] = useState(false);
   const [filtroFilialMenuAbierto, setFiltroFilialMenuAbierto] = useState(false);
@@ -176,10 +195,10 @@ function GestionSolicitudesCatequesis() {
   const [limite, setLimite] =
     useState<(typeof TAMANOS_PAGINA_SOLICITUDES)[number]>(10);
 
-  // Filtros que el backend soporta (estado, encargado, q, nivel, filial)
+  // La lista de solicitudes solo trae pendientes. Aprobadas y rechazadas
+  // se consultan en el historial.
   const filtros = useMemo(
     () => ({
-      estado: filtroEstado === "todos" ? undefined : filtroEstado,
       encargado: debouncedEncargado || undefined,
       q: debouncedQ || undefined,
       nivel: filtroNivel === "todos" ? undefined : filtroNivel,
@@ -188,7 +207,6 @@ function GestionSolicitudesCatequesis() {
       limit: limite,
     }),
     [
-      filtroEstado,
       debouncedEncargado,
       debouncedQ,
       filtroNivel,
@@ -312,14 +330,12 @@ function GestionSolicitudesCatequesis() {
   ]);
 
   const hayFiltrosActivos =
-    filtroEstado !== "todos" ||
     filtroNivel !== "todos" ||
     filtroFilial !== "todos" ||
     filtroTextoLibre.trim() !== "" ||
     filtroEncargado.trim() !== "";
 
   const limpiarFiltros = () => {
-    setFiltroEstado("todos");
     setFiltroNivel("todos");
     setFiltroFilial("todos");
     setFiltroTextoLibre("");
@@ -511,7 +527,7 @@ function GestionSolicitudesCatequesis() {
         id: "catequizando",
         header: "Catequizando",
         cell: ({ row }) => (
-          <span className="font-medium text-text">
+          <span className="font-medium text-text dark:text-[#f3f6fa]">
             {`${row.original.catequizando?.nombre ?? "Sin nombre"} ${row.original.catequizando?.apellidos ?? ""}`.trim()}
           </span>
         ),
@@ -520,7 +536,7 @@ function GestionSolicitudesCatequesis() {
         id: "nivel",
         header: "Nivel",
         cell: ({ row }) => (
-          <span className="text-text-secondary">
+          <span className="text-text-secondary dark:text-[#b7c3d4]">
             {obtenerEtiquetaNivelCatequesis(
               row.original.catequesis?.nivelAInscribirse,
             )}
@@ -531,7 +547,7 @@ function GestionSolicitudesCatequesis() {
         id: "filial",
         header: "Filial",
         cell: ({ row }) => (
-          <span className="text-text-secondary">
+          <span className="text-text-secondary dark:text-[#b7c3d4]">
             {row.original.catequesis?.centroCatequesis || "—"}
           </span>
         ),
@@ -540,7 +556,7 @@ function GestionSolicitudesCatequesis() {
         id: "fecha",
         header: "Fecha de ingreso",
         cell: ({ row }) => (
-          <span className="tabular-nums text-text-secondary">
+          <span className="tabular-nums text-text-secondary dark:text-[#b7c3d4]">
             {formatFechaIngreso(row.original.fechaSolicitud)}
           </span>
         ),
@@ -554,11 +570,11 @@ function GestionSolicitudesCatequesis() {
           const correo = row.original.encargado?.correo?.trim();
 
           return (
-            <span className="flex min-w-0 flex-col text-sm leading-snug text-text-secondary">
-              <span className="truncate font-medium text-text">
+            <span className="flex min-w-0 flex-col text-sm leading-snug text-text-secondary dark:text-[#b7c3d4]">
+              <span className="truncate font-medium text-text dark:text-[#f3f6fa]">
                 {nombre || "—"}
               </span>
-              <span className="truncate text-xs text-text-muted">
+              <span className="truncate text-xs text-text-muted dark:text-[#7f8da3]">
                 {correo || "—"}
               </span>
             </span>
@@ -569,7 +585,7 @@ function GestionSolicitudesCatequesis() {
         accessorKey: "estado",
         header: "Estado",
         cell: ({ row }) => (
-          <Badge variant={getEstadoBadgeVariant(row.original.estado)}>
+          <Badge variant={getEstadoBadgeVariant(row.original.estado)} className={getEstadoBadgeDark(row.original.estado)}>
             {obtenerTextoEstado(row.original.estado)}
           </Badge>
         ),
@@ -587,7 +603,7 @@ function GestionSolicitudesCatequesis() {
                 openModal(row.original);
               }}
               aria-label="Ver solicitud"
-              className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+              className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
             >
               <Eye size={17} strokeWidth={1.5} />
             </button>
@@ -639,28 +655,28 @@ function GestionSolicitudesCatequesis() {
 
   useEffect(() => {
     setPagina(1);
-  }, [filtroTextoLibre, filtroEncargado, filtroEstado, filtroNivel, filtroFilial]);
+  }, [filtroTextoLibre, filtroEncargado, filtroNivel, filtroFilial]);
 
   return (
     <AdminModule className="gap-3!">
       {guardando && (
         <p
-          className="rounded-xl bg-info-bg px-3.5 py-2.5 text-sm font-semibold text-info"
+          className="rounded-xl bg-info-bg px-3.5 py-2.5 text-sm font-semibold text-info dark:bg-[rgba(217,169,40,0.12)] dark:text-[#d9a928]"
           role="status"
         >
           Guardando cambios...
         </p>
       )}
 
-      <div className="flex w-full flex-wrap items-center gap-1 rounded-xl border border-border-strong bg-surface p-1 shadow-sm">
+      <div className="flex w-full flex-wrap items-center gap-1 rounded-xl border border-border-strong bg-surface p-1 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
         <button
           type="button"
           onClick={() => setVista("solicitudes")}
           aria-pressed={vista === "solicitudes"}
           className={`inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border-0 px-4 text-sm transition-colors ${
             vista === "solicitudes"
-              ? "bg-[#003366] font-semibold text-white"
-              : "bg-transparent font-medium text-text-secondary hover:bg-surface-muted"
+              ? "bg-[#003366] font-semibold text-white dark:bg-[#d9a928] dark:text-[#040b16]"
+              : "bg-transparent font-medium text-text-secondary hover:bg-surface-muted dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
           }`}
         >
           <Inbox size={16} />
@@ -672,8 +688,8 @@ function GestionSolicitudesCatequesis() {
           aria-pressed={vista === "historial"}
           className={`inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border-0 px-4 text-sm transition-colors ${
             vista === "historial"
-              ? "bg-[#003366] font-semibold text-white"
-              : "bg-transparent font-medium text-text-secondary hover:bg-surface-muted"
+              ? "bg-[#003366] font-semibold text-white dark:bg-[#d9a928] dark:text-[#040b16]"
+              : "bg-transparent font-medium text-text-secondary hover:bg-surface-muted dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
           }`}
         >
           <Archive size={16} />
@@ -686,44 +702,44 @@ function GestionSolicitudesCatequesis() {
       {error && <ErrorMessage message={error} />}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <article className="flex items-center justify-between rounded-3xl border border-slate-100 bg-surface p-5 shadow-sm">
+        <article className="flex items-center justify-between rounded-3xl border border-slate-100 bg-surface p-5 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
           <div>
-            <span className="block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+            <span className="block text-[10px] font-black tracking-widest text-slate-400 uppercase dark:text-[#7f8da3]">
               Total pendientes
             </span>
-            <strong className="mt-1.5 block font-heading text-3xl text-royal-blue">
+            <strong className="mt-1.5 block font-heading text-3xl text-royal-blue dark:text-[#f3f6fa]">
               {totalPendientes}
             </strong>
           </div>
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-50 text-amber-600">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-[rgba(242,163,74,0.12)] dark:text-[#f2a34a]">
             <Clock size={22} />
           </div>
         </article>
 
-        <article className="flex items-center justify-between rounded-3xl border border-slate-100 bg-surface p-5 shadow-sm">
+        <article className="flex items-center justify-between rounded-3xl border border-slate-100 bg-surface p-5 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
           <div>
-            <span className="block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+            <span className="block text-[10px] font-black tracking-widest text-slate-400 uppercase dark:text-[#7f8da3]">
               Matrículas aprobadas
             </span>
-            <strong className="mt-1.5 block font-heading text-3xl text-royal-blue">
+            <strong className="mt-1.5 block font-heading text-3xl text-royal-blue dark:text-[#f3f6fa]">
               {totalAprobadas}
             </strong>
           </div>
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-success-bg text-emerald-600">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-success-bg text-emerald-600 dark:bg-[rgba(53,214,160,0.12)] dark:text-[#35d6a0]">
             <CheckCircle size={22} />
           </div>
         </article>
 
-        <article className="flex items-center justify-between rounded-3xl border border-slate-100 bg-surface p-5 shadow-sm">
+        <article className="flex items-center justify-between rounded-3xl border border-slate-100 bg-surface p-5 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
           <div>
-            <span className="block text-[10px] font-black tracking-widest text-slate-400 uppercase">
+            <span className="block text-[10px] font-black tracking-widest text-slate-400 uppercase dark:text-[#7f8da3]">
               Matrículas rechazadas
             </span>
-            <strong className="mt-1.5 block font-heading text-3xl text-royal-blue">
+            <strong className="mt-1.5 block font-heading text-3xl text-royal-blue dark:text-[#f3f6fa]">
               {totalRechazadas}
             </strong>
           </div>
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-danger-bg text-red-600">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-danger-bg text-red-600 dark:bg-[rgba(230,106,106,0.12)] dark:text-[#e66a6a]">
             <XCircle size={22} />
           </div>
         </article>
@@ -731,32 +747,13 @@ function GestionSolicitudesCatequesis() {
 
       <AdminToolbar className="p-3!">
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={filtroEstado}
-            onChange={(event) =>
-              setFiltroEstado(
-                event.target.value as
-                  | "todos"
-                  | "pendiente"
-                  | "aprobado"
-                  | "rechazado",
-              )
-            }
-            className="min-h-11 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
-            aria-label="Filtrar por estado"
-          >
-            <option value="todos">Todos los estados</option>
-            <option value="pendiente">Pendiente</option>
-            <option value="aprobado">Aprobada</option>
-            <option value="rechazado">Rechazada</option>
-          </select>
           <input
             type="text"
             value={filtroTextoLibre}
             onChange={(e) => setFiltroTextoLibre(e.target.value)}
             maxLength={60}
             placeholder="Buscar en alumno o contacto"
-            className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
             aria-label="Buscar en alumno o contacto (nombre o teléfono)"
           />
           <input
@@ -766,7 +763,7 @@ function GestionSolicitudesCatequesis() {
               setFiltroEncargado(handleSoloLetrasNombre(e.target.value))
             }
             placeholder="Nombre del encargado"
-            className="min-h-11 min-w-[180px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            className="min-h-11 min-w-[180px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
             aria-label="Filtrar por nombre del encargado"
           />
           <div
@@ -779,9 +776,9 @@ function GestionSolicitudesCatequesis() {
               aria-expanded={filtroNivelMenuAbierto}
               aria-label="Filtrar por nivel"
               onClick={() => setFiltroNivelMenuAbierto((prev) => !prev)}
-              className={`flex min-h-11 w-[170px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none ${
+              className={`flex min-h-11 w-[170px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
                 filtroNivelMenuAbierto
-                  ? "border-blue-400 bg-surface"
+                  ? "border-blue-400 bg-surface dark:border-[#d9a928]"
                   : "border-border-strong"
               }`}
             >
@@ -801,7 +798,7 @@ function GestionSolicitudesCatequesis() {
             {filtroNivelMenuAbierto && (
               <ul
                 role="listbox"
-                className="absolute top-full left-0 z-50 mt-1.5 w-[170px] overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+                className="absolute top-full left-0 z-50 mt-1.5 w-[170px] overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:shadow-[0_16px_40px_rgba(0,0,0,0.4)]"
               >
                 <li role="option" aria-selected={filtroNivel === "todos"}>
                   <button
@@ -812,8 +809,8 @@ function GestionSolicitudesCatequesis() {
                     }}
                     className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
                       filtroNivel === "todos"
-                        ? "bg-royal-blue/10 text-royal-blue"
-                        : "text-slate-700 hover:bg-royal-blue/5"
+                        ? "bg-royal-blue/10 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                        : "text-slate-700 hover:bg-royal-blue/5 dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
                     }`}
                   >
                     Todos
@@ -835,8 +832,8 @@ function GestionSolicitudesCatequesis() {
                         }}
                         className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
                           activo
-                            ? "bg-royal-blue/10 text-royal-blue"
-                            : "text-slate-700 hover:bg-royal-blue/5"
+                            ? "bg-royal-blue/10 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                            : "text-slate-700 hover:bg-royal-blue/5 dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
                         }`}
                       >
                         {opcion.label}
@@ -857,9 +854,9 @@ function GestionSolicitudesCatequesis() {
               aria-expanded={filtroFilialMenuAbierto}
               aria-label="Filtrar por filial"
               onClick={() => setFiltroFilialMenuAbierto((prev) => !prev)}
-              className={`flex min-h-11 w-[170px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none ${
+              className={`flex min-h-11 w-[170px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
                 filtroFilialMenuAbierto
-                  ? "border-blue-400 bg-surface"
+                  ? "border-blue-400 bg-surface dark:border-[#d9a928]"
                   : "border-border-strong"
               }`}
             >
@@ -877,7 +874,7 @@ function GestionSolicitudesCatequesis() {
             {filtroFilialMenuAbierto && (
               <ul
                 role="listbox"
-                className="absolute top-full left-0 z-50 mt-1.5 max-h-72 w-[170px] overflow-y-auto rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+                className="absolute top-full left-0 z-50 mt-1.5 max-h-72 w-[170px] overflow-y-auto rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:shadow-[0_16px_40px_rgba(0,0,0,0.4)]"
               >
                 <li role="option" aria-selected={filtroFilial === "todos"}>
                   <button
@@ -888,8 +885,8 @@ function GestionSolicitudesCatequesis() {
                     }}
                     className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
                       filtroFilial === "todos"
-                        ? "bg-royal-blue/10 text-royal-blue"
-                        : "text-slate-700 hover:bg-royal-blue/5"
+                        ? "bg-royal-blue/10 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                        : "text-slate-700 hover:bg-royal-blue/5 dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
                     }`}
                   >
                     Todas
@@ -911,8 +908,8 @@ function GestionSolicitudesCatequesis() {
                         }}
                         className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
                           activo
-                            ? "bg-royal-blue/10 text-royal-blue"
-                            : "text-slate-700 hover:bg-royal-blue/5"
+                            ? "bg-royal-blue/10 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                            : "text-slate-700 hover:bg-royal-blue/5 dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
                         }`}
                       >
                         {filial}
@@ -926,7 +923,7 @@ function GestionSolicitudesCatequesis() {
           {filtrando && (
             <Loader2
               size={18}
-              className="animate-spin text-text-muted"
+              className="animate-spin text-text-muted dark:text-[#7f8da3]"
               aria-label="Aplicando filtros"
             />
           )}
@@ -934,7 +931,7 @@ function GestionSolicitudesCatequesis() {
             type="button"
             onClick={limpiarFiltros}
             disabled={!hayFiltrosActivos}
-            className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40 dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
             aria-label="Limpiar filtros de solicitudes"
           >
             <RotateCcw size={15} strokeWidth={2} />
@@ -958,13 +955,13 @@ function GestionSolicitudesCatequesis() {
       {exportError && <ErrorMessage message={exportError} />}
 
       {isInitialLoading && (
-        <p className="py-6 text-center text-sm text-text-muted">
+        <p className="py-6 text-center text-sm text-text-muted dark:text-[#7f8da3]">
           Cargando solicitudes...
         </p>
       )}
 
       {!isInitialLoading && solicitudes.length === 0 && (
-        <p className="py-6 text-center text-sm text-text-muted">
+        <p className="py-6 text-center text-sm text-text-muted dark:text-[#7f8da3]">
           {hayFiltrosActivos
             ? "No se encontraron solicitudes con los filtros seleccionados."
             : "Actualmente no existen solicitudes registradas."}
@@ -1033,7 +1030,7 @@ function GestionSolicitudesCatequesis() {
               accent="#003366"
               title={nombre}
               badges={
-                <Badge variant={getEstadoBadgeVariant(solicitud.estado)}>
+                <Badge variant={getEstadoBadgeVariant(solicitud.estado)} className={getEstadoBadgeDark(solicitud.estado)}>
                   {obtenerTextoEstado(solicitud.estado)}
                 </Badge>
               }
@@ -1075,61 +1072,27 @@ function GestionSolicitudesCatequesis() {
         })}
       </div>
 
-      <AdminTableFooter pegadoAbajo>
-        <span className="text-sm text-text-muted">
-          Mostrando{" "}
-          <strong className="text-text tabular-nums">
-            {primerRegistro}-{ultimoRegistro}
-          </strong>{" "}
-          de <strong className="text-text tabular-nums">{totalItems}</strong>{" "}
-          registros
-        </span>
-        <AdminPagination>
-          <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
-            Registros por página
-            <select
-              value={limite}
-              onChange={(e) => {
-                setLimite(
-                  Number(e.target.value) as typeof TAMANOS_PAGINA_SOLICITUDES[number],
-                );
-                setPagina(1);
-              }}
-              className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
-              aria-label="Cantidad de registros por página"
-            >
-              {TAMANOS_PAGINA_SOLICITUDES.map((tamano) => (
-                <option key={tamano} value={tamano}>
-                  {tamano}
-                </option>
-              ))}
-            </select>
-          </label>
-          <AdminPaginationButton
-            type="button"
-            onClick={goToPreviousPage}
-            disabled={!canPreviousPage}
-            aria-label="Página anterior"
-          >
-            <ChevronLeft size={16} strokeWidth={2} />
-          </AdminPaginationButton>
-          <span className="text-sm whitespace-nowrap text-text-muted">
-            Página{" "}
-            <strong className="text-text tabular-nums">{currentPage}</strong> de{" "}
-            <strong className="text-text tabular-nums">
-              {totalPages || 1}
-            </strong>
-          </span>
-          <AdminPaginationButton
-            type="button"
-            onClick={goToNextPage}
-            disabled={!canNextPage}
-            aria-label="Página siguiente"
-          >
-            <ChevronRight size={16} strokeWidth={2} />
-          </AdminPaginationButton>
-        </AdminPagination>
-      </AdminTableFooter>
+      {/* Barra de paginación compartida (antes iba inline): misma pinta, ahora también la usan CICA y Bautismo */}
+      <AdminPaginationBar
+        pegadoAbajo
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]"
+        desde={primerRegistro}
+        hasta={ultimoRegistro}
+        total={totalItems}
+        pagina={currentPage}
+        totalPaginas={totalPages}
+        registrosPorPagina={limite}
+        tamanosPagina={TAMANOS_PAGINA_SOLICITUDES}
+        puedeAnterior={canPreviousPage}
+        puedeSiguiente={canNextPage}
+        onAnterior={goToPreviousPage}
+        onSiguiente={goToNextPage}
+        // al cambiar el tamaño volvemos a la primera, igual que antes
+        onCambiarRegistrosPorPagina={(nuevo) => {
+          setLimite(nuevo as (typeof TAMANOS_PAGINA_SOLICITUDES)[number]);
+          setPagina(1);
+        }}
+      />
       </>
       )}
 
@@ -1166,8 +1129,8 @@ function GestionSolicitudesCatequesis() {
           sinFondo
           overlayClassName={
             isConfirmRejectOpen
-              ? "fixed inset-0 z-[1350] backdrop-blur-[6px]"
-              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+              ? "fixed inset-0 z-[1350] backdrop-blur-[6px] dark:bg-black/60"
+              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
           }
         >
           <motion.div
@@ -1180,7 +1143,7 @@ function GestionSolicitudesCatequesis() {
               <div className="flex min-h-44 flex-col">
                 <LineaDoradaTitulo parteSubrayada="Rechazar inscripción" />
                 <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
-                  <p className="text-sm leading-relaxed text-text-secondary">
+                  <p className="text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
                     ¿Estás seguro/a que quieres rechazar esta solicitud de
                     catequesis? Una vez rechazada, su estado no podrá ser
                     cambiado.
@@ -1204,7 +1167,7 @@ function GestionSolicitudesCatequesis() {
                   </Button>
                   <Button
                     variant="secondary"
-                    className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
+                    className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300! dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                     onClick={() => setIsConfirmRejectOpen(false)}
                     disabled={guardando}
                   >
@@ -1215,7 +1178,7 @@ function GestionSolicitudesCatequesis() {
             ) : (
               <div className="flex min-h-44 flex-col gap-4">
                 <LineaDoradaTitulo parteSubrayada="Rechazar inscripción" />
-                <p className="text-sm text-text-secondary">
+                <p className="text-sm text-text-secondary dark:text-[#b7c3d4]">
                   Indique el motivo del rechazo. Este comentario quedará
                   registrado en la solicitud.
                 </p>
@@ -1237,7 +1200,7 @@ function GestionSolicitudesCatequesis() {
                   </Button>
                   <Button
                     variant="secondary"
-                    className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
+                    className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300! dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                     onClick={cerrarRechazo}
                     disabled={guardando}
                   >
@@ -1256,7 +1219,7 @@ function GestionSolicitudesCatequesis() {
           title="Confirmar aprobación"
           sinFondo
           cerrarAlClicFuera={false}
-          overlayClassName="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+          overlayClassName="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
         >
           <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
@@ -1265,12 +1228,12 @@ function GestionSolicitudesCatequesis() {
           >
             <div className="flex min-h-44 flex-col gap-4">
               <LineaDoradaTitulo parteSubrayada="Aprobar inscripción" />
-              <p className="m-0 text-sm leading-relaxed text-text-secondary">
+              <p className="m-0 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
                 ¿Estás seguro/a que quieres aprobar esta solicitud de
                 catequesis? Una vez aprobada su estado no podrá ser cambiado.
               </p>
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-semibold text-text-muted">
+                <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
                   Observación (opcional)
                 </span>
                 <Textarea
@@ -1283,7 +1246,7 @@ function GestionSolicitudesCatequesis() {
                   disabled={guardando}
                 />
               </label>
-              <p className="m-0 text-xs text-text-muted">
+              <p className="m-0 text-xs text-text-muted dark:text-[#7f8da3]">
                 Si la escribes, se guarda en la solicitud y se envía en el
                 correo de aprobación.
               </p>
@@ -1305,7 +1268,7 @@ function GestionSolicitudesCatequesis() {
                 </Button>
                 <Button
                   variant="secondary"
-                  className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300!"
+                  className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300! dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                   onClick={() => setIsApproveModalOpen(false)}
                   disabled={guardando}
                 >
@@ -1321,7 +1284,7 @@ function GestionSolicitudesCatequesis() {
 
       {vista === "historial" && (
         <div className="flex w-full flex-col gap-4">
-          <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm">
+          <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-border-strong bg-surface p-3 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
             <AdminSearch
               type="text"
               placeholder="Nombre o apellidos"
@@ -1349,7 +1312,7 @@ function GestionSolicitudesCatequesis() {
               aria-label="Filtrar historial por encargado"
             />
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-text-muted">
+              <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
                 Nivel
               </span>
               <select
@@ -1359,7 +1322,7 @@ function GestionSolicitudesCatequesis() {
                     event.target.value as "todos" | "Primero" | "Sétimo",
                   )
                 }
-                className="min-h-10 min-w-[160px] cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-10 min-w-[160px] cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial por nivel"
               >
                 <option value="todos">Todos</option>
@@ -1371,13 +1334,13 @@ function GestionSolicitudesCatequesis() {
               </select>
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-text-muted">
+              <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
                 Filial
               </span>
               <select
                 value={historialFiltroFilial}
                 onChange={(event) => setHistorialFiltroFilial(event.target.value)}
-                className="min-h-10 min-w-[160px] cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-10 min-w-[160px] cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial por filial"
               >
                 <option value="todos">Todas</option>
@@ -1389,7 +1352,7 @@ function GestionSolicitudesCatequesis() {
               </select>
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-text-muted">
+              <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
                 Tipo
               </span>
               <select
@@ -1402,7 +1365,7 @@ function GestionSolicitudesCatequesis() {
                       | "rechazado",
                   )
                 }
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial por tipo"
               >
                 <option value="todos">Todos</option>
@@ -1411,7 +1374,7 @@ function GestionSolicitudesCatequesis() {
               </select>
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-text-muted">
+              <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
                 Desde
               </span>
               <input
@@ -1419,12 +1382,12 @@ function GestionSolicitudesCatequesis() {
                 value={historialFechaDesde}
                 max={historialFechaHasta || undefined}
                 onChange={(e) => setHistorialFechaDesde(e.target.value)}
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial desde fecha"
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-text-muted">
+              <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
                 Hasta
               </span>
               <input
@@ -1432,7 +1395,7 @@ function GestionSolicitudesCatequesis() {
                 value={historialFechaHasta}
                 min={historialFechaDesde || undefined}
                 onChange={(e) => setHistorialFechaHasta(e.target.value)}
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial hasta fecha"
               />
             </label>
@@ -1440,7 +1403,7 @@ function GestionSolicitudesCatequesis() {
               type="button"
               onClick={limpiarFiltrosHistorial}
               disabled={!hayFiltrosHistorialActivos}
-              className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40 dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
               aria-label="Limpiar filtros del historial"
             >
               <RotateCcw size={15} strokeWidth={2} />
@@ -1451,15 +1414,15 @@ function GestionSolicitudesCatequesis() {
           {historialFechaDesde &&
             historialFechaHasta &&
             !rangoFechasValido(historialFechaDesde, historialFechaHasta) && (
-              <p className="m-0 text-xs font-semibold text-red-600">
+              <p className="m-0 text-xs font-semibold text-red-600 dark:text-[#e66a6a]">
                 La fecha de inicio no puede ser mayor que la fecha de fin
               </p>
             )}
 
           {historialCargando && (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-              <Loader2 size={32} className="animate-spin text-text-muted" />
-              <p className="m-0 text-sm text-text-secondary">
+              <Loader2 size={32} className="animate-spin text-text-muted dark:text-[#7f8da3]" />
+              <p className="m-0 text-sm text-text-secondary dark:text-[#b7c3d4]">
                 Cargando historial...
               </p>
             </div>
@@ -1509,31 +1472,33 @@ function GestionSolicitudesCatequesis() {
                         {historialPaginaItems.map((item) => (
                           <AdminTableRow key={item.id}>
                             <AdminTableCell>
-                              <span className="font-medium">
+                              <span className="font-medium text-text dark:text-[#f3f6fa]">
                                 {item.nombreCatequizando || "Sin nombre"}
                               </span>
                             </AdminTableCell>
                             <AdminTableCell>
                               {item.nombreEncargado || (
-                                <span className="text-slate-400 italic">
+                                <span className="text-slate-400 italic dark:text-[#7f8da3]">
                                   No registrado
                                 </span>
                               )}
                             </AdminTableCell>
                             <AdminTableCell>
                               {item.centroCatequesis || (
-                                <span className="text-slate-400 italic">
+                                <span className="text-slate-400 italic dark:text-[#7f8da3]">
                                   No registrada
                                 </span>
                               )}
                             </AdminTableCell>
                             <AdminTableCell>
+                              <span className="text-text-secondary dark:text-[#b7c3d4]">
                               {obtenerEtiquetaNivelCatequesis(
                                 item.nivelAInscribirse,
                               )}
+                              </span>
                             </AdminTableCell>
                             <AdminTableCell>
-                              <span className="tabular-nums text-text-secondary">
+                              <span className="tabular-nums text-text-secondary dark:text-[#b7c3d4]">
                                 {formatFechaIngreso(
                                   item.fechaActualizacionEstado ?? "",
                                 )}
@@ -1542,13 +1507,14 @@ function GestionSolicitudesCatequesis() {
                             <AdminTableCell>
                               <Badge
                                 variant={getEstadoBadgeVariant(item.estado)}
+                                className={getEstadoBadgeDark(item.estado)}
                               >
                                 {obtenerTextoEstado(item.estado)}
                               </Badge>
                             </AdminTableCell>
                             <AdminTableCell>
                               {item.revisor || (
-                                <span className="text-slate-400 italic">
+                                <span className="text-slate-400 italic dark:text-[#7f8da3]">
                                   —
                                 </span>
                               )}
@@ -1558,7 +1524,7 @@ function GestionSolicitudesCatequesis() {
                                 type="button"
                                 onClick={() => setHistorialSeleccionada(item)}
                                 aria-label="Ver historial de esta inscripción"
-                                className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                                className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
                               >
                                 <Eye size={17} strokeWidth={1.5} />
                               </button>
@@ -1579,7 +1545,7 @@ function GestionSolicitudesCatequesis() {
                       code={`CAT-${item.id}`}
                       title={item.nombreCatequizando || "Sin nombre"}
                       badges={
-                        <Badge variant={getEstadoBadgeVariant(item.estado)}>
+                        <Badge variant={getEstadoBadgeVariant(item.estado)} className={getEstadoBadgeDark(item.estado)}>
                           {obtenerTextoEstado(item.estado)}
                         </Badge>
                       }
@@ -1624,74 +1590,33 @@ function GestionSolicitudesCatequesis() {
                   ))}
                 </div>
 
-                <AdminTableFooter pegadoAbajo>
-                  <span className="text-sm text-text-muted">
-                    Mostrando{" "}
-                    <strong className="text-text tabular-nums">
-                      {primerHistorialRegistro}-{ultimoHistorialRegistro}
-                    </strong>{" "}
-                    de{" "}
-                    <strong className="text-text tabular-nums">
-                      {historialFiltrado.length}
-                    </strong>{" "}
-                    registros
-                  </span>
-                  <AdminPagination className="flex-wrap">
-                    <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
-                      Registros por página
-                      <select
-                        value={historialRegistrosPorPagina}
-                        onChange={(event) =>
-                          setHistorialRegistrosPorPagina(
-                            Number(event.target.value),
-                          )
-                        }
-                        className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
-                        aria-label="Cantidad de registros por página"
-                      >
-                        {TAMANOS_PAGINA.map((tamano) => (
-                          <option key={tamano} value={tamano}>
-                            {tamano}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <AdminPaginationButton
-                      type="button"
-                      onClick={() =>
-                        setHistorialPagina((pagina) =>
-                          Math.max(1, pagina - 1),
-                        )
-                      }
-                      disabled={historialPagina <= 1}
-                      aria-label="Página anterior"
-                    >
-                      <ChevronLeft size={16} strokeWidth={2} />
-                    </AdminPaginationButton>
-                    <span className="text-sm whitespace-nowrap text-text-muted">
-                      Página{" "}
-                      <strong className="text-text tabular-nums">
-                        {historialPagina}
-                      </strong>{" "}
-                      de{" "}
-                      <strong className="text-text tabular-nums">
-                        {totalHistorialPaginas}
-                      </strong>
-                    </span>
-                    <AdminPaginationButton
-                      type="button"
-                      onClick={() =>
-                        setHistorialPagina((pagina) =>
-                          Math.min(totalHistorialPaginas, pagina + 1),
-                        )
-                      }
-                      disabled={historialPagina >= totalHistorialPaginas}
-                      aria-label="Página siguiente"
-                    >
-                      <ChevronRight size={16} strokeWidth={2} />
-                    </AdminPaginationButton>
-                  </AdminPagination>
-                </AdminTableFooter>
+                {/* Barra de paginación compartida (antes iba inline): misma pinta, ahora también la usan CICA y Bautismo */}
+                <AdminPaginationBar
+                  pegadoAbajo
+                  className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]"
+                  desde={primerHistorialRegistro}
+                  hasta={ultimoHistorialRegistro}
+                  total={historialFiltrado.length}
+                  pagina={historialPagina}
+                  totalPaginas={totalHistorialPaginas}
+                  registrosPorPagina={historialRegistrosPorPagina}
+                  tamanosPagina={TAMANOS_PAGINA}
+                  puedeAnterior={historialPagina > 1}
+                  puedeSiguiente={historialPagina < totalHistorialPaginas}
+                  onAnterior={() =>
+                    setHistorialPagina((pagina) => Math.max(1, pagina - 1))
+                  }
+                  onSiguiente={() =>
+                    setHistorialPagina((pagina) =>
+                      Math.min(totalHistorialPaginas, pagina + 1),
+                    )
+                  }
+                  // antes el historial no reseteaba la página al cambiar el tamaño; ahora sí para no quedar viendo una página vacía
+                  onCambiarRegistrosPorPagina={(nuevo) => {
+                    setHistorialRegistrosPorPagina(nuevo);
+                    setHistorialPagina(1);
+                  }}
+                />
               </>
             )}
         </div>
@@ -1700,68 +1625,93 @@ function GestionSolicitudesCatequesis() {
       {historialSeleccionada && (
         <Modal
           onClose={() => setHistorialSeleccionada(null)}
-          title={`Historial de CAT-${historialSeleccionada.id}`}
+          title={historialSeleccionada.nombreCatequizando || "Sin nombre"}
           sinFondo
+          tamano="xl"
           cerrarConEsc
+          overlayClassName="fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+          className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
         >
           <motion.div
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="flex flex-col gap-4">
-              <div className="pr-14">
-                <LineaDoradaTitulo
-                  parteSubrayada={`Historial de CAT-${historialSeleccionada.id}`}
-                />
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border-strong bg-surface-muted p-4">
+            <div className="flex flex-col gap-5 pr-10">
+              <div className="flex flex-col gap-2">
+                <p className="m-0 text-xs font-semibold tracking-wide text-text-muted uppercase dark:text-[#7f8da3]">
+                  Historial de catequesis
+                </p>
                 <div className="flex flex-col gap-1">
-                  <p className="m-0 text-lg font-semibold text-slate-900">
-                    {historialSeleccionada.nombreCatequizando || "Sin nombre"}
-                  </p>
-                  <p className="m-0 text-sm text-text-secondary">
-                    {obtenerEtiquetaNivelCatequesis(
-                      historialSeleccionada.nivelAInscribirse,
-                    )}
-                    {historialSeleccionada.centroCatequesis
-                      ? ` · ${historialSeleccionada.centroCatequesis}`
-                      : ""}
-                  </p>
-                  <p className="m-0 text-xs text-text-muted">
-                    Fecha de solicitud:{" "}
-                    {formatFechaIngreso(
-                      historialSeleccionada.fechaSolicitud ?? "",
-                    )}
-                  </p>
-                  {historialSeleccionada.telefonoEncargada && (
-                    <p className="m-0 text-xs text-text-muted">
-                      Teléfono: {historialSeleccionada.telefonoEncargada}
-                    </p>
-                  )}
-                  {historialSeleccionada.nombreEncargado && (
-                    <p className="m-0 text-xs text-text-muted">
-                      Encargado: {historialSeleccionada.nombreEncargado}
-                    </p>
-                  )}
-                  {historialSeleccionada.revisor && (
-                    <p className="m-0 text-xs text-text-muted">
-                      Revisor: {historialSeleccionada.revisor}
-                    </p>
-                  )}
+                  <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
+                    Nombre catequizando
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="m-0 font-heading text-2xl text-slate-900 dark:text-[#f3f6fa]">
+                      {historialSeleccionada.nombreCatequizando || "Sin nombre"}
+                    </h2>
+                    <Badge
+                      variant={getEstadoBadgeVariant(historialSeleccionada.estado)}
+                      className={getEstadoBadgeDark(historialSeleccionada.estado)}
+                    >
+                      {obtenerTextoEstado(historialSeleccionada.estado)}
+                    </Badge>
+                  </div>
                 </div>
               </div>
 
+              <div className="grid gap-3 sm:grid-cols-2">
+                <CampoHistorial
+                  label="Nivel"
+                  value={
+                    historialSeleccionada.nivelAInscribirse
+                      ? obtenerEtiquetaNivelCatequesis(
+                          historialSeleccionada.nivelAInscribirse,
+                        )
+                      : "—"
+                  }
+                />
+                <CampoHistorial
+                  label="Filial"
+                  value={historialSeleccionada.centroCatequesis?.trim() || "—"}
+                />
+                <CampoHistorial
+                  label="Fecha de solicitud"
+                  value={formatFechaIngreso(historialSeleccionada.fechaSolicitud)}
+                />
+                <CampoHistorial
+                  label="Encargado"
+                  value={historialSeleccionada.nombreEncargado?.trim() || "—"}
+                />
+                <CampoHistorial
+                  label="Teléfono"
+                  value={
+                    formatearTelefono(historialSeleccionada.telefonoEncargada) ||
+                    "—"
+                  }
+                />
+                <CampoHistorial
+                  label="Revisor"
+                  value={historialSeleccionada.revisor?.trim() || "—"}
+                />
+              </div>
+
               {normalizarEstado(historialSeleccionada.estado) === "aprobado" ? (
-                <div className="flex gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                  <CheckCircle size={17} className="mt-0.5 shrink-0 text-emerald-700" />
+                <div className="flex gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-[#35d6a0]/30 dark:bg-[rgba(53,214,160,0.10)]">
+                  <CheckCircle
+                    size={17}
+                    className="mt-0.5 shrink-0 text-emerald-700 dark:text-[#35d6a0]"
+                  />
                   <div>
-                    <p className="m-0 text-sm text-emerald-900">
-                      {historialSeleccionada.observacionAdministrativa ||
+                    <p className="m-0 text-sm font-semibold text-emerald-900 dark:text-[#35d6a0]">
+                      Aprobación
+                    </p>
+                    <p className="m-0 mt-1 text-sm text-emerald-900 dark:text-[#d7f8ec]">
+                      {historialSeleccionada.observacionAdministrativa?.trim() ||
                         "Sin comentario de aprobación"}
                     </p>
                     {historialSeleccionada.fechaActualizacionEstado && (
-                      <p className="m-0 mt-1 text-xs text-emerald-700">
+                      <p className="m-0 mt-1 text-xs text-emerald-700 dark:text-[#35d6a0]">
                         Aprobado el{" "}
                         {formatFechaIngreso(
                           historialSeleccionada.fechaActualizacionEstado,
@@ -1771,15 +1721,21 @@ function GestionSolicitudesCatequesis() {
                   </div>
                 </div>
               ) : (
-                <div className="flex gap-2.5 rounded-xl border border-red-200 bg-red-50 p-4">
-                  <XCircle size={17} className="mt-0.5 shrink-0 text-red-700" />
+                <div className="flex gap-2.5 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-[#e66a6a]/30 dark:bg-[rgba(230,106,106,0.10)]">
+                  <XCircle
+                    size={17}
+                    className="mt-0.5 shrink-0 text-red-700 dark:text-[#e66a6a]"
+                  />
                   <div>
-                    <p className="m-0 text-sm font-semibold text-red-900">
-                      {historialSeleccionada.observacionAdministrativa ||
+                    <p className="m-0 text-sm font-semibold text-red-900 dark:text-[#e66a6a]">
+                      Rechazo
+                    </p>
+                    <p className="m-0 mt-1 text-sm text-red-900 dark:text-[#f8d0d0]">
+                      {historialSeleccionada.observacionAdministrativa?.trim() ||
                         "Motivo no especificado"}
                     </p>
                     {historialSeleccionada.fechaActualizacionEstado && (
-                      <p className="m-0 mt-1 text-xs text-red-700">
+                      <p className="m-0 mt-1 text-xs text-red-700 dark:text-[#e66a6a]">
                         Rechazado el{" "}
                         {formatFechaIngreso(
                           historialSeleccionada.fechaActualizacionEstado,

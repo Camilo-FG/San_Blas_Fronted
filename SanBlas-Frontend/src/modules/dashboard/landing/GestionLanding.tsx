@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Edit3, RotateCcw } from "lucide-react";
 import {
   actualizarSeccionLanding,
@@ -30,6 +31,8 @@ import type { ArchivoImagen } from "../../solicSacramento/components/SubidaImage
 
 function GestionLanding() {
   const { showToast } = useToast();
+  // invalida el caché del sitio público pa que lo recién guardado se vea ya
+  const queryClient = useQueryClient();
   const [sections, setSections] = useState<LandingSectionResponse[]>([]);
   const [editingKey, setEditingKey] = useState<LandingSectionKey | null>(null);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -85,6 +88,9 @@ function GestionLanding() {
     });
     setArchivosImagen({});
     setEditingKey(null);
+    // Que un fallo de guardado no quede pegado como banner en la página:
+    // ya se avisó por toast y por campo.
+    setError(null);
   };
 
   const handleArchivoChange = (name: string, archivo: ArchivoImagen | null) => {
@@ -114,6 +120,8 @@ function GestionLanding() {
       for (const item of actualizadas) mapa.set(item.sectionKey, item);
       return Array.from(mapa.values());
     });
+    // marca como viejo el caché del home pa que refleje el reset ya mismo
+    void queryClient.invalidateQueries({ queryKey: ["landing"] });
   };
 
   const restablecerSeccion = async () => {
@@ -150,7 +158,6 @@ function GestionLanding() {
       const erroresLocales = validarFormularioLanding(editingKey, formValues);
       if (Object.keys(erroresLocales).length > 0) {
         setErroresCampo(erroresLocales);
-        setError(Object.values(erroresLocales)[0] ?? null);
         return;
       }
       setErroresCampo({});
@@ -166,10 +173,17 @@ function GestionLanding() {
         }
         archivos[nombre] = archivo.file;
       }
+
+      if (archivos.imageUrl) {
+        // El archivo nuevo reemplaza la URL anterior; nunca mandamos ambas señales.
+        delete payload.imageUrl;
+        delete payload.eliminarImagen;
+      }
       const updated = await actualizarSeccionLanding(
         editingKey,
         payload,
-        archivos.imageUrl,
+        // el PDF de catequesis viaja como "archivo" al endpoint con-archivo
+        archivos.imageUrl ?? archivos.lineamientosUrl,
         archivos,
       );
 
@@ -184,6 +198,9 @@ function GestionLanding() {
         }
         return [...current, updated];
       });
+      // sin esto el home seguía mostrando la sección vieja hasta que venciera
+      // el caché de React Query (hasta 10 min)
+      void queryClient.invalidateQueries({ queryKey: ["landing"] });
       Object.values(archivosImagen).forEach((archivo) => {
         if (archivo?.preview) URL.revokeObjectURL(archivo.preview);
       });
@@ -216,7 +233,7 @@ function GestionLanding() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <p className="m-0 text-sm leading-relaxed text-text-muted">
+        <p className="m-0 text-sm leading-relaxed text-text-muted dark:text-[#b7c3d4]">
           Seleccione una sección para editar textos e imágenes. Los cambios se
           reflejan en el sitio público.
         </p>
@@ -241,17 +258,17 @@ function GestionLanding() {
           return (
             <article
               key={section.key}
-              className="flex flex-col gap-3 rounded-2xl border border-border-strong bg-surface p-4 shadow-sm"
+              className="flex flex-col gap-3 rounded-2xl border border-border-strong bg-surface p-4 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]"
             >
               <div>
-                <h3 className="mb-1 text-base font-bold text-royal-blue">
+                <h3 className="mb-1 text-base font-bold text-royal-blue dark:text-[#d9a928]">
                   {section.label}
                 </h3>
-                <p className="m-0 text-sm leading-relaxed text-text-muted">
+                <p className="m-0 text-sm leading-relaxed text-text-muted dark:text-[#b7c3d4]">
                   {section.description}
                 </p>
               </div>
-              <p className="m-0 text-xs text-slate-400">
+              <p className="m-0 text-xs text-slate-400 dark:text-[#7f8da3]">
                 Última actualización: {updatedAt}
               </p>
               <div className="mt-auto flex gap-2">
@@ -265,6 +282,7 @@ function GestionLanding() {
                 </Button>
                 <Button
                   variant="secondary"
+                  className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                   onClick={() => setSeccionARestablecer(section.key)}
                   aria-label={`Restablecer ${section.label}`}
                 >
@@ -282,17 +300,20 @@ function GestionLanding() {
         title="Restablecer sección"
         parteSubrayada="Restablecer"
         resto=" sección"
-        iconoAdvertencia
-        confirmVariant="danger"
+        confirmVariant="royal"
         confirmLabel="Restablecer"
         pendingLabel="Restableciendo..."
         isPending={restableciendo}
+        confirmClassName="dark:bg-[#d9a928]! dark:text-[#040b16]! dark:shadow-[0_0_18px_rgba(217,169,40,0.35)]! dark:hover:bg-[#d9a928]! dark:hover:shadow-[0_0_24px_rgba(217,169,40,0.55)]! dark:enabled:hover:text-[#040b16]!"
         mensaje={`Se restablecerá "${
           LANDING_SECTIONS.find((s) => s.key === seccionARestablecer)?.label ??
           ""
         }" a su configuración original. Esta acción no se puede deshacer.`}
         onConfirm={restablecerSeccion}
         onCancel={() => setSeccionARestablecer(null)}
+        overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+        cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
       />
 
       {activeConfig && editingKey && (
@@ -302,7 +323,6 @@ function GestionLanding() {
           fields={activeConfig.fields}
           values={formValues}
           errores={erroresCampo}
-          errorMensaje={error}
           guardando={guardando}
           archivosImagen={archivosImagen}
           onArchivoChange={handleArchivoChange}

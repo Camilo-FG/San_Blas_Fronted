@@ -16,6 +16,7 @@ import {
   IdCard,
   Eye,
   Search,
+  SlidersHorizontal,
   Loader2,
   Mail,
   X,
@@ -259,6 +260,8 @@ const TableSacramentos = () => {
   const modalBodyRef = useRef<HTMLDivElement>(null);
   const [filtroEstadoMenuAbierto, setFiltroEstadoMenuAbierto] = useState(false);
   const filtroEstadoMenuRef = useRef<HTMLDivElement>(null);
+  const [tamanoPaginaMenuAbierto, setTamanoPaginaMenuAbierto] = useState(false);
+  const tamanoPaginaMenuRef = useRef<HTMLDivElement>(null);
   const ultimoMaxIdRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -280,6 +283,12 @@ const TableSacramentos = () => {
         !motivoMenuRef.current.contains(event.target as Node)
       ) {
         setMotivoMenuAbierto(false);
+      }
+      if (
+        tamanoPaginaMenuRef.current &&
+        !tamanoPaginaMenuRef.current.contains(event.target as Node)
+      ) {
+        setTamanoPaginaMenuAbierto(false);
       }
     };
     document.addEventListener("mousedown", handleClickFuera);
@@ -641,7 +650,7 @@ const TableSacramentos = () => {
         id: "solicitante",
         header: () => "Solicitante",
         cell: (info) => (
-          <span className="font-medium text-text">
+          <span className="font-medium text-text dark:text-[#f3f6fa]">
             {nombreCompleto(info.row.original)}
           </span>
         ),
@@ -649,7 +658,7 @@ const TableSacramentos = () => {
       columnHelper.accessor("Cedula", {
         header: () => "Cédula",
         cell: (info) => (
-          <span className="tabular-nums text-text-secondary">
+          <span className="tabular-nums text-text-secondary dark:text-[#b7c3d4]">
             {formatearCedulaMostrada(String(info.getValue() ?? ""))}
           </span>
         ),
@@ -657,7 +666,7 @@ const TableSacramentos = () => {
       columnHelper.accessor("Fecha", {
         header: () => "Fecha de ingreso",
         cell: (info) => (
-          <span className="tabular-nums text-text-secondary">
+          <span className="tabular-nums text-text-secondary dark:text-[#b7c3d4]">
             {formatFechaHora(info.getValue())}
           </span>
         ),
@@ -668,7 +677,7 @@ const TableSacramentos = () => {
         cell: (info) => {
           const r = info.row.original;
           return (
-            <span className="flex flex-col text-sm leading-snug text-text-secondary">
+            <span className="flex flex-col text-sm leading-snug text-text-secondary dark:text-[#b7c3d4]">
               <span className="tabular-nums font-medium">
                 {formatearTelefono(r.Telefono) || "—"}
               </span>
@@ -693,7 +702,7 @@ const TableSacramentos = () => {
                 type="button"
                 onClick={() => setSolicitudSeleccionada(info.row.original)}
                 aria-label="Ver solicitud"
-                className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
               >
                 <Eye
                   size={17}
@@ -706,7 +715,7 @@ const TableSacramentos = () => {
                   onClick={() => handleRestaurar(info.row.original)}
                   aria-label="Restaurar solicitud"
                   title="Restaurar solicitud"
-                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
                 >
                   <ArchiveRestore
                     size={17}
@@ -719,7 +728,7 @@ const TableSacramentos = () => {
                   onClick={() => handleSolicitarArchivar(info.row.original)}
                   aria-label="Archivar solicitud"
                   title="Archivar solicitud"
-                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
                 >
                   <Archive
                     size={17}
@@ -873,8 +882,17 @@ const mensaje =
 
   const renderEstadoBadge = (estado?: string) => {
     const currentEstado = estado ?? "Pendiente";
+    const normalizado = currentEstado.toLowerCase();
+    const darkPill =
+      normalizado === "aprobado"
+        ? "dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]"
+        : normalizado === "rechazado"
+          ? "dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]"
+          : normalizado === "archivado"
+            ? "dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]"
+            : "dark:border-[#f2a34a] dark:bg-[rgba(242,163,74,0.10)] dark:text-[#f2a34a]";
     return (
-      <Badge variant={getEstadoBadgeVariant(currentEstado)}>
+      <Badge variant={getEstadoBadgeVariant(currentEstado)} className={darkPill}>
         {currentEstado}
       </Badge>
     );
@@ -899,10 +917,12 @@ const mensaje =
 
   return (
     <AdminModule className="gap-3!">
-      <AdminToolbar className="p-3!">
+      <AdminToolbar className="p-3! dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
         <div className="flex flex-wrap items-center gap-2">
-          <div
-            className="flex items-center gap-0.5 rounded-lg border border-border-strong bg-surface p-0.5"
+          <motion.div
+            layout
+            transition={{ type: "spring", stiffness: 400, damping: 34 }}
+            className="flex items-center gap-0.5 rounded-lg border border-border-strong bg-surface p-0.5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0b192d]/60"
             role="group"
             aria-label="Cambiar vista de solicitudes"
           >
@@ -916,13 +936,15 @@ const mensaje =
                   aria-pressed={activo}
                   className={cn(
                     "relative inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-                    activo ? "text-white" : "text-text-muted hover:text-text",
+                    activo
+                      ? "text-white dark:bg-[#d9a928] dark:text-[#040b16] dark:shadow-[0_0_18px_rgba(217,169,40,0.35)]"
+                      : "text-text-muted hover:text-text dark:text-[#b7c3d4] dark:hover:bg-[rgba(217,169,40,0.14)] dark:hover:text-[#d9a928]",
                   )}
                 >
                   {activo && (
                     <motion.span
                       layoutId="vistaSolicitudesActiva"
-                      className="absolute inset-0 rounded-md bg-royal-blue"
+                      className="absolute inset-0 rounded-md bg-royal-blue dark:bg-[#d9a928]"
                       transition={{
                         type: "spring",
                         stiffness: 420,
@@ -943,11 +965,21 @@ const mensaje =
                 </button>
               );
             })}
-          </div>
+          </motion.div>
+          <AnimatePresence mode="popLayout" initial={false}>
           {vista === "solicitudes" && (
+            <motion.span
+              key="btn-archivar-procesadas"
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
             <Button
               type="button"
               variant="secondary"
+              className="dark:border-[rgba(220,230,242,0.12)] dark:bg-transparent dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:[&_svg]:text-[#d9a928]"
               onClick={() => setIsArchivarTodasOpen(true)}
               disabled={filasArchivables.length === 0}
               title={
@@ -962,7 +994,10 @@ const mensaje =
               />
               Archivar procesadas
             </Button>
+            </motion.span>
           )}
+          </AnimatePresence>
+          <motion.div layout transition={{ type: "spring", stiffness: 400, damping: 34 }} className="ml-auto flex flex-wrap items-center gap-2">
           <input
             type="text"
             value={filtroNombre}
@@ -972,7 +1007,7 @@ const mensaje =
               )
             }
             placeholder="Nombre completo"
-            className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            className="min-h-11 w-[220px] shrink-0 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)]"
             aria-label="Filtrar por nombre completo"
           />
           <input
@@ -983,7 +1018,7 @@ const mensaje =
               setFiltroCedula(soloDigitos(e.target.value).slice(0, 9))
             }
             placeholder="Cédula"
-            className="min-h-11 w-[150px] shrink-0 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm tabular-nums text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            className="min-h-11 w-[150px] shrink-0 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm tabular-nums text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)]"
             aria-label="Filtrar por cédula"
           />
           <div
@@ -995,12 +1030,17 @@ const mensaje =
               aria-haspopup="listbox"
               aria-expanded={filtroEstadoMenuAbierto}
               onClick={() => setFiltroEstadoMenuAbierto((prev) => !prev)}
-              className={`flex min-h-11 w-[150px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none ${
+              className={`flex min-h-11 w-[150px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)] dark:outline-none dark:transition ${
                 filtroEstadoMenuAbierto
-                  ? "border-blue-400 bg-surface"
+                  ? "border-blue-400 bg-surface dark:border-[#d9a928]"
                   : "border-border-strong"
               }`}
             >
+              <SlidersHorizontal
+                size={16}
+                strokeWidth={2}
+                className="shrink-0 text-[#aa7323] dark:text-[#d9a928]"
+              />
               <span>{filtroEstado || "Todos"}</span>
               <ChevronDown
                 size={16}
@@ -1014,7 +1054,7 @@ const mensaje =
             {filtroEstadoMenuAbierto && (
               <ul
                 role="listbox"
-                className="absolute top-full left-0 z-50 mt-1.5 w-[150px] overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)]"
+                className="absolute top-full left-0 z-50 mt-1.5 w-[150px] overflow-hidden rounded-xl border-0 bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:shadow-[0_16px_40px_rgba(0,0,0,0.4)]"
               >
                 {(
                   [
@@ -1045,8 +1085,8 @@ const mensaje =
                         }}
                         className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[0.8rem] font-semibold transition-colors ${
                           activo
-                            ? "bg-royal-blue/10 text-royal-blue"
-                            : "text-slate-700 hover:bg-royal-blue/5"
+                            ? "bg-royal-blue/10 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                            : "text-slate-700 hover:bg-royal-blue/5 dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
                         }`}
                       >
                         {opcion.label}
@@ -1057,10 +1097,11 @@ const mensaje =
               </ul>
             )}
           </div>
+          </motion.div>
           {isFiltering && (
             <Loader2
               size={18}
-              className="animate-spin text-text-muted"
+              className="animate-spin text-text-muted dark:text-[#7f8da3]"
               aria-label="Aplicando filtros"
             />
           )}
@@ -1068,13 +1109,13 @@ const mensaje =
       </AdminToolbar>
 
       {isInitialLoading && (
-        <p className="py-6 text-center text-sm text-text-muted">
+        <p className="py-6 text-center text-sm text-text-muted dark:text-[#7f8da3]">
           Cargando solicitudes...
         </p>
       )}
 
       {!isInitialLoading && filasVista.length === 0 && (
-        <p className="py-6 text-center text-sm text-text-muted">
+        <p className="py-6 text-center text-sm text-text-muted dark:text-[#7f8da3]">
           {vista === "archivados"
             ? "Actualmente no existen solicitudes archivadas."
             : filtroNombre.trim() || filtroCedula.trim() || filtroEstado
@@ -1086,8 +1127,8 @@ const mensaje =
       {!isInitialLoading && filasVista.length > 0 && (
         <>
           <div className="hidden md:block">
-            <AdminTablePanel>
-              <AdminTable className="table-fixed [&_td]:py-2! [&_th]:py-2.5!">
+            <AdminTablePanel className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none">
+              <AdminTable className="table-fixed dark:bg-[#0a1425] [&_td]:py-2! [&_th]:py-2.5!">
                 <colgroup>
                   <col className="w-[20%]" />
                   <col className="w-[14%]" />
@@ -1096,11 +1137,14 @@ const mensaje =
                   <col className="w-[13%]" />
                   <col className="w-[15%]" />
                 </colgroup>
-                <AdminTableHead>
+                <AdminTableHead className="dark:bg-[#0f1d33]">
                   {table.getHeaderGroups().map((hg) => (
-                    <AdminTableRow key={hg.id}>
+                    <AdminTableRow key={hg.id} className="dark:hover:bg-transparent">
                       {hg.headers.map((h) => (
-                        <AdminTableHeaderCell key={h.id}>
+                        <AdminTableHeaderCell
+                          key={h.id}
+                          className="dark:border-[rgba(220,230,242,0.12)] dark:text-[#f3f6fa]"
+                        >
                           {h.isPlaceholder
                             ? null
                             : flexRender(
@@ -1114,14 +1158,20 @@ const mensaje =
                 </AdminTableHead>
                 <tbody>
                   {table.getRowModel().rows.map((row) => (
-                    <AdminTableRow key={row.id}>
+                    <AdminTableRow
+                      key={row.id}
+                      className="dark:bg-[#0a1425] dark:hover:bg-white/[0.035]"
+                    >
                       {row.getVisibleCells().map((cell) => {
                         if (cell.column.id === "Estado") {
                           const originalRow = row.original;
                           const currentEstado =
                             originalRow.Estado ?? "Pendiente";
                           return (
-                            <AdminTableCell key={cell.id}>
+                            <AdminTableCell
+                              key={cell.id}
+                              className="dark:border-white/[0.08] dark:text-[#f3f6fa]"
+                            >
                               {renderEstadoBadge(
                                 vista === "archivados"
                                   ? "Archivado"
@@ -1131,7 +1181,10 @@ const mensaje =
                           );
                         }
                         return (
-                          <AdminTableCell key={cell.id}>
+                          <AdminTableCell
+                            key={cell.id}
+                            className="dark:border-white/[0.08] dark:text-[#f3f6fa]"
+                          >
                             {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext(),
@@ -1207,9 +1260,9 @@ const mensaje =
       <AnimatePresence>
         {(solicitudSeleccionada || isRejectModalOpen) && (
           <motion.div
-            className="fixed inset-0 z-[1300] bg-[#060f20]"
+            className="fixed inset-0 z-[1300] bg-[#060f20] backdrop-blur-[6px]"
             initial={{ opacity: 0 }}
-            animate={{ opacity: isConfirmRejectOpen ? 0 : 0.7 }}
+            animate={{ opacity: isConfirmRejectOpen ? 0 : 0.78 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             aria-hidden="true"
@@ -1255,20 +1308,20 @@ const mensaje =
           >
             <div className="flex min-h-full items-end justify-center md:items-center md:p-4">
             <div
-              className="relative z-10 w-full rounded-[16px] bg-white shadow-[0_24px_64px_rgba(6,15,32,0.45)] md:max-w-[768px]"
+              className="relative z-10 w-full rounded-[16px] bg-white shadow-[0_32px_80px_rgba(0,0,0,0.55)] ring-1 ring-slate-900/10 md:max-w-[768px] dark:bg-[#0a1425] dark:shadow-[0_32px_80px_rgba(0,0,0,0.7)] dark:ring-white/15"
             style={{ fontFamily: "'Geist', sans-serif" }}
             role="dialog"
             aria-modal="true"
             aria-label="Datos de la solicitud"
             onClick={(event) => event.stopPropagation()}
           >
-            <header className="flex shrink-0 items-center justify-between gap-4 rounded-t-[16px] bg-[#f1f5fa] px-6 py-4">
+            <header className="flex shrink-0 items-center justify-between gap-4 rounded-t-[16px] bg-[#f1f5fa] px-6 py-4 dark:bg-[#0f1d33]">
               <div className="min-w-0">
-                <p className="m-0 text-[11px] font-semibold tracking-[0.22em] text-[#aa7323] uppercase">
+                <p className="m-0 text-[11px] font-semibold tracking-[0.22em] text-[#aa7323] uppercase dark:text-[#d9a928]">
                   Solicitud
                 </p>
                 <h2
-                  className="m-0 mt-1 text-[24px] leading-tight font-semibold tracking-tight text-[#16243c]"
+                  className="m-0 mt-1 text-[24px] leading-tight font-semibold tracking-tight text-[#16243c] dark:text-[#f3f6fa]"
                   style={{ fontFamily: "'Geist', sans-serif" }}
                 >
                   Datos de la solicitud
@@ -1278,7 +1331,7 @@ const mensaje =
                 type="button"
                 onClick={() => setSolicitudSeleccionada(null)}
                 aria-label="Cerrar detalle"
-                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-[#16243c]/10 bg-white text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-white/10 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
               >
                 <X size={16} />
               </button>
@@ -1289,55 +1342,55 @@ const mensaje =
               className="flex flex-col gap-4 p-6"
             >
               <div className="grid items-stretch gap-4 md:grid-cols-2">
-                <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
+                <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4 dark:bg-[#0f1d33]">
                   <EtiquetaSeccion>Nombre del solicitante</EtiquetaSeccion>
-                  <p className="m-0 text-sm font-semibold text-[#16243c]">
+                  <p className="m-0 text-sm font-semibold text-[#16243c] dark:text-[#f3f6fa]">
                     {nombreCompleto(solicitudSeleccionada)}
                   </p>
-                  <div className="h-px w-full bg-[#16243c]/10" />
+                  <div className="h-px w-full bg-[#16243c]/10 dark:bg-white/10" />
                   <div className="flex items-start gap-2">
                     <CalendarDays
                       size={16}
-                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                      className="mt-0.5 shrink-0 text-[#aa7323] dark:text-[#d9a928]"
                     />
                     <div className="min-w-0">
-                      <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
+                        <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase dark:text-[#b7c3d4]">
                         Fecha de ingreso
                       </p>
-                      <p className="m-0 mt-1 text-sm font-semibold tabular-nums text-[#16243c]">
+                        <p className="m-0 mt-1 text-sm font-semibold tabular-nums text-[#16243c] dark:text-[#f3f6fa]">
                         {formatFechaHora(solicitudSeleccionada.Fecha)}
                       </p>
                     </div>
                   </div>
                 </section>
 
-                <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4">
+                <section className="flex flex-col gap-3 rounded-[12px] bg-[#f1f5fa] p-4 dark:bg-[#0f1d33]">
                   <EtiquetaSeccion>Contacto</EtiquetaSeccion>
                   <div className="flex items-start gap-2">
                     <Mail
                       size={16}
-                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                      className="mt-0.5 shrink-0 text-[#aa7323] dark:text-[#d9a928]"
                     />
                     <div className="min-w-0">
-                      <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
+                        <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase dark:text-[#b7c3d4]">
                         Correo
                       </p>
-                      <p className="m-0 mt-1 break-words text-sm font-semibold text-[#16243c]">
+                        <p className="m-0 mt-1 break-words text-sm font-semibold text-[#16243c] dark:text-[#f3f6fa]">
                         {solicitudSeleccionada.Correo || "—"}
                       </p>
                     </div>
                   </div>
-                  <div className="h-px w-full bg-[#16243c]/10" />
+                  <div className="h-px w-full bg-[#16243c]/10 dark:bg-white/10" />
                   <div className="flex items-start gap-2">
                     <Phone
                       size={16}
-                      className="mt-0.5 shrink-0 text-[#aa7323]"
+                      className="mt-0.5 shrink-0 text-[#aa7323] dark:text-[#d9a928]"
                     />
                     <div className="min-w-0">
-                      <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase">
+                        <p className="m-0 text-[11px] font-semibold tracking-[0.18em] text-[#16243c]/60 uppercase dark:text-[#b7c3d4]">
                         Teléfono
                       </p>
-                      <p className="m-0 mt-1 text-sm font-semibold tabular-nums text-[#16243c]">
+                        <p className="m-0 mt-1 text-sm font-semibold tabular-nums text-[#16243c] dark:text-[#f3f6fa]">
                         {formatearTelefono(solicitudSeleccionada.Telefono) || "—"}
                       </p>
                     </div>
@@ -1345,22 +1398,22 @@ const mensaje =
                 </section>
               </div>
 
-              <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
+              <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4 dark:bg-[#0f1d33]">
                 <EtiquetaSeccion>Motivo</EtiquetaSeccion>
-                <p className="m-0 min-w-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c]">
+                <p className="m-0 min-w-0 text-sm leading-relaxed whitespace-pre-wrap break-words text-[#16243c] dark:text-[#f3f6fa]">
                   {solicitudSeleccionada.Motivo || "—"}
                 </p>
               </section>
 
               <div className="grid items-stretch gap-4 md:grid-cols-2">
-              <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4">
+              <section className="flex flex-col gap-3 rounded-[12px] bg-[#e4eaf3] p-4 dark:bg-[#0f1d33]">
                 <EtiquetaSeccion>Comprobante de pago</EtiquetaSeccion>
                 {solicitudSeleccionada.comprobanteUrl ? (
                   <a
                     href={solicitudSeleccionada.comprobanteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-xl border-2 border-solid border-royal-blue px-4 py-2.5 font-[Arial,Helvetica,sans-serif] text-sm font-bold text-royal-blue no-underline transition-colors duration-200 ease-out hover:border-royal-blue hover:bg-royal-blue hover:text-white focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:ring-focus-ring focus-visible:outline-none"
+                    className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 rounded-xl border-2 border-solid border-royal-blue px-4 py-2.5 font-[Arial,Helvetica,sans-serif] text-sm font-bold text-royal-blue no-underline transition-colors duration-200 ease-out hover:border-royal-blue hover:bg-royal-blue hover:text-white focus-visible:ring-3 focus-visible:ring-offset-2 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[#d9a928] dark:text-white dark:shadow-[0_0_18px_rgba(217,169,40,0.35)] dark:transition-all dark:duration-300 dark:ease-out dark:hover:border-[#d9a928] dark:hover:bg-[#d9a928] dark:hover:text-black dark:hover:shadow-[0_0_24px_rgba(217,169,40,0.6)] dark:focus-visible:ring-[#d9a928]"
                   >
                     <ImageIcon
                       size={16}
@@ -1375,14 +1428,14 @@ const mensaje =
                     />
                   </a>
                 ) : (
-                  <p className="m-0 text-sm text-[#16243c]/70">
+                  <p className="m-0 text-sm text-[#16243c]/70 dark:text-[#b7c3d4]">
                     No se adjuntó ningún comprobante.
                   </p>
                 )}
               </section>
 
               {isAdmin && (
-              <div className="flex flex-col gap-3 rounded-[12px] border border-[#aa7323]/25 bg-[#aa7323]/[0.07] p-4">
+              <div className="flex flex-col gap-3 rounded-[12px] border border-[#aa7323]/25 bg-[#aa7323]/[0.07] p-4 dark:border-transparent dark:bg-[#0f1d33]">
                   <EtiquetaSeccion>Cambiar estado</EtiquetaSeccion>
                     <div
                       className="relative"
@@ -1394,7 +1447,7 @@ const mensaje =
                         aria-haspopup="listbox"
                         aria-expanded={estadoMenuAbierto}
                         onClick={() => setEstadoMenuAbierto((prev) => !prev)}
-                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-white/10 dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/10"
                       >
                         <span>
                           {solicitudSeleccionada.Estado ?? "Pendiente"}
@@ -1417,7 +1470,7 @@ const mensaje =
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -6, scale: 0.98 }}
                             transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-                            className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                            className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-[8px] border border-[#16243c]/10 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)] dark:border-white/10 dark:bg-[#0f1d33]"
                           >
                           {(
                             [
@@ -1459,8 +1512,8 @@ const mensaje =
                                   }}
                                   className={`flex w-full cursor-pointer items-center gap-2 rounded-[6px] px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
                                     activo
-                                      ? "bg-[#aa7323]/10 text-[#16243c]"
-                                      : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                                      ? "bg-[#aa7323]/10 text-[#16243c] dark:text-[#f3f6fa]"
+                                      : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323] dark:text-[#b7c3d4] dark:hover:bg-[#aa7323]/20 dark:hover:text-[#d9a928]"
                                   }`}
                                 >
                                   <span
@@ -1494,9 +1547,10 @@ const mensaje =
           sinFondo
           overlayClassName={
             isConfirmRejectOpen
-              ? "fixed inset-0 z-[1350] backdrop-blur-[6px]"
-              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px]"
+              ? "fixed inset-0 z-[1350] backdrop-blur-[6px] dark:bg-black/60"
+              : "fixed inset-0 z-[1350] bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
           }
+          className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
         >
           <motion.div
             key={isConfirmRejectOpen ? "confirmar" : "formulario"}
@@ -1508,7 +1562,7 @@ const mensaje =
             <div className="flex min-h-44 flex-col">
               <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
               <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
-                <p className="text-sm leading-relaxed text-text-secondary">
+                <p className="text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
                   ¿Estás seguro/a que quieres rechazar esta solicitud de
                   sacramento? Una vez rechazada, su estado no podrá ser cambiado.
                 </p>
@@ -1534,7 +1588,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                 </Button>
                 <Button
                   variant="secondary"
-                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                   onClick={handleCancelConfirmReject}
                   disabled={isSubmitting}
                 >
@@ -1545,7 +1599,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
           ) : (
             <div className="flex min-h-44 flex-col gap-4">
               <LineaDoradaTitulo parteSubrayada="Rechazar solicitud sac" resto="ramental" />
-              <p className="text-sm text-text-secondary">
+              <p className="text-sm text-text-secondary dark:text-[#b7c3d4]">
                 Seleccione el motivo de rechazo en la lista. El campo de texto es
                 opcional para agregar un detalle.
               </p>
@@ -1555,24 +1609,24 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                   aria-haspopup="listbox"
                   aria-expanded={motivoMenuAbierto}
                   onClick={() => setMotivoMenuAbierto((prev) => !prev)}
-                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 ${
+                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
                     motivoMenuAbierto
-                      ? "border-blue-400 bg-surface"
+                      ? "border-blue-400 bg-surface dark:border-[#d9a928] dark:bg-[#0f1d33]"
                       : "border-border-strong"
                   }`}
                 >
                   <span
                     className={
                       rejectionReasonSelect
-                        ? "font-semibold text-[#16243c]"
-                        : "font-medium text-slate-700"
+                        ? "font-semibold text-[#16243c] dark:text-[#f3f6fa]"
+                        : "font-medium text-slate-700 dark:text-[#b7c3d4]"
                     }
                   >
                     {rejectionReasonSelect || "Seleccione un motivo"}
                   </span>
                   <ChevronDown
                     size={16}
-                    className={`shrink-0 text-slate-900 transition-transform duration-200 ${
+                    className={`shrink-0 text-slate-900 transition-transform duration-200 dark:text-[#7f8da3] ${
                       motivoMenuAbierto ? "rotate-180" : ""
                     }`}
                   />
@@ -1592,7 +1646,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -6, scale: 0.98 }}
                         transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-                        className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]"
+                        className="absolute top-full left-0 z-50 mt-1.5 w-full overflow-hidden rounded-xl border border-border-strong bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
                       >
                         {rejectionReasons.map((reason) => (
                           <li key={reason} role="option" aria-selected={rejectionReasonSelect === reason}>
@@ -1605,8 +1659,8 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                               }}
                               className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none ${
                                 rejectionReasonSelect === reason
-                                  ? "bg-[#aa7323]/10 text-[#16243c]"
-                                  : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323]"
+                                  ? "bg-[#aa7323]/10 text-[#16243c] dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                                  : "text-[#16243c] hover:bg-[#aa7323]/15 hover:text-[#aa7323] dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
                               }`}
                             >
                               {reason}
@@ -1641,7 +1695,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                     className={`m-0 ml-auto text-xs ${
                       rejectionReasonText.length >= 150
                         ? "font-semibold text-red-600"
-                        : "text-text-muted"
+                        : "text-text-muted dark:text-[#7f8da3]"
                     }`}
                   >
                     {rejectionReasonText.length}/150
@@ -1658,7 +1712,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                 </Button>
                 <Button
                   variant="secondary"
-                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                  className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                   onClick={handleCloseRejectModal}
                   disabled={isSubmitting}
                 >
@@ -1682,6 +1736,9 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
         isPending={aprobarSolicitud.isPending}
         onConfirm={handleApproveConfirm}
         onCancel={handleCancelApprove}
+        overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_p.text-text-secondary]:text-[#b7c3d4] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+        cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
       />
 
       <AnimatePresence>
@@ -1690,6 +1747,8 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
             onClose={handleCancelArchivar}
             title="Confirmar archivado"
             sinFondo
+            overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+            className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
           >
           <div className="flex min-h-44 flex-col">
             <LineaDoradaTitulo
@@ -1697,9 +1756,9 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
               resto="ramental"
             />
             <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
-              <p className="text-sm leading-relaxed text-text-secondary">
+              <p className="text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
                 ¿Estás seguro/a que quieres archivar la solicitud de{" "}
-                <strong className="font-semibold text-text">
+                <strong className="font-semibold text-text dark:text-[#f3f6fa]">
                   {nombreCompleto(solicitudAArchivar)}
                 </strong>
                 ? Podrás restaurarla desde la vista de archivadas.
@@ -1715,7 +1774,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
               </Button>
               <Button
                 variant="secondary"
-                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                 onClick={handleCancelArchivar}
               >
                 Cancelar
@@ -1732,6 +1791,8 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
             onClose={handleCancelArchivarTodas}
             title="Confirmar archivado masivo"
             sinFondo
+            overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+            className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
           >
           <div className="flex min-h-44 flex-col">
             <LineaDoradaTitulo
@@ -1739,9 +1800,9 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
               resto="esadas"
             />
             <div className="flex flex-1 items-center justify-center px-8 py-4 text-center">
-              <p className="text-sm leading-relaxed text-text-secondary">
+              <p className="text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
                 Se archivarán las{" "}
-                <strong className="font-semibold text-text">
+                <strong className="font-semibold text-text dark:text-[#f3f6fa]">
                   {filasArchivables.length}
                 </strong>{" "}
                 solicitudes aprobadas o rechazadas de la lista. Las pendientes
@@ -1759,7 +1820,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
               </Button>
               <Button
                 variant="secondary"
-                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out"
+                className="rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                 onClick={handleCancelArchivarTodas}
               >
                 Cancelar
@@ -1771,50 +1832,101 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
       </AnimatePresence>
 
       {!isInitialLoading && table.getRowModel().rows.length > 0 && (
-        <AdminTableFooter pegadoAbajo>
-          <span className="text-sm text-text-muted">
+        <AdminTableFooter
+          pegadoAbajo
+          className="overflow-x-visible dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]"
+        >
+          <span className="text-sm text-text-muted dark:text-[#7f8da3]">
             Mostrando{" "}
-            <strong className="text-text tabular-nums">
+            <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
               {primerRegistroVista}-{ultimoRegistroVista}
             </strong>{" "}
-            de <strong className="text-text tabular-nums">{totalVista}</strong>{" "}
+            de{" "}
+            <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
+              {totalVista}
+            </strong>{" "}
             registros
           </span>
           <AdminPagination>
-            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted dark:text-[#7f8da3]">
               Registros por página
-              <select
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
-                aria-label="Cantidad de registros por página"
-              >
-                {PAGE_SIZES.map((tamano) => (
-                  <option
-                    key={tamano}
-                    value={tamano}
+              <span className="relative inline-flex" ref={tamanoPaginaMenuRef}>
+                <button
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={tamanoPaginaMenuAbierto}
+                  onClick={() =>
+                    setTamanoPaginaMenuAbierto((prev) => !prev)
+                  }
+                  className={`flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
+                    tamanoPaginaMenuAbierto
+                      ? "border-blue-400 bg-surface dark:border-[#d9a928]"
+                      : "border-border-strong"
+                  }`}
+                  aria-label="Cantidad de registros por página"
+                >
+                  <span className="min-w-6 text-center">{pageSize}</span>
+                  <ChevronDown
+                    size={16}
+                    strokeWidth={2.5}
+                    className={`shrink-0 transition-transform duration-200 ${
+                      tamanoPaginaMenuAbierto ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {tamanoPaginaMenuAbierto && (
+                  <ul
+                    role="listbox"
+                    aria-label="Cantidad de registros por página"
+                    className="absolute right-0 bottom-full z-50 mb-1.5 w-full min-w-[72px] overflow-hidden rounded-xl border border-border-strong bg-surface p-1 shadow-[0_16px_35px_rgba(0,0,0,0.18)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:shadow-[0_16px_40px_rgba(0,0,0,0.4)]"
                   >
-                    {tamano}
-                  </option>
-                ))}
-              </select>
+                    {PAGE_SIZES.map((tamano) => {
+                      const activo = pageSize === tamano;
+                      return (
+                        <li
+                          key={tamano}
+                          role="option"
+                          aria-selected={activo}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPageSize(tamano);
+                              setTamanoPaginaMenuAbierto(false);
+                            }}
+                            className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold tabular-nums transition-colors ${
+                              activo
+                                ? "bg-royal-blue/10 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]"
+                                : "text-slate-700 hover:bg-royal-blue/5 dark:text-[#b7c3d4] dark:hover:bg-white/[0.035] dark:hover:text-[#f3f6fa]"
+                            }`}
+                          >
+                            {tamano}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </span>
             </label>
             <AdminPaginationButton
               type="button"
               onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
               disabled={!canPreviousPageVista}
               aria-label="Página anterior"
+              className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
             >
               <ChevronLeft
                 size={16}
                 strokeWidth={2}
               />
             </AdminPaginationButton>
-            <span className="text-sm whitespace-nowrap text-text-muted">
+            <span className="text-sm whitespace-nowrap text-text-muted dark:text-[#7f8da3]">
               Página{" "}
-              <strong className="text-text tabular-nums">{currentPage}</strong>{" "}
+              <strong className="text-text tabular-nums dark:text-[#f3f6fa]">{currentPage}</strong>{" "}
               de{" "}
-              <strong className="text-text tabular-nums">
+              <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
                 {totalPagesVista}
               </strong>
             </span>
@@ -1827,6 +1939,7 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
               }
               disabled={!canNextPageVista}
               aria-label="Página siguiente"
+              className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
             >
               <ChevronRight
                 size={16}

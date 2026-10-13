@@ -68,7 +68,7 @@ const SacramentTable = ({
       <button
         type="button"
         onClick={() => onEdit(sacramento)}
-        className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-text-muted transition-colors hover:bg-surface-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+        className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-text-muted transition-colors hover:bg-surface-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
         aria-label="Editar"
       >
         <Pencil size={15} strokeWidth={1.5} />
@@ -76,7 +76,7 @@ const SacramentTable = ({
       <button
         type="button"
         onClick={() => onViewDetails(sacramento)}
-        className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-text-muted transition-colors hover:bg-surface-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+        className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-text-muted transition-colors hover:bg-surface-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
         aria-label="Ver detalle"
       >
         <Eye size={15} strokeWidth={1.5} />
@@ -84,7 +84,7 @@ const SacramentTable = ({
       <button
         type="button"
         onClick={() => onDelete(sacramento)}
-        className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-text-muted transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+        className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-1.5 text-text-muted transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-[rgba(230,106,106,0.12)] dark:hover:text-[#e66a6a]"
         aria-label="Eliminar"
       >
         <Trash2 size={15} strokeWidth={1.5} />
@@ -113,18 +113,18 @@ const SacramentTable = ({
                   onClick={() => onViewDetails(s)}
                 >
                   <AdminTableCell>
-                    <span className="font-medium text-text">{resaltarCoincidencia(s.nombre, searchNombre)}</span>
+                    <span className="font-medium text-text dark:text-[#f3f6fa]">{resaltarCoincidencia(s.nombre, searchNombre)}</span>
                   </AdminTableCell>
                   <AdminTableCell>
-                    <span className="tabular-nums text-text-secondary">{formatearCedula(s.cedula)}</span>
+                    <span className="tabular-nums text-text-secondary dark:text-[#b7c3d4]">{formatearCedula(s.cedula)}</span>
                   </AdminTableCell>
                   <AdminTableCell>
-                    <span className="tabular-nums text-text-secondary">
+                    <span className="tabular-nums text-text-secondary dark:text-[#b7c3d4]">
                       {formatearFecha(s.fechaRegistro || s.fecha)}
                     </span>
                   </AdminTableCell>
                   <AdminTableCell>
-                    <span className="text-text-secondary">{s.parroquia}</span>
+                    <span className="text-text-secondary dark:text-[#b7c3d4]">{s.parroquia}</span>
                   </AdminTableCell>
                   <AdminTableCell onClick={(e) => e.stopPropagation()}>
                     <Acciones sacramento={s} />
@@ -181,22 +181,22 @@ const SacramentTable = ({
       </div>
 
       {sacramentos.length > 0 && (
-        <AdminTableFooter pegadoAbajo>
-          <span className="text-sm text-text-muted">
+        <AdminTableFooter pegadoAbajo className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#040b16]/95 dark:text-[#b7c3d4]">
+          <span className="text-sm text-text-muted dark:text-[#7f8da3]">
             Mostrando{" "}
-            <strong className="text-text tabular-nums">
+            <strong className="text-text tabular-nums dark:text-[#f3f6fa]">
               {pageStart}-{pageEnd}
             </strong>{" "}
-            de <strong className="text-text tabular-nums">{total}</strong>{" "}
+            de <strong className="text-text tabular-nums dark:text-[#f3f6fa]">{total}</strong>{" "}
             registros
           </span>
           <AdminPagination>
-            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted">
+            <label className="mr-1 flex items-center gap-2 text-sm text-text-muted dark:text-[#7f8da3]">
               Registros por página
               <select
                 value={pageSize}
                 onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Cantidad de registros por página"
               >
                 {PAGE_SIZES.map((tamano) => (
@@ -211,19 +211,21 @@ const SacramentTable = ({
               onClick={() => onPageChange(page - 1)}
               disabled={page <= 1}
               aria-label="Página anterior"
+              className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
             >
               <ChevronLeft size={16} strokeWidth={2} />
             </AdminPaginationButton>
-            <span className="text-sm whitespace-nowrap text-text-muted">
+            <span className="text-sm whitespace-nowrap text-text-muted dark:text-[#7f8da3]">
               Página{" "}
-              <strong className="text-text tabular-nums">{page}</strong> de{" "}
-              <strong className="text-text tabular-nums">{totalPages}</strong>
+              <strong className="text-text tabular-nums dark:text-[#f3f6fa]">{page}</strong> de{" "}
+              <strong className="text-text tabular-nums dark:text-[#f3f6fa]">{totalPages}</strong>
             </span>
             <AdminPaginationButton
               type="button"
               onClick={() => onPageChange(page + 1)}
               disabled={page >= totalPages}
               aria-label="Página siguiente"
+              className="dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928] dark:disabled:bg-white/5 dark:disabled:text-[#7f8da3]"
             >
               <ChevronRight size={16} strokeWidth={2} />
             </AdminPaginationButton>

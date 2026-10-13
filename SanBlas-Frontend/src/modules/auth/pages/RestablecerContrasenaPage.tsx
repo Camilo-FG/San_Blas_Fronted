@@ -1,9 +1,12 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { ApiError } from "../../../services/apiClient";
-import { restablecerContrasena } from "../../../services/authService";
+import {
+  restablecerContrasena,
+  validarEnlaceRecuperacion,
+} from "../../../services/authService";
 import Rutas from "../../../routes/Rutas";
 import { Button, FieldError, Input, Label, cn } from "../../../shared/ui";
 import SeoHead from "../../../seo/SeoHead";
@@ -11,6 +14,24 @@ import {
   mensajeErrorConfirmacion,
   mensajeErrorContrasena,
 } from "../validarContrasena";
+import {
+  esErrorDeRed,
+  MENSAJE_CONEXION_PERDIDA,
+  MENSAJE_SIN_INTERNET,
+  MENSAJE_SIN_INTERNET_ENLACE,
+} from "../mensajesConexion";
+
+const TOKEN_RECUPERACION = /^[A-Za-z0-9_-]{43,128}$/;
+const MENSAJE_FORMATO =
+  "El enlace no es válido. Solicita uno nuevo desde recuperar contraseña.";
+const MENSAJE_ENLACE_USADO = "Este enlace ya fue utilizado.";
+
+type EstadoEnlace =
+  | "comprobando"
+  | "valido"
+  | "rechazado"
+  | "sin-conexion"
+  | "posiblementeCambiada";
 
 interface RestablecerContrasenaPageProps {
   token: string;
@@ -35,17 +56,78 @@ export default function RestablecerContrasenaPage({
   const [listo, setListo] = useState(false);
   const [loading, setLoading] = useState(false);
   const reducirMovimiento = useReducedMotion();
-  const tokenValido = /^[A-Za-z0-9_-]{43,128}$/.test(token);
+  const formatoValido = TOKEN_RECUPERACION.test(token);
+  const [estadoEnlace, setEstadoEnlace] = useState<EstadoEnlace>(
+    formatoValido ? "comprobando" : "rechazado",
+  );
+  const [mensajeEnlace, setMensajeEnlace] = useState(
+    formatoValido ? "" : MENSAJE_FORMATO,
+  );
+  const [reintento, setReintento] = useState(0);
+  const [huboCorteDeRed, setHuboCorteDeRed] = useState(false);
+  const [errorEsDeRed, setErrorEsDeRed] = useState(false);
+
+  useEffect(() => {
+    if (!formatoValido) return;
+    let vigente = true;
+    setEstadoEnlace("comprobando");
+
+    validarEnlaceRecuperacion(token)
+      .then(() => {
+        if (vigente) setEstadoEnlace("valido");
+      })
+      .catch((err: unknown) => {
+        if (!vigente) return;
+        if (err instanceof ApiError && err.status === 400) {
+          setMensajeEnlace(err.message);
+          setEstadoEnlace("rechazado");
+          return;
+        }
+        setMensajeEnlace(
+          esErrorDeRed(err) || !navigator.onLine
+            ? MENSAJE_SIN_INTERNET_ENLACE
+            : err instanceof ApiError
+              ? err.message
+              : "No se pudo comprobar el enlace. Intente nuevamente.",
+        );
+        setEstadoEnlace("sin-conexion");
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, [formatoValido, reintento, token]);
+
+  useEffect(() => {
+    const alVolverConexion = () => {
+      if (estadoEnlace === "sin-conexion") {
+        setReintento((valor) => valor + 1);
+      }
+      if (errorEsDeRed) {
+        setErrorEnvio(null);
+        setErrorEsDeRed(false);
+      }
+    };
+    window.addEventListener("online", alVolverConexion);
+    return () => window.removeEventListener("online", alVolverConexion);
+  }, [errorEsDeRed, estadoEnlace]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setErrorEnvio(null);
+    setErrorEsDeRed(false);
 
     const errorClave = mensajeErrorContrasena(password);
     const errorRepeticion = mensajeErrorConfirmacion(confirmPassword, password);
     setErrorContrasena(errorClave);
     setErrorConfirmacion(errorRepeticion);
-    if (errorClave || errorRepeticion || !tokenValido) return;
+    if (errorClave || errorRepeticion || estadoEnlace !== "valido") return;
+
+    if (!navigator.onLine) {
+      setErrorEnvio(MENSAJE_SIN_INTERNET);
+      setErrorEsDeRed(true);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -56,10 +138,30 @@ export default function RestablecerContrasenaPage({
       });
       setListo(true);
     } catch (err) {
+      if (esErrorDeRed(err)) {
+        setHuboCorteDeRed(true);
+        setErrorEnvio(MENSAJE_CONEXION_PERDIDA);
+        setErrorEsDeRed(true);
+        return;
+      }
       const mensaje =
         err instanceof ApiError
           ? err.message
           : "No se pudo restablecer la contraseña. Intente nuevamente.";
+      if (
+        err instanceof ApiError &&
+        err.status === 400 &&
+        mensaje !== "Las contraseñas no coinciden" &&
+        !mensaje.startsWith("La contraseña debe")
+      ) {
+        setMensajeEnlace(mensaje);
+        setEstadoEnlace(
+          huboCorteDeRed && mensaje === MENSAJE_ENLACE_USADO
+            ? "posiblementeCambiada"
+            : "rechazado",
+        );
+        return;
+      }
       setErrorEnvio(mensaje);
     } finally {
       setLoading(false);
@@ -111,10 +213,47 @@ export default function RestablecerContrasenaPage({
                 Ir a iniciar sesión
               </Link>
             </div>
-          ) : !tokenValido ? (
+          ) : estadoEnlace === "comprobando" ? (
+            <p className="m-0 text-base leading-relaxed text-text-muted" role="status">
+              Comprobando el enlace...
+            </p>
+          ) : estadoEnlace === "sin-conexion" ? (
             <div className="flex flex-col gap-6" role="alert">
               <p className="m-0 text-base leading-relaxed text-text-muted">
-                El enlace no es válido. Solicita uno nuevo desde recuperar contraseña.
+                {mensajeEnlace}
+              </p>
+              <Button
+                type="button"
+                variant="royal"
+                className="w-full min-h-12 text-base"
+                onClick={() => setReintento((valor) => valor + 1)}
+              >
+                Reintentar
+              </Button>
+            </div>
+          ) : estadoEnlace === "posiblementeCambiada" ? (
+            <div className="flex flex-col gap-6" role="status">
+              <p className="m-0 text-base leading-relaxed text-text-muted">
+                Es posible que su contraseña ya se haya cambiado en el intento
+                anterior. Pruebe iniciar sesión con la nueva clave.
+              </p>
+              <Link
+                to={Rutas.login}
+                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-royal-blue px-4 text-base font-bold text-white no-underline"
+              >
+                Ir a iniciar sesión
+              </Link>
+              <Link
+                to={Rutas.recuperarContrasena}
+                className="text-base text-royal-blue no-underline hover:underline"
+              >
+                Solicitar un enlace nuevo
+              </Link>
+            </div>
+          ) : estadoEnlace === "rechazado" ? (
+            <div className="flex flex-col gap-6" role="alert">
+              <p className="m-0 text-base leading-relaxed text-text-muted">
+                {mensajeEnlace}
               </p>
               <Link
                 to={Rutas.recuperarContrasena}

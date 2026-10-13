@@ -47,7 +47,7 @@ const Line = ({ children }: { children?: React.ReactNode }) => (
 
 const Fila = ({ label, valor }: { label: string; valor?: React.ReactNode }) => (
   <div className="flex items-baseline">
-    <span className="mr-1 text-slate-500">{label}</span>
+    <span className="mr-1 text-slate-500 dark:text-[#7f8da3]">{label}</span>
     <Line>{valor ?? ''}</Line>
   </div>
 );
@@ -97,7 +97,7 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
       {isOpen && (
         <>
           <motion.div
-            className="fixed inset-0 z-[1300] bg-slate-900/60 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[1300] bg-slate-900/60 backdrop-blur-[2px] dark:bg-black/60"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -106,7 +106,7 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
             role="presentation"
           />
           <motion.div
-        className="fixed top-0 right-0 bottom-0 left-0 z-[1301] flex h-full w-full max-w-full flex-col bg-white shadow-[-8px_0_24px_rgba(15,23,42,0.15)] sm:left-auto sm:w-[min(700px,100vw)]"
+        className="fixed top-0 right-0 bottom-0 left-0 z-[1301] flex h-full w-full max-w-full flex-col bg-white shadow-[-8px_0_24px_rgba(15,23,42,0.15)] sm:left-auto sm:w-[min(700px,100vw)] dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]"
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
@@ -116,18 +116,18 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
         aria-label="Detalle del sacramento"
       >
         {/* Encabezado */}
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border-strong bg-white px-5 py-4 shadow-sm">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border-strong bg-white px-5 py-4 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
           <div>
-            <h2 className="m-0 text-[1.1rem] font-bold leading-snug break-words text-royal-blue">
+            <h2 className="m-0 text-[1.1rem] font-bold leading-snug break-words text-royal-blue dark:text-[#f3f6fa]">
               Detalle del sacramento
             </h2>
-            <p className="m-0 mt-0.5 text-[0.82rem] text-slate-500">
+            <p className="m-0 mt-0.5 text-[0.82rem] text-slate-500 dark:text-[#7f8da3]">
               {sacramental ? nombreActa(sacramental) : 'Acta de vida sacramental'}
             </p>
           </div>
           <button
             type="button"
-            className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-[10px] border-0 bg-slate-100 text-xl leading-none text-slate-700 hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+            className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-[10px] border-0 bg-slate-100 text-xl leading-none text-slate-700 hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
             onClick={onClose}
             aria-label="Cerrar detalles"
           >
@@ -139,13 +139,13 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
         <div className="flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4">
           {isPending && (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-              <Loader2 size={28} className="animate-spin text-text-muted" />
-              <p className="m-0 text-sm text-text-secondary">Cargando detalles...</p>
+              <Loader2 size={28} className="animate-spin text-text-muted dark:text-[#7f8da3]" />
+              <p className="m-0 text-sm text-text-secondary dark:text-[#b7c3d4]">Cargando detalles...</p>
             </div>
           )}
 
           {!isPending && error && (
-            <p className="px-4 py-8 text-center text-slate-500">
+            <p className="px-4 py-8 text-center text-slate-500 dark:text-[#7f8da3]">
               No se encontró una persona con esa cédula o no se pudo cargar la ficha.
             </p>
           )}
@@ -156,19 +156,19 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                 {/* Datos personales */}
                 <div className="mb-4 grid grid-cols-1 gap-x-6 gap-y-2 md:grid-cols-2">
                   <div className="flex min-w-0 items-baseline">
-                    <span className="mr-1 shrink-0 text-slate-500">Nombre</span>
+                    <span className="mr-1 shrink-0 text-slate-500 dark:text-[#7f8da3]">Nombre</span>
                     <Line>{persona?.nombre ?? ''}</Line>
                   </div>
                   <div className="flex min-w-0 items-baseline">
-                    <span className="mr-1 shrink-0 text-slate-500">Primer Apellido</span>
+                    <span className="mr-1 shrink-0 text-slate-500 dark:text-[#7f8da3]">Primer Apellido</span>
                     <Line>{persona?.primerApellido ?? ''}</Line>
                   </div>
                   <div className="flex min-w-0 items-baseline">
-                    <span className="mr-1 shrink-0 text-slate-500">Segundo Apellido</span>
+                    <span className="mr-1 shrink-0 text-slate-500 dark:text-[#7f8da3]">Segundo Apellido</span>
                     <Line>{persona?.segundoApellido ?? ''}</Line>
                   </div>
                   <div className="flex min-w-0 items-baseline">
-                    <span className="mr-1 shrink-0 text-slate-500">Cédula</span>
+                    <span className="mr-1 shrink-0 text-slate-500 dark:text-[#7f8da3]">Cédula</span>
                     <Line>{persona?.cedula ?? ''}</Line>
                   </div>
                 </div>
@@ -176,12 +176,12 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                 {/* Bautismo */}
                 <div
                   className={`mb-4 rounded-sm border-2 px-4 py-3 ${
-                    sacramental.bautismo ? 'border-slate-400' : 'border-slate-200'
+                    sacramental.bautismo ? 'border-slate-400 dark:border-[rgba(220,230,242,0.12)]' : 'border-slate-200 dark:border-[rgba(220,230,242,0.12)]'
                   }`}
                 >
                   <h4
                     className={`mb-3 text-center text-[0.95rem] font-bold tracking-wide uppercase ${
-                      sacramental.bautismo ? 'text-slate-800' : 'text-slate-400'
+                      sacramental.bautismo ? 'text-slate-800 dark:text-[#f3f6fa]' : 'text-slate-400 dark:text-[#7f8da3]'
                     }`}
                   >
                     {TIPO_SACRAMENTO_LABEL.bautismo}
@@ -212,12 +212,12 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                 {/* Primera Comunión */}
                 <div
                   className={`mb-4 rounded-sm border-2 px-4 py-3 ${
-                    sacramental.comunion ? 'border-slate-400' : 'border-slate-200'
+                    sacramental.comunion ? 'border-slate-400 dark:border-[rgba(220,230,242,0.12)]' : 'border-slate-200 dark:border-[rgba(220,230,242,0.12)]'
                   }`}
                 >
                   <h4
                     className={`mb-3 text-center text-[0.95rem] font-bold tracking-wide uppercase ${
-                      sacramental.comunion ? 'text-slate-800' : 'text-slate-400'
+                      sacramental.comunion ? 'text-slate-800 dark:text-[#f3f6fa]' : 'text-slate-400 dark:text-[#7f8da3]'
                     }`}
                   >
                     {TIPO_SACRAMENTO_LABEL.comunion}
@@ -238,12 +238,12 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                 {/* Confirmación */}
                 <div
                   className={`mb-4 rounded-sm border-2 px-4 py-3 ${
-                    sacramental.confirmacion ? 'border-slate-400' : 'border-slate-200'
+                    sacramental.confirmacion ? 'border-slate-400 dark:border-[rgba(220,230,242,0.12)]' : 'border-slate-200 dark:border-[rgba(220,230,242,0.12)]'
                   }`}
                 >
                   <h4
                     className={`mb-3 text-center text-[0.95rem] font-bold tracking-wide uppercase ${
-                      sacramental.confirmacion ? 'text-slate-800' : 'text-slate-400'
+                      sacramental.confirmacion ? 'text-slate-800 dark:text-[#f3f6fa]' : 'text-slate-400 dark:text-[#7f8da3]'
                     }`}
                   >
                     {TIPO_SACRAMENTO_LABEL.confirmacion}
@@ -264,12 +264,12 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                 {/* Matrimonio */}
                 <div
                   className={`mb-4 rounded-sm border-2 px-4 py-3 ${
-                    sacramental.matrimonio ? 'border-slate-400' : 'border-slate-200'
+                    sacramental.matrimonio ? 'border-slate-400 dark:border-[rgba(220,230,242,0.12)]' : 'border-slate-200 dark:border-[rgba(220,230,242,0.12)]'
                   }`}
                 >
                   <h4
                     className={`mb-3 text-center text-[0.95rem] font-bold tracking-wide uppercase ${
-                      sacramental.matrimonio ? 'text-slate-800' : 'text-slate-400'
+                      sacramental.matrimonio ? 'text-slate-800 dark:text-[#f3f6fa]' : 'text-slate-400 dark:text-[#7f8da3]'
                     }`}
                   >
                     {TIPO_SACRAMENTO_LABEL.matrimonio}
@@ -313,8 +313,8 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                 </div>
 
                 {/* Observaciones */}
-                <div className="mb-5 rounded-sm border-2 border-slate-200 px-4 py-3">
-                  <h4 className="mb-2 text-center text-[0.95rem] font-bold tracking-wide uppercase text-slate-500">
+                <div className="mb-5 rounded-sm border-2 border-slate-200 px-4 py-3 dark:border-[rgba(220,230,242,0.12)]">
+                  <h4 className="mb-2 text-center text-[0.95rem] font-bold tracking-wide uppercase text-slate-500 dark:text-[#7f8da3]">
                     Observaciones
                   </h4>
                   <div className="min-h-[9.5rem] overflow-hidden rounded-sm bg-white px-1 pt-1 [background-image:repeating-linear-gradient(to_bottom,transparent,transparent_1.9rem,#cbd5e1_1.9rem,#cbd5e1_1.95rem)]">

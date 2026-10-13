@@ -4,7 +4,6 @@ import { Eye, EyeOff } from 'lucide-react';
 import { type Usuario } from '../../../../types/Usuario';
 import {
   opcionesSelectRol,
-  ROLES_ASIGNABLES,
   type Rol,
 } from '../../../../types/Rol';
 import { useAuth } from '../../../../context/AuthContext';
@@ -20,7 +19,7 @@ import { normalizarTexto } from '../../Utils/normalizarTexto';
 
 // estilos del botón de ojo para mostrar/ocultar contraseña (mismo look que el login)
 const BOTON_OJO =
-  'absolute right-2.5 inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-text-muted transition-colors hover:bg-royal-blue/5 hover:text-royal-blue focus-visible:ring-2 focus-visible:ring-royal-blue/25 focus-visible:outline-none';
+  'absolute right-2.5 inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-text-muted transition-colors hover:bg-royal-blue/5 hover:text-royal-blue focus-visible:ring-2 focus-visible:ring-royal-blue/25 focus-visible:outline-none dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]';
 
 interface Props {
   isOpen: boolean;
@@ -81,9 +80,12 @@ const UpdateUserModal: React.FC<Props> = ({
   const esSecretarioSesion = rolesSesion.some(
     (rol) => rol.toLowerCase() === 'secretario',
   );
-  const rolesPermitidos = esSecretarioSesion
-    ? [...ROLES_ASIGNABLES]
-    : ROLES_ASIGNABLES.filter((rol) => rol !== 'secretario');
+  const rolesAsignables = roles
+    .map((rol) => rol.clave)
+    .filter(
+      (clave) =>
+        clave !== 'user' && (esSecretarioSesion || clave !== 'secretario'),
+    );
 
   // al menos un rol obligatorio al guardar
   const validarRoles = (value: string[]) => {
@@ -139,15 +141,34 @@ const UpdateUserModal: React.FC<Props> = ({
     if (!v) return 'El nombre es requerido.';
     if (usuario && v === normalizarTexto(usuario.userName)) return undefined;
     if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
-    if (v.length > 100) return 'El nombre no puede superar los 100 caracteres.';
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v)) return 'El nombre solo puede contener letras.';
+    if (v.length > 60) return 'El nombre no puede superar los 60 caracteres.';
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+$/.test(v)) return 'El nombre solo puede contener letras y números.';
+    if (
+      users.some(
+        (u) =>
+          u.id !== usuario?.id &&
+          normalizarTexto(u.userName).toLowerCase() === v.toLowerCase(),
+      )
+    ) {
+      return 'Ya existe un usuario con este nombre.';
+    }
     return undefined;
   };
 
   const validarCorreo = (value: string) => {
     const v = normalizarTexto(value);
     if (!v) return 'El correo es requerido.';
-    if (!validateEmail(v)) return 'Solo se permiten dominios .com, .es o .org';
+    if (v.length > 40) return 'El correo no puede superar los 40 caracteres.';
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v)) {
+      // Tiene .com/.es/.org en medio pero con caracteres después (ej: usuario@ga.com12).
+      if (/\.(com|es|org)(?![a-zA-Z])/i.test(v)) {
+        return 'El correo debe terminar en .com, .es o .org, sin caracteres después del dominio.';
+      }
+      return 'Formato de correo inválido. Ej: usuario@correo.com.';
+    }
+    if (!validateEmail(v)) {
+      return 'El correo debe terminar en .com, .es o .org, sin caracteres después del dominio.';
+    }
     if (
       users.some(
         (u) => u.email.toLowerCase() === v.toLowerCase() && u.id !== usuario?.id,
@@ -181,8 +202,14 @@ const UpdateUserModal: React.FC<Props> = ({
   };
 
   return (
-    <Modal onClose={onClose} title="Editar usuario" cerrarAlClicFuera={false}>
-      <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue">
+    <Modal
+      onClose={onClose}
+      title="Editar usuario"
+      cerrarAlClicFuera={false}
+      overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+      className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] dark:[scrollbar-color:#475569_transparent]"
+    >
+      <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue dark:text-[#f3f6fa]">
         Editar usuario
       </h3>
 
@@ -204,9 +231,9 @@ const UpdateUserModal: React.FC<Props> = ({
             {(field) => (
               <div>
                 <Label htmlFor="u-nombre">
-                  Nombre completo
-                  <span className="ml-1.5 font-normal text-text-muted">
-                    ({field.state.value.length}/100)
+                  Nombre de usuario
+                  <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
+                    ({field.state.value.length}/60)
                   </span>
                 </Label>
                 <Input
@@ -215,12 +242,16 @@ const UpdateUserModal: React.FC<Props> = ({
                   placeholder="Ej: Juan Pérez González"
                   value={field.state.value}
                   hasError={field.state.meta.errors.length > 0}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) =>
+                    field.handleChange(
+                      e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]/g, ''),
+                    )
+                  }
                   onBlur={() => {
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
-                  maxLength={100}
+                  maxLength={60}
                 />
                 <FieldError message={field.state.meta.errors[0]} />
               </div>
@@ -239,8 +270,8 @@ const UpdateUserModal: React.FC<Props> = ({
               <div>
                 <Label htmlFor="u-correo">
                   Correo electrónico
-                  <span className="ml-1.5 font-normal text-text-muted">
-                    ({field.state.value.length}/100)
+                  <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
+                    ({field.state.value.length}/40)
                   </span>
                 </Label>
                 <Input
@@ -249,12 +280,16 @@ const UpdateUserModal: React.FC<Props> = ({
                   placeholder="Ej: ejemplo@correo.com"
                   value={field.state.value}
                   hasError={field.state.meta.errors.length > 0}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) =>
+                    field.handleChange(
+                      e.target.value.replace(/[^a-zA-Z0-9._%+\-@]/g, ''),
+                    )
+                  }
                   onBlur={() => {
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
-                  maxLength={100}
+                  maxLength={40}
                 />
                 <FieldError message={field.state.meta.errors[0]} />
               </div>
@@ -315,7 +350,7 @@ const UpdateUserModal: React.FC<Props> = ({
                   <div>
                     <Label htmlFor="u-contraseña">
                       Nueva contraseña
-                      <span className="ml-1.5 font-normal text-text-muted">
+                      <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
                         ({field.state.value.length}/64)
                       </span>
                     </Label>
@@ -326,7 +361,11 @@ const UpdateUserModal: React.FC<Props> = ({
                         placeholder="Dejar vacío para no cambiar"
                         value={field.state.value}
                         hasError={field.state.meta.errors.length > 0}
-                        onChange={(e) => field.handleChange(e.target.value)}
+                        onChange={(e) =>
+                          field.handleChange(
+                            e.target.value.replace(/[^a-zA-Z0-9]/g, ''),
+                          )
+                        }
                         onBlur={() => {
                           field.handleChange(field.state.value.trim());
                           field.handleBlur();
@@ -346,18 +385,18 @@ const UpdateUserModal: React.FC<Props> = ({
                     </div>
                     {valor ? (
                       <div className="mt-2 flex items-center gap-2" aria-live="polite">
-                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong dark:bg-white/10">
                           <div
                             className={`h-full rounded-full transition-all ${fortaleza.clase}`}
                             style={{ width: `${(puntos / 4) * 100}%` }}
                           />
                         </div>
-                        <span className="text-xs font-semibold text-text-muted">
+                        <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
                           {fortaleza.texto}
                         </span>
                       </div>
                     ) : null}
-                    <p className="mt-1 text-xs text-text-muted">
+                    <p className="mt-1 text-xs text-text-muted dark:text-[#7f8da3]">
                       Incluya mayúscula, minúscula y número.
                     </p>
                     <FieldError message={field.state.meta.errors[0]} />
@@ -382,18 +421,18 @@ const UpdateUserModal: React.FC<Props> = ({
                   <div
                     role="group"
                     aria-labelledby="u-roles-titulo"
-                    className="flex flex-col gap-2 rounded-xl border border-border-strong bg-surface-muted p-3"
+                    className="flex max-h-48 flex-col gap-2 overflow-y-auto rounded-xl border border-border-strong bg-surface-muted p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
                   >
                     {opcionesSelectRol(
                       roles,
                       field.state.value[0],
-                      rolesPermitidos,
+                      rolesAsignables,
                     ).map((rol) => {
                       const marcado = field.state.value.includes(rol.clave);
                       return (
                         <label
                           key={rol.clave}
-                          className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-text"
+                          className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-text dark:text-[#f3f6fa]"
                         >
                           <input
                             type="checkbox"
@@ -423,7 +462,7 @@ const UpdateUserModal: React.FC<Props> = ({
                     }
                   />
                   {esUsuarioActual && (
-                    <p className="mt-1.5 text-xs text-text-muted">
+                    <p className="mt-1.5 text-xs text-text-muted dark:text-[#7f8da3]">
                       No puede cambiar sus propios roles.
                     </p>
                   )}
@@ -446,7 +485,7 @@ const UpdateUserModal: React.FC<Props> = ({
                     <option value="inactive">Inactivo</option>
                   </Select>
                   {esUsuarioActual && (
-                    <p className="mt-1.5 text-xs text-text-muted">
+                    <p className="mt-1.5 text-xs text-text-muted dark:text-[#7f8da3]">
                       No puede inactivar su propia cuenta.
                     </p>
                   )}
@@ -456,11 +495,11 @@ const UpdateUserModal: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col gap-2 border-t border-border-strong pt-4 sm:flex-row sm:justify-end">
+        <div className="mt-6 flex flex-col gap-2 border-t border-border-strong pt-4 sm:flex-row sm:justify-end dark:border-[rgba(220,230,242,0.12)]">
           <Button type="submit" variant="royal">
             Guardar cambios
           </Button>
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={onClose} className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!">
             Cancelar
           </Button>
         </div>

@@ -88,15 +88,15 @@ const cardsConfig: CardConfig[] = [
 function CardSkeleton({ hero }: { hero?: boolean }) {
   return (
     <div
-      className={`animate-pulse rounded-2xl border border-border bg-surface p-6 ${
+      className={`animate-pulse rounded-2xl border border-border bg-surface p-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] ${
         hero ? "sm:col-span-2 lg:col-span-2" : ""
       }`}
     >
       <div className="mb-4 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-gray-200" />
-        <div className="h-3 w-32 rounded bg-gray-200" />
+        <div className="h-10 w-10 rounded-xl bg-gray-200 dark:bg-white/10" />
+        <div className="h-3 w-32 rounded bg-gray-200 dark:bg-white/10" />
       </div>
-      <div className="h-9 w-20 rounded bg-gray-200" />
+      <div className="h-9 w-20 rounded bg-gray-200 dark:bg-white/10" />
     </div>
   );
 }
@@ -106,7 +106,7 @@ function MetricCard({ card, value }: { card: CardConfig; value: number }) {
 
   return (
     <article
-      className={`group relative rounded-2xl border border-border bg-surface p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+      className={`group relative rounded-2xl border border-border bg-surface p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] ${
         card.hero ? "sm:col-span-2 lg:col-span-2" : ""
       }`}
       style={{ borderTopWidth: "2px", borderTopColor: card.color }}
@@ -130,7 +130,7 @@ function MetricCard({ card, value }: { card: CardConfig; value: number }) {
             {card.label}
           </p>
           {card.hero && (
-            <span className="text-[10px] font-semibold text-text-muted">
+            <span className="text-[10px] font-semibold text-text-muted dark:text-[#7f8da3]">
               Actividad principal
             </span>
           )}
@@ -238,7 +238,7 @@ function DashboardHome() {
           to={LANDING_CARD.link}
           className="group block text-inherit no-underline"
         >
-          <article className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
+          <article className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center sm:justify-between dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)]">
             <div className="flex items-start gap-4">
               <span
                 className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0f766e14] text-[#0f766e] ring-1 ring-inset ring-[#0f766e33]"
@@ -247,20 +247,20 @@ function DashboardHome() {
               </span>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="m-0 text-base font-bold text-royal-blue">
+                  <h3 className="m-0 text-base font-bold text-royal-blue dark:text-[#d9a928]">
                     {LANDING_CARD.label}
                   </h3>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-500 dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]">
                     <Lock size={11} aria-hidden="true" />
                     Acceso restringido
                   </span>
                 </div>
-                <p className="m-0 mt-1 text-sm text-text-muted">
+                <p className="m-0 mt-1 text-sm text-text-muted dark:text-[#b7c3d4]">
                   {LANDING_CARD.description}
                 </p>
               </div>
             </div>
-            <span className="text-sm font-bold text-royal-blue transition-transform group-hover:translate-x-1">
+            <span className="text-sm font-bold text-royal-blue transition-transform group-hover:translate-x-1 dark:text-[#d9a928]">
               Ir al CMS →
             </span>
           </article>
