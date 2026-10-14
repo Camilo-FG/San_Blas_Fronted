@@ -75,7 +75,7 @@ export function AdminRecordDetailSheet({
       <div
         ref={dialogoRef}
         tabIndex={-1}
-        className="relative flex max-h-[94vh] w-full flex-col rounded-t-[18px] bg-surface shadow-[0_-8px_30px_rgba(15,23,42,0.18)] focus:outline-none md:max-h-[92vh] md:min-h-[78vh] md:max-w-5xl md:rounded-[18px]"
+        className="relative flex max-h-[94vh] w-full flex-col rounded-t-[18px] bg-surface shadow-[0_-8px_30px_rgba(15,23,42,0.18)] focus:outline-none md:max-h-[92vh] md:min-h-[78vh] md:max-w-5xl md:rounded-[18px] dark:border dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby={hideHeader ? undefined : titleId}
@@ -85,7 +85,7 @@ export function AdminRecordDetailSheet({
         {hideHeader && (
           <button
             type="button"
-            className="absolute top-3 right-3 z-10 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-none bg-slate-100 text-slate-700 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            className="absolute top-3 right-3 z-10 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-none bg-slate-100 text-slate-700 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
             onClick={onClose}
             aria-label="Cerrar detalle"
           >
@@ -94,16 +94,16 @@ export function AdminRecordDetailSheet({
         )}
 
         {!hideHeader && (
-          <header className="flex items-start justify-between gap-3 border-b border-border-strong px-5 py-5 md:px-8">
+          <header className="flex items-start justify-between gap-3 border-b border-border-strong px-5 py-5 md:px-8 dark:border-[rgba(220,230,242,0.12)]">
             <div>
               {subtitle && (
-                <p className="mb-1 text-[0.78rem] font-semibold text-text-muted">
+                <p className="mb-1 text-[0.78rem] font-semibold text-text-muted dark:text-[#7f8da3]">
                   {subtitle}
                 </p>
               )}
               <h3
                 id={titleId}
-                className="text-[1.1rem] leading-snug text-royal-blue"
+                className="text-[1.1rem] leading-snug text-royal-blue dark:text-[#f3f6fa]"
               >
                 {title}
               </h3>
@@ -125,7 +125,7 @@ export function AdminRecordDetailSheet({
               )}
               <button
                 type="button"
-                className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-none bg-slate-100 text-slate-700 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border-none bg-slate-100 text-slate-700 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
                 onClick={onClose}
                 aria-label="Cerrar detalle"
               >
@@ -146,7 +146,7 @@ export function AdminRecordDetailSheet({
         </div>
 
         {actions && (
-          <footer className="flex flex-col gap-2.5 border-t border-border-strong px-5 pt-4 pb-5 md:flex-row md:flex-wrap md:justify-end md:px-8">
+          <footer className="flex flex-col gap-2.5 border-t border-border-strong px-5 pt-4 pb-5 md:flex-row md:flex-wrap md:justify-end md:px-8 dark:border-[rgba(220,230,242,0.12)]">
             {actions}
           </footer>
         )}
