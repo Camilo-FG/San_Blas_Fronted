@@ -7,6 +7,7 @@ import {
   consultarInscripcionCatequesisBautismo,
   crearInscripcionCatequesisBautismo,
 } from "../catequesisBautismoService";
+import { mapearFormularioBautismo } from "../bautismoMapper";
 import {
   getEstadoBadgeVariant,
   textoEstadoCica,
@@ -122,21 +123,9 @@ const CatequesisBautismoPage = () => {
 
     setEnviando(true);
     try {
-      const respuesta = await crearInscripcionCatequesisBautismo({
-        nombre: form.nombre.trim(),
-        apellido1: form.apellido1.trim(),
-        apellido2: form.apellido2.trim() || null,
-        fechaNacimiento: form.fechaNacimiento,
-        cedula: form.cedula.trim(),
-        telefono: form.telefono.trim(),
-        estadoCivil: form.estadoCivil as EstadoCivilBautismo,
-        parroquiaOrigen: form.parroquiaOrigen.trim(),
-        provincia: form.provincia as (typeof PROVINCIAS_COSTA_RICA)[number],
-        canton: form.canton.trim(),
-        distrito: form.distrito.trim(),
-        barrio: form.barrio.trim(),
-        condicion: form.condicion as CondicionBautismo,
-      });
+      const respuesta = await crearInscripcionCatequesisBautismo(
+        mapearFormularioBautismo(form),
+      );
       setListo({
         mensaje:
           respuesta?.mensaje ??

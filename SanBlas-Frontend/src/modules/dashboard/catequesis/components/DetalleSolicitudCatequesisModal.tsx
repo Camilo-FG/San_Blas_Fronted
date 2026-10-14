@@ -142,7 +142,7 @@ export function DetalleSolicitudCatequesisModal({
             </Button>
             <Button
               variant="secondary"
-              className="rounded-lg! border-0! duration-150 ease-out hover:bg-slate-300! dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
+              className="enabled:hover:text-[#dcb55a]"
               disabled={guardando}
               onClick={onRechazar}
             >

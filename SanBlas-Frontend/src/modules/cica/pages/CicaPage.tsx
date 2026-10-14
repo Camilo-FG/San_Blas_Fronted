@@ -4,11 +4,11 @@ import SeoHead from "../../../seo/SeoHead";
 import Rutas from "../../../routes/Rutas";
 import { Button, Card, ErrorMessage, FieldError, Input, Label, Textarea, Badge } from "../../../shared/ui";
 import { consultarInscripcionCica, crearInscripcionCica } from "../cicaService";
+import { mapearFormularioCica } from "../cicaMapper";
 import {
   getEstadoBadgeVariant,
   textoEstadoCica,
 } from "../estadoCica";
-import type { EstadoCivilCica } from "../types";
 import { SACRAMENTOS_CICA } from "../sacramentosCica";
 import {
   filtrarApellidoCica,
@@ -142,38 +142,7 @@ const CicaPage = () => {
 
     setEnviando(true);
     try {
-      const respuesta = await crearInscripcionCica({
-        nombre: form.nombre.trim(),
-        apellido1: form.apellido1.trim(),
-        apellido2: form.apellido2.trim() || null,
-        fechaNacimiento: form.fechaNacimiento,
-        cedula: form.cedula.trim(),
-        nacionalidad: form.nacionalidad.trim(),
-        telefono: form.telefono.trim(),
-        correo: form.correo.trim(),
-        estadoCivil: form.estadoCivil as EstadoCivilCica,
-        conyugeNombre:
-          form.estadoCivil === "soltero" ? null : form.conyugeNombre.trim(),
-        conyugeApellido1:
-          form.estadoCivil === "soltero" ? null : form.conyugeApellido1.trim(),
-        conyugeApellido2:
-          form.estadoCivil === "soltero"
-            ? null
-            : form.conyugeApellido2.trim() || null,
-        necesitaBautizo: form.necesitaBautizo,
-        necesitaPrimeraComunion: form.necesitaPrimeraComunion,
-        necesitaConfirmacion: form.necesitaConfirmacion,
-        padreNombre: form.padreNombre.trim(),
-        padreApellido1: form.padreApellido1.trim(),
-        padreApellido2: form.padreApellido2.trim() || null,
-        madreNombre: form.madreNombre.trim(),
-        madreApellido1: form.madreApellido1.trim(),
-        madreApellido2: form.madreApellido2.trim() || null,
-        direccionHogar: form.direccionHogar.trim(),
-        esCatolico: form.esCatolico === "si",
-        otraIglesia: form.esCatolico === "no" ? form.otraIglesia.trim() : null,
-        observacion: form.observacion.trim() || null,
-      });
+      const respuesta = await crearInscripcionCica(mapearFormularioCica(form));
       setListo({
         mensaje:
           respuesta?.mensaje ??
