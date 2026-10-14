@@ -188,6 +188,14 @@ export const agregarObservacionAdministrativa = async (
   return actualizarEstadoSolicitud(id, estado, observacion);
 };
 
+export const eliminarSolicitudCatequesis = async (id: number): Promise<void> => {
+  try {
+    await apiClient.delete(`${BASE}/${id}`);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
 export const consultarSolicitudesPorCorreo = async (
   correo: string,
 ): Promise<CatequesisEnrollmentRecord[]> => {

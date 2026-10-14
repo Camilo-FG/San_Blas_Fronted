@@ -10,6 +10,7 @@ import {
   Inbox,
   Loader2,
   RotateCcw,
+  Trash2,
   XCircle,
   GraduationCap,
   Mail,
@@ -54,6 +55,7 @@ import {
   Badge,
   type BadgeVariant,
   Button,
+  ConfirmacionAccionModal,
   EmptyState,
   ErrorMessage,
   LineaDoradaTitulo,
@@ -246,6 +248,8 @@ function GestionSolicitudesCatequesis() {
     cambiarEstado,
     obtenerDetalle,
     exportarExcel,
+    eliminar,
+    eliminando,
     cargando,
     filtrando,
     guardando,
@@ -273,6 +277,8 @@ function GestionSolicitudesCatequesis() {
   const [historialRegistrosPorPagina, setHistorialRegistrosPorPagina] =
     useState(7);
   const [historialSeleccionada, setHistorialSeleccionada] =
+    useState<HistorialInscripcionCatequesis | null>(null);
+  const [eliminarSeleccion, setEliminarSeleccion] =
     useState<HistorialInscripcionCatequesis | null>(null);
   const [historialNombreInput, setHistorialNombreInput] = useState("");
   const [historialFiltros, setHistorialFiltros] = useState({
@@ -434,6 +440,20 @@ function GestionSolicitudesCatequesis() {
     },
     [cambiarEstado, rejectionReason, closeModal, showToast],
   );
+
+  const confirmarEliminar = useCallback(async () => {
+    if (!eliminarSeleccion) return;
+    const resultado = await eliminar(eliminarSeleccion.id);
+    if (resultado.ok) {
+      showToast("Solicitud eliminada correctamente", "success");
+      setEliminarSeleccion(null);
+      setHistorialSeleccionada((actual) =>
+        actual?.id === eliminarSeleccion.id ? null : actual,
+      );
+      return;
+    }
+    showToast(resultado.mensaje, "error");
+  }, [eliminar, eliminarSeleccion, showToast]);
 
   const historialFiltrado = useMemo(() => {
     const nombreBuscado = normalizeText(historialFiltros.nombre);
@@ -1520,14 +1540,25 @@ function GestionSolicitudesCatequesis() {
                               )}
                             </AdminTableCell>
                             <AdminTableCell>
-                              <button
-                                type="button"
-                                onClick={() => setHistorialSeleccionada(item)}
-                                aria-label="Ver historial de esta inscripción"
-                                className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
-                              >
-                                <Eye size={17} strokeWidth={1.5} />
-                              </button>
+                              <span className="inline-flex items-center gap-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setHistorialSeleccionada(item)}
+                                  aria-label="Ver historial de esta inscripción"
+                                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
+                                >
+                                  <Eye size={17} strokeWidth={1.5} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEliminarSeleccion(item)}
+                                  aria-label={`Eliminar solicitud de ${item.nombreCatequizando || "esta inscripción"}`}
+                                  title="Eliminar solicitud"
+                                  className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#e66a6a]"
+                                >
+                                  <Trash2 size={17} strokeWidth={1.5} />
+                                </button>
+                              </span>
                             </AdminTableCell>
                           </AdminTableRow>
                         ))}
@@ -1584,6 +1615,12 @@ function GestionSolicitudesCatequesis() {
                           icon: <Eye size={15} />,
                           variant: "primary",
                           onClick: () => setHistorialSeleccionada(item),
+                        },
+                        {
+                          label: "Eliminar",
+                          icon: <Trash2 size={15} />,
+                          variant: "danger",
+                          onClick: () => setEliminarSeleccion(item),
                         },
                       ]}
                     />
@@ -1766,6 +1803,23 @@ function GestionSolicitudesCatequesis() {
           }}
         />
       )}
+
+      <ConfirmacionAccionModal
+        open={eliminarSeleccion !== null}
+        title="Eliminar solicitud"
+        parteSubrayada="Eliminar del historial"
+        mensaje={`¿Estás seguro/a que quieres eliminar la solicitud de ${eliminarSeleccion?.nombreCatequizando || "esta inscripción"}? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        pendingLabel="Eliminando..."
+        isPending={eliminando}
+        iconoAdvertencia
+        confirmVariant="danger"
+        onConfirm={() => void confirmarEliminar()}
+        onCancel={() => setEliminarSeleccion(null)}
+        overlayClassName="fixed inset-0 z-[1400] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+        cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
+      />
     </AdminModule>
   );
 }

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../../../services/apiClient";
 import {
   actualizarEstadoCatequesisBautismo,
+  eliminarInscripcionCatequesisBautismo,
   listarInscripcionesCatequesisBautismo,
 } from "../../../catequesisBautismo/catequesisBautismoService";
 import type {
@@ -70,6 +71,29 @@ export function useSolicitudesCatequesisBautismo() {
     [cambiarEstadoMutation],
   );
 
+  const eliminarMutation = useMutation({
+    mutationFn: (id: number) => eliminarInscripcionCatequesisBautismo(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: SOLICITUDES_KEY });
+      void queryClient.invalidateQueries({ queryKey: HISTORIAL_KEY });
+    },
+  });
+
+  const eliminar = useCallback(
+    async (id: number): Promise<{ ok: true } | { ok: false; mensaje: string }> => {
+      try {
+        await eliminarMutation.mutateAsync(id);
+        return { ok: true };
+      } catch (error) {
+        return {
+          ok: false,
+          mensaje: mensajeDeError(error, "No se pudo eliminar la solicitud."),
+        };
+      }
+    },
+    [eliminarMutation],
+  );
+
   const reintentar = useCallback(() => {
     void solicitudesQuery.refetch();
     void historialQuery.refetch();
@@ -87,5 +111,7 @@ export function useSolicitudesCatequesisBautismo() {
     reintentar,
     cambiarEstado,
     guardando: cambiarEstadoMutation.isPending,
+    eliminar,
+    eliminando: eliminarMutation.isPending,
   };
 }
