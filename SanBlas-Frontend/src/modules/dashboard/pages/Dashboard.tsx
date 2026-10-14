@@ -193,6 +193,7 @@ function Dashboard() {
 
   useEffect(() => {
     if (esRutaDeCatequesis(pathname)) setCatequesisAbierta(true);
+    else setCatequesisAbierta(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -259,8 +260,14 @@ function Dashboard() {
           barraExpandida ? "lg:w-72" : "lg:w-20",
           esAdmin && "dark:bg-[#030710]",
         )}
-        onMouseEnter={() => setBarraExpandida(true)}
-        onMouseLeave={() => setBarraExpandida(false)}
+        onMouseEnter={() => {
+          setBarraExpandida(true);
+          if (esRutaDeCatequesis(pathname)) setCatequesisAbierta(true);
+        }}
+        onMouseLeave={() => {
+          setBarraExpandida(false);
+          setCatequesisAbierta(false);
+        }}
         aria-label="Menú del panel administrativo"
       >
         <div>
