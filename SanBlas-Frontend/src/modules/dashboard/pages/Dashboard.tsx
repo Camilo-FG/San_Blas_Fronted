@@ -1,6 +1,6 @@
 import SeoHead from "../../../seo/SeoHead";
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -132,7 +132,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
 };
 
 const menuItemBaseClassName =
-  "group relative flex w-full items-center gap-2.5 rounded-lg border-l-4 py-2 pr-4 pl-1 text-left text-sm font-semibold no-underline transition-all duration-200 ease-out hover:translate-x-1.5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
+  "group relative flex w-full items-center gap-2.5 overflow-hidden rounded-lg border-l-4 py-2 pr-4 pl-1 text-left text-sm font-semibold no-underline transition-[background-color,color,border-color] duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
 const menuItemInactiveClassName =
   "border-transparent text-gray-400 hover:bg-white/5 hover:text-white dark:hover:bg-transparent";
@@ -178,6 +178,31 @@ function Dashboard() {
   const [barraExpandida, setBarraExpandida] = useState(false);
   const [catequesisAbierta, setCatequesisAbierta] = useState(() =>
     esRutaDeCatequesis(pathname),
+  );
+  const temporizadorCierre = useRef<number | null>(null);
+
+  const expandirBarra = () => {
+    if (temporizadorCierre.current) {
+      window.clearTimeout(temporizadorCierre.current);
+      temporizadorCierre.current = null;
+    }
+    setBarraExpandida(true);
+    if (esRutaDeCatequesis(pathname)) setCatequesisAbierta(true);
+  };
+
+  const colapsarBarra = () => {
+    if (temporizadorCierre.current) window.clearTimeout(temporizadorCierre.current);
+    temporizadorCierre.current = window.setTimeout(() => {
+      setBarraExpandida(false);
+      setCatequesisAbierta(false);
+    }, 120);
+  };
+
+  useEffect(
+    () => () => {
+      if (temporizadorCierre.current) window.clearTimeout(temporizadorCierre.current);
+    },
+    [],
   );
   const esAdmin =
     pathname === Rutas.dashboard ||
@@ -255,23 +280,17 @@ function Dashboard() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 z-50 flex h-screen w-72 shrink-0 flex-col justify-between overflow-hidden border-r border-gray-800 bg-[#050a12] text-gray-300 transition-[width,transform] duration-300 ease-out lg:sticky lg:translate-x-0",
+          "fixed top-0 z-50 flex h-screen w-72 shrink-0 flex-col justify-between overflow-hidden overflow-x-hidden border-r border-gray-800 bg-[#050a12] text-gray-300 transition-[width,transform] duration-200 ease-in-out will-change-[width,transform] lg:sticky lg:translate-x-0",
           menuAbierto ? "translate-x-0" : "-translate-x-full",
           barraExpandida ? "lg:w-72" : "lg:w-20",
           esAdmin && "dark:bg-[#030710]",
         )}
-        onMouseEnter={() => {
-          setBarraExpandida(true);
-          if (esRutaDeCatequesis(pathname)) setCatequesisAbierta(true);
-        }}
-        onMouseLeave={() => {
-          setBarraExpandida(false);
-          setCatequesisAbierta(false);
-        }}
+        onMouseEnter={expandirBarra}
+        onMouseLeave={colapsarBarra}
         aria-label="Menú del panel administrativo"
       >
         <div>
-          <div className={cn("border-b border-gray-800 px-5 py-5", !barraExpandida && "lg:flex lg:h-[88px] lg:items-center lg:justify-start lg:p-0 lg:pl-5")}>
+          <div className="flex h-[68px] shrink-0 items-center border-b border-gray-800 px-5 lg:h-[76px] lg:px-4">
             <Link
               to={Rutas.home}
               aria-label="Ir al sitio de la parroquia"
@@ -281,7 +300,7 @@ function Dashboard() {
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-brand-gold bg-brand-blue dark:border-[#e3c05c] dark:bg-[#050a12] dark:shadow-[0_0_14px_rgba(212,175,55,0.45)]">
                 <span className="font-heading text-sm font-bold text-brand-gold dark:text-[#e8c85a]">SB</span>
               </div>
-              <div className={cn("min-w-0", !barraExpandida && "lg:hidden")}>
+              <div className={cn("min-w-0 overflow-hidden whitespace-nowrap transition-opacity duration-150", !barraExpandida ? "lg:pointer-events-none lg:opacity-0" : "lg:opacity-100")}>
                 <span className="block truncate whitespace-nowrap font-heading text-sm font-bold text-white">
                   San Blas Nicoya
                 </span>
@@ -317,7 +336,6 @@ function Dashboard() {
                       className={cn(
                         menuItemBaseClassName,
                         "cursor-pointer border-0 bg-transparent",
-                        !barraExpandida && "lg:pr-0",
                         pastillaCompleta
                           ? menuItemActiveExpandedClassName
                           : menuItemInactiveClassName,
@@ -328,7 +346,7 @@ function Dashboard() {
                           <span
                             aria-hidden="true"
                             className={cn(
-                              "pointer-events-none absolute left-1 top-1/2 h-9 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-300 ease-out",
+                              "pointer-events-none absolute left-1 top-1/2 h-9 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-200 ease-in-out",
                               pastillaCompleta && !pastillaIcono && "w-[calc(100%-4px)]",
                               !pastillaCompleta && pastillaIcono && "hidden w-9 lg:block",
                               pastillaCompleta && pastillaIcono && "w-[calc(100%-4px)] lg:w-9",
@@ -338,7 +356,7 @@ function Dashboard() {
                         <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-transparent">
                           <Icon
                             className={cn(
-                              "h-[18px] w-[18px] shrink-0 transition-all duration-200",
+                              "h-[18px] w-[18px] shrink-0 transition-[color] duration-150",
                               pastillaCompleta
                                 ? "text-[#0a1628]"
                                 : pastillaIcono
@@ -352,8 +370,8 @@ function Dashboard() {
                         </span>
                         <span
                           className={cn(
-                            "relative whitespace-nowrap",
-                            !barraExpandida && "lg:hidden",
+                            "relative overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-150",
+                            !barraExpandida ? "lg:max-w-0 lg:opacity-0" : "lg:max-w-[180px] lg:opacity-100",
                           )}
                         >
                           {link.label}
@@ -361,9 +379,9 @@ function Dashboard() {
                         <ChevronDown
                           aria-hidden="true"
                           className={cn(
-                            "relative ml-auto h-4 w-4 shrink-0 transition-transform duration-200",
+                            "relative ml-auto h-4 w-4 shrink-0 transition-[transform,opacity] duration-150",
                             catequesisAbierta && "rotate-180",
-                            !barraExpandida && "lg:hidden",
+                            !barraExpandida && "lg:opacity-0",
                           )}
                         />
                       </span>
@@ -424,7 +442,6 @@ function Dashboard() {
                   to={link.to}
                   className={cn(
                     menuItemBaseClassName,
-                    !barraExpandida && "lg:pr-0",
                   )}
                   inactiveProps={{ className: menuItemInactiveClassName }}
                   activeProps={{
@@ -443,7 +460,7 @@ function Dashboard() {
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "pointer-events-none absolute left-1 top-1/2 h-9 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-300 ease-out",
+                        "pointer-events-none absolute left-1 top-1/2 h-9 -translate-y-1/2 rounded-[10px] bg-gradient-to-br from-[#f6c945] via-[#e6b53a] to-[#c9992b] shadow-[0_0_18px_rgba(230,181,58,0.5),0_4px_10px_rgba(0,0,0,0.3)] transition-[width] duration-200 ease-in-out",
                         barraExpandida ? "w-[calc(100%-4px)]" : "w-9",
                       )}
                     />
@@ -453,7 +470,7 @@ function Dashboard() {
                   >
                     <Icon
                       className={cn(
-                        "h-[18px] w-[18px] shrink-0 transition-all duration-200",
+                        "h-[18px] w-[18px] shrink-0 transition-[color] duration-150",
                         activo
                           ? "text-[#0a1628]"
                           : esDonaciones
@@ -465,8 +482,8 @@ function Dashboard() {
                     </span>
                     <span
                       className={cn(
-                        "relative whitespace-nowrap pr-16",
-                        !barraExpandida && "lg:hidden",
+                        "relative overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-150",
+                        !barraExpandida ? "lg:max-w-0 lg:opacity-0 lg:pr-0" : "lg:max-w-[220px] lg:opacity-100 pr-16",
                       )}
                     >
                       {link.label}
@@ -485,7 +502,7 @@ function Dashboard() {
                 "flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-full border py-1.5 pl-1.5 pr-3.5 text-gray-300 transition-colors hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-70",
                 barraExpandida
                   ? "border-white/10 bg-black/40 hover:border-white/20"
-                  : "border-transparent bg-transparent lg:pr-0",
+                  : "border-transparent bg-transparent",
               )}
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center">
@@ -494,8 +511,8 @@ function Dashboard() {
               </span>
               <span
                 className={cn(
-                  "flex-1 whitespace-nowrap text-left text-sm font-semibold",
-                  !barraExpandida && "lg:hidden",
+                  "flex-1 overflow-hidden whitespace-nowrap text-left text-sm font-semibold transition-[max-width,opacity] duration-150",
+                  !barraExpandida ? "lg:max-w-0 lg:opacity-0" : "lg:max-w-[180px] lg:opacity-100",
                 )}
               >
                 {esOscuro ? "Modo oscuro" : "Modo claro"}
@@ -504,7 +521,7 @@ function Dashboard() {
           </nav>
         </div>
 
-        <div className={cn("border-t border-gray-800 bg-[#050a12] px-6 py-4 text-xs", !barraExpandida && "lg:flex lg:h-[99px] lg:items-start lg:justify-center lg:pt-4 lg:px-0")}>
+        <div className="shrink-0 border-t border-gray-800 bg-[#050a12] px-4 py-4 text-xs">
           <Link
             to={Rutas.dashboardUrl.perfil}
             className={cn(
@@ -516,14 +533,14 @@ function Dashboard() {
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-gold font-heading text-[10px] font-bold text-brand-blue uppercase">
               {getUserInitial(user?.email)}
             </div>
-            <div className={cn("min-w-0 overflow-hidden", !barraExpandida && "lg:hidden")}>
+            <div className={cn("min-w-0 overflow-hidden whitespace-nowrap transition-opacity duration-150", !barraExpandida ? "lg:pointer-events-none lg:opacity-0" : "lg:opacity-100")}>
               <p className="truncate whitespace-nowrap text-[11px] font-bold text-white">
                 {getRoleLabel(user?.role)}
               </p>
               <p className="truncate whitespace-nowrap text-[9px] text-gray-500">{user?.email}</p>
             </div>
           </Link>
-          <div className={cn("grid min-w-56 grid-cols-2 gap-2", !barraExpandida && "lg:hidden")}>
+          <div className={cn("grid min-w-56 grid-cols-2 gap-2 overflow-hidden transition-[max-height,opacity] duration-200", !barraExpandida ? "lg:max-h-0 lg:opacity-0" : "lg:max-h-16 lg:opacity-100")}>
             <Link
               to={Rutas.home}
               className="w-full rounded bg-white/5 py-1.5 text-center text-[10px] font-semibold whitespace-nowrap text-gray-400 no-underline transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
