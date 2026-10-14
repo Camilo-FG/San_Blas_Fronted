@@ -5,7 +5,7 @@ const variantClasses = {
   primary:
     "bg-teal text-white hover:bg-teal-hover focus-visible:ring-focus-ring",
   secondary:
-    "border border-border-strong bg-surface text-royal-blue hover:bg-surface-muted focus-visible:ring-focus-ring",
+    "border border-border-strong bg-slate-200 text-royal-blue hover:bg-slate-300 hover:text-royal-blue focus-visible:ring-focus-ring dark:border-white/15 dark:bg-[#334155] dark:text-[#f3f6fa] dark:hover:bg-[#475569] dark:hover:text-[#f3f6fa]",
   danger:
     "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-focus-ring",
   ghost:
@@ -13,7 +13,7 @@ const variantClasses = {
   royal:
     "bg-royal-blue text-white hover:bg-royal-blue-dark focus-visible:ring-focus-ring",
   outline:
-    "border border-border-strong bg-surface text-royal-blue hover:bg-surface-muted focus-visible:ring-focus-ring",
+    "border border-border-strong bg-slate-200 text-royal-blue hover:bg-slate-300 hover:text-royal-blue focus-visible:ring-focus-ring dark:border-white/15 dark:bg-[#334155] dark:text-[#f3f6fa] dark:hover:bg-[#475569] dark:hover:text-[#f3f6fa]",
 } as const;
 
 export type ButtonVariant = keyof typeof variantClasses;
