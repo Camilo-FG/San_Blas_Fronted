@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { IdentificacionCedula } from "../../../shared/components/IdentificacionCedula";
+import { useAutocompletarCedula } from "../../../shared/hooks/useAutocompletarCedula";
+import { limpiarCedula, PATRON_CEDULA, type TipoCedula } from "../../../shared/utils/cedulaIdentificacion";
 import { ApiError } from "../../../services/apiClient";
 import SeoHead from "../../../seo/SeoHead";
 import Rutas from "../../../routes/Rutas";
@@ -31,6 +34,7 @@ const vacio: FormularioCica = {
   apellido2: "",
   fechaNacimiento: "",
   cedula: "",
+  tipoCedula: "nacional",
   nacionalidad: "",
   telefono: "",
   correo: "",
@@ -105,6 +109,7 @@ function Campo({
 
 const CicaPage = () => {
   const [form, setForm] = useState(vacio);
+  const { estado: estadoCedula, verificar } = useAutocompletarCedula();
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -133,10 +138,32 @@ const CicaPage = () => {
   const alApellido = (clave: keyof FormularioCica) => (valor: string) =>
     set(clave, filtrarApellidoCica(valor));
 
+  // Cambiar la identificación invalida los nombres anteriores, incluso si la consulta vieja termina después.
+  const cambiarIdentificacion = (valor: string, tipo: TipoCedula) => {
+    const cedula = limpiarCedula(valor, tipo);
+    setForm((actual) => ({ ...actual, cedula, tipoCedula: tipo, nombre: "", apellido1: "", apellido2: "" }));
+    setErrores((actual) => {
+      const siguiente = { ...actual };
+      for (const clave of ["cedula", "nombre", "apellido1", "apellido2"]) delete siguiente[clave];
+      return siguiente;
+    });
+    void verificar(cedula, tipo, (datos) => {
+      setForm((actual) => ({
+        ...actual,
+        nombre: filtrarNombreCica(datos.nombre),
+        apellido1: filtrarApellidoCica(datos.primerApellido),
+        apellido2: filtrarApellidoCica(datos.segundoApellido),
+      }));
+    });
+  };
+
   const enviar = async (event: React.FormEvent) => {
     event.preventDefault();
     setErrorEnvio(null);
     const encontrados = validarFormularioCica(form);
+    if (form.tipoCedula === "nacional" && estadoCedula !== "encontrada") {
+      encontrados.cedula = "Verifique la cédula antes de enviar la inscripción.";
+    }
     setErrores(encontrados);
     if (Object.keys(encontrados).length > 0) return;
 
@@ -162,8 +189,8 @@ const CicaPage = () => {
 
   const consultar = async () => {
     const cedula = cedulaConsulta.trim();
-    if (!/^\d{9}$/.test(cedula)) {
-      setErrorConsulta("La cédula debe tener 9 dígitos.");
+    if (!PATRON_CEDULA.test(cedula)) {
+      setErrorConsulta("La cédula debe tener 9 dígitos (nacional) o 12 (extranjera).");
       setConsultas([]);
       return;
     }
@@ -245,7 +272,10 @@ const CicaPage = () => {
                 <legend className="mb-2 font-heading text-lg font-extrabold text-royal-blue">
                   Identificación
                 </legend>
-                <Campo etiqueta="Cédula" obligatorio className="sm:col-span-3" placeholder="Ej: 102340567" valor={form.cedula} error={errores.cedula} onChange={(valor) => set("cedula", valor)} />
+                <IdentificacionCedula tipo={form.tipoCedula} valor={form.cedula} estado={estadoCedula} error={errores.cedula}
+                  onValor={(valor) => cambiarIdentificacion(valor, form.tipoCedula)}
+                  onTipo={(tipo) => cambiarIdentificacion("", tipo)}
+                  onReintentar={() => cambiarIdentificacion(form.cedula, form.tipoCedula)} />
                 <Campo etiqueta="Nombre" obligatorio maxLength={MAX_NOMBRE_CICA} placeholder="Ej: Ana María" valor={form.nombre} error={errores.nombre} onChange={alNombre("nombre")} />
                 <Campo etiqueta="Primer apellido" obligatorio maxLength={MAX_APELLIDO_CICA} placeholder="Ej: Pérez" valor={form.apellido1} error={errores.apellido1} onChange={alApellido("apellido1")} />
                 <Campo etiqueta="Segundo apellido" maxLength={MAX_APELLIDO_CICA} placeholder="Ej: Gómez" valor={form.apellido2} error={errores.apellido2} onChange={alApellido("apellido2")} />
@@ -422,7 +452,7 @@ const CicaPage = () => {
               </div>
 
               <FieldError message={errorEnvio} />
-              <Button type="submit" variant="royal" disabled={enviando}>
+              <Button type="submit" variant="royal" disabled={enviando || estadoCedula === "buscando"}>
                 {enviando ? "Enviando..." : "Enviar inscripción"}
               </Button>
             </form>
@@ -442,8 +472,10 @@ const CicaPage = () => {
               <Label required>Cédula</Label>
               <Input
                 value={cedulaConsulta}
+                inputMode="numeric"
+                maxLength={12}
                 placeholder="Ej: 102340567"
-                onChange={(event) => setCedulaConsulta(event.target.value)}
+                onChange={(event) => setCedulaConsulta(event.target.value.replace(/\D/g, "").slice(0, 12))}
               />
             </div>
             <Button

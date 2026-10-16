@@ -1,3 +1,5 @@
+import type { TipoCedula } from "../../shared/utils/cedulaIdentificacion";
+
 export type EstadoCivilCica = "soltero" | "matrimonio_civil" | "union_libre";
 
 export interface InscripcionCica {
@@ -34,6 +36,7 @@ export interface InscripcionCica {
 }
 
 export interface CrearInscripcionCica {
+  tipoCedula: TipoCedula;
   nombre: string;
   apellido1: string;
   apellido2: string | null;

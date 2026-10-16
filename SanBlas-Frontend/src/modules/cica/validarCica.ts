@@ -1,5 +1,6 @@
 import type { EstadoCivilCica } from "./types";
 import { SACRAMENTOS_CICA } from "./sacramentosCica";
+import { validarCedulaIdentificacion, type TipoCedula } from "../../shared/utils/cedulaIdentificacion";
 
 export const MAX_NOMBRE_CICA = 25;
 export const MAX_APELLIDO_CICA = 25;
@@ -7,7 +8,6 @@ export const MAX_DIRECCION_CICA = 100;
 export const MAX_TEXTO_CICA = 200;
 export const MIN_DIRECCION_CICA = 10;
 
-export const CEDULA_CICA = /^\d{9}$/;
 export const TELEFONO_CICA = /^\d{4}-\d{4}$/;
 export const CORREO_CICA = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const LETRAS_CON_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
@@ -32,6 +32,7 @@ export type FormularioCica = {
   apellido2: string;
   fechaNacimiento: string;
   cedula: string;
+  tipoCedula: TipoCedula;
   nacionalidad: string;
   telefono: string;
   correo: string;
@@ -100,9 +101,7 @@ export const validarFormularioCica = (
   poner("apellido2", mensajeNombre(form.apellido2, "El segundo apellido", false, false));
   poner("fechaNacimiento", mensajeFechaNacimientoCica(form.fechaNacimiento));
 
-  if (!form.cedula.trim()) errores.cedula = "La cédula es obligatoria.";
-  else if (!CEDULA_CICA.test(form.cedula.trim()))
-    errores.cedula = "La cédula debe tener 9 dígitos.";
+  poner("cedula", validarCedulaIdentificacion(form.cedula, form.tipoCedula));
 
   poner(
     "nacionalidad",

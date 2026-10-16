@@ -17,6 +17,7 @@ export function mapearFormularioCica(form: FormularioCica): CrearInscripcionCica
     apellido2: nuloSiVacio(form.apellido2),
     fechaNacimiento: form.fechaNacimiento,
     cedula: limpiar(form.cedula),
+    tipoCedula: form.tipoCedula,
     nacionalidad: limpiar(form.nacionalidad),
     telefono: limpiar(form.telefono),
     correo: limpiar(form.correo),
