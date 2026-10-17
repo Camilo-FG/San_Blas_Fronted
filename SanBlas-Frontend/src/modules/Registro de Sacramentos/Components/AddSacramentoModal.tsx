@@ -541,7 +541,6 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
                   void autocompletarPorCedula(setter, cedula, { ...persona, cedula }, prefijo);
                 }
               }}
-              onBlur={() => void autocompletarPorCedula(setter, persona.cedula, persona, prefijo)}
             />
             {campoCedulaCargando === prefijo && (
               <Loader2
@@ -623,7 +622,13 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
               </select>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div className="relative">
-                  <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} className="pr-10" onChange={(e) => setAbueloCampo(idx, 'cedula', e.target.value)} onBlur={() => void autocompletarAbueloPorCedula(idx, ab)} />
+                  <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} className="pr-10" onChange={(e) => {
+                    setAbueloCampo(idx, 'cedula', e.target.value);
+                    const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
+                    if (cedulaDigitosValidos(cedula).length === 9) {
+                      void autocompletarAbueloPorCedula(idx, { ...ab, cedula });
+                    }
+                  }} />
                   {campoCedulaCargando === `abuelo-${idx}` && <Loader2 aria-label="Buscando datos de la cédula" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue" />}
                 </div>
                 <Input type="text" placeholder="Nombre" maxLength={30} value={ab.nombre} disabled={cedulaDigitosValidos(ab.cedula).length > 0} title={cedulaDigitosValidos(ab.cedula).length > 0 ? 'Borre la cédula para cambiar el nombre.' : undefined} onChange={(e) => setAbueloCampo(idx, 'nombre', e.target.value)} />
