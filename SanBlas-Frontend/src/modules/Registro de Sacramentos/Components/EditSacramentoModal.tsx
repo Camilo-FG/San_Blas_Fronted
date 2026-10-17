@@ -335,6 +335,10 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
     campo: keyof PersonaForm,
     valor: string,
   ) => {
+    if (campo === 'cedula' && cedulaDigitosValidos(valor).length === 0) {
+      setter(() => ({ cedula: '', nombre: '', primerApellido: '', segundoApellido: '' }));
+      return;
+    }
     setter((prev) => ({
       ...prev,
       [campo]:
@@ -365,11 +369,13 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
       ...prev,
       abuelos: prev.abuelos.map((ab, i) =>
         i === idx
-          ? {
-              ...ab,
-              [campo]:
-                campo === 'cedula' ? formatearCedulaCR(cedulaDigitosValidos(valor)) : soloLetras(valor),
-            }
+          ? campo === 'cedula' && cedulaDigitosValidos(valor).length === 0
+            ? { ...ab, cedula: '', nombre: '', primerApellido: '', segundoApellido: '' }
+            : {
+                ...ab,
+                [campo]:
+                  campo === 'cedula' ? formatearCedulaCR(cedulaDigitosValidos(valor)) : soloLetras(valor),
+              }
           : ab,
       ),
     }));
@@ -596,15 +602,15 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
           <ErrorMsg errors={errors} clave={`${prefijo}Cedula`} />
         </div>
         <div>
-          <Input type="text" placeholder="Nombre" maxLength={30} className={inputClass(Boolean(errors[`${prefijo}Nombre`]))} value={persona.nombre} onChange={(e) => setCampoPersona(setter, 'nombre', e.target.value)} />
+          <Input type="text" placeholder="Nombre" maxLength={30} className={inputClass(Boolean(errors[`${prefijo}Nombre`]))} value={persona.nombre} disabled={cedulaDigitosValidos(persona.cedula).length > 0} onChange={(e) => setCampoPersona(setter, 'nombre', e.target.value)} />
           <ErrorMsg errors={errors} clave={`${prefijo}Nombre`} />
         </div>
         <div>
-          <Input type="text" placeholder="Primer apellido" maxLength={30} className={inputClass(Boolean(errors[`${prefijo}PrimerApellido`]))} value={persona.primerApellido} onChange={(e) => setCampoPersona(setter, 'primerApellido', e.target.value)} />
+          <Input type="text" placeholder="Primer apellido" maxLength={30} className={inputClass(Boolean(errors[`${prefijo}PrimerApellido`]))} value={persona.primerApellido} disabled={cedulaDigitosValidos(persona.cedula).length > 0} onChange={(e) => setCampoPersona(setter, 'primerApellido', e.target.value)} />
           <ErrorMsg errors={errors} clave={`${prefijo}PrimerApellido`} />
         </div>
         <div>
-          <Input type="text" placeholder="Segundo apellido" maxLength={30} className={inputClass(Boolean(errors[`${prefijo}SegundoApellido`]))} value={persona.segundoApellido} onChange={(e) => setCampoPersona(setter, 'segundoApellido', e.target.value)} />
+          <Input type="text" placeholder="Segundo apellido" maxLength={30} className={inputClass(Boolean(errors[`${prefijo}SegundoApellido`]))} value={persona.segundoApellido} disabled={cedulaDigitosValidos(persona.cedula).length > 0} onChange={(e) => setCampoPersona(setter, 'segundoApellido', e.target.value)} />
           <ErrorMsg errors={errors} clave={`${prefijo}SegundoApellido`} />
         </div>
       </div>
@@ -648,9 +654,9 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
               </select>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} onChange={(e) => setAbueloBautismoCampo(idx, 'cedula', e.target.value)} onBlur={() => void autocompletarAbueloPorCedula(idx, ab)} />
-                <Input type="text" placeholder="Nombre" maxLength={30} value={ab.nombre} onChange={(e) => setAbueloBautismoCampo(idx, 'nombre', e.target.value)} />
-                <Input type="text" placeholder="Primer apellido" maxLength={30} value={ab.primerApellido} onChange={(e) => setAbueloBautismoCampo(idx, 'primerApellido', e.target.value)} />
-                <Input type="text" placeholder="Segundo apellido" maxLength={30} value={ab.segundoApellido} onChange={(e) => setAbueloBautismoCampo(idx, 'segundoApellido', e.target.value)} />
+                <Input type="text" placeholder="Nombre" maxLength={30} value={ab.nombre} disabled={cedulaDigitosValidos(ab.cedula).length > 0} onChange={(e) => setAbueloBautismoCampo(idx, 'nombre', e.target.value)} />
+                <Input type="text" placeholder="Primer apellido" maxLength={30} value={ab.primerApellido} disabled={cedulaDigitosValidos(ab.cedula).length > 0} onChange={(e) => setAbueloBautismoCampo(idx, 'primerApellido', e.target.value)} />
+                <Input type="text" placeholder="Segundo apellido" maxLength={30} value={ab.segundoApellido} disabled={cedulaDigitosValidos(ab.cedula).length > 0} onChange={(e) => setAbueloBautismoCampo(idx, 'segundoApellido', e.target.value)} />
               </div>
             </div>
           ))}
