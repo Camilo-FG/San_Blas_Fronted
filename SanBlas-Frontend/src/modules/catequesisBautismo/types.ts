@@ -1,3 +1,5 @@
+import type { TipoCedula } from "../../shared/utils/cedulaIdentificacion";
+
 export type EstadoCivilBautismo =
   | "soltero"
   | "matrimonio_catolico"
@@ -61,6 +63,7 @@ export interface InscripcionCatequesisBautismo {
 }
 
 export interface CrearInscripcionCatequesisBautismo {
+  tipoCedula: TipoCedula;
   nombre: string;
   apellido1: string;
   apellido2: string | null;

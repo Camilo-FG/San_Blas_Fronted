@@ -1,10 +1,10 @@
 import type { CondicionBautismo, EstadoCivilBautismo } from "./types";
 import { PROVINCIAS_COSTA_RICA } from "./types";
+import { validarCedulaIdentificacion, type TipoCedula } from "../../shared/utils/cedulaIdentificacion";
 
 export const MAX_NOMBRE_BAUTISMO = 25;
 export const MAX_APELLIDO_BAUTISMO = 25;
 
-export const CEDULA_BAUTISMO = /^\d{9}$/;
 export const TELEFONO_BAUTISMO = /^\d{4}-\d{4}$/;
 const LETRAS_CON_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
 const LETRAS_SIN_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/;
@@ -28,6 +28,7 @@ export type FormularioCatequesisBautismo = {
   apellido2: string;
   fechaNacimiento: string;
   cedula: string;
+  tipoCedula: TipoCedula;
   telefono: string;
   estadoCivil: EstadoCivilBautismo | "";
   parroquiaOrigen: string;
@@ -84,9 +85,7 @@ export const validarFormularioCatequesisBautismo = (
   poner("apellido2", mensajeNombre(form.apellido2, "El segundo apellido", false, false));
   poner("fechaNacimiento", mensajeFechaNacimientoBautismo(form.fechaNacimiento));
 
-  if (!form.cedula.trim()) errores.cedula = "La cédula es obligatoria.";
-  else if (!CEDULA_BAUTISMO.test(form.cedula.trim()))
-    errores.cedula = "La cédula debe tener 9 dígitos.";
+  poner("cedula", validarCedulaIdentificacion(form.cedula, form.tipoCedula));
 
   if (!form.telefono.trim()) errores.telefono = "El teléfono es obligatorio.";
   else if (!TELEFONO_BAUTISMO.test(form.telefono.trim()))
