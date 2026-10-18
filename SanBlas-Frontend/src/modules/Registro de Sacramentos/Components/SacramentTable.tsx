@@ -32,9 +32,12 @@ interface Props {
 
 const PAGE_SIZES = [10, 25, 50];
 
+// Texto que se muestra en la columna "Cédula" cuando el registro no tiene cédula.
+const CEDULA_NO_ESPECIFICADA = 'No se especifica';
+
 const formatearCedula = (valor: string | null | undefined): string => {
   const soloDigitos = String(valor ?? '').replace(/\D/g, '');
-  if (!soloDigitos) return '';
+  if (!soloDigitos) return CEDULA_NO_ESPECIFICADA;
   if (soloDigitos.length <= 1) return soloDigitos;
   if (soloDigitos.length <= 5) return `${soloDigitos[0]}-${soloDigitos.slice(1)}`;
   return `${soloDigitos[0]}-${soloDigitos.slice(1, 5)}-${soloDigitos.slice(5)}`;

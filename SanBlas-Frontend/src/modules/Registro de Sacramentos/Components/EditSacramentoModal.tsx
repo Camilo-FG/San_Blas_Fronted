@@ -378,30 +378,28 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
     }));
   };
 
-  // Al completar la cédula, consulta la API y llena solo los campos que el usuario no haya escrito.
+  // Al completar la cédula, consulta la API y sobrescribe nombre y apellidos con
+  // los de esa cédula (al cambiarla se reemplazan los datos anteriores).
   const autocompletarPorCedula = async (
     setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
     cedula: string,
-    persona: PersonaForm,
     campo: string,
   ) => {
     const digitos = cedulaDigitosValidos(cedula);
     if (digitos.length !== 9) return;
-    if (persona.nombre.trim() && persona.primerApellido.trim()) return;
     setCampoCedulaCargando(campo);
     try {
       const datos = await obtenerDatosCedula(cedula);
-      if (!datos) return;
-      setter((prev) => ({
-        ...prev,
-        nombre: prev.nombre.trim() ? prev.nombre : datos.nombre,
-        primerApellido: prev.primerApellido.trim()
-          ? prev.primerApellido
-          : datos.primerApellido,
-        segundoApellido: prev.segundoApellido.trim()
-          ? prev.segundoApellido
-          : datos.segundoApellido,
-      }));
+      setter((prev) => {
+        // Si el usuario cambió la cédula mientras se consultaba, no sobrescribir.
+        if (cedulaDigitosValidos(prev.cedula) !== digitos) return prev;
+        return {
+          ...prev,
+          nombre: datos?.nombre ?? '',
+          primerApellido: datos?.primerApellido ?? '',
+          segundoApellido: datos?.segundoApellido ?? '',
+        };
+      });
     } finally {
       setCampoCedulaCargando((actual) => (actual === campo ? null : actual));
     }
@@ -411,24 +409,23 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
   const autocompletarAbueloPorCedula = async (idx: number, abuelo: PersonaForm & { parentesco: ParentescoAbuelo }) => {
     const digitos = cedulaDigitosValidos(abuelo.cedula);
     if (digitos.length !== 9) return;
-    if (abuelo.nombre.trim() && abuelo.primerApellido.trim()) return;
     const campo = `abuelo-${idx}`;
     setCampoCedulaCargando(campo);
     try {
       const datos = await obtenerDatosCedula(abuelo.cedula);
-      if (!datos) return;
       setBautismo((prev) => ({
         ...prev,
-        abuelos: prev.abuelos.map((a, i) =>
-          i === idx
-            ? {
-                ...a,
-                nombre: a.nombre.trim() ? a.nombre : datos.nombre,
-                primerApellido: a.primerApellido.trim() ? a.primerApellido : datos.primerApellido,
-                segundoApellido: a.segundoApellido.trim() ? a.segundoApellido : datos.segundoApellido,
-              }
-            : a,
-        ),
+        abuelos: prev.abuelos.map((a, i) => {
+          if (i !== idx) return a;
+          // Si el usuario cambió la cédula mientras se consultaba, no sobrescribir.
+          if (cedulaDigitosValidos(a.cedula) !== digitos) return a;
+          return {
+            ...a,
+            nombre: datos?.nombre ?? '',
+            primerApellido: datos?.primerApellido ?? '',
+            segundoApellido: datos?.segundoApellido ?? '',
+          };
+        }),
       }));
     } finally {
       setCampoCedulaCargando((actual) => (actual === campo ? null : actual));
@@ -606,7 +603,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, 
               const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
               setCampoPersona(setter, 'cedula', e.target.value);
               if (cedulaDigitosValidos(cedula).length === 9) {
-                void autocompletarPorCedula(setter, cedula, { ...persona, cedula }, prefijo);
+                void autocompletarPorCedula(setter, cedula, prefijo);
               }
             }} />
             {campoCedulaCargando === prefijo && (

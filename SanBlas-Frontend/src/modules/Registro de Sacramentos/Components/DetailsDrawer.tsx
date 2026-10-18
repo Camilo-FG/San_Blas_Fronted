@@ -2,10 +2,14 @@ import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useObtenerSacramentosPersona } from '../hooks/hooksNuevos/useObtenerSacramentosPersona';
+import { useObtenerSacramentoNuevo } from '../hooks/hooksNuevos/useObtenerSacramentoNuevo';
 import {
   DetalleBautismo,
+  DetalleMatrimonio,
+  DetallePersonaSacramento,
   PersonaDetalle,
   PersonaSacramental,
+  SacramentoDetalle,
   TIPO_SACRAMENTO_LABEL,
 } from '../../../types/sacramentosNuevos';
 
@@ -13,6 +17,8 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   cedula: string | null;
+  // Se usa cuando el registro no tiene cédula: el detalle se consulta por id.
+  sacramentoId: number | null;
 }
 
 const nombreCompleto = (persona: PersonaDetalle | null | undefined): string => {
@@ -37,6 +43,23 @@ const nombreActa = (s: PersonaSacramental): string => {
   if (s.matrimonio) return 'Acta de Matrimonio';
   return 'Acta de vida sacramental';
 };
+
+// Persona dueña del acta según el tipo de sacramento.
+const personaDeDetalle = (detalle: SacramentoDetalle): PersonaDetalle => {
+  if (detalle.tipo === 'bautismo') return (detalle.detalle as DetalleBautismo).bautizado;
+  if (detalle.tipo === 'matrimonio') return (detalle.detalle as DetalleMatrimonio).contrayente1;
+  return (detalle.detalle as DetallePersonaSacramento).persona;
+};
+
+// Adapta un detalle puntual (consultado por id) a la forma que renderiza el acta.
+// Se usa para registros sin cédula, que no tienen el agregado por persona.
+const aPersonaSacramental = (detalle: SacramentoDetalle): PersonaSacramental => ({
+  persona: personaDeDetalle(detalle),
+  bautismo: detalle.tipo === 'bautismo' ? detalle : null,
+  comunion: detalle.tipo === 'comunion' ? detalle : null,
+  confirmacion: detalle.tipo === 'confirmacion' ? detalle : null,
+  matrimonio: detalle.tipo === 'matrimonio' ? detalle : null,
+});
 
 // Línea punteada para un dato vacío dentro del texto del acta (estilo original).
 const Line = ({ children }: { children?: React.ReactNode }) => (
