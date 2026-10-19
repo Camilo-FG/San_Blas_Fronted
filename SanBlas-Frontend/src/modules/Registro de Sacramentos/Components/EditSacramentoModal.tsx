@@ -31,7 +31,6 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   sacramentoId: number | null;
-  cedula: string | null;
   onUpdate: (id: number, dto: ActualizarSacramentoInput) => Promise<void>;
   onCreate: (dto: CrearSacramentoInput) => Promise<void>;
 }
@@ -179,11 +178,11 @@ const matrimonioVacio = (): MatrimonioForm => ({
   folio: '',
 });
 
-const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, cedula, onUpdate, onCreate }: Props) => {
+const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate }: Props) => {
   const { showToast } = useToast();
   const { data: parroquias } = useListarParroquias();
   const { data: presbiteros } = useListarPresbiteros();
-  const ficha = useObtenerSacramentosPersona(cedula);
+  const ficha = useObtenerSacramentosPersona(sacramentoId);
   const detalleQuery = useObtenerSacramentoNuevo(sacramentoId);
 
   const [activeTab, setActiveTab] = useState<TipoSacramento>('bautismo');

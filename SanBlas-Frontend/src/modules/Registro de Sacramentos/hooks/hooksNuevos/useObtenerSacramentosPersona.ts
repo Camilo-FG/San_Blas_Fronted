@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { obtenerSacramentosPersona } from '../../services/sacramentosNuevosService';
 
-export const useObtenerSacramentosPersona = (cedula: string | null) => {
+// Agregado sacramental de la persona dueña del acta indicada (por id).
+export const useObtenerSacramentosPersona = (sacramentoId: number | null) => {
   return useQuery({
-    queryKey: ['sacramentos-nuevos', 'persona', cedula],
-    queryFn: () => obtenerSacramentosPersona(cedula as string),
-    enabled: cedula !== null && cedula !== undefined && cedula.trim() !== '',
+    queryKey: ['sacramentos-nuevos', 'persona', sacramentoId],
+    queryFn: () => obtenerSacramentosPersona(sacramentoId as number),
+    enabled: sacramentoId !== null && sacramentoId !== undefined,
     retry: false,
   });
 };

@@ -2,22 +2,17 @@ import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useObtenerSacramentosPersona } from '../hooks/hooksNuevos/useObtenerSacramentosPersona';
-import { useObtenerSacramentoNuevo } from '../hooks/hooksNuevos/useObtenerSacramentoNuevo';
 import {
   DetalleBautismo,
-  DetalleMatrimonio,
-  DetallePersonaSacramento,
   PersonaDetalle,
   PersonaSacramental,
-  SacramentoDetalle,
   TIPO_SACRAMENTO_LABEL,
 } from '../../../types/sacramentosNuevos';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  cedula: string | null;
-  // Se usa cuando el registro no tiene cédula: el detalle se consulta por id.
+  // Acta puntual desde la que se arma el agregado de la persona (por id).
   sacramentoId: number | null;
 }
 
@@ -45,22 +40,6 @@ const nombreActa = (s: PersonaSacramental): string => {
 };
 
 // Persona dueña del acta según el tipo de sacramento.
-const personaDeDetalle = (detalle: SacramentoDetalle): PersonaDetalle => {
-  if (detalle.tipo === 'bautismo') return (detalle.detalle as DetalleBautismo).bautizado;
-  if (detalle.tipo === 'matrimonio') return (detalle.detalle as DetalleMatrimonio).contrayente1;
-  return (detalle.detalle as DetallePersonaSacramento).persona;
-};
-
-// Adapta un detalle puntual (consultado por id) a la forma que renderiza el acta.
-// Se usa para registros sin cédula, que no tienen el agregado por persona.
-const aPersonaSacramental = (detalle: SacramentoDetalle): PersonaSacramental => ({
-  persona: personaDeDetalle(detalle),
-  bautismo: detalle.tipo === 'bautismo' ? detalle : null,
-  comunion: detalle.tipo === 'comunion' ? detalle : null,
-  confirmacion: detalle.tipo === 'confirmacion' ? detalle : null,
-  matrimonio: detalle.tipo === 'matrimonio' ? detalle : null,
-});
-
 // Línea punteada para un dato vacío dentro del texto del acta (estilo original).
 const Line = ({ children }: { children?: React.ReactNode }) => (
   <span className="inline-flex min-w-0 min-w-0 flex-1 items-baseline border-b border-slate-400 px-1 text-slate-900">
@@ -99,8 +78,10 @@ const renderBautismo = (detalle: DetalleBautismo) => (
   </>
 );
 
-const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
-  const { data, isPending, error } = useObtenerSacramentosPersona(cedula);
+const DetailsDrawer = ({ isOpen, onClose, sacramentoId }: Props) => {
+  // El agregado de la persona se consulta por el id del acta seleccionada.
+  const { data: sacramental, isPending, error } =
+    useObtenerSacramentosPersona(sacramentoId);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -111,7 +92,6 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  const sacramental: PersonaSacramental | undefined = data;
   const persona = sacramental?.persona;
 
   return (
@@ -169,7 +149,7 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
 
           {!isPending && error && (
             <p className="px-4 py-8 text-center text-slate-500 dark:text-[#7f8da3]">
-              No se encontró una persona con esa cédula o no se pudo cargar la ficha.
+              No se pudo cargar el detalle del registro.
             </p>
           )}
 
@@ -192,7 +172,7 @@ const DetailsDrawer = ({ isOpen, onClose, cedula }: Props) => {
                   </div>
                   <div className="flex min-w-0 items-baseline">
                     <span className="mr-1 shrink-0 text-slate-500 dark:text-[#7f8da3]">Cédula</span>
-                    <Line>{persona?.cedula ?? ''}</Line>
+                    <Line>{persona?.cedula || 'No se especifica'}</Line>
                   </div>
                 </div>
 

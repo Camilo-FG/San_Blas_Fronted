@@ -26,12 +26,12 @@ export const obtenerSacramento = async (id: number): Promise<SacramentoDetalle> 
   return response.data;
 };
 
-// Todos los sacramentos de una persona, buscada por cédula.
+// Todos los sacramentos de la persona dueña del acta indicada (por id).
 export const obtenerSacramentosPersona = async (
-  cedula: string,
+  sacramentoId: number,
 ): Promise<PersonaSacramental> => {
   const response = await apiClient.get(
-    `/Sacramentos-nuevos/persona/cedula/${encodeURIComponent(cedula)}`,
+    `/Sacramentos-nuevos/${sacramentoId}/persona`,
   );
   return response.data;
 };
