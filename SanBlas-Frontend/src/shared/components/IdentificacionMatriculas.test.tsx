@@ -84,13 +84,14 @@ for (const [nombre, Pagina, consultar] of [
       }
       fireEvent.change(container.querySelector('input[type="date"]')!, { target: { value: "1990-01-01" } });
       fireEvent.change(screen.getByPlaceholderText("Ej: 8888-8888"), { target: { value: "88881234" } });
-      fireEvent.click(screen.getByRole("radio", { name: "Soltero(a)" }));
       if (nombre === "CICA") {
+        fireEvent.change(container.querySelector("#cica-estado-civil-select")!, { target: { value: "soltero" } });
         fireEvent.change(screen.getByPlaceholderText("Ej: ana.solis@correo.com"), { target: { value: "prueba@example.com" } });
         fireEvent.change(screen.getByPlaceholderText("Ej: 200 m norte de la iglesia, Nicoya"), { target: { value: "Frente a la iglesia" } });
         fireEvent.click(screen.getByRole("checkbox", { name: "Bautizo" }));
         fireEvent.click(screen.getByRole("radio", { name: "Católico" }));
       } else {
+        fireEvent.click(screen.getByRole("radio", { name: "Soltero(a)" }));
         fireEvent.click(screen.getByRole("radio", { name: "Padre/Madre" }));
         fireEvent.change(container.querySelector('select:not([id])')!, { target: { value: "Guanacaste" } });
       }
