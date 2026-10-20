@@ -5,7 +5,7 @@ import { limpiarCedula, PATRON_CEDULA, type TipoCedula } from "../../../shared/u
 import { ApiError } from "../../../services/apiClient";
 import SeoHead from "../../../seo/SeoHead";
 import Rutas from "../../../routes/Rutas";
-import { Button, Card, ErrorMessage, FieldError, Input, Label, Textarea, Badge } from "../../../shared/ui";
+import { Button, Card, ErrorMessage, FieldError, Input, Label, Select, Textarea, Badge } from "../../../shared/ui";
 import { consultarInscripcionCica, crearInscripcionCica } from "../cicaService";
 import { mapearFormularioCica } from "../cicaMapper";
 import {
@@ -13,6 +13,10 @@ import {
   textoEstadoCica,
 } from "../estadoCica";
 import { SACRAMENTOS_CICA } from "../sacramentosCica";
+import {
+  ESTADOS_CIVILES_CICA,
+  requiereConyugeCica,
+} from "../estadosCivilesCica";
 import {
   filtrarApellidoCica,
   filtrarNombreCica,
@@ -68,6 +72,7 @@ function Campo({
   className,
   maxLength,
   mostrarContador = false,
+  id,
 }: {
   etiqueta: string;
   valor: string;
@@ -79,6 +84,7 @@ function Campo({
   className?: string;
   maxLength?: number;
   mostrarContador?: boolean;
+  id?: string;
 }) {
   return (
     <div className={`flex flex-col gap-1 text-sm ${className ?? ""}`}>
@@ -93,6 +99,7 @@ function Campo({
         ) : null}
       </div>
       <Input
+        id={id}
         className={campo}
         type={type}
         value={valor}
@@ -138,6 +145,26 @@ const CicaPage = () => {
   const alApellido = (clave: keyof FormularioCica) => (valor: string) =>
     set(clave, filtrarApellidoCica(valor));
 
+  // Los datos del cónyuge solo tienen sentido si el estado civil implica pareja.
+  // Al pasar a soltero(a) o divorciado(a) se limpian para no arrastrar valores viejos.
+  const cambiarEstadoCivil = (valor: FormularioCica["estadoCivil"]) => {
+    set("estadoCivil", valor);
+    if (requiereConyugeCica(valor)) return;
+    setForm((actual) => ({
+      ...actual,
+      conyugeNombre: "",
+      conyugeApellido1: "",
+      conyugeApellido2: "",
+    }));
+    setErrores((actual) => {
+      const siguiente = { ...actual };
+      delete siguiente.conyugeNombre;
+      delete siguiente.conyugeApellido1;
+      delete siguiente.conyugeApellido2;
+      return siguiente;
+    });
+  };
+
   // Cambiar la identificación invalida los nombres anteriores, incluso si la consulta vieja termina después.
   const cambiarIdentificacion = (valor: string, tipo: TipoCedula) => {
     const cedula = limpiarCedula(valor, tipo);
@@ -165,6 +192,20 @@ const CicaPage = () => {
       encontrados.cedula = "Verifique la cédula antes de enviar la inscripción.";
     }
     setErrores(encontrados);
+    if (
+      encontrados.estadoCivil ||
+      encontrados.conyugeNombre ||
+      encontrados.conyugeApellido1
+    ) {
+      document.getElementById("cica-conyuge-nombre")?.focus();
+      const seccionEstadoCivil = document.getElementById("cica-estado-civil");
+      if (typeof seccionEstadoCivil?.scrollIntoView === "function") {
+        seccionEstadoCivil.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }
     if (Object.keys(encontrados).length > 0) return;
 
     setEnviando(true);
@@ -285,89 +326,120 @@ const CicaPage = () => {
                 <Campo etiqueta="Correo" obligatorio type="email" placeholder="Ej: ana.solis@correo.com" valor={form.correo} error={errores.correo} onChange={(valor) => set("correo", valor)} className="sm:col-span-2" />
               </fieldset>
 
-              <fieldset>
+              <fieldset
+                id="cica-estado-civil"
+                aria-invalid={Boolean(
+                  errores.estadoCivil ||
+                    errores.conyugeNombre ||
+                    errores.conyugeApellido1 ||
+                    errores.conyugeApellido2,
+                )}
+              >
                 <legend className="mb-2 font-heading text-lg font-extrabold text-royal-blue">
                   Estado civil
                 </legend>
-                <div className="flex flex-wrap gap-4 text-sm">
-                  {(
-                    [
-                      ["soltero", "Soltero(a)"],
-                      ["matrimonio_civil", "Matrimonio civil"],
-                      ["union_libre", "Unión libre"],
-                    ] as const
-                  ).map(([valor, etiqueta]) => (
-                    <label key={valor} className="inline-flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="estadoCivil"
-                        checked={form.estadoCivil === valor}
-                        onChange={() => set("estadoCivil", valor)}
-                      />
-                      {etiqueta}
-                    </label>
-                  ))}
-                </div>
-                <FieldError message={errores.estadoCivil} />
-                {form.estadoCivil && form.estadoCivil !== "soltero" && (
-                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                    <Campo
-                      etiqueta="Nombre"
-                      obligatorio
-                      maxLength={MAX_NOMBRE_CICA}
-                      placeholder="Ej: Luis"
-                      valor={form.conyugeNombre}
-                      error={errores.conyugeNombre}
-                      onChange={alNombre("conyugeNombre")}
-                    />
-                    <Campo
-                      etiqueta="Primer apellido"
-                      obligatorio
-                      maxLength={MAX_APELLIDO_CICA}
-                      placeholder="Ej: Pérez"
-                      valor={form.conyugeApellido1}
-                      error={errores.conyugeApellido1}
-                      onChange={alApellido("conyugeApellido1")}
-                    />
-                    <Campo
-                      etiqueta="Segundo apellido"
-                      maxLength={MAX_APELLIDO_CICA}
-                      placeholder="Ej: Gómez"
-                      valor={form.conyugeApellido2}
-                      error={errores.conyugeApellido2}
-                      onChange={alApellido("conyugeApellido2")}
-                    />
+                <div
+                  className={
+                    errores.estadoCivil ||
+                    errores.conyugeNombre ||
+                    errores.conyugeApellido1 ||
+                    errores.conyugeApellido2
+                      ? "rounded-xl border border-red-400 bg-danger-bg p-3"
+                      : undefined
+                  }
+                >
+                  <div className="flex flex-col gap-1 text-sm">
+                    <Label htmlFor="cica-estado-civil-select" required>
+                      Estado civil
+                    </Label>
+                    <Select
+                      id="cica-estado-civil-select"
+                      className={campo}
+                      value={form.estadoCivil}
+                      hasError={Boolean(errores.estadoCivil)}
+                      aria-invalid={Boolean(errores.estadoCivil)}
+                      onChange={(event) =>
+                        cambiarEstadoCivil(
+                          event.target.value as FormularioCica["estadoCivil"],
+                        )
+                      }
+                    >
+                      <option value="">Seleccione una opción</option>
+                      {ESTADOS_CIVILES_CICA.map(({ valor, etiqueta }) => (
+                        <option key={valor} value={valor}>
+                          {etiqueta}
+                        </option>
+                      ))}
+                    </Select>
+                    <FieldError message={errores.estadoCivil} />
                   </div>
-                )}
+                  {requiereConyugeCica(form.estadoCivil) && (
+                    <>
+                      <p className="mt-3 text-sm font-semibold text-slate-800 dark:text-white">
+                        Cónyuge o compañero(a)
+                      </p>
+                      <div className="mt-2 grid gap-3 sm:grid-cols-3">
+                        <Campo
+                          id="cica-conyuge-nombre"
+                          etiqueta="Nombre"
+                          obligatorio
+                          maxLength={MAX_NOMBRE_CICA}
+                          placeholder="Ej: Luis"
+                          valor={form.conyugeNombre}
+                          error={errores.conyugeNombre}
+                          onChange={alNombre("conyugeNombre")}
+                        />
+                        <Campo
+                          etiqueta="Primer apellido"
+                          obligatorio
+                          maxLength={MAX_APELLIDO_CICA}
+                          placeholder="Ej: Pérez"
+                          valor={form.conyugeApellido1}
+                          error={errores.conyugeApellido1}
+                          onChange={alApellido("conyugeApellido1")}
+                        />
+                        <Campo
+                          etiqueta="Segundo apellido"
+                          maxLength={MAX_APELLIDO_CICA}
+                          placeholder="Ej: Gómez"
+                          valor={form.conyugeApellido2}
+                          error={errores.conyugeApellido2}
+                          onChange={alApellido("conyugeApellido2")}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
               </fieldset>
 
-              <fieldset
-                className={
-                  errores.sacramentos
-                    ? "rounded-xl border border-red-400 bg-danger-bg p-3"
-                    : undefined
-                }
-                aria-invalid={Boolean(errores.sacramentos)}
-              >
+              <fieldset aria-invalid={Boolean(errores.sacramentos)}>
                 <legend className="mb-2 font-heading text-lg font-extrabold text-royal-blue">
                   Sacramentos que necesita
                 </legend>
-                <div className="flex flex-wrap gap-4 text-sm">
-                  {SACRAMENTOS_CICA.map((sacramento) => (
-                    <label key={sacramento.clave} className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={form[sacramento.clave]}
-                        aria-invalid={Boolean(errores.sacramentos)}
-                        onChange={(event) =>
-                          set(sacramento.clave, event.target.checked)
-                        }
-                      />
-                      {sacramento.etiqueta}
-                    </label>
-                  ))}
+                <div
+                  className={
+                    errores.sacramentos
+                      ? "rounded-xl border border-red-400 bg-danger-bg p-3"
+                      : undefined
+                  }
+                >
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    {SACRAMENTOS_CICA.map((sacramento) => (
+                      <label key={sacramento.clave} className="inline-flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={form[sacramento.clave]}
+                          aria-invalid={Boolean(errores.sacramentos)}
+                          onChange={(event) =>
+                            set(sacramento.clave, event.target.checked)
+                          }
+                        />
+                        {sacramento.etiqueta}
+                      </label>
+                    ))}
+                  </div>
+                  <FieldError message={errores.sacramentos} />
                 </div>
-                <FieldError message={errores.sacramentos} />
               </fieldset>
 
               <fieldset className="grid gap-3 sm:grid-cols-3">
@@ -383,52 +455,53 @@ const CicaPage = () => {
                 <Campo etiqueta="Dirección del hogar" obligatorio maxLength={MAX_DIRECCION_CICA} mostrarContador placeholder="Ej: 200 m norte de la iglesia, Nicoya" valor={form.direccionHogar} error={errores.direccionHogar} onChange={(valor) => set("direccionHogar", valor.slice(0, MAX_DIRECCION_CICA))} className="sm:col-span-3" />
               </fieldset>
 
-              <fieldset
-                className={
-                  errores.esCatolico
-                    ? "rounded-xl border border-red-400 bg-danger-bg p-3"
-                    : undefined
-                }
-                aria-invalid={Boolean(errores.esCatolico)}
-              >
+              <fieldset aria-invalid={Boolean(errores.esCatolico)}>
                 <legend className="mb-2 font-heading text-lg font-extrabold text-royal-blue">
                   ¿Usted es?
                 </legend>
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <label className="inline-flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="religion"
-                      checked={form.esCatolico === "si"}
-                      aria-invalid={Boolean(errores.esCatolico)}
-                      onChange={() => set("esCatolico", "si")}
+                <div
+                  className={
+                    errores.esCatolico
+                      ? "rounded-xl border border-red-400 bg-danger-bg p-3"
+                      : undefined
+                  }
+                >
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="religion"
+                        checked={form.esCatolico === "si"}
+                        aria-invalid={Boolean(errores.esCatolico)}
+                        onChange={() => set("esCatolico", "si")}
+                      />
+                      Católico
+                    </label>
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="religion"
+                        checked={form.esCatolico === "no"}
+                        aria-invalid={Boolean(errores.esCatolico)}
+                        onChange={() => set("esCatolico", "no")}
+                      />
+                      Otra iglesia
+                    </label>
+                  </div>
+                  <FieldError message={errores.esCatolico} />
+                  {form.esCatolico === "no" && (
+                    <Campo
+                      etiqueta="¿Cuál?"
+                      obligatorio
+                      maxLength={MAX_NOMBRE_CICA}
+                      placeholder="Ej: Iglesia evangélica"
+                      valor={form.otraIglesia}
+                      error={errores.otraIglesia}
+                      onChange={alNombre("otraIglesia")}
+                      className="mt-3"
                     />
-                    Católico
-                  </label>
-                  <label className="inline-flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="religion"
-                      checked={form.esCatolico === "no"}
-                      aria-invalid={Boolean(errores.esCatolico)}
-                      onChange={() => set("esCatolico", "no")}
-                    />
-                    Otra iglesia
-                  </label>
+                  )}
                 </div>
-                <FieldError message={errores.esCatolico} />
-                {form.esCatolico === "no" && (
-                  <Campo
-                    etiqueta="¿Cuál?"
-                    obligatorio
-                    maxLength={MAX_NOMBRE_CICA}
-                    placeholder="Ej: Iglesia evangélica"
-                    valor={form.otraIglesia}
-                    error={errores.otraIglesia}
-                    onChange={alNombre("otraIglesia")}
-                    className="mt-3"
-                  />
-                )}
               </fieldset>
 
               <div className="flex flex-col gap-1 text-sm">

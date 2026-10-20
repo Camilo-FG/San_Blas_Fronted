@@ -1,4 +1,5 @@
 import type { EstadoCivilCica } from "./types";
+import { requiereConyugeCica } from "./estadosCivilesCica";
 import { SACRAMENTOS_CICA } from "./sacramentosCica";
 import { validarCedulaIdentificacion, type TipoCedula } from "../../shared/utils/cedulaIdentificacion";
 
@@ -7,6 +8,7 @@ export const MAX_APELLIDO_CICA = 25;
 export const MAX_DIRECCION_CICA = 100;
 export const MAX_TEXTO_CICA = 200;
 export const MIN_DIRECCION_CICA = 10;
+export const MIN_CONYUGE_CICA = 3;
 
 export const TELEFONO_CICA = /^\d{4}-\d{4}$/;
 export const CORREO_CICA = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -120,35 +122,43 @@ export const validarFormularioCica = (
     errores.correo = "Ingrese un correo válido. Ej: nombre@dominio.com";
 
   if (!form.estadoCivil) errores.estadoCivil = "Seleccione el estado civil.";
-  if (form.estadoCivil && form.estadoCivil !== "soltero") {
-    poner(
-      "conyugeNombre",
-      mensajeNombre(
-        form.conyugeNombre,
-        "El nombre del cónyuge o compañero(a)",
-        true,
-        true,
-      ),
-    );
-    poner(
-      "conyugeApellido1",
-      mensajeNombre(
-        form.conyugeApellido1,
-        "El primer apellido del cónyuge o compañero(a)",
-        true,
-        false,
-      ),
-    );
-    poner(
-      "conyugeApellido2",
-      mensajeNombre(
-        form.conyugeApellido2,
-        "El segundo apellido del cónyuge o compañero(a)",
-        false,
-        false,
-      ),
-    );
+  if (form.estadoCivil && requiereConyugeCica(form.estadoCivil)) {
+    const nombreConyuge = form.conyugeNombre.trim();
+    if (!nombreConyuge) {
+      errores.conyugeNombre =
+        "El nombre del cónyuge o compañero(a) es obligatorio.";
+    } else if (nombreConyuge.length < MIN_CONYUGE_CICA) {
+      errores.conyugeNombre = `El nombre del cónyuge o compañero(a) debe tener al menos ${MIN_CONYUGE_CICA} caracteres.`;
+    } else {
+      poner(
+        "conyugeNombre",
+        mensajeNombre(
+          form.conyugeNombre,
+          "El nombre del cónyuge o compañero(a)",
+          true,
+          true,
+        ),
+      );
+    }
   }
+  poner(
+    "conyugeApellido1",
+    mensajeNombre(
+      form.conyugeApellido1,
+      "El primer apellido del cónyuge o compañero(a)",
+      requiereConyugeCica(form.estadoCivil),
+      false,
+    ),
+  );
+  poner(
+    "conyugeApellido2",
+    mensajeNombre(
+      form.conyugeApellido2,
+      "El segundo apellido del cónyuge o compañero(a)",
+      false,
+      false,
+    ),
+  );
 
   const seleccionados = SACRAMENTOS_CICA.filter(
     (sacramento) => form[sacramento.clave],

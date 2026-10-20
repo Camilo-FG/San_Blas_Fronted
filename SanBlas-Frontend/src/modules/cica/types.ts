@@ -1,6 +1,12 @@
 import type { TipoCedula } from "../../shared/utils/cedulaIdentificacion";
 
-export type EstadoCivilCica = "soltero" | "matrimonio_civil" | "union_libre";
+export type EstadoCivilCica =
+  | "soltero"
+  | "matrimonio_civil"
+  | "matrimonio_catolico"
+  | "union_libre"
+  | "union_civil"
+  | "divorciado";
 
 export interface InscripcionCica {
   id: number;
