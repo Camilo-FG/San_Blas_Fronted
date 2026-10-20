@@ -43,6 +43,10 @@ import {
   getEstadoBadgeVariant,
   textoEstadoCica,
 } from "../../../cica/estadoCica";
+import {
+  MOTIVO_RECHAZO_MAXIMO,
+  validarMotivoRechazo,
+} from "../../../cica/validarRechazoCica";
 import type { InscripcionCica } from "../../../cica/types";
 import { useSolicitudesCica } from "../hooks/useSolicitudesCica";
 
@@ -115,8 +119,10 @@ const GestionSolicitudesCica = () => {
 
   const cambiar = async (estado: "Aprobada" | "Rechazada") => {
     if (!seleccion) return;
-    if (estado === "Rechazada" && !motivo.trim()) {
-      setErrorAccion("La observación es obligatoria al rechazar.");
+    const errorMotivo =
+      estado === "Rechazada" ? validarMotivoRechazo(motivo) : null;
+    if (errorMotivo) {
+      setErrorAccion(errorMotivo);
       return;
     }
     setErrorAccion(null);
@@ -451,6 +457,9 @@ const GestionSolicitudesCica = () => {
         confirmLabel="Rechazar solicitud"
         pendingLabel="Rechazando..."
         isPending={guardando}
+        confirmVariant="danger"
+        iconoAdvertencia
+        confirmDisabled={validarMotivoRechazo(motivo) !== null}
         onConfirm={() => void cambiar("Rechazada")}
         onCancel={() => setConfirmacion(null)}
         overlayClassName="fixed inset-0 z-[1400] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
@@ -468,11 +477,21 @@ const GestionSolicitudesCica = () => {
               if (errorAccion) setErrorAccion(null);
             }}
             rows={3}
+            maxLength={MOTIVO_RECHAZO_MAXIMO}
             placeholder="Ej: Falta confirmar la cédula."
-            hasError={Boolean(errorAccion)}
+            hasError={
+              Boolean(errorAccion) ||
+              (motivo.trim().length > 0 &&
+                validarMotivoRechazo(motivo) !== null)
+            }
             disabled={guardando}
           />
-          <FieldError message={errorAccion} />
+          <FieldError
+            message={
+              errorAccion ??
+              (motivo.trim().length > 0 ? validarMotivoRechazo(motivo) : null)
+            }
+          />
         </label>
       </ConfirmacionAccionModal>
     </AdminModule>

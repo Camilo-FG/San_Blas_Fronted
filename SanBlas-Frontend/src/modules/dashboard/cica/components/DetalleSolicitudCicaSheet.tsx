@@ -107,8 +107,7 @@ export function DetalleSolicitudCicaSheet({
               Aprobar
             </Button>
             <Button
-              variant="secondary"
-              className="enabled:hover:text-[#dcb55a]"
+              variant="danger"
               disabled={guardando}
               onClick={onRechazar}
             >
