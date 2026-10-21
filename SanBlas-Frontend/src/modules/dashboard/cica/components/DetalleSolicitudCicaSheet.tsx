@@ -28,6 +28,7 @@ import {
   getEstadoBadgeVariant,
   textoEstadoCica,
 } from "../../../cica/estadoCica";
+import { ETIQUETA_ESTADO_CIVIL_CICA } from "../../../cica/estadosCivilesCica";
 import type { InscripcionCica } from "../../../cica/types";
 
 type DetalleSolicitudCicaSheetProps = {
@@ -41,11 +42,7 @@ type DetalleSolicitudCicaSheetProps = {
 };
 
 // Helpers compartidos con la página: la tabla y el detalle formatean igual.
-export const etiquetaCivil: Record<string, string> = {
-  soltero: "Soltero(a)",
-  matrimonio_civil: "Matrimonio civil",
-  union_libre: "Unión libre",
-};
+export const etiquetaCivil: Record<string, string> = ETIQUETA_ESTADO_CIVIL_CICA;
 
 export const nombreCompleto = (persona: {
   nombre: string;
@@ -107,8 +104,7 @@ export function DetalleSolicitudCicaSheet({
               Aprobar
             </Button>
             <Button
-              variant="secondary"
-              className="enabled:hover:text-[#dcb55a]"
+              variant="danger"
               disabled={guardando}
               onClick={onRechazar}
             >

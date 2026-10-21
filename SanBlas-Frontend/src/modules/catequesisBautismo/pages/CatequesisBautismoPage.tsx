@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { IdentificacionCedula } from "../../../shared/components/IdentificacionCedula";
+import { useAutocompletarCedula } from "../../../shared/hooks/useAutocompletarCedula";
+import { limpiarCedula, PATRON_CEDULA, type TipoCedula } from "../../../shared/utils/cedulaIdentificacion";
 import { ApiError } from "../../../services/apiClient";
 import SeoHead from "../../../seo/SeoHead";
 import Rutas from "../../../routes/Rutas";
@@ -38,6 +41,7 @@ const vacio: FormularioCatequesisBautismo = {
   apellido2: "",
   fechaNacimiento: "",
   cedula: "",
+  tipoCedula: "nacional",
   telefono: "",
   estadoCivil: "",
   parroquiaOrigen: "",
@@ -89,6 +93,7 @@ function Campo({
 
 const CatequesisBautismoPage = () => {
   const [form, setForm] = useState(vacio);
+  const { estado: estadoCedula, verificar } = useAutocompletarCedula();
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -114,10 +119,32 @@ const CatequesisBautismoPage = () => {
   const alApellido = (clave: keyof FormularioCatequesisBautismo) => (valor: string) =>
     set(clave, filtrarApellidoBautismo(valor));
 
+  // Reinicia los datos de la persona al cambiar de cédula; una respuesta atrasada no debe llenar otra solicitud.
+  const cambiarIdentificacion = (valor: string, tipo: TipoCedula) => {
+    const cedula = limpiarCedula(valor, tipo);
+    setForm((actual) => ({ ...actual, cedula, tipoCedula: tipo, nombre: "", apellido1: "", apellido2: "" }));
+    setErrores((actual) => {
+      const siguiente = { ...actual };
+      for (const clave of ["cedula", "nombre", "apellido1", "apellido2"]) delete siguiente[clave];
+      return siguiente;
+    });
+    void verificar(cedula, tipo, (datos) => {
+      setForm((actual) => ({
+        ...actual,
+        nombre: filtrarNombreBautismo(datos.nombre),
+        apellido1: filtrarApellidoBautismo(datos.primerApellido),
+        apellido2: filtrarApellidoBautismo(datos.segundoApellido),
+      }));
+    });
+  };
+
   const enviar = async (event: React.FormEvent) => {
     event.preventDefault();
     setErrorEnvio(null);
     const encontrados = validarFormularioCatequesisBautismo(form);
+    if (form.tipoCedula === "nacional" && estadoCedula !== "encontrada") {
+      encontrados.cedula = "Verifique la cédula antes de enviar la inscripción.";
+    }
     setErrores(encontrados);
     if (Object.keys(encontrados).length > 0) return;
 
@@ -145,8 +172,8 @@ const CatequesisBautismoPage = () => {
 
   const consultar = async () => {
     const cedula = cedulaConsulta.trim();
-    if (!/^\d{9}$/.test(cedula)) {
-      setErrorConsulta("La cédula debe tener 9 dígitos.");
+    if (!PATRON_CEDULA.test(cedula)) {
+      setErrorConsulta("La cédula debe tener 9 dígitos (nacional) o 12 (extranjera).");
       setConsultas([]);
       return;
     }
@@ -229,15 +256,10 @@ const CatequesisBautismoPage = () => {
                 <legend className="mb-2 font-heading text-lg font-extrabold text-royal-blue">
                   Identificación
                 </legend>
-                <Campo
-                  etiqueta="Cédula"
-                  obligatorio
-                  className="sm:col-span-3"
-                  placeholder="Ej: 102340567"
-                  valor={form.cedula}
-                  error={errores.cedula}
-                  onChange={(valor) => set("cedula", valor)}
-                />
+                <IdentificacionCedula tipo={form.tipoCedula} valor={form.cedula} estado={estadoCedula} error={errores.cedula}
+                  onValor={(valor) => cambiarIdentificacion(valor, form.tipoCedula)}
+                  onTipo={(tipo) => cambiarIdentificacion("", tipo)}
+                  onReintentar={() => cambiarIdentificacion(form.cedula, form.tipoCedula)} />
                 <Campo
                   etiqueta="Nombre"
                   obligatorio
@@ -396,7 +418,7 @@ const CatequesisBautismoPage = () => {
                 </p>
               )}
 
-              <Button type="submit" variant="royal" disabled={enviando}>
+              <Button type="submit" variant="royal" disabled={enviando || estadoCedula === "buscando"}>
                 {enviando ? "Enviando..." : "Enviar inscripción"}
               </Button>
             </form>
@@ -416,8 +438,10 @@ const CatequesisBautismoPage = () => {
               <Label required>Cédula</Label>
               <Input
                 value={cedulaConsulta}
+                inputMode="numeric"
+                maxLength={12}
                 placeholder="Ej: 102340567"
-                onChange={(event) => setCedulaConsulta(event.target.value)}
+                onChange={(event) => setCedulaConsulta(event.target.value.replace(/\D/g, "").slice(0, 12))}
               />
             </div>
             <Button
