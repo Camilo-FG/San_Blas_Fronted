@@ -103,8 +103,11 @@ export function DetalleSolicitudCicaSheet({
             >
               Aprobar
             </Button>
+            {/* Rechazar va en gris como en juvenil y bautismo: el rojo solo se usa para el estado rechazado */}
             <Button
-              variant="danger"
+              variant="secondary"
+              style={{ backgroundColor: "#e2e8f0" }}
+              className="rounded-lg! duration-150 ease-out hover:bg-slate-300! enabled:hover:text-[#dcb55a] dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
               disabled={guardando}
               onClick={onRechazar}
             >
