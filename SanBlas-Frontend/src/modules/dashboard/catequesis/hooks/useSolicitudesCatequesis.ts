@@ -9,6 +9,7 @@ import {
   obtenerSolicitudesCatequesis,
 } from "../services/catequesisService";
 import { ApiError } from "../../../../services/apiClient";
+import { invalidarNotificacionesPanel } from "../../hooks/notificacionesPanelQuery";
 
 // Filtros que el backend soporta en GET /inscripciones-catequesis
 export interface SolicitudesCatequesisFiltros {
@@ -119,6 +120,7 @@ export const useSolicitudesCatequesis = (
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: HISTORIAL_KEY });
+      invalidarNotificacionesPanel(queryClient);
     },
     onError: (error: unknown) => {
       setAccionError(
@@ -136,6 +138,7 @@ export const useSolicitudesCatequesis = (
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: HISTORIAL_KEY });
+      invalidarNotificacionesPanel(queryClient);
     },
   });
 

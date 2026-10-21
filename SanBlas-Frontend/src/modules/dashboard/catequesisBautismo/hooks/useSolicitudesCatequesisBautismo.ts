@@ -10,6 +10,7 @@ import type {
   CertificarCatequesisBautismo,
   InscripcionCatequesisBautismo,
 } from "../../../catequesisBautismo/types";
+import { invalidarNotificacionesPanel } from "../../hooks/notificacionesPanelQuery";
 
 const SOLICITUDES_KEY = ["catequesis-bautismo-solicitudes"] as const;
 const HISTORIAL_KEY = ["catequesis-bautismo-historial"] as const;
@@ -46,6 +47,7 @@ export function useSolicitudesCatequesisBautismo() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SOLICITUDES_KEY });
       void queryClient.invalidateQueries({ queryKey: HISTORIAL_KEY });
+      invalidarNotificacionesPanel(queryClient);
     },
   });
 
@@ -76,6 +78,7 @@ export function useSolicitudesCatequesisBautismo() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SOLICITUDES_KEY });
       void queryClient.invalidateQueries({ queryKey: HISTORIAL_KEY });
+      invalidarNotificacionesPanel(queryClient);
     },
   });
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   actualizarEstadoDonacion,
   obtenerDonaciones,
@@ -8,6 +9,7 @@ import {
   type EstadoDonacionAccion,
 } from "../../../services/donacionesService";
 import { ApiError } from "../../../services/apiClient";
+import { invalidarNotificacionesPanel } from "../../dashboard/hooks/notificacionesPanelQuery";
 
 export type { Donacion, EstadoDonacion, EstadoDonacionAccion };
 
@@ -19,6 +21,7 @@ const esEstadoFinal = (estado?: EstadoDonacion) =>
   estado === "Aprobado" || estado === "Rechazado";
 
 export const useGestionDonaciones = () => {
+  const queryClient = useQueryClient();
   const [donaciones, setDonaciones] = useState<Donacion[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
   const [guardando, setGuardando] = useState(false);
@@ -66,6 +69,7 @@ export const useGestionDonaciones = () => {
           item.id === id ? { ...item, estado: nuevoEstado } : item,
         ),
       );
+      invalidarNotificacionesPanel(queryClient);
       return { ok: true };
     } catch (err) {
       const mensaje =
@@ -103,6 +107,7 @@ export const useGestionDonaciones = () => {
           item.id === id ? { ...item, estado: "Rechazado" } : item,
         ),
       );
+      invalidarNotificacionesPanel(queryClient);
       return { ok: true };
     } catch (err) {
       const mensaje =

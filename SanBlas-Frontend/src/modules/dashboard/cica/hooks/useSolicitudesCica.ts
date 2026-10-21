@@ -7,6 +7,7 @@ import {
   listarInscripcionesCica,
 } from "../../../cica/cicaService";
 import type { InscripcionCica } from "../../../cica/types";
+import { invalidarNotificacionesPanel } from "../../hooks/notificacionesPanelQuery";
 
 const SOLICITUDES_KEY = ["cica-solicitudes"] as const;
 const HISTORIAL_KEY = ["cica-historial"] as const;
@@ -42,6 +43,7 @@ export function useSolicitudesCica() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SOLICITUDES_KEY });
       void queryClient.invalidateQueries({ queryKey: HISTORIAL_KEY });
+      invalidarNotificacionesPanel(queryClient);
     },
   });
 
@@ -73,6 +75,7 @@ export function useSolicitudesCica() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SOLICITUDES_KEY });
       void queryClient.invalidateQueries({ queryKey: HISTORIAL_KEY });
+      invalidarNotificacionesPanel(queryClient);
     },
   });
 

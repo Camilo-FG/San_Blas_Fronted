@@ -6,6 +6,7 @@ import { obtenerSolicitudesCatequesis } from "../../../services/catequesis/cateq
 import { obtenerDonaciones } from "../../../services/donacionesService";
 import { obtenerSolicitudesSacramentos } from "../../../services/constancias/constanciasService";
 import Rutas from "../../../routes/Rutas";
+import { NOTIFICACIONES_PANEL_KEY } from "./notificacionesPanelQuery";
 
 const REFETCH_MS = 60_000;
 
@@ -25,7 +26,7 @@ export function useNotificacionesPanel() {
   const results = useQueries({
     queries: [
       {
-        queryKey: ["notificaciones-panel", "catequesis"] as const,
+        queryKey: [...NOTIFICACIONES_PANEL_KEY, "catequesis"] as const,
         queryFn: async () => {
           const pagina = await obtenerSolicitudesCatequesis({
             page: 1,
@@ -38,7 +39,7 @@ export function useNotificacionesPanel() {
         refetchOnWindowFocus: true,
       },
       {
-        queryKey: ["notificaciones-panel", "cica"] as const,
+        queryKey: [...NOTIFICACIONES_PANEL_KEY, "cica"] as const,
         queryFn: async () => {
           const data = (await listarInscripcionesCica("solicitudes")) ?? [];
           return data.length;
@@ -48,7 +49,7 @@ export function useNotificacionesPanel() {
         refetchOnWindowFocus: true,
       },
       {
-        queryKey: ["notificaciones-panel", "bautismo"] as const,
+        queryKey: [...NOTIFICACIONES_PANEL_KEY, "bautismo"] as const,
         queryFn: async () => {
           const data =
             (await listarInscripcionesCatequesisBautismo("solicitudes")) ?? [];
@@ -59,7 +60,7 @@ export function useNotificacionesPanel() {
         refetchOnWindowFocus: true,
       },
       {
-        queryKey: ["notificaciones-panel", "donaciones"] as const,
+        queryKey: [...NOTIFICACIONES_PANEL_KEY, "donaciones"] as const,
         queryFn: async () => {
           const data = (await obtenerDonaciones()) ?? [];
           return data.filter(
@@ -71,7 +72,7 @@ export function useNotificacionesPanel() {
         refetchOnWindowFocus: true,
       },
       {
-        queryKey: ["notificaciones-panel", "constancias"] as const,
+        queryKey: [...NOTIFICACIONES_PANEL_KEY, "constancias"] as const,
         queryFn: async () => {
           const pagina = await obtenerSolicitudesSacramentos({
             estado: "Pendiente",

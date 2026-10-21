@@ -3,6 +3,7 @@ import axios from "axios";
 import { aprobarSolicitudSacramento } from "../../../services/constancias/constanciasService";
 import { MENSAJES_APROBACION } from "../../../services/constancias/aprobacionErrors";
 import { ApiError } from "../../../services/apiClient";
+import { invalidarNotificacionesPanel } from "../../dashboard/hooks/notificacionesPanelQuery";
 
 type AprobarPayload = {
   id: number | string;
@@ -46,7 +47,8 @@ export const useAprobarSolicitud = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["solicitudes"] });
+      void queryClient.invalidateQueries({ queryKey: ["solicitudes"] });
+      invalidarNotificacionesPanel(queryClient);
     },
   });
 };
