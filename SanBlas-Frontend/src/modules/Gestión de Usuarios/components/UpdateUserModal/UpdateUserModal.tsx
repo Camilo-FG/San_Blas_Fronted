@@ -141,7 +141,7 @@ const UpdateUserModal: React.FC<Props> = ({
     if (!v) return 'El nombre es requerido.';
     if (usuario && v === normalizarTexto(usuario.userName)) return undefined;
     if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
-    if (v.length > 60) return 'El nombre no puede superar los 60 caracteres.';
+    if (v.length > 30) return 'El nombre no puede superar los 30 caracteres.';
     if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+$/.test(v)) return 'El nombre solo puede contener letras y números.';
     if (
       users.some(
@@ -233,7 +233,7 @@ const UpdateUserModal: React.FC<Props> = ({
                 <Label htmlFor="u-nombre">
                   Nombre de usuario
                   <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
-                    ({field.state.value.length}/60)
+                    ({field.state.value.length}/30)
                   </span>
                 </Label>
                 <Input
@@ -251,7 +251,7 @@ const UpdateUserModal: React.FC<Props> = ({
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
-                  maxLength={60}
+                  maxLength={30}
                 />
                 <FieldError message={field.state.meta.errors[0]} />
               </div>

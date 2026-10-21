@@ -12,6 +12,8 @@ type ModalProps = {
   title?: string;
   sinFondo?: boolean;
   overlayClassName?: string;
+  // deja el contenedor del overlay sin color para que el consumidor pinte su propio fondo animado
+  overlayTransparente?: boolean;
   cerrarAlClicFuera?: boolean;
   cerrarConEsc?: boolean;
   tamano?: "md" | "xl";
@@ -24,6 +26,7 @@ export function Modal({
   title,
   sinFondo,
   overlayClassName,
+  overlayTransparente,
   cerrarAlClicFuera = true,
   cerrarConEsc = false,
   tamano = "md",
@@ -132,7 +135,10 @@ export function Modal({
       }}
     >
       <div
-        className="fixed inset-0 z-[1200] flex items-center justify-center overflow-hidden overscroll-none bg-slate-900/55 p-4"
+        className={cn(
+          "fixed inset-0 z-[1200] flex items-center justify-center overflow-hidden overscroll-none p-4",
+          !overlayTransparente && "bg-slate-900/55",
+        )}
         onClick={cerrarAlClicFuera ? onClose : undefined}
         role="presentation"
       >

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 import { type Usuario } from '../../../../types/Usuario';
 import {
@@ -130,8 +131,6 @@ const CreateUserModal: React.FC<Props> = ({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const validateEmail = (email: string) => {
     const validDomainsRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|es|org)$/i;
     return validDomainsRegex.test(email);
@@ -161,7 +160,7 @@ const CreateUserModal: React.FC<Props> = ({
     const v = normalizarTexto(value);
     if (!v) return 'El nombre es requerido.';
     if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
-    if (v.length > 60) return 'El nombre no puede superar los 60 caracteres.';
+    if (v.length > 30) return 'El nombre no puede superar los 30 caracteres.';
     if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+$/.test(v)) return 'El nombre solo puede contener letras y números.';
     if (
       users.some(
@@ -225,12 +224,12 @@ const CreateUserModal: React.FC<Props> = ({
     return undefined;
   };
 
-  return (
+  const contenidoModal = (
     <Modal
       onClose={guardando ? () => undefined : onClose}
       title="Crear nuevo usuario"
       cerrarAlClicFuera={false}
-      overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+      overlayTransparente
       className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] dark:[scrollbar-color:#475569_transparent]"
     >
       <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue dark:text-[#f3f6fa]">
@@ -258,7 +257,7 @@ const CreateUserModal: React.FC<Props> = ({
                 <Label htmlFor="nombre" required>
                   Nombre de usuario
                   <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
-                    ({field.state.value.length}/60)
+                    ({field.state.value.length}/30)
                   </span>
                 </Label>
                 <Input
@@ -276,7 +275,7 @@ const CreateUserModal: React.FC<Props> = ({
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
-                  maxLength={60}
+                  maxLength={30}
                   disabled={guardando}
                 />
                 <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
@@ -548,6 +547,26 @@ const CreateUserModal: React.FC<Props> = ({
         </div>
       </form>
     </Modal>
+  );
+
+  return (
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            key="crear-usuario-backdrop"
+            className="fixed inset-0 z-[1199] bg-[#060f20]/[0.78] backdrop-blur-[6px] dark:bg-black/60"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
+      {isOpen && contenidoModal}
+    </>
   );
 };
 
