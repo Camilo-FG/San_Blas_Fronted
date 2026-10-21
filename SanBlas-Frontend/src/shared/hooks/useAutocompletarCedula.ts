@@ -33,10 +33,10 @@ export function useAutocompletarCedula() {
     }
     setEstado("buscando");
     try {
-      const datos = await obtenerDatosCedula(cedula);
+      const resultado = await obtenerDatosCedula(cedula);
       if (actual !== solicitud.current) return;
-      setEstado(datos ? "encontrada" : "no_encontrada");
-      if (datos) completar(datos);
+      setEstado(resultado.estado);
+      if (resultado.estado === "encontrada") completar(resultado.datos);
     } catch {
       if (actual === solicitud.current) setEstado("error");
     }
