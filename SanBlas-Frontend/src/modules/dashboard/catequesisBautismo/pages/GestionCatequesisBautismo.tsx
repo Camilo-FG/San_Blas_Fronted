@@ -7,6 +7,7 @@ import {
   Inbox,
   Loader2,
   RotateCcw,
+  Trash2,
   XCircle,
 } from "lucide-react";
 import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
@@ -77,6 +78,8 @@ const GestionCatequesisBautismo = () => {
     reintentar,
     cambiarEstado,
     guardando,
+    eliminar,
+    eliminando,
   } = useSolicitudesCatequesisBautismo();
   const [vista, setVista] = useState<"solicitudes" | "historial">("solicitudes");
   const [filtro, setFiltro] = useState<"todos" | "Aprobada" | "Rechazada">("todos");
@@ -87,6 +90,8 @@ const GestionCatequesisBautismo = () => {
   const [erroresCertificado, setErroresCertificado] = useState<Record<string, string>>({});
   const [errorAccion, setErrorAccion] = useState<string | null>(null);
   const [confirmacion, setConfirmacion] = useState<"aprobar" | "rechazar" | null>(null);
+  const [eliminarSeleccion, setEliminarSeleccion] =
+    useState<InscripcionCatequesisBautismo | null>(null);
 
   // Debounce de la búsqueda para no recalcular filas ni resetear la página con cada tecla, igual que catequesis.
   const busquedaDebounced = useDebouncedValue(busqueda, 400);
@@ -175,6 +180,17 @@ const GestionCatequesisBautismo = () => {
       return;
     }
     setErrorAccion(resultado.mensaje);
+    showToast(resultado.mensaje, "error");
+  };
+
+  const confirmarEliminar = async () => {
+    if (!eliminarSeleccion) return;
+    const resultado = await eliminar(eliminarSeleccion.id);
+    if (resultado.ok) {
+      showToast("Solicitud eliminada correctamente", "success");
+      setEliminarSeleccion(null);
+      return;
+    }
     showToast(resultado.mensaje, "error");
   };
 
@@ -380,14 +396,27 @@ const GestionCatequesisBautismo = () => {
                         </Badge>
                       </AdminTableCell>
                       <AdminTableCell>
-                        <button
-                          type="button"
-                          onClick={() => abrir(item)}
-                          aria-label={`Ver detalle de ${nombreCompleto(item)}`}
-                          className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
-                        >
-                          <Eye size={17} strokeWidth={1.5} />
-                        </button>
+                        <span className="inline-flex items-center gap-0.5">
+                          <button
+                            type="button"
+                            onClick={() => abrir(item)}
+                            aria-label={`Ver detalle de ${nombreCompleto(item)}`}
+                            className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
+                          >
+                            <Eye size={17} strokeWidth={1.5} />
+                          </button>
+                          {vista === "historial" && (
+                            <button
+                              type="button"
+                              onClick={() => setEliminarSeleccion(item)}
+                              aria-label={`Eliminar solicitud de ${nombreCompleto(item)}`}
+                              title="Eliminar solicitud"
+                              className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#e66a6a]"
+                            >
+                              <Trash2 size={17} strokeWidth={1.5} />
+                            </button>
+                          )}
+                        </span>
                       </AdminTableCell>
                     </AdminTableRow>
                   ))}
@@ -417,8 +446,24 @@ const GestionCatequesisBautismo = () => {
                     value: ETIQUETA_CONDICION[item.condicion] ?? item.condicion,
                   },
                 ]}
-                onViewDetail={() => abrir(item)}
-                viewLabel="Ver detalle"
+                actions={[
+                  {
+                    label: "Ver detalle",
+                    icon: <Eye size={15} />,
+                    variant: "primary",
+                    onClick: () => abrir(item),
+                  },
+                  ...(vista === "historial"
+                    ? [
+                        {
+                          label: "Eliminar",
+                          icon: <Trash2 size={15} />,
+                          variant: "danger" as const,
+                          onClick: () => setEliminarSeleccion(item),
+                        },
+                      ]
+                    : []),
+                ]}
               />
             ))}
           </div>
@@ -508,6 +553,22 @@ const GestionCatequesisBautismo = () => {
           <FieldError message={errorAccion} />
         </label>
       </ConfirmacionAccionModal>
+      <ConfirmacionAccionModal
+        open={eliminarSeleccion !== null}
+        title="Eliminar solicitud"
+        parteSubrayada="Eliminar del historial"
+        mensaje={`¿Estás seguro/a que quieres eliminar la solicitud de ${eliminarSeleccion ? nombreCompleto(eliminarSeleccion) : ""}? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        pendingLabel="Eliminando..."
+        isPending={eliminando}
+        iconoAdvertencia
+        confirmVariant="danger"
+        onConfirm={() => void confirmarEliminar()}
+        onCancel={() => setEliminarSeleccion(null)}
+        overlayClassName="fixed inset-0 z-[1400] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+        cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
+      />
     </AdminModule>
   );
 };

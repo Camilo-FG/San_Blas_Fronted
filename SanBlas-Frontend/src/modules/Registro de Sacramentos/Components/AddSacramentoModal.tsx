@@ -281,6 +281,12 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     campo: keyof PersonaForm,
     valor: string,
   ) => {
+    // Si se borra la cédula por completo, los nombres inyectados por el
+    // autocompletado deben limpiarse para no mezclar cédulas con nombres ajenos.
+    if (campo === 'cedula' && cedulaDigitosValidos(valor).length === 0) {
+      setter(() => ({ cedula: '', nombre: '', primerApellido: '', segundoApellido: '' }));
+      return;
+    }
     setter((prev) => ({
       ...prev,
       [campo]:
@@ -288,31 +294,28 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     }));
   };
 
-  // Al completar la cédula, consulta la API y llena solo los campos que el usuario no haya escrito.
+  // Al completar la cédula, consulta la API y sobrescribe nombre y apellidos con
+  // los de esa cédula (al cambiarla se reemplazan los datos anteriores).
   const autocompletarPorCedula = async (
     setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
     cedula: string,
-    persona: PersonaForm,
     campo: string,
   ) => {
     const digitos = cedulaDigitosValidos(cedula);
     if (digitos.length !== 9) return;
-    // Si nombre y apellidos ya están llenos, no tiene sentido consultar.
-    if (persona.nombre.trim() && persona.primerApellido.trim()) return;
     setCampoCedulaCargando(campo);
     try {
       const datos = await obtenerDatosCedula(cedula);
-      if (!datos) return;
-      setter((prev) => ({
-        ...prev,
-        nombre: prev.nombre.trim() ? prev.nombre : datos.nombre,
-        primerApellido: prev.primerApellido.trim()
-          ? prev.primerApellido
-          : datos.primerApellido,
-        segundoApellido: prev.segundoApellido.trim()
-          ? prev.segundoApellido
-          : datos.segundoApellido,
-      }));
+      setter((prev) => {
+        // Si el usuario cambió la cédula mientras se consultaba, no sobrescribir.
+        if (cedulaDigitosValidos(prev.cedula) !== digitos) return prev;
+        return {
+          ...prev,
+          nombre: datos?.nombre ?? '',
+          primerApellido: datos?.primerApellido ?? '',
+          segundoApellido: datos?.segundoApellido ?? '',
+        };
+      });
     } finally {
       setCampoCedulaCargando((actual) => (actual === campo ? null : actual));
     }
@@ -322,11 +325,13 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     setAbuelos((prev) =>
       prev.map((ab, i) =>
         i === idx
-          ? {
-              ...ab,
-              [campo]:
-                campo === 'cedula' ? formatearCedulaCR(cedulaDigitosValidos(valor)) : soloLetras(valor),
-            }
+          ? campo === 'cedula' && cedulaDigitosValidos(valor).length === 0
+            ? { ...ab, cedula: '', nombre: '', primerApellido: '', segundoApellido: '' }
+            : {
+                ...ab,
+                [campo]:
+                  campo === 'cedula' ? formatearCedulaCR(cedulaDigitosValidos(valor)) : soloLetras(valor),
+              }
           : ab,
       ),
     );
@@ -336,23 +341,22 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const autocompletarAbueloPorCedula = async (idx: number, abuelo: PersonaForm & { parentesco: ParentescoAbuelo }) => {
     const digitos = cedulaDigitosValidos(abuelo.cedula);
     if (digitos.length !== 9) return;
-    if (abuelo.nombre.trim() && abuelo.primerApellido.trim()) return;
     const campo = `abuelo-${idx}`;
     setCampoCedulaCargando(campo);
     try {
       const datos = await obtenerDatosCedula(abuelo.cedula);
-      if (!datos) return;
       setAbuelos((prev) =>
-        prev.map((a, i) =>
-          i === idx
-            ? {
-                ...a,
-                nombre: a.nombre.trim() ? a.nombre : datos.nombre,
-                primerApellido: a.primerApellido.trim() ? a.primerApellido : datos.primerApellido,
-                segundoApellido: a.segundoApellido.trim() ? a.segundoApellido : datos.segundoApellido,
-              }
-            : a,
-        ),
+        prev.map((a, i) => {
+          if (i !== idx) return a;
+          // Si el usuario cambió la cédula mientras se consultaba, no sobrescribir.
+          if (cedulaDigitosValidos(a.cedula) !== digitos) return a;
+          return {
+            ...a,
+            nombre: datos?.nombre ?? '',
+            primerApellido: datos?.primerApellido ?? '',
+            segundoApellido: datos?.segundoApellido ?? '',
+          };
+        }),
       );
     } finally {
       setCampoCedulaCargando((actual) => (actual === campo ? null : actual));
@@ -511,68 +515,78 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     persona: PersonaForm,
     setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
     prefijo: string,
-  ) => (
-    <div className="mb-5">
-      <Label>{titulo}</Label>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="relative">
-          <Input
-            type="text"
-            placeholder="Cédula (0-0000-0000)"
-            maxLength={12}
-            className={cn(inputClass(Boolean(errors[`${prefijo}Cedula`])), 'pr-10')}
-            value={persona.cedula}
-            onChange={(e) => {
-              const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
-              setPersonaCampo(setter, 'cedula', e.target.value);
-              if (cedulaDigitosValidos(cedula).length === 9) {
-                void autocompletarPorCedula(setter, cedula, { ...persona, cedula }, prefijo);
-              }
-            }}
-            onBlur={() => void autocompletarPorCedula(setter, persona.cedula, persona, prefijo)}
-          />
-          {campoCedulaCargando === prefijo && (
-            <Loader2
-              aria-label="Buscando datos de la cédula"
-              className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue"
+  ) => {
+    // Los nombres solo llegan por autocompletado de cédula: si hay cédula se
+    // bloquean (incluido el fetch) y solo se liberan al borrar la cédula.
+    const nombresBloqueados = cedulaDigitosValidos(persona.cedula).length > 0;
+    return (
+      <div className="mb-5">
+        <Label>{titulo}</Label>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="relative">
+            <Input
+              type="text"
+              placeholder="Cédula (0-0000-0000)"
+              maxLength={12}
+              className={cn(inputClass(Boolean(errors[`${prefijo}Cedula`])), 'pr-10')}
+              value={persona.cedula}
+              onChange={(e) => {
+                const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
+                setPersonaCampo(setter, 'cedula', e.target.value);
+                if (cedulaDigitosValidos(cedula).length === 9) {
+                  void autocompletarPorCedula(setter, cedula, prefijo);
+                }
+              }}
             />
-          )}
-        </div>
-        <div>
-          <Input
-            type="text"
-            placeholder="Nombre"
-            maxLength={30}
-            className={inputClass(Boolean(errors[`${prefijo}Nombre`]))}
-            value={persona.nombre}
-            onChange={(e) => setPersonaCampo(setter, 'nombre', e.target.value)}
-          />
-          <ErrorMsg errors={errors} clave={`${prefijo}Nombre`} />
-        </div>
-        <div>
-          <Input
-            type="text"
-            placeholder="Primer apellido"
-            maxLength={30}
-            className={inputClass(Boolean(errors[`${prefijo}PrimerApellido`]))}
-            value={persona.primerApellido}
-            onChange={(e) => setPersonaCampo(setter, 'primerApellido', e.target.value)}
-          />
-          <ErrorMsg errors={errors} clave={`${prefijo}PrimerApellido`} />
-        </div>
-        <div>
-          <Input
-            type="text"
-            placeholder="Segundo apellido"
-            maxLength={30}
-            className={inputClass(Boolean(errors[`${prefijo}SegundoApellido`]))}
-            value={persona.segundoApellido}
-            onChange={(e) => setPersonaCampo(setter, 'segundoApellido', e.target.value)}
-          />
+            {campoCedulaCargando === prefijo && (
+              <Loader2
+                aria-label="Buscando datos de la cédula"
+                className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue"
+              />
+            )}
+          </div>
+          <div>
+            <Input
+              type="text"
+              placeholder="Nombre"
+              maxLength={30}
+              className={inputClass(Boolean(errors[`${prefijo}Nombre`]))}
+              value={persona.nombre}
+              disabled={nombresBloqueados}
+              title={nombresBloqueados ? 'Borre la cédula para cambiar el nombre.' : undefined}
+              onChange={(e) => setPersonaCampo(setter, 'nombre', e.target.value)}
+            />
+            <ErrorMsg errors={errors} clave={`${prefijo}Nombre`} />
+          </div>
+          <div>
+            <Input
+              type="text"
+              placeholder="Primer apellido"
+              maxLength={30}
+              className={inputClass(Boolean(errors[`${prefijo}PrimerApellido`]))}
+              value={persona.primerApellido}
+              disabled={nombresBloqueados}
+              title={nombresBloqueados ? 'Borre la cédula para cambiar el apellido.' : undefined}
+              onChange={(e) => setPersonaCampo(setter, 'primerApellido', e.target.value)}
+            />
+            <ErrorMsg errors={errors} clave={`${prefijo}PrimerApellido`} />
+          </div>
+          <div>
+            <Input
+              type="text"
+              placeholder="Segundo apellido"
+              maxLength={30}
+              className={inputClass(Boolean(errors[`${prefijo}SegundoApellido`]))}
+              value={persona.segundoApellido}
+              disabled={nombresBloqueados}
+              title={nombresBloqueados ? 'Borre la cédula para cambiar el apellido.' : undefined}
+              onChange={(e) => setPersonaCampo(setter, 'segundoApellido', e.target.value)}
+            />
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderBautismo = () => (
     <>
@@ -604,12 +618,18 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
               </select>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div className="relative">
-                  <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} className="pr-10" onChange={(e) => setAbueloCampo(idx, 'cedula', e.target.value)} onBlur={() => void autocompletarAbueloPorCedula(idx, ab)} />
+                  <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} className="pr-10" onChange={(e) => {
+                    setAbueloCampo(idx, 'cedula', e.target.value);
+                    const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
+                    if (cedulaDigitosValidos(cedula).length === 9) {
+                      void autocompletarAbueloPorCedula(idx, { ...ab, cedula });
+                    }
+                  }} />
                   {campoCedulaCargando === `abuelo-${idx}` && <Loader2 aria-label="Buscando datos de la cédula" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue" />}
                 </div>
-                <Input type="text" placeholder="Nombre" maxLength={30} value={ab.nombre} onChange={(e) => setAbueloCampo(idx, 'nombre', e.target.value)} />
-                <Input type="text" placeholder="Primer apellido" maxLength={30} value={ab.primerApellido} onChange={(e) => setAbueloCampo(idx, 'primerApellido', e.target.value)} />
-                <Input type="text" placeholder="Segundo apellido" maxLength={30} value={ab.segundoApellido} onChange={(e) => setAbueloCampo(idx, 'segundoApellido', e.target.value)} />
+                <Input type="text" placeholder="Nombre" maxLength={30} value={ab.nombre} disabled={cedulaDigitosValidos(ab.cedula).length > 0} title={cedulaDigitosValidos(ab.cedula).length > 0 ? 'Borre la cédula para cambiar el nombre.' : undefined} onChange={(e) => setAbueloCampo(idx, 'nombre', e.target.value)} />
+                <Input type="text" placeholder="Primer apellido" maxLength={30} value={ab.primerApellido} disabled={cedulaDigitosValidos(ab.cedula).length > 0} onChange={(e) => setAbueloCampo(idx, 'primerApellido', e.target.value)} />
+                <Input type="text" placeholder="Segundo apellido" maxLength={30} value={ab.segundoApellido} disabled={cedulaDigitosValidos(ab.cedula).length > 0} onChange={(e) => setAbueloCampo(idx, 'segundoApellido', e.target.value)} />
               </div>
             </div>
           ))}

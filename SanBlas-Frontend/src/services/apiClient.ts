@@ -210,5 +210,7 @@ const isTechnicalApiMessage = (message: string): boolean =>
   /(query failed|syntax error|typeorm|exception|stack|sql|postgres|ECONN|internal server error|at \w+\()/i.test(
     message,
   ) ||
+  // 404 crudo de Nest ("Cannot DELETE /cica/1") cuando la ruta no existe en el backend en ejecución
+  /^\s*cannot\s+(get|post|put|delete|patch)\s+\//i.test(message) ||
   // 401 crudo de proxies/CDN sin body del backend: cae al mensaje amable por estado
   /^\s*unauthorized\s*$/i.test(message);

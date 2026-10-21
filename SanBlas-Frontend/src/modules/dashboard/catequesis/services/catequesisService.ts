@@ -6,6 +6,7 @@ export {
   actualizarEstadoSolicitud,
   agregarObservacionAdministrativa,
   exportarInscripcionesCatequesis,
+  eliminarSolicitudCatequesis,
 } from "../../../../services/catequesis/catequesisService";
 export type { HistorialInscripcionCatequesis } from "../../../../services/catequesis/catequesisService";
 

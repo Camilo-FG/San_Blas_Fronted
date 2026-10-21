@@ -69,3 +69,13 @@ export const actualizarEstadoCatequesisBautismo = async (
     handleApiError(error);
   }
 };
+
+export const eliminarInscripcionCatequesisBautismo = async (
+  id: number,
+): Promise<void> => {
+  try {
+    await apiClient.delete(`/catequesis-bautismo/${id}`);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
