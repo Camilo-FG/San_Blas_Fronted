@@ -780,10 +780,16 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const catalogoCargando = cargandoParroquias || cargandoPresbiteros;
 
   return (
-    <div ref={modalRef} className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 dark:bg-black/60" onClick={onClose}>
+    <div
+      ref={modalRef}
+      className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 dark:bg-black/60"
+      role="presentation"
+    >
       <div
         className="flex max-h-[90vh] w-[90%] max-w-[800px] flex-col overflow-hidden rounded-xl bg-white dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Inscripción sacramental"
       >
         <div className="flex flex-col gap-3 border-b border-gray-200 bg-surface-muted px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
           <h2 className="m-0 text-base text-slate-800 sm:text-lg dark:text-[#f3f6fa]">INSCRIPCIÓN SACRAMENTAL</h2>

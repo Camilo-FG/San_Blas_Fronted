@@ -160,8 +160,12 @@ export function RolesYPermisos({
       (usuario) => usuario.role === clave || usuario.roles?.includes(clave),
     ).length;
 
-  const rolesSistema = roles.filter((rol) => esRolDelSistema(rol));
-  const rolesPersonalizados = roles.filter((rol) => !esRolDelSistema(rol));
+  // 'user' no se ofrece ni se muestra: no da acceso al panel y no se asigna desde aquí.
+  const rolesVisibles = roles.filter((rol) => rol.clave !== 'user');
+  const rolesSistema = rolesVisibles.filter((rol) => esRolDelSistema(rol));
+  const rolesPersonalizados = rolesVisibles.filter(
+    (rol) => !esRolDelSistema(rol),
+  );
 
   const handleConfirmarEliminar = async () => {
     if (!rolAEliminar) return;
@@ -195,7 +199,7 @@ export function RolesYPermisos({
         </Button>
       </div>
 
-      {roles.length === 0 ? (
+      {rolesVisibles.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border-strong bg-surface px-4 py-10 text-center dark:border-[rgba(220,230,242,0.16)] dark:bg-[#0a1425]">
           <div className="flex size-11 items-center justify-center rounded-xl bg-royal-blue/8 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]">
             <Shield size={22} aria-hidden="true" />
