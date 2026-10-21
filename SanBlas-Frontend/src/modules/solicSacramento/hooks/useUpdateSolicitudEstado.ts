@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { actualizarEstadoSacramento } from "../../../services/constancias/constanciasService";
 import type { EstadoSolicitudBackend } from "../../../services/constancias/constanciasApiTypes";
+import { invalidarNotificacionesPanel } from "../../dashboard/hooks/notificacionesPanelQuery";
 
 type UpdateEstadoPayload = {
   id: number | string;
@@ -15,7 +16,8 @@ export const useUpdateSolicitudEstado = () => {
       return actualizarEstadoSacramento(Number(id), nuevoEstado);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["solicitudes"] });
+      void queryClient.invalidateQueries({ queryKey: ["solicitudes"] });
+      invalidarNotificacionesPanel(queryClient);
     },
   });
 };

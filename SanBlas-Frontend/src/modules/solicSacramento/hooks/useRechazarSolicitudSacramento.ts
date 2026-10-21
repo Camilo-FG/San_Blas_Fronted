@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { rechazarSolicitudSacramento } from "../../../services/constancias/constanciasService";
+import { invalidarNotificacionesPanel } from "../../dashboard/hooks/notificacionesPanelQuery";
 
 type RechazarSolicitudPayload = {
   id: number | string;
@@ -15,7 +16,8 @@ export const useRechazarSolicitudSacramento = () => {
       return rechazarSolicitudSacramento(Number(id), motivoRechazo, detalleRechazo);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["solicitudes"] });
+      void queryClient.invalidateQueries({ queryKey: ["solicitudes"] });
+      invalidarNotificacionesPanel(queryClient);
     },
   });
 };
