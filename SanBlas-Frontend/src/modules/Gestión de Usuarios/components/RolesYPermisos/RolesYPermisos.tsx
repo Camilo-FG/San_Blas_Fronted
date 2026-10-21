@@ -7,7 +7,12 @@ import {
   cn,
   useToast,
 } from '../../../../shared/ui';
-import { etiquetaPermiso, type Rol } from '../../../../types/Rol';
+import {
+  CLAVES_ROL_SISTEMA,
+  esRolDelSistema,
+  etiquetaPermiso,
+  type Rol,
+} from '../../../../types/Rol';
 import type { Usuario } from '../../../../types/Usuario';
 import { useDeleteRol } from '../../hooks/hooksUsuarios/useDeleteRol';
 
@@ -18,16 +23,6 @@ interface RolesYPermisosProps {
   onRolEliminado?: () => void;
 }
 
-// Claves que nunca se pueden eliminar desde el panel (espejo del backend).
-const CLAVES_NO_ELIMINABLES = [
-  'admin',
-  'user',
-  'secretario',
-  'catequista',
-  'gestor-eventos',
-  'gestor-donaciones',
-];
-
 interface RolCardProps {
   rol: Rol;
   asignados: number;
@@ -35,16 +30,18 @@ interface RolCardProps {
 }
 
 function RolCard({ rol, asignados, onEliminar }: RolCardProps) {
-  const esAdmin = rol.clave === 'admin';
-  const Icono = esAdmin ? ShieldCheck : rol.esSistema ? Shield : Sparkles;
+  const esAdmin = rol.clave === 'admin' || rol.clave === 'secretario';
+  const delSistema = esRolDelSistema(rol);
+  const Icono = esAdmin ? ShieldCheck : delSistema ? Shield : Sparkles;
   const puedeEliminar =
-    !rol.esSistema && !CLAVES_NO_ELIMINABLES.includes(rol.clave);
+    !delSistema &&
+    !(CLAVES_ROL_SISTEMA as readonly string[]).includes(rol.clave);
 
   return (
     <article
       className={cn(
         'flex flex-col gap-4 rounded-2xl border bg-surface p-5 shadow-sm dark:bg-[#0a1425] dark:shadow-none',
-        rol.esSistema
+        delSistema
           ? 'border-royal-blue/15 dark:border-[rgba(217,169,40,0.22)]'
           : 'border-border-strong dark:border-[rgba(220,230,242,0.12)]',
       )}
@@ -54,7 +51,7 @@ function RolCard({ rol, asignados, onEliminar }: RolCardProps) {
           <div
             className={cn(
               'flex size-11 shrink-0 items-center justify-center rounded-xl',
-              rol.esSistema
+              delSistema
                 ? 'bg-royal-blue/8 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]'
                 : 'bg-[#aa7323]/10 text-[#aa7323] dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]',
             )}
@@ -66,7 +63,7 @@ function RolCard({ rol, asignados, onEliminar }: RolCardProps) {
               {rol.nombre}
             </h3>
             <p className="m-0 mt-0.5 text-xs font-semibold tracking-wide text-text-muted uppercase dark:text-[#7f8da3]">
-              {rol.esSistema ? (
+              {delSistema ? (
                 'Rol del sistema'
               ) : (
                 <>
@@ -163,8 +160,8 @@ export function RolesYPermisos({
       (usuario) => usuario.role === clave || usuario.roles?.includes(clave),
     ).length;
 
-  const rolesSistema = roles.filter((rol) => rol.esSistema);
-  const rolesPersonalizados = roles.filter((rol) => !rol.esSistema);
+  const rolesSistema = roles.filter((rol) => esRolDelSistema(rol));
+  const rolesPersonalizados = roles.filter((rol) => !esRolDelSistema(rol));
 
   const handleConfirmarEliminar = async () => {
     if (!rolAEliminar) return;

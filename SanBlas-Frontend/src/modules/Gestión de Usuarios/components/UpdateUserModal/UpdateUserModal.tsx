@@ -3,6 +3,7 @@ import { useForm } from '@tanstack/react-form';
 import { Eye, EyeOff } from 'lucide-react';
 import { type Usuario } from '../../../../types/Usuario';
 import {
+  esRolDelSistema,
   opcionesSelectRol,
   type Rol,
 } from '../../../../types/Rol';
@@ -415,44 +416,104 @@ const UpdateUserModal: React.FC<Props> = ({
                 onSubmit: ({ value }) => validarRoles(value),
               }}
             >
-              {(field) => (
+              {(field) => {
+                const opcionesRol = opcionesSelectRol(
+                  roles,
+                  field.state.value[0],
+                  rolesAsignables,
+                );
+                const rolesSistemaOpciones = opcionesRol.filter((opcion) => {
+                  const rol = roles.find((item) => item.clave === opcion.clave);
+                  return rol ? esRolDelSistema(rol) : false;
+                });
+                const rolesPersonalizadosOpciones = opcionesRol.filter(
+                  (opcion) => {
+                    const rol = roles.find(
+                      (item) => item.clave === opcion.clave,
+                    );
+                    return rol ? !esRolDelSistema(rol) : false;
+                  },
+                );
+
+                const renderCheckboxRol = (rol: {
+                  clave: string;
+                  nombre: string;
+                }) => {
+                  const marcado = field.state.value.includes(rol.clave);
+                  return (
+                    <label
+                      key={rol.clave}
+                      className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-text dark:text-[#f3f6fa]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={marcado}
+                        disabled={esUsuarioActual}
+                        onChange={() => {
+                          const actual = field.state.value;
+                          field.handleChange(
+                            marcado
+                              ? actual.filter((r) => r !== rol.clave)
+                              : [...actual, rol.clave],
+                          );
+                        }}
+                        onBlur={field.handleBlur}
+                        className="h-4 w-4 shrink-0 cursor-pointer accent-royal-blue"
+                      />
+                      <span>{rol.nombre}</span>
+                    </label>
+                  );
+                };
+
+                return (
                 <div>
                   <Label id="u-roles-titulo">Roles del usuario</Label>
                   <div
                     role="group"
                     aria-labelledby="u-roles-titulo"
-                    className="flex max-h-48 flex-col gap-2 overflow-y-auto rounded-xl border border-border-strong bg-surface-muted p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+                    className="flex max-h-60 flex-col gap-3 overflow-y-auto rounded-xl border border-border-strong bg-surface-muted p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
                   >
-                    {opcionesSelectRol(
-                      roles,
-                      field.state.value[0],
-                      rolesAsignables,
-                    ).map((rol) => {
-                      const marcado = field.state.value.includes(rol.clave);
-                      return (
-                        <label
-                          key={rol.clave}
-                          className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-text dark:text-[#f3f6fa]"
+                    {rolesSistemaOpciones.length > 0 && (
+                      <div>
+                        <p
+                          id="u-roles-sistema-titulo"
+                          className="mb-1.5 text-[11px] font-bold tracking-wide text-royal-blue uppercase dark:text-[#d9a928]"
                         >
-                          <input
-                            type="checkbox"
-                            checked={marcado}
-                            disabled={esUsuarioActual}
-                            onChange={() => {
-                              const actual = field.state.value;
-                              field.handleChange(
-                                marcado
-                                  ? actual.filter((r) => r !== rol.clave)
-                                  : [...actual, rol.clave],
-                              );
-                            }}
-                            onBlur={field.handleBlur}
-                            className="h-4 w-4 shrink-0 cursor-pointer accent-royal-blue"
-                          />
-                          <span>{rol.nombre}</span>
-                        </label>
-                      );
-                    })}
+                          Roles del sistema
+                        </p>
+                        <div
+                          role="group"
+                          aria-labelledby="u-roles-sistema-titulo"
+                          className="flex flex-col gap-2"
+                        >
+                          {rolesSistemaOpciones.map(renderCheckboxRol)}
+                        </div>
+                      </div>
+                    )}
+
+                    {rolesPersonalizadosOpciones.length > 0 && (
+                      <div
+                        className={
+                          rolesSistemaOpciones.length > 0
+                            ? 'border-t border-border-strong pt-3 dark:border-[rgba(220,230,242,0.12)]'
+                            : undefined
+                        }
+                      >
+                        <p
+                          id="u-roles-personalizados-titulo"
+                          className="mb-1.5 text-[11px] font-bold tracking-wide text-text-muted uppercase dark:text-[#7f8da3]"
+                        >
+                          Roles personalizados
+                        </p>
+                        <div
+                          role="group"
+                          aria-labelledby="u-roles-personalizados-titulo"
+                          className="flex flex-col gap-2"
+                        >
+                          {rolesPersonalizadosOpciones.map(renderCheckboxRol)}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <FieldError
                     message={
@@ -467,7 +528,8 @@ const UpdateUserModal: React.FC<Props> = ({
                     </p>
                   )}
                 </div>
-              )}
+                );
+              }}
             </form.Field>
 
             <form.Field name="estado">

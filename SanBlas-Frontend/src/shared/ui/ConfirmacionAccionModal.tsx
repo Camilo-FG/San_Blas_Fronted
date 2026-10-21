@@ -61,13 +61,19 @@ export function ConfirmacionAccionModal({
       title={title}
       sinFondo
       cerrarAlClicFuera={false}
-      className={className}
-      overlayClassName={overlayClassName}
+      className={cn(
+        "border-border bg-surface dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa]",
+        className,
+      )}
+      overlayClassName={
+        overlayClassName ??
+        "fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+      }
     >
       <div className="flex min-h-44 flex-col">
         {iconoAdvertencia && (
           <div className="flex shrink-0 items-center justify-center pt-4">
-            <span className="inline-flex size-12 items-center justify-center rounded-full bg-danger-bg text-danger">
+            <span className="inline-flex size-12 items-center justify-center rounded-full bg-danger-bg text-danger dark:bg-[rgba(230,106,106,0.14)] dark:text-[#e66a6a]">
               <AlertTriangle size={24} aria-hidden="true" />
             </span>
           </div>
@@ -77,7 +83,7 @@ export function ConfirmacionAccionModal({
           resto={resto}
         />
         <div className="flex flex-1 flex-col items-center justify-center px-8 py-4 text-center">
-          <p className="text-sm leading-relaxed text-text-secondary">
+          <p className="text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
             {mensaje}
           </p>
           {children}
@@ -87,7 +93,7 @@ export function ConfirmacionAccionModal({
             variant={confirmVariant}
             className={cn(
               esDestructivo
-                ? "rounded-lg! duration-400 ease-in-out"
+                ? "rounded-lg! duration-400 ease-in-out dark:bg-[#b91c1c] dark:hover:bg-[#991b1b]"
                 : "rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hover:text-[#dcb55a]",
               confirmClassName,
             )}
@@ -109,7 +115,7 @@ export function ConfirmacionAccionModal({
           <Button
             variant="secondary"
             className={cn(
-              "rounded-lg! border-0! hover:bg-slate-300! duration-150 ease-out",
+              "rounded-lg! duration-150 ease-out dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!",
               cancelClassName,
             )}
             onClick={onCancel}

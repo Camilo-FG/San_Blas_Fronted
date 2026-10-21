@@ -23,6 +23,8 @@ import { useAuth } from "../../../context/AuthContext";
 import { useTheme } from "../../../context/ThemeContext";
 import { cn } from "../../../shared/ui";
 import type { PermisoRolId } from "../../../types/Rol";
+import DashboardTopBar from "../components/DashboardTopBar";
+import NotificacionesPanel from "../components/NotificacionesPanel";
 
 const navLinks: {
   to: string;
@@ -251,10 +253,18 @@ function Dashboard() {
         >
           SB San Blas
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
           <span className="rounded-full border border-brand-gold/30 bg-brand-gold/20 px-2 py-0.5 text-[10px] font-bold text-brand-gold">
             ADMIN
           </span>
+          <NotificacionesPanel variante="oscuro" />
+          <Link
+            to={Rutas.dashboardUrl.perfil}
+            aria-label="Ver mi perfil"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gold font-heading text-[10px] font-bold text-brand-blue uppercase no-underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+          >
+            {getUserInitial(user?.email)}
+          </Link>
           <button
             type="button"
             onClick={() => setMenuAbierto((prev) => !prev)}
@@ -558,50 +568,59 @@ function Dashboard() {
         </div>
       </aside>
 
-      {/* Main content */}
-      <main
+      {/* Main column: top bar + scrollable content */}
+      <div
         className={cn(
-          "h-[calc(100vh-50px)] flex-1 overflow-y-auto p-4 sm:p-6 lg:h-screen lg:p-8",
+          "flex h-[calc(100vh-50px)] min-w-0 flex-1 flex-col lg:h-screen",
           esAdmin && "dark:bg-[#040b16]",
         )}
       >
-        {pathname !== Rutas.dashboard && (
-          <header
-            className={cn(
-              "mb-3 rounded-[20px] border border-border bg-surface p-4 shadow-sm sm:p-5 lg:mb-4",
-              esAdmin &&
-                "dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]",
-            )}
-          >
-            <p
-              className={cn(
-                "mb-1 text-[0.72rem] leading-tight font-extrabold tracking-[0.14em] text-brand-gold uppercase",
-                esAdmin && "dark:text-[#d9a928]",
-              )}
-            >
-              Administración
-            </p>
-            <h1
-              className={cn(
-                "mb-1 font-heading text-lg leading-tight text-brand-blue lg:text-2xl",
-                esAdmin && "dark:text-[#f3f6fa]",
-              )}
-            >
-              {pageInfo.title}
-            </h1>
-            <p
-              className={cn(
-                "max-w-3xl text-sm text-text-secondary",
-                esAdmin && "dark:text-[#b7c3d4]",
-              )}
-            >
-              {pageInfo.subtitle}
-            </p>
-          </header>
-        )}
+        <DashboardTopBar tituloSeccion={pageInfo.title} esAdmin={esAdmin} />
 
-        <Outlet />
-      </main>
+        <main
+          className={cn(
+            "min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8",
+            esAdmin && "dark:bg-[#040b16]",
+          )}
+        >
+          {pathname !== Rutas.dashboard && (
+            <header
+              className={cn(
+                "mb-3 rounded-[20px] border border-border bg-surface p-4 shadow-sm sm:p-5 lg:mb-4",
+                esAdmin &&
+                  "dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]",
+              )}
+            >
+              <p
+                className={cn(
+                  "mb-1 text-[0.72rem] leading-tight font-extrabold tracking-[0.14em] text-brand-gold uppercase",
+                  esAdmin && "dark:text-[#d9a928]",
+                )}
+              >
+                Administración
+              </p>
+              <h1
+                className={cn(
+                  "mb-1 font-heading text-lg leading-tight text-brand-blue lg:text-2xl",
+                  esAdmin && "dark:text-[#f3f6fa]",
+                )}
+              >
+                {pageInfo.title}
+              </h1>
+              <p
+                className={cn(
+                  "max-w-3xl text-sm text-text-secondary",
+                  esAdmin && "dark:text-[#b7c3d4]",
+                )}
+              >
+                {pageInfo.subtitle}
+              </p>
+            </header>
+          )}
+
+          <Outlet />
+        </main>
+      </div>
     </div>
     </>
   );

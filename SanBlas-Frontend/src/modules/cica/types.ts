@@ -31,6 +31,9 @@ export interface InscripcionCica {
   madreNombre: string;
   madreApellido1: string;
   madreApellido2: string | null;
+  provincia: string;
+  canton: string;
+  distrito: string;
   direccionHogar: string;
   esCatolico: boolean;
   otraIglesia: string | null;
@@ -64,6 +67,9 @@ export interface CrearInscripcionCica {
   madreNombre: string;
   madreApellido1: string;
   madreApellido2: string | null;
+  provincia: string;
+  canton: string;
+  distrito: string;
   direccionHogar: string;
   esCatolico: boolean;
   otraIglesia: string | null;

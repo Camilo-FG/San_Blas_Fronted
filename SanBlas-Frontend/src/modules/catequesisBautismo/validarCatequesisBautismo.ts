@@ -100,16 +100,18 @@ export const validarFormularioCatequesisBautismo = (
     ) ?? null,
   );
 
-  if (
+  if (!form.provincia.trim()) {
+    errores.provincia = "Seleccione una provincia.";
+  } else if (
     !PROVINCIAS_COSTA_RICA.includes(
       form.provincia as (typeof PROVINCIAS_COSTA_RICA)[number],
     )
   ) {
-    errores.provincia = "Seleccione una provincia.";
+    errores.provincia = "Seleccione una provincia válida.";
   }
 
-  poner("canton", mensajeNombre(form.canton, "El cantón", true, true));
-  poner("distrito", mensajeNombre(form.distrito, "El distrito", true, true));
+  if (!form.canton.trim()) errores.canton = "Seleccione un cantón.";
+  if (!form.distrito.trim()) errores.distrito = "Seleccione un distrito.";
   poner("barrio", mensajeNombre(form.barrio, "El barrio", true, true));
   if (!form.condicion) errores.condicion = "Seleccione su condición.";
 

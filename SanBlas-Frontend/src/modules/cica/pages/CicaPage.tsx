@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { IdentificacionCedula } from "../../../shared/components/IdentificacionCedula";
+import { UbicacionCostaRicaCampos } from "../../../shared/components/UbicacionCostaRicaCampos";
 import { useAutocompletarCedula } from "../../../shared/hooks/useAutocompletarCedula";
 import { limpiarCedula, PATRON_CEDULA, type TipoCedula } from "../../../shared/utils/cedulaIdentificacion";
 import { ApiError } from "../../../services/apiClient";
@@ -55,6 +56,9 @@ const vacio: FormularioCica = {
   madreNombre: "",
   madreApellido1: "",
   madreApellido2: "",
+  provincia: "",
+  canton: "",
+  distrito: "",
   direccionHogar: "",
   esCatolico: "",
   otraIglesia: "",
@@ -452,7 +456,31 @@ const CicaPage = () => {
                 <Campo etiqueta="Nombre de la madre" obligatorio maxLength={MAX_NOMBRE_CICA} placeholder="Ej: María" valor={form.madreNombre} error={errores.madreNombre} onChange={alNombre("madreNombre")} />
                 <Campo etiqueta="Primer apellido de la madre" obligatorio maxLength={MAX_APELLIDO_CICA} placeholder="Ej: López" valor={form.madreApellido1} error={errores.madreApellido1} onChange={alApellido("madreApellido1")} />
                 <Campo etiqueta="Segundo apellido de la madre" maxLength={MAX_APELLIDO_CICA} placeholder="Ej: Vargas" valor={form.madreApellido2} error={errores.madreApellido2} onChange={alApellido("madreApellido2")} />
-                <Campo etiqueta="Dirección del hogar" obligatorio maxLength={MAX_DIRECCION_CICA} mostrarContador placeholder="Ej: 200 m norte de la iglesia, Nicoya" valor={form.direccionHogar} error={errores.direccionHogar} onChange={(valor) => set("direccionHogar", valor.slice(0, MAX_DIRECCION_CICA))} className="sm:col-span-3" />
+                <UbicacionCostaRicaCampos
+                  valor={{
+                    provincia: form.provincia,
+                    canton: form.canton,
+                    distrito: form.distrito,
+                  }}
+                  onChange={(ubicacion) => {
+                    setForm((prev) => ({ ...prev, ...ubicacion }));
+                    setErrores((prev) => {
+                      const siguiente = { ...prev };
+                      delete siguiente.provincia;
+                      delete siguiente.canton;
+                      delete siguiente.distrito;
+                      return siguiente;
+                    });
+                  }}
+                  errores={{
+                    provincia: errores.provincia,
+                    canton: errores.canton,
+                    distrito: errores.distrito,
+                  }}
+                  disabled={enviando}
+                  selectClassName={campo}
+                />
+                <Campo etiqueta="Dirección exacta" obligatorio maxLength={MAX_DIRECCION_CICA} mostrarContador placeholder="Ej: 200 m norte de la iglesia, casa azul" valor={form.direccionHogar} error={errores.direccionHogar} onChange={(valor) => set("direccionHogar", valor.slice(0, MAX_DIRECCION_CICA))} className="sm:col-span-3" />
               </fieldset>
 
               <fieldset aria-invalid={Boolean(errores.esCatolico)}>

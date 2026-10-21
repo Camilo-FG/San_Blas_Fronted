@@ -75,8 +75,8 @@ export function Modal({
         className={cn(
           "absolute top-4 right-4 inline-flex size-10 cursor-pointer items-center justify-center transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none",
           sinFondo
-            ? "rounded-[6px] bg-white text-black hover:bg-slate-100"
-            : "rounded-xl border border-border-strong bg-surface-muted text-slate-600 hover:bg-slate-100",
+            ? "rounded-[6px] border border-border-strong bg-surface-muted text-royal-blue hover:bg-slate-100 dark:border-[rgba(220,230,242,0.12)] dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
+            : "rounded-xl border border-border-strong bg-surface-muted text-slate-600 hover:bg-slate-100 dark:border-[rgba(220,230,242,0.12)] dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10",
         )}
         onClick={onClose}
         aria-label="Cerrar modal"

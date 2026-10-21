@@ -7,7 +7,7 @@ const variantClasses = {
   secondary:
     "border border-border-strong bg-slate-200 text-royal-blue hover:bg-slate-300 hover:text-royal-blue focus-visible:ring-focus-ring dark:border-white/15 dark:bg-[#334155] dark:text-[#f3f6fa] dark:hover:bg-[#475569] dark:hover:text-[#f3f6fa]",
   danger:
-    "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-focus-ring",
+    "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-focus-ring dark:bg-[#b91c1c] dark:hover:bg-[#991b1b]",
   ghost:
     "border border-blue-200 bg-info-bg text-blue-600 hover:bg-blue-50 focus-visible:ring-focus-ring",
   royal:
