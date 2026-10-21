@@ -25,6 +25,36 @@ vi.mock("../../modules/catequesisBautismo/catequesisBautismoService", () => ({
   crearInscripcionCatequesisBautismo: vi.fn(),
 }));
 
+// La ubicación se resuelve sincrónica para que los selects tengan opciones sin tocar la red.
+vi.mock("../hooks/useUbicacionesCostaRica", () => ({
+  useProvinciasCR: () => ({
+    data: [{ id: "5", nombre: "Guanacaste" }],
+    isPending: false,
+    isFetching: false,
+    isError: false,
+  }),
+  useCantonesCR: (provinciaId?: string) => ({
+    data: provinciaId ? [{ id: "01", nombre: "Nicoya" }] : [],
+    isPending: false,
+    isFetching: false,
+    isError: false,
+  }),
+  useDistritosCR: (provinciaId?: string, cantonId?: string) => ({
+    data: provinciaId && cantonId ? [{ id: "01", nombre: "Nicoya" }] : [],
+    isPending: false,
+    isFetching: false,
+    isError: false,
+  }),
+  resolverIdPorNombre: (
+    opciones: { id: string; nombre: string }[] | undefined,
+    nombre: string,
+  ) =>
+    opciones?.find(
+      (opcion) =>
+        opcion.nombre.toLowerCase() === nombre.trim().toLowerCase(),
+    )?.id,
+}));
+
 beforeEach(() => {
   vi.mocked(obtenerDatosCedula).mockReset();
   vi.mocked(obtenerDatosCedula).mockResolvedValue({
@@ -87,16 +117,22 @@ for (const [nombre, Pagina, consultar] of [
       }
       fireEvent.change(container.querySelector('input[type="date"]')!, { target: { value: "1990-01-01" } });
       fireEvent.change(screen.getByPlaceholderText("Ej: 8888-8888"), { target: { value: "88881234" } });
+      // Provincia, cantón y distrito: los tres selects que no tienen id propio.
+      const ubicaciones = Array.from(
+        container.querySelectorAll<HTMLSelectElement>("select:not([id])"),
+      );
+      fireEvent.change(ubicaciones[0], { target: { value: "Guanacaste" } });
+      fireEvent.change(ubicaciones[1], { target: { value: "Nicoya" } });
+      fireEvent.change(ubicaciones[2], { target: { value: "Nicoya" } });
       if (nombre === "CICA") {
         fireEvent.change(container.querySelector("#cica-estado-civil-select")!, { target: { value: "soltero" } });
         fireEvent.change(screen.getByPlaceholderText("Ej: ana.solis@correo.com"), { target: { value: "prueba@example.com" } });
-        fireEvent.change(screen.getByPlaceholderText("Ej: 200 m norte de la iglesia, Nicoya"), { target: { value: "Frente a la iglesia" } });
+        fireEvent.change(screen.getByPlaceholderText("Ej: 200 m norte de la iglesia, casa azul"), { target: { value: "Frente a la iglesia" } });
         fireEvent.click(screen.getByRole("checkbox", { name: "Bautizo" }));
         fireEvent.click(screen.getByRole("radio", { name: "Católico" }));
       } else {
         fireEvent.click(screen.getByRole("radio", { name: "Soltero(a)" }));
         fireEvent.click(screen.getByRole("radio", { name: "Padre/Madre" }));
-        fireEvent.change(container.querySelector('select:not([id])')!, { target: { value: "Guanacaste" } });
       }
       fireEvent.submit(container.querySelector("form")!);
       await waitFor(() => expect(crear).toHaveBeenCalledWith(expect.objectContaining({ cedula: "012345678901", tipoCedula: "extranjera" })));

@@ -64,6 +64,9 @@ describe("Cédulas nacionales y extranjeras de catequesis", () => {
       ].map((clave) => [clave, ""]),
       ["cedula", "012345678901"],
       ["tipoCedula", "extranjera"],
+      ["provincia", "Guanacaste"],
+      ["canton", "Nicoya"],
+      ["distrito", "Nicoya"],
     ]) as FormularioCica;
     expect(validarFormularioCica(form).cedula).toBeUndefined();
     expect(mapearFormularioCica(form)).toMatchObject({

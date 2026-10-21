@@ -8,6 +8,36 @@ vi.mock("../cicaService", () => ({
   crearInscripcionCica: vi.fn(),
 }));
 
+// La pantalla carga provincias con react-query; en el test se resuelven sincrónicas para no depender de la red.
+vi.mock("../../../shared/hooks/useUbicacionesCostaRica", () => ({
+  useProvinciasCR: () => ({
+    data: [{ id: "5", nombre: "Guanacaste" }],
+    isPending: false,
+    isFetching: false,
+    isError: false,
+  }),
+  useCantonesCR: (provinciaId?: string) => ({
+    data: provinciaId ? [{ id: "01", nombre: "Nicoya" }] : [],
+    isPending: false,
+    isFetching: false,
+    isError: false,
+  }),
+  useDistritosCR: (provinciaId?: string, cantonId?: string) => ({
+    data: provinciaId && cantonId ? [{ id: "01", nombre: "Nicoya" }] : [],
+    isPending: false,
+    isFetching: false,
+    isError: false,
+  }),
+  resolverIdPorNombre: (
+    opciones: { id: string; nombre: string }[] | undefined,
+    nombre: string,
+  ) =>
+    opciones?.find(
+      (opcion) =>
+        opcion.nombre.toLowerCase() === nombre.trim().toLowerCase(),
+    )?.id,
+}));
+
 const seleccionarEstadoCivil = (
   container: HTMLElement,
   valor: string,
