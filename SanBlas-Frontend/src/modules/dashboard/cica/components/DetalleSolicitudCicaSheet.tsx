@@ -151,7 +151,13 @@ export function DetalleSolicitudCicaSheet({
             <Separador />
             <Campo label="Correo" value={valorOGuion(solicitud.correo)} icon={<Mail size={16} className="shrink-0" />} />
             <Separador />
-            <Campo label="Dirección del hogar" value={valorOGuion(solicitud.direccionHogar)} icon={<MapPin size={16} className="shrink-0" />} />
+            <Campo label="Provincia" value={valorOGuion(solicitud.provincia)} icon={<MapPin size={16} className="shrink-0" />} />
+            <Separador />
+            <Campo label="Cantón" value={valorOGuion(solicitud.canton)} />
+            <Separador />
+            <Campo label="Distrito" value={valorOGuion(solicitud.distrito)} />
+            <Separador />
+            <Campo label="Dirección exacta" value={valorOGuion(solicitud.direccionHogar)} />
           </section>
         </div>
 

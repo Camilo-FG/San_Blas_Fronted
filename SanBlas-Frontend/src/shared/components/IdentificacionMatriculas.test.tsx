@@ -28,9 +28,12 @@ vi.mock("../../modules/catequesisBautismo/catequesisBautismoService", () => ({
 beforeEach(() => {
   vi.mocked(obtenerDatosCedula).mockReset();
   vi.mocked(obtenerDatosCedula).mockResolvedValue({
-    nombre: "Ana María",
-    primerApellido: "Pérez",
-    segundoApellido: "Solís",
+    estado: "encontrada",
+    datos: {
+      nombre: "Ana María",
+      primerApellido: "Pérez",
+      segundoApellido: "Solís",
+    },
   });
 });
 
@@ -115,7 +118,9 @@ for (const [nombre, Pagina, consultar] of [
     });
 
     it("no permite enviar una nacional no encontrada", async () => {
-      vi.mocked(obtenerDatosCedula).mockResolvedValueOnce(null);
+      vi.mocked(obtenerDatosCedula).mockResolvedValueOnce({
+        estado: "no_encontrada",
+      });
       const { container } = render(<Pagina />);
       fireEvent.change(screen.getByRole("textbox", { name: /^Cédula/ }), {
         target: { value: "102340567" },

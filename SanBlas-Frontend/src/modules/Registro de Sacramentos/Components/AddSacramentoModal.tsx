@@ -163,6 +163,34 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const [saving, setSaving] = useState(false);
   const [campoCedulaCargando, setCampoCedulaCargando] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Resultado de la consulta de cédula por campo (bautizado, padre, ..., abuelo-0).
+  // Va aparte de `errors` porque ese estado se limpia al cambiar de pestaña.
+  const [consultasCedula, setConsultasCedula] = useState<
+    Record<string, { digitos: string; estado: 'no_encontrada' | 'error' }>
+  >({});
+
+  // Devuelve el estado solo si corresponde a la cédula actual (evita mensajes
+  // de una consulta vieja cuando el usuario ya cambió el número).
+  const estadoConsultaCedula = (prefijo: string, cedula: string) => {
+    const digitos = cedulaDigitosValidos(cedula);
+    const registro = consultasCedula[prefijo];
+    return registro && registro.digitos === digitos ? registro.estado : null;
+  };
+
+  const renderAvisoCedula = (prefijo: string, cedula: string) => {
+    const estado = estadoConsultaCedula(prefijo, cedula);
+    if (estado !== 'no_encontrada' && estado !== 'error') return null;
+    return (
+      <span
+        role="alert"
+        className="mt-1 block text-xs font-semibold text-red-500 dark:text-[#e66a6a]"
+      >
+        {estado === 'no_encontrada'
+          ? 'Cédula no encontrada'
+          : 'No se pudo verificar la cédula. Intente nuevamente.'}
+      </span>
+    );
+  };
 
   const [bautizado, setBautizado] = useState<PersonaForm>(borradorInicial?.bautizado ?? personaVacia);
   const [padre, setPadre] = useState<PersonaForm>(borradorInicial?.padre ?? personaVacia);
@@ -217,6 +245,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     setDetalleMatrimonio(vacio.detalleMatrimonio);
     setCampoCedulaCargando(null);
     setErrors({});
+    setConsultasCedula({});
     if (mostrarMensaje) {
       showToast('Progreso eliminado. Puede iniciar una inscripción nueva.', 'success');
     }
@@ -305,16 +334,35 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     if (digitos.length !== 9) return;
     setCampoCedulaCargando(campo);
     try {
-      const datos = await obtenerDatosCedula(cedula);
+      const resultado = await obtenerDatosCedula(cedula);
       setter((prev) => {
         // Si el usuario cambió la cédula mientras se consultaba, no sobrescribir.
         if (cedulaDigitosValidos(prev.cedula) !== digitos) return prev;
+        if (resultado.estado === 'encontrada') {
+          return {
+            ...prev,
+            nombre: resultado.datos.nombre,
+            primerApellido: resultado.datos.primerApellido,
+            segundoApellido: resultado.datos.segundoApellido,
+          };
+        }
+        // Cédula inexistente o proveedor caído: se limpian los nombres, pero los
+        // campos quedan habilitados para escribirlos a mano.
         return {
           ...prev,
-          nombre: datos?.nombre ?? '',
-          primerApellido: datos?.primerApellido ?? '',
-          segundoApellido: datos?.segundoApellido ?? '',
+          nombre: '',
+          primerApellido: '',
+          segundoApellido: '',
         };
+      });
+      setConsultasCedula((prev) => {
+        const siguiente = { ...prev };
+        if (resultado.estado === 'encontrada') {
+          delete siguiente[campo];
+        } else {
+          siguiente[campo] = { digitos, estado: resultado.estado };
+        }
+        return siguiente;
       });
     } finally {
       setCampoCedulaCargando((actual) => (actual === campo ? null : actual));
@@ -344,20 +392,37 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     const campo = `abuelo-${idx}`;
     setCampoCedulaCargando(campo);
     try {
-      const datos = await obtenerDatosCedula(abuelo.cedula);
+      const resultado = await obtenerDatosCedula(abuelo.cedula);
       setAbuelos((prev) =>
         prev.map((a, i) => {
           if (i !== idx) return a;
           // Si el usuario cambió la cédula mientras se consultaba, no sobrescribir.
           if (cedulaDigitosValidos(a.cedula) !== digitos) return a;
+          if (resultado.estado === 'encontrada') {
+            return {
+              ...a,
+              nombre: resultado.datos.nombre,
+              primerApellido: resultado.datos.primerApellido,
+              segundoApellido: resultado.datos.segundoApellido,
+            };
+          }
           return {
             ...a,
-            nombre: datos?.nombre ?? '',
-            primerApellido: datos?.primerApellido ?? '',
-            segundoApellido: datos?.segundoApellido ?? '',
+            nombre: '',
+            primerApellido: '',
+            segundoApellido: '',
           };
         }),
       );
+      setConsultasCedula((prev) => {
+        const siguiente = { ...prev };
+        if (resultado.estado === 'encontrada') {
+          delete siguiente[campo];
+        } else {
+          siguiente[campo] = { digitos, estado: resultado.estado };
+        }
+        return siguiente;
+      });
     } finally {
       setCampoCedulaCargando((actual) => (actual === campo ? null : actual));
     }
@@ -516,34 +581,40 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
     prefijo: string,
   ) => {
-    // Los nombres solo llegan por autocompletado de cédula: si hay cédula se
-    // bloquean (incluido el fetch) y solo se liberan al borrar la cédula.
-    const nombresBloqueados = cedulaDigitosValidos(persona.cedula).length > 0;
+    // Con cédula completa se bloquean los nombres porque se autocompletan; si
+    // la cédula no existe (o el proveedor falló) se habilitan para escribir a mano.
+    const estadoCedula = estadoConsultaCedula(prefijo, persona.cedula);
+    const nombresBloqueados =
+      cedulaDigitosValidos(persona.cedula).length === 9 && estadoCedula === null;
     return (
       <div className="mb-5">
         <Label>{titulo}</Label>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="relative">
-            <Input
-              type="text"
-              placeholder="Cédula (0-0000-0000)"
-              maxLength={12}
-              className={cn(inputClass(Boolean(errors[`${prefijo}Cedula`])), 'pr-10')}
-              value={persona.cedula}
-              onChange={(e) => {
-                const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
-                setPersonaCampo(setter, 'cedula', e.target.value);
-                if (cedulaDigitosValidos(cedula).length === 9) {
-                  void autocompletarPorCedula(setter, cedula, prefijo);
-                }
-              }}
-            />
-            {campoCedulaCargando === prefijo && (
-              <Loader2
-                aria-label="Buscando datos de la cédula"
-                className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue"
+          <div>
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Cédula (0-0000-0000)"
+                maxLength={12}
+                className={cn(inputClass(Boolean(errors[`${prefijo}Cedula`])), 'pr-10')}
+                value={persona.cedula}
+                aria-invalid={estadoCedula === 'no_encontrada' || undefined}
+                onChange={(e) => {
+                  const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
+                  setPersonaCampo(setter, 'cedula', e.target.value);
+                  if (cedulaDigitosValidos(cedula).length === 9) {
+                    void autocompletarPorCedula(setter, cedula, prefijo);
+                  }
+                }}
               />
-            )}
+              {campoCedulaCargando === prefijo && (
+                <Loader2
+                  aria-label="Buscando datos de la cédula"
+                  className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue"
+                />
+              )}
+            </div>
+            {renderAvisoCedula(prefijo, persona.cedula)}
           </div>
           <div>
             <Input
@@ -599,7 +670,11 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       <div className="mb-5">
         <Label>Abuelos (opcional)</Label>
         <div className="space-y-3">
-          {abuelos.map((ab, idx) => (
+          {abuelos.map((ab, idx) => {
+            const estadoCedulaAbuelo = estadoConsultaCedula(`abuelo-${idx}`, ab.cedula);
+            const abueloBloqueado =
+              cedulaDigitosValidos(ab.cedula).length === 9 && estadoCedulaAbuelo === null;
+            return (
             <div key={idx} className="rounded-md border border-gray-200 p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
               <select
                 value={ab.parentesco}
@@ -617,22 +692,26 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
                 ))}
               </select>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="relative">
-                  <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} className="pr-10" onChange={(e) => {
-                    setAbueloCampo(idx, 'cedula', e.target.value);
-                    const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
-                    if (cedulaDigitosValidos(cedula).length === 9) {
-                      void autocompletarAbueloPorCedula(idx, { ...ab, cedula });
-                    }
-                  }} />
-                  {campoCedulaCargando === `abuelo-${idx}` && <Loader2 aria-label="Buscando datos de la cédula" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue" />}
+                <div>
+                  <div className="relative">
+                    <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} className="pr-10" onChange={(e) => {
+                      setAbueloCampo(idx, 'cedula', e.target.value);
+                      const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
+                      if (cedulaDigitosValidos(cedula).length === 9) {
+                        void autocompletarAbueloPorCedula(idx, { ...ab, cedula });
+                      }
+                    }} />
+                    {campoCedulaCargando === `abuelo-${idx}` && <Loader2 aria-label="Buscando datos de la cédula" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue" />}
+                  </div>
+                  {renderAvisoCedula(`abuelo-${idx}`, ab.cedula)}
                 </div>
-                <Input type="text" placeholder="Nombre" maxLength={30} value={ab.nombre} disabled={cedulaDigitosValidos(ab.cedula).length > 0} title={cedulaDigitosValidos(ab.cedula).length > 0 ? 'Borre la cédula para cambiar el nombre.' : undefined} onChange={(e) => setAbueloCampo(idx, 'nombre', e.target.value)} />
-                <Input type="text" placeholder="Primer apellido" maxLength={30} value={ab.primerApellido} disabled={cedulaDigitosValidos(ab.cedula).length > 0} onChange={(e) => setAbueloCampo(idx, 'primerApellido', e.target.value)} />
-                <Input type="text" placeholder="Segundo apellido" maxLength={30} value={ab.segundoApellido} disabled={cedulaDigitosValidos(ab.cedula).length > 0} onChange={(e) => setAbueloCampo(idx, 'segundoApellido', e.target.value)} />
+                <Input type="text" placeholder="Nombre" maxLength={30} value={ab.nombre} disabled={abueloBloqueado} title={abueloBloqueado ? 'Borre la cédula para cambiar el nombre.' : undefined} onChange={(e) => setAbueloCampo(idx, 'nombre', e.target.value)} />
+                <Input type="text" placeholder="Primer apellido" maxLength={30} value={ab.primerApellido} disabled={abueloBloqueado} onChange={(e) => setAbueloCampo(idx, 'primerApellido', e.target.value)} />
+                <Input type="text" placeholder="Segundo apellido" maxLength={30} value={ab.segundoApellido} disabled={abueloBloqueado} onChange={(e) => setAbueloCampo(idx, 'segundoApellido', e.target.value)} />
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
         <Button type="button" variant="secondary" onClick={agregarAbuelo} className="mt-2 dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!">
           + Agregar abuelo

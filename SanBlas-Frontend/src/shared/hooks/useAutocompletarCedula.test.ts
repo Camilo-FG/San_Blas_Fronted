@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   obtenerDatosCedula,
-  type DatosCedula,
+  type ResultadoCedula,
 } from "../../services/cedulaService";
 import { useAutocompletarCedula } from "./useAutocompletarCedula";
 
@@ -14,12 +14,13 @@ const datos = {
   primerApellido: "Pérez",
   segundoApellido: "Solís",
 };
+const encontrada: ResultadoCedula = { estado: "encontrada", datos };
 
 beforeEach(() => vi.mocked(obtenerDatosCedula).mockReset());
 
 describe("Autocompletar identificación sin storage", () => {
   it("consulta solo al completar nueve dígitos nacionales", async () => {
-    vi.mocked(obtenerDatosCedula).mockResolvedValue(datos);
+    vi.mocked(obtenerDatosCedula).mockResolvedValue(encontrada);
     const completar = vi.fn();
     const { result } = renderHook(() => useAutocompletarCedula());
     await act(() => result.current.verificar("10234", "nacional", completar));
@@ -45,13 +46,13 @@ describe("Autocompletar identificación sin storage", () => {
   });
 
   it("ignora respuestas atrasadas cuando cambia la cédula", async () => {
-    let resolver!: (valor: DatosCedula | null) => void;
+    let resolver!: (valor: ResultadoCedula) => void;
     vi.mocked(obtenerDatosCedula).mockReturnValueOnce(
       new Promise((resolve) => {
         resolver = resolve;
       }),
     );
-    vi.mocked(obtenerDatosCedula).mockResolvedValueOnce(datos);
+    vi.mocked(obtenerDatosCedula).mockResolvedValueOnce(encontrada);
     const completar = vi.fn();
     const { result } = renderHook(() => useAutocompletarCedula());
     act(() => {
@@ -61,14 +62,14 @@ describe("Autocompletar identificación sin storage", () => {
       result.current.verificar("102340567", "nacional", completar),
     );
     await act(async () => {
-      resolver({ ...datos, nombre: "Otra persona" });
+      resolver({ estado: "encontrada", datos: { ...datos, nombre: "Otra persona" } });
     });
     expect(completar).toHaveBeenCalledTimes(1);
     expect(completar).toHaveBeenCalledWith(datos);
   });
 
   it("invalida una consulta al pasar a extranjera o borrar dígitos", async () => {
-    let resolver!: (valor: DatosCedula | null) => void;
+    let resolver!: (valor: ResultadoCedula) => void;
     vi.mocked(obtenerDatosCedula).mockReturnValueOnce(
       new Promise((resolve) => {
         resolver = resolve;
@@ -81,7 +82,7 @@ describe("Autocompletar identificación sin storage", () => {
     });
     await act(() => result.current.verificar("", "extranjera", completar));
     await act(async () => {
-      resolver(datos);
+      resolver(encontrada);
     });
     expect(completar).not.toHaveBeenCalled();
     expect(result.current.estado).toBe("inactiva");
@@ -89,9 +90,9 @@ describe("Autocompletar identificación sin storage", () => {
 
   it("distingue cédula no encontrada de error de red y deja reintentar", async () => {
     vi.mocked(obtenerDatosCedula)
-      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ estado: "no_encontrada" })
       .mockRejectedValueOnce(new Error("sin red"))
-      .mockResolvedValueOnce(datos);
+      .mockResolvedValueOnce(encontrada);
     const completar = vi.fn();
     const { result } = renderHook(() => useAutocompletarCedula());
     await act(() =>
@@ -109,7 +110,7 @@ describe("Autocompletar identificación sin storage", () => {
   });
 
   it("no completa el formulario después de desmontarlo", async () => {
-    let resolver!: (valor: DatosCedula | null) => void;
+    let resolver!: (valor: ResultadoCedula) => void;
     vi.mocked(obtenerDatosCedula).mockReturnValueOnce(
       new Promise((resolve) => {
         resolver = resolve;
@@ -122,7 +123,7 @@ describe("Autocompletar identificación sin storage", () => {
     });
     unmount();
     await act(async () => {
-      resolver(datos);
+      resolver(encontrada);
     });
     expect(completar).not.toHaveBeenCalled();
   });

@@ -12,6 +12,8 @@ type ModalProps = {
   title?: string;
   sinFondo?: boolean;
   overlayClassName?: string;
+  // deja el contenedor del overlay sin color para que el consumidor pinte su propio fondo animado
+  overlayTransparente?: boolean;
   cerrarAlClicFuera?: boolean;
   cerrarConEsc?: boolean;
   tamano?: "md" | "xl";
@@ -24,6 +26,7 @@ export function Modal({
   title,
   sinFondo,
   overlayClassName,
+  overlayTransparente,
   cerrarAlClicFuera = true,
   cerrarConEsc = false,
   tamano = "md",
@@ -72,8 +75,8 @@ export function Modal({
         className={cn(
           "absolute top-4 right-4 inline-flex size-10 cursor-pointer items-center justify-center transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none",
           sinFondo
-            ? "rounded-[6px] bg-white text-black hover:bg-slate-100"
-            : "rounded-xl border border-border-strong bg-surface-muted text-slate-600 hover:bg-slate-100",
+            ? "rounded-[6px] border border-border-strong bg-surface-muted text-royal-blue hover:bg-slate-100 dark:border-[rgba(220,230,242,0.12)] dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
+            : "rounded-xl border border-border-strong bg-surface-muted text-slate-600 hover:bg-slate-100 dark:border-[rgba(220,230,242,0.12)] dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10",
         )}
         onClick={onClose}
         aria-label="Cerrar modal"
@@ -132,7 +135,10 @@ export function Modal({
       }}
     >
       <div
-        className="fixed inset-0 z-[1200] flex items-center justify-center overflow-hidden overscroll-none bg-slate-900/55 p-4"
+        className={cn(
+          "fixed inset-0 z-[1200] flex items-center justify-center overflow-hidden overscroll-none p-4",
+          !overlayTransparente && "bg-slate-900/55",
+        )}
         onClick={cerrarAlClicFuera ? onClose : undefined}
         role="presentation"
       >

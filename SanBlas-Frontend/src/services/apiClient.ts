@@ -66,6 +66,7 @@ apiClient.interceptors.response.use(
       const isValidarEnlaceRequest = url
         .toLowerCase()
         .includes("/auth/validar-enlace-recuperacion");
+      const isConsultaCedula = url.toLowerCase().includes("/usuario/cedula/");
 
       if (
         config &&
@@ -76,6 +77,7 @@ apiClient.interceptors.response.use(
         !isRecuperarRequest &&
         !isRestablecerRequest &&
         !isValidarEnlaceRequest &&
+        !isConsultaCedula &&
         !config._retry
       ) {
         config._retry = true;
@@ -90,7 +92,7 @@ apiClient.interceptors.response.use(
         }
       }
 
-      if (!isLoginRequest && !isRefreshRequest && !isSessionRequest && !isLogoutRequest && !isRecuperarRequest && !isRestablecerRequest && !isValidarEnlaceRequest) {
+      if (!isLoginRequest && !isRefreshRequest && !isSessionRequest && !isLogoutRequest && !isRecuperarRequest && !isRestablecerRequest && !isValidarEnlaceRequest && !isConsultaCedula) {
         clearAuthToken();
         const currentPath = window.location.pathname;
         if (!currentPath.startsWith("/login") && !redirigiendoAlLogin) {

@@ -685,7 +685,7 @@ export const UserList = ({
                 title="Eliminar usuario"
                 parteSubrayada="Eliminar usuario"
                 iconoAdvertencia
-                confirmVariant="danger"
+                confirmVariant="royal"
                 mensaje={
                     usuarioAEliminar ? (
                         <>

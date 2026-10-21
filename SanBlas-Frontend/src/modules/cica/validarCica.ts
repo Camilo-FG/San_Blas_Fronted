@@ -51,11 +51,24 @@ export type FormularioCica = {
   madreNombre: string;
   madreApellido1: string;
   madreApellido2: string;
+  provincia: string;
+  canton: string;
+  distrito: string;
   direccionHogar: string;
   esCatolico: "" | "si" | "no";
   otraIglesia: string;
   observacion: string;
 };
+
+export const PROVINCIAS_COSTA_RICA_CICA = [
+  "San José",
+  "Alajuela",
+  "Cartago",
+  "Heredia",
+  "Guanacaste",
+  "Puntarenas",
+  "Limón",
+] as const;
 
 const mensajeNombre = (
   valor: string,
@@ -185,6 +198,18 @@ export const validarFormularioCica = (
     "madreApellido2",
     mensajeNombre(form.madreApellido2, "El segundo apellido de la madre", false, false),
   );
+
+  if (!form.provincia.trim()) {
+    errores.provincia = "Seleccione una provincia.";
+  } else if (
+    !PROVINCIAS_COSTA_RICA_CICA.includes(
+      form.provincia as (typeof PROVINCIAS_COSTA_RICA_CICA)[number],
+    )
+  ) {
+    errores.provincia = "Seleccione una provincia válida.";
+  }
+  if (!form.canton.trim()) errores.canton = "Seleccione un cantón.";
+  if (!form.distrito.trim()) errores.distrito = "Seleccione un distrito.";
 
   const direccion = form.direccionHogar.trim();
   if (!direccion) errores.direccionHogar = "La dirección del hogar es obligatoria.";

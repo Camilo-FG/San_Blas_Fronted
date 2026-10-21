@@ -289,12 +289,13 @@ const FormSolic = () => {
 
         try {
           // Forced minimum 2-second loading
-          const [datos] = await Promise.all([
+          const [resultado] = await Promise.all([
             obtenerDatosCedula(digitos),
             new Promise((resolve) => setTimeout(resolve, 2000)),
           ]);
 
-          if (datos) {
+          if (resultado.estado === "encontrada") {
+            const datos = resultado.datos;
             setCedulaValida(true);
             setDatosCedulaValidada(datos);
             setErrorCedula(null);
@@ -316,7 +317,11 @@ const FormSolic = () => {
           } else {
             setCedulaValida(false);
             setDatosCedulaValidada(null);
-            setErrorCedula("La cédula ingresada no existe.");
+            setErrorCedula(
+              resultado.estado === "error"
+                ? "No se pudo verificar la cédula. Intente nuevamente."
+                : "La cédula ingresada no existe.",
+            );
           }
         } catch {
           setCedulaValida(false);

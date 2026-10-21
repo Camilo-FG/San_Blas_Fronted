@@ -5,6 +5,7 @@ import { limpiarCedula, PATRON_CEDULA, type TipoCedula } from "../../../shared/u
 import { ApiError } from "../../../services/apiClient";
 import SeoHead from "../../../seo/SeoHead";
 import Rutas from "../../../routes/Rutas";
+import { UbicacionCostaRicaCampos } from "../../../shared/components/UbicacionCostaRicaCampos";
 import { Button, Badge, Card, ErrorMessage, FieldError, Input, Label } from "../../../shared/ui";
 import {
   consultarInscripcionCatequesisBautismo,
@@ -18,7 +19,6 @@ import {
 import {
   ETIQUETA_CONDICION,
   ETIQUETA_ESTADO_CIVIL,
-  PROVINCIAS_COSTA_RICA,
   type CondicionBautismo,
   type EstadoCivilBautismo,
 } from "../types";
@@ -366,40 +366,29 @@ const CatequesisBautismoPage = () => {
                   error={errores.parroquiaOrigen}
                   onChange={alNombre("parroquiaOrigen")}
                 />
-                <div className="flex flex-col gap-1 text-sm">
-                  <Label required>Provincia</Label>
-                  <select
-                    className={campo}
-                    value={form.provincia}
-                    aria-invalid={Boolean(errores.provincia)}
-                    onChange={(event) => set("provincia", event.target.value)}
-                  >
-                    <option value="">Seleccione la provincia</option>
-                    {PROVINCIAS_COSTA_RICA.map((provincia) => (
-                      <option key={provincia} value={provincia}>
-                        {provincia}
-                      </option>
-                    ))}
-                  </select>
-                  <FieldError message={errores.provincia} />
-                </div>
-                <Campo
-                  etiqueta="Cantón"
-                  obligatorio
-                  maxLength={MAX_NOMBRE_BAUTISMO}
-                  placeholder="Ej: Nicoya"
-                  valor={form.canton}
-                  error={errores.canton}
-                  onChange={alNombre("canton")}
-                />
-                <Campo
-                  etiqueta="Distrito"
-                  obligatorio
-                  maxLength={MAX_NOMBRE_BAUTISMO}
-                  placeholder="Ej: Nicoya"
-                  valor={form.distrito}
-                  error={errores.distrito}
-                  onChange={alNombre("distrito")}
+                <UbicacionCostaRicaCampos
+                  valor={{
+                    provincia: form.provincia,
+                    canton: form.canton,
+                    distrito: form.distrito,
+                  }}
+                  onChange={(ubicacion) => {
+                    setForm((prev) => ({ ...prev, ...ubicacion }));
+                    setErrores((prev) => {
+                      const siguiente = { ...prev };
+                      delete siguiente.provincia;
+                      delete siguiente.canton;
+                      delete siguiente.distrito;
+                      return siguiente;
+                    });
+                  }}
+                  errores={{
+                    provincia: errores.provincia,
+                    canton: errores.canton,
+                    distrito: errores.distrito,
+                  }}
+                  disabled={enviando}
+                  selectClassName={campo}
                 />
                 <Campo
                   etiqueta="Barrio"

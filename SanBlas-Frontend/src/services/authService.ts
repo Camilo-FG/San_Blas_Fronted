@@ -45,6 +45,10 @@ export const restoreSession = async (): Promise<AuthUser | null> => {
   restorePromise ??= apiClient
     .get<LoginResponse>("/auth/session")
     .then(({ data }) => {
+      if (!data?.user) {
+        clearSession();
+        return null;
+      }
       setCurrentUser(data.user);
       return data.user;
     })

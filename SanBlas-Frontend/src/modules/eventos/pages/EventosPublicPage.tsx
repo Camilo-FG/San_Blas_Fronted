@@ -4,7 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { obtenerEventosPublicos, type Evento } from "../../../services/eventosService";
 import { ApiError } from "../../../services/apiClient";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3, MapPin, Search } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  MapPin,
+  RotateCcw,
+  Search,
+} from "lucide-react";
 import {
   AdminPagination,
   AdminPaginationButton,
@@ -23,7 +31,11 @@ import { ModalEvento } from "../components/ModalEvento";
 const TAMANOS_PAGINA = [6, 9, 12] as const;
 const TAMANO_PAGINA_INICIAL = 6;
 
-type OrdenEventos = "proximos" | "antiguo-futuro" | "futuro-antiguo";
+type OrdenEventos =
+  | "todos"
+  | "proximos"
+  | "antiguo-futuro"
+  | "futuro-antiguo";
 
 const fechaHoyCostaRica = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "America/Costa_Rica" });
@@ -84,7 +96,7 @@ const EventosPublicPage = () => {
   const [busquedaNombre, setBusquedaNombre] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
-  const [ordenEventos, setOrdenEventos] = useState<OrdenEventos>("proximos");
+  const [ordenEventos, setOrdenEventos] = useState<OrdenEventos>("todos");
   const [paginaActual, setPaginaActual] = useState(1);
   const [registrosPorPagina, setRegistrosPorPagina] = useState(TAMANO_PAGINA_INICIAL);
 
@@ -130,13 +142,24 @@ const EventosPublicPage = () => {
     Boolean(busquedaNombre.trim()) ||
     Boolean(fechaDesde) ||
     Boolean(fechaHasta) ||
-    ordenEventos === "proximos";
+    ordenEventos !== "todos";
+
+  const reiniciarConsulta = () => {
+    setBusquedaNombre("");
+    setFechaDesde("");
+    setFechaHasta("");
+    setOrdenEventos("todos");
+    setPaginaActual(1);
+  };
 
   const eventosFiltrados = useMemo(() => {
     const nombre = normalizarTexto(busquedaNombre);
     const hoy = fechaHoyCostaRica();
+    // "todos" y "antiguo-futuro": del más antiguo al más futuro
     const masCercanoPrimero =
-      ordenEventos === "proximos" || ordenEventos === "antiguo-futuro";
+      ordenEventos === "proximos" ||
+      ordenEventos === "antiguo-futuro" ||
+      ordenEventos === "todos";
 
     return eventos
       .filter((evento) => {
@@ -209,60 +232,75 @@ const EventosPublicPage = () => {
       </ScrollReveal>
 
       {!cargando && !error && (
-        <div className="mb-8 grid grid-cols-1 gap-4 rounded-2xl border border-border bg-surface p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
-          <div>
-            <Label htmlFor="filtro-nombre-evento">Buscar por nombre</Label>
-            <div className="relative">
-              <Search
-                size={16}
-                className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-text-muted"
-                aria-hidden="true"
-              />
+        <div className="mb-8 rounded-2xl border border-border bg-surface p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
+            <div>
+              <Label htmlFor="filtro-nombre-evento">Buscar por nombre</Label>
+              <div className="relative">
+                <Search
+                  size={16}
+                  className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-text-muted"
+                  aria-hidden="true"
+                />
+                <Input
+                  id="filtro-nombre-evento"
+                  type="search"
+                  value={busquedaNombre}
+                  onChange={(event) => setBusquedaNombre(event.target.value)}
+                  placeholder="Ej: Misa de San Blas"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="filtro-fecha-desde">Desde</Label>
               <Input
-                id="filtro-nombre-evento"
-                type="search"
-                value={busquedaNombre}
-                onChange={(event) => setBusquedaNombre(event.target.value)}
-                placeholder="Ej: Misa de San Blas"
-                className="pl-10"
+                id="filtro-fecha-desde"
+                type="date"
+                value={fechaDesde}
+                max={fechaHasta || undefined}
+                onChange={(event) => setFechaDesde(event.target.value)}
               />
             </div>
+            <div>
+              <Label htmlFor="filtro-fecha-hasta">Hasta</Label>
+              <Input
+                id="filtro-fecha-hasta"
+                type="date"
+                value={fechaHasta}
+                min={fechaDesde || undefined}
+                onChange={(event) => setFechaHasta(event.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="filtro-orden-evento">Ordenar</Label>
+              <select
+                id="filtro-orden-evento"
+                value={ordenEventos}
+                onChange={(event) =>
+                  setOrdenEventos(event.target.value as OrdenEventos)
+                }
+                className="min-h-11 w-full cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                aria-label="Ordenar eventos"
+              >
+                <option value="todos">Todos los eventos</option>
+                <option value="proximos">Más próximos</option>
+                <option value="antiguo-futuro">Más antiguo a más futuro</option>
+                <option value="futuro-antiguo">Más futuro a más antiguo</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <Label htmlFor="filtro-fecha-desde">Desde</Label>
-            <Input
-              id="filtro-fecha-desde"
-              type="date"
-              value={fechaDesde}
-              max={fechaHasta || undefined}
-              onChange={(event) => setFechaDesde(event.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="filtro-fecha-hasta">Hasta</Label>
-            <Input
-              id="filtro-fecha-hasta"
-              type="date"
-              value={fechaHasta}
-              min={fechaDesde || undefined}
-              onChange={(event) => setFechaHasta(event.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="filtro-orden-evento">Ordenar</Label>
-            <select
-              id="filtro-orden-evento"
-              value={ordenEventos}
-              onChange={(event) =>
-                setOrdenEventos(event.target.value as OrdenEventos)
-              }
-              className="min-h-11 w-full cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
-              aria-label="Ordenar eventos"
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={reiniciarConsulta}
+              disabled={!hayFiltros}
+              className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-slate-900 transition-colors hover:bg-surface-muted focus-visible:border-blue-400 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Reiniciar consulta de eventos"
             >
-              <option value="proximos">Más próximos</option>
-              <option value="antiguo-futuro">Más antiguo a más futuro</option>
-              <option value="futuro-antiguo">Más futuro a más antiguo</option>
-            </select>
+              <RotateCcw size={15} strokeWidth={2} aria-hidden="true" />
+              Reiniciar consulta
+            </button>
           </div>
         </div>
       )}
