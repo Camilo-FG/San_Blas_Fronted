@@ -219,16 +219,16 @@ export const validarFormularioCica = (
     errores.direccionHogar = "La dirección no puede superar los 100 caracteres.";
 
   if (!form.esCatolico)
-    errores.esCatolico = "Indique si es católico o de otra iglesia.";
+    errores.esCatolico = "Indique si es católico o de otra religión.";
   if (form.esCatolico === "no") {
     const iglesia = form.otraIglesia.trim();
     if (iglesia.length < 2) {
       errores.otraIglesia =
-        "Indique el nombre de la otra iglesia. Debe tener al menos 2 caracteres.";
+        "Indique el nombre de la otra religión. Debe tener al menos 2 caracteres.";
     } else if (!LETRAS_CON_ESPACIO.test(iglesia)) {
-      errores.otraIglesia = "El nombre de la otra iglesia solo puede contener letras.";
+      errores.otraIglesia = "El nombre de la otra religión solo puede contener letras.";
     } else if (iglesia.length > MAX_NOMBRE_CICA) {
-      errores.otraIglesia = "El nombre de la otra iglesia no puede superar los 25 caracteres.";
+      errores.otraIglesia = "El nombre de la otra religión no puede superar los 25 caracteres.";
     }
   }
 

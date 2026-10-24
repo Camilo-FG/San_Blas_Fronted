@@ -16,7 +16,7 @@ export const useGetUsuariosPaginados = () => {
   const [pagina, setPagina] = useState(1);
   const [limite, setLimite] = useState(LIMITE_INICIAL);
   const [busqueda, setBusqueda] = useState('');
-  const [filtros, setFiltros] = useState<FiltrosAvanzados>({});
+  const [filtros, setFiltros] = useState<FiltrosAvanzados>({ state: 'all' });
   const [orden, setOrden] = useState<OrdenUsuarios>(ORDEN_INICIAL);
   const [users, setUsers] = useState<Usuario[]>([]);
   const [total, setTotal] = useState(0);
@@ -89,14 +89,18 @@ export const useGetUsuariosPaginados = () => {
   }, []);
 
   const limpiarFiltros = useCallback(() => {
-    setFiltros({});
+    setFiltros({ state: 'all' });
     setBusqueda('');
     setPagina(1);
   }, []);
 
-  const filtrosActivos = Object.values(filtros).filter(
-    (v) => v !== undefined && v !== '',
-  ).length + (busqueda.trim() ? 1 : 0);
+  const filtrosActivos =
+    Object.entries(filtros).filter(([clave, valor]) => {
+      if (valor === undefined || valor === '') return false;
+      // "Todos" no cuenta como filtro activo
+      if (clave === 'state' && valor === 'all') return false;
+      return true;
+    }).length + (busqueda.trim() ? 1 : 0);
 
   return {
     users,

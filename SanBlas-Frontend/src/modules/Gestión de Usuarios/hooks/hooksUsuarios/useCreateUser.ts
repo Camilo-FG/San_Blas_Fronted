@@ -9,12 +9,18 @@ export const useCreateUser = () => {
 
     const crearUsuario = async (
         userData: UserCreate,
-    ): Promise<{ ok: true } | { ok: false; mensaje: string }> => {
+    ): Promise<
+        | { ok: true; correoActivacionEnviado: boolean }
+        | { ok: false; mensaje: string }
+    > => {
         setLoading(true);
         setError(null);
         try {
-            await createUser(userData);
-            return { ok: true };
+            const creado = await createUser(userData);
+            return {
+                ok: true,
+                correoActivacionEnviado: creado.correoActivacionEnviado,
+            };
         } catch (err) {
             const mensaje =
                 err instanceof ApiError

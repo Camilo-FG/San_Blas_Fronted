@@ -104,3 +104,31 @@ export const restablecerContrasena = async (datos: {
     handleApiError(error);
   }
 };
+
+export const validarEnlaceActivacion = async (
+  token: string,
+): Promise<void> => {
+  try {
+    await apiClient.post("/auth/validar-enlace-activacion", { token });
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const activarCuenta = async (token: string): Promise<void> => {
+  try {
+    await apiClient.post("/auth/activar-cuenta", { token });
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const reenviarActivacion = async (email: string): Promise<void> => {
+  try {
+    await apiClient.post("/auth/reenviar-activacion", {
+      email: email.trim(),
+    });
+  } catch (error) {
+    handleApiError(error);
+  }
+};

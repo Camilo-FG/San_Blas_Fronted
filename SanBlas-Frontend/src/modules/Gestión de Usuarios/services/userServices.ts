@@ -133,13 +133,32 @@ export const getUserById = async (id: number): Promise<Usuario> => {
   }
 };
 
-export const createUser = async (userData: UserCreate): Promise<Usuario> => {
+export type UsuarioCreado = Usuario & {
+  correoActivacionEnviado: boolean;
+};
+
+export const createUser = async (
+  userData: UserCreate,
+): Promise<UsuarioCreado> => {
   try {
     const { data } = await apiClient.post<Record<string, unknown>>(
       '/usuario',
       mapCreateToBackend(userData),
     );
-    return mapBackendToFrontend(data);
+    return {
+      ...mapBackendToFrontend(data),
+      correoActivacionEnviado: data.correoActivacionEnviado === true,
+    };
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const reenviarActivacionUsuario = async (
+  id: number,
+): Promise<void> => {
+  try {
+    await apiClient.post(`/usuario/${id}/reenviar-activacion`);
   } catch (error) {
     handleApiError(error);
   }

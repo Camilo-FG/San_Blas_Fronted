@@ -52,6 +52,9 @@ const RecuperarContrasenaPage = lazyWithRetry(
 const RestablecerContrasenaPage = lazyWithRetry(
   () => import("../modules/auth/pages/RestablecerContrasenaPage"),
 );
+const ActivarCuentaPage = lazyWithRetry(
+  () => import("../modules/auth/pages/ActivarCuentaPage"),
+);
 const EventosPublicPage = lazyWithRetry(
   () => import("../modules/eventos/pages/EventosPublicPage"),
 );
@@ -109,7 +112,8 @@ function RootLayout() {
     pathname === Rutas.login ||
     pathname.startsWith(`${Rutas.login}/`) ||
     pathname === Rutas.recuperarContrasena ||
-    pathname === Rutas.restablecerContrasena;
+    pathname === Rutas.restablecerContrasena ||
+    pathname === Rutas.activarCuenta;
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -260,6 +264,22 @@ const restablecerContrasenaRoute = createRoute({
     return (
       <Suspense fallback={<LandingLoader />}>
         <RestablecerContrasenaPage token={token} />
+      </Suspense>
+    );
+  },
+});
+
+const activarCuentaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.activarCuenta,
+  validateSearch: (search: Record<string, unknown>) => ({
+    token: typeof search.token === "string" ? search.token : "",
+  }),
+  component: function ActivarCuentaRoute() {
+    const { token } = activarCuentaRoute.useSearch();
+    return (
+      <Suspense fallback={<LandingLoader />}>
+        <ActivarCuentaPage token={token} />
       </Suspense>
     );
   },
@@ -449,6 +469,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   recuperarContrasenaRoute,
   restablecerContrasenaRoute,
+  activarCuentaRoute,
   rutaDesconocidaRoute,
   dashboardRoute.addChildren([
     dashboardHomeRoute,
