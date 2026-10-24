@@ -14,7 +14,8 @@ const cache = new Map<string, OpcionUbicacion[]>();
 function mapaAOpciones(mapa: MapaUbicacion): OpcionUbicacion[] {
   return Object.entries(mapa)
     .map(([id, nombre]) => ({ id, nombre }))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    // Orden oficial por código (provincias 1–7: San José … Limón).
+    .sort((a, b) => Number(a.id) - Number(b.id));
 }
 
 async function fetchMapa(ruta: string): Promise<OpcionUbicacion[]> {

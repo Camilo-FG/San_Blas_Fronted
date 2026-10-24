@@ -145,7 +145,14 @@ export const UserList = ({
     const { eliminarUsuario, loading: eliminando } = useDeleteUser();
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
     const [filtroRolTemp, setFiltroRolTemp] = useState(filtros.role ?? '');
-    const [filtroEstadoTemp, setFiltroEstadoTemp] = useState(filtros.state ?? '');
+    const [filtroEstadoTemp, setFiltroEstadoTemp] = useState(
+        filtros.state ?? 'all',
+    );
+
+    useEffect(() => {
+        setFiltroRolTemp(filtros.role ?? '');
+        setFiltroEstadoTemp(filtros.state ?? 'all');
+    }, [filtros.role, filtros.state]);
     const [textoBusqueda, setTextoBusqueda] = useState(busqueda);
     const textoDebounced = useDebouncedValue(textoBusqueda, 400);
     // último texto que nosotros mandamos, para distinguirlo de un clear que venga del padre
@@ -387,7 +394,7 @@ export const UserList = ({
                             onChange={(e) => setFiltroEstadoTemp(e.target.value)}
                             className="min-h-10"
                         >
-                            <option value="">Todos</option>
+                            <option value="all">Todos</option>
                             <option value="active">Activo</option>
                             <option value="inactive">Inactivo</option>
                         </Select>
@@ -400,7 +407,7 @@ export const UserList = ({
                             onClick={() => {
                                 aplicarFiltros({
                                     role: filtroRolTemp || undefined,
-                                    state: filtroEstadoTemp || undefined,
+                                    state: filtroEstadoTemp || 'all',
                                 });
                                 aplicarBusqueda(textoBusqueda);
                             }}
@@ -410,13 +417,14 @@ export const UserList = ({
                             ) : null}
                             Buscar
                         </Button>
-                        {(filtroRolTemp || filtroEstadoTemp) && (
+                        {(filtroRolTemp ||
+                            (filtroEstadoTemp && filtroEstadoTemp !== 'all')) && (
                             <Button
                                 variant="secondary"
                                 className="min-h-10 gap-1 dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                                 onClick={() => {
                                     setFiltroRolTemp('');
-                                    setFiltroEstadoTemp('');
+                                    setFiltroEstadoTemp('all');
                                     limpiarFiltros();
                                 }}
                             >
@@ -693,8 +701,10 @@ export const UserList = ({
                             <strong className="font-semibold text-text dark:text-[#f3f6fa]">
                                 {usuarioAEliminar.userName}
                             </strong>
-                            ? Esta acción no se puede deshacer: la cuenta quedará
-                            inactiva y dejará de aparecer en el listado.
+                            ?{' '}
+                            {usuarioAEliminar.state
+                                ? 'Esta acción no se puede deshacer: la cuenta quedará inactiva y dejará de aparecer en el listado.'
+                                : 'La cuenta ya está inactiva: se eliminará de forma permanente y el correo quedará libre.'}
                         </>
                     ) : (
                         ''

@@ -173,7 +173,7 @@ export function DetalleSolicitudCicaSheet({
               value={
                 solicitud.esCatolico
                   ? "Católico"
-                  : solicitud.otraIglesia?.trim() || "Otra iglesia"
+                  : solicitud.otraIglesia?.trim() || "Otra religión"
               }
               icon={<BookOpen size={16} className="shrink-0" />}
             />

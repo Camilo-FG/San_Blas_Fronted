@@ -48,6 +48,10 @@ const GestionUsuarios = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalRolAbierto, setModalRolAbierto] = useState(false);
     const [pestana, setPestana] = useState<PestanaUsuarios>('usuarios');
+    const [irAPersonalizadosToken, setIrAPersonalizadosToken] = useState(0);
+    const [claveRolRecienCreado, setClaveRolRecienCreado] = useState<
+        string | null
+    >(null);
 
     const handleSaveUser = async (userData: {
         nombre: string;
@@ -67,7 +71,12 @@ const GestionUsuarios = () => {
         });
 
         if (resultado.ok) {
-            showToast('Usuario creado correctamente', 'success');
+            showToast(
+                resultado.correoActivacionEnviado
+                    ? 'Usuario creado. Se envió el correo de activación.'
+                    : 'Usuario creado, pero no se pudo enviar el correo de activación. Reenvíelo desde el perfil.',
+                resultado.correoActivacionEnviado ? 'success' : 'warning',
+            );
             setIsModalOpen(false);
             void refetch();
             void refetchPagina();
@@ -87,6 +96,9 @@ const GestionUsuarios = () => {
         if (resultado.ok) {
             showToast('Rol creado correctamente', 'success');
             setModalRolAbierto(false);
+            setPestana('roles');
+            setClaveRolRecienCreado(resultado.rol.clave);
+            setIrAPersonalizadosToken((n) => n + 1);
             void refetchRoles();
             return true;
         }
@@ -194,6 +206,11 @@ const GestionUsuarios = () => {
                             users={users}
                             roles={roles}
                             onCrearRol={() => setModalRolAbierto(true)}
+                            irAPersonalizadosToken={irAPersonalizadosToken}
+                            claveRolRecienCreado={claveRolRecienCreado}
+                            onResaltadoRolConsumido={() =>
+                                setClaveRolRecienCreado(null)
+                            }
                             onRolEliminado={() => {
                                 void refetchRoles();
                                 void refetch();

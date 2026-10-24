@@ -513,7 +513,7 @@ const CicaPage = () => {
                         aria-invalid={Boolean(errores.esCatolico)}
                         onChange={() => set("esCatolico", "no")}
                       />
-                      Otra iglesia
+                      Otra religión
                     </label>
                   </div>
                   <FieldError message={errores.esCatolico} />

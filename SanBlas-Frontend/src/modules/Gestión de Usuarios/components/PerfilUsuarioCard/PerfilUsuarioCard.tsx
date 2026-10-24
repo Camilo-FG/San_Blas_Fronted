@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { AlertOctagon, Mail, User, UserCheck } from "lucide-react";
+import { AlertOctagon, Mail, Send, User, UserCheck } from "lucide-react";
 import type { Usuario } from "../../../../types/Usuario";
 import { etiquetaRol, type Rol } from "../../../../types/Rol";
 import { useAuth } from "../../../../context/AuthContext";
+import { ApiError } from "../../../../services/apiClient";
 import { useToast } from "../../../../shared/ui";
 import {
   Badge,
@@ -12,6 +13,7 @@ import {
   cn,
 } from "../../../../shared/ui";
 import { useUpdateUser } from "../../hooks/hooksUsuarios/useUpdateUser";
+import { reenviarActivacionUsuario } from "../../services/userServices";
 
 const formatFechaCreacion = (fecha?: string | null) => {
   if (!fecha) return "—";
@@ -45,6 +47,7 @@ export function PerfilUsuarioCard({
   const { actualizarUsuario, loading: actualizando } = useUpdateUser();
   const [activo, setActivo] = useState(usuario.state);
   const [confirmando, setConfirmando] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
 
   useEffect(() => {
     setActivo(usuario.state);
@@ -102,6 +105,23 @@ export function PerfilUsuarioCard({
       return;
     }
     showToast(resultado.mensaje, "error");
+  };
+
+  const reenviarActivacion = async () => {
+    setReenviando(true);
+    try {
+      await reenviarActivacionUsuario(usuario.id);
+      showToast("Se envió un nuevo enlace de activación.", "success");
+    } catch (err) {
+      showToast(
+        err instanceof ApiError
+          ? err.message
+          : "No se pudo reenviar el enlace de activación.",
+        "error",
+      );
+    } finally {
+      setReenviando(false);
+    }
   };
 
   return (
@@ -176,18 +196,29 @@ export function PerfilUsuarioCard({
           <div className="flex flex-col gap-3">
             <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
               <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
-              Esta cuenta está inactiva y no aparece en el listado. Reactívela
-              para que pueda iniciar sesión nuevamente.
+              Esta cuenta está inactiva y no puede iniciar sesión. Reenvíe el
+              enlace de activación o reactívela manualmente si corresponde.
             </p>
-            <Button
-              variant="royal"
-              className="self-start"
-              onClick={() => void confirmarReactivacion()}
-              disabled={actualizando}
-            >
-              <UserCheck size={16} />
-              {actualizando ? "Reactivando..." : "Reactivar cuenta"}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="royal"
+                className="self-start"
+                onClick={() => void reenviarActivacion()}
+                disabled={reenviando || actualizando}
+              >
+                <Send size={16} />
+                {reenviando ? "Enviando..." : "Reenviar activación"}
+              </Button>
+              <Button
+                variant="outline"
+                className="self-start"
+                onClick={() => void confirmarReactivacion()}
+                disabled={actualizando || reenviando}
+              >
+                <UserCheck size={16} />
+                {actualizando ? "Reactivando..." : "Reactivar cuenta"}
+              </Button>
+            </div>
           </div>
         ) : (
           <div>

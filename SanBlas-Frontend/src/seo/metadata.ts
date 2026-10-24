@@ -102,4 +102,10 @@ export const pageMetadata: Record<string, PageMeta> = {
     canonical: SITE + '/reset-password',
     robots: 'noindex, nofollow',
   },
+  [Rutas.activarCuenta]: {
+    title: 'Activar Cuenta | Parroquia San Blas de Nicoya',
+    description: 'Active su cuenta para acceder al sistema de la Parroquia San Blas de Nicoya.',
+    canonical: SITE + '/activar-cuenta',
+    robots: 'noindex, nofollow',
+  },
 };

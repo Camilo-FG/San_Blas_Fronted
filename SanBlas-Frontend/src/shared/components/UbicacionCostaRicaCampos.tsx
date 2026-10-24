@@ -91,7 +91,7 @@ export function UbicacionCostaRicaCampos({
           </option>
           {provincias.map((opcion) => (
             <option key={opcion.id} value={opcion.nombre}>
-              {opcion.nombre}
+              {opcion.id}-{opcion.nombre}
             </option>
           ))}
         </select>
@@ -128,7 +128,7 @@ export function UbicacionCostaRicaCampos({
           {hayProvincia &&
             cantones.map((opcion) => (
               <option key={opcion.id} value={opcion.nombre}>
-                {opcion.nombre}
+                {opcion.id}-{opcion.nombre}
               </option>
             ))}
         </select>
@@ -164,7 +164,7 @@ export function UbicacionCostaRicaCampos({
           {hayCanton &&
             distritos.map((opcion) => (
               <option key={opcion.id} value={opcion.nombre}>
-                {opcion.nombre}
+                {opcion.id}-{opcion.nombre}
               </option>
             ))}
         </select>
