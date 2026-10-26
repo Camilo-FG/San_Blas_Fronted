@@ -239,6 +239,7 @@ const CicaPage = () => {
   };
 
   const consultar = async () => {
+    if (consultando) return;
     const cedula = cedulaConsulta.trim();
     if (!PATRON_CEDULA.test(cedula)) {
       setErrorConsulta("La cédula debe tener 9 dígitos (nacional) o 12 (extranjera).");
@@ -583,6 +584,12 @@ const CicaPage = () => {
                 inputMode="numeric"
                 maxLength={12}
                 placeholder="Ej: 102340567"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                    event.preventDefault();
+                    void consultar();
+                  }
+                }}
                 onChange={(event) => setCedulaConsulta(event.target.value.replace(/\D/g, "").replace(/^0+/, "").slice(0, 12))}
               />
             </div>

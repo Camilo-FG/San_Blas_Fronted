@@ -141,6 +141,7 @@ const CatequesisPage = () => {
   };
 
   const handleConsultar = async () => {
+    if (consultando) return;
     if (!correoConsulta.trim()) return;
     if (!correoValido(correoConsulta)) {
       setErrorConsulta("Digite un correo válido.");
@@ -347,7 +348,10 @@ const CatequesisPage = () => {
                       if (!valor || correoValido(valor)) setErrorConsulta(null);
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") handleConsultar();
+                      if (e.key === "Enter" && !e.nativeEvent.isComposing && correoConsulta.trim()) {
+                        e.preventDefault();
+                        void handleConsultar();
+                      }
                     }}
                   />
                 </div>
