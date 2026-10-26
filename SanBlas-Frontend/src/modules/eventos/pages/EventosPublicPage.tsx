@@ -280,7 +280,7 @@ const EventosPublicPage = () => {
                 onChange={(event) =>
                   setOrdenEventos(event.target.value as OrdenEventos)
                 }
-                className="min-h-11 w-full cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-11 w-full cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none"
                 aria-label="Ordenar eventos"
               >
                 <option value="todos">Todos los eventos</option>
@@ -404,7 +404,7 @@ const EventosPublicPage = () => {
                 onChange={(event) =>
                   setRegistrosPorPagina(Number(event.target.value))
                 }
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none"
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none"
                 aria-label="Cantidad de registros por página"
               >
                 {TAMANOS_PAGINA.map((tamano) => (

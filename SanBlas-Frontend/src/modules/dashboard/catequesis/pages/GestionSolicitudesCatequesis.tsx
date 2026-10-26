@@ -773,7 +773,7 @@ function GestionSolicitudesCatequesis() {
             onChange={(e) => setFiltroTextoLibre(e.target.value)}
             maxLength={60}
             placeholder="Buscar en alumno o contacto"
-            className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
+            className="min-h-11 min-w-[200px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
             aria-label="Buscar en alumno o contacto (nombre o teléfono)"
           />
           <input
@@ -783,7 +783,7 @@ function GestionSolicitudesCatequesis() {
               setFiltroEncargado(handleSoloLetrasNombre(e.target.value))
             }
             placeholder="Nombre del encargado"
-            className="min-h-11 min-w-[180px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
+            className="min-h-11 min-w-[180px] flex-1 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
             aria-label="Filtrar por nombre del encargado"
           />
           <div
@@ -796,9 +796,9 @@ function GestionSolicitudesCatequesis() {
               aria-expanded={filtroNivelMenuAbierto}
               aria-label="Filtrar por nivel"
               onClick={() => setFiltroNivelMenuAbierto((prev) => !prev)}
-              className={`flex min-h-11 w-[170px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
+              className={`flex min-h-11 w-[170px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-slate-500 focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
                 filtroNivelMenuAbierto
-                  ? "border-blue-400 bg-surface dark:border-[#d9a928]"
+                  ? "border-slate-500 bg-surface dark:border-[#d9a928]"
                   : "border-border-strong"
               }`}
             >
@@ -874,9 +874,9 @@ function GestionSolicitudesCatequesis() {
               aria-expanded={filtroFilialMenuAbierto}
               aria-label="Filtrar por filial"
               onClick={() => setFiltroFilialMenuAbierto((prev) => !prev)}
-              className={`flex min-h-11 w-[170px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
+              className={`flex min-h-11 w-[170px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-slate-500 focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
                 filtroFilialMenuAbierto
-                  ? "border-blue-400 bg-surface dark:border-[#d9a928]"
+                  ? "border-slate-500 bg-surface dark:border-[#d9a928]"
                   : "border-border-strong"
               }`}
             >
@@ -1342,7 +1342,7 @@ function GestionSolicitudesCatequesis() {
                     event.target.value as "todos" | "Primero" | "Sétimo",
                   )
                 }
-                className="min-h-10 min-w-[160px] cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
+                className="min-h-10 min-w-[160px] cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial por nivel"
               >
                 <option value="todos">Todos</option>
@@ -1360,7 +1360,7 @@ function GestionSolicitudesCatequesis() {
               <select
                 value={historialFiltroFilial}
                 onChange={(event) => setHistorialFiltroFilial(event.target.value)}
-                className="min-h-10 min-w-[160px] cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
+                className="min-h-10 min-w-[160px] cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial por filial"
               >
                 <option value="todos">Todas</option>
@@ -1385,7 +1385,7 @@ function GestionSolicitudesCatequesis() {
                       | "rechazado",
                   )
                 }
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial por tipo"
               >
                 <option value="todos">Todos</option>
@@ -1402,7 +1402,7 @@ function GestionSolicitudesCatequesis() {
                 value={historialFechaDesde}
                 max={historialFechaHasta || undefined}
                 onChange={(e) => setHistorialFechaDesde(e.target.value)}
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial desde fecha"
               />
             </label>
@@ -1415,7 +1415,7 @@ function GestionSolicitudesCatequesis() {
                 value={historialFechaHasta}
                 min={historialFechaDesde || undefined}
                 onChange={(e) => setHistorialFechaHasta(e.target.value)}
-                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
+                className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                 aria-label="Filtrar historial hasta fecha"
               />
             </label>

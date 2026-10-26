@@ -52,7 +52,7 @@ import type { InscripcionCica } from "../../../cica/types";
 import { useSolicitudesCica } from "../hooks/useSolicitudesCica";
 
 const inputAdmin =
-  "min-h-11 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]";
+  "min-h-11 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]";
 
 const coincideBusqueda = (item: InscripcionCica, texto: string) => {
   const consulta = texto.trim().toLowerCase();

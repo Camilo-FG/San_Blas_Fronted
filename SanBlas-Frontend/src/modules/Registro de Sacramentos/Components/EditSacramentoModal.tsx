@@ -51,7 +51,7 @@ const inputClass = (hasError = false) =>
     'w-full rounded-md border px-3 py-2.5 text-sm transition-colors focus:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928]',
     hasError
       ? 'border-red-500 bg-red-50 focus:border-red-600 dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)]'
-      : 'border-gray-300 focus:border-blue-600',
+      : 'border-gray-300 focus:border-slate-500',
   );
 
 // Mensajes de validación mostrados bajo cada campo, igual que en la solicitud de sacramentos.

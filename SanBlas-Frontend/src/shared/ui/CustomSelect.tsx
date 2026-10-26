@@ -254,10 +254,10 @@ export function CustomSelect({
         }}
         onKeyDown={handleTriggerKeyDown}
         className={cn(
-          "flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border-2 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+          "flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border-2 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
           hasError
-            ? "border-red-400"
-            : "border-[#16243c]/25 hover:bg-slate-200",
+            ? "border-red-400 focus-visible:border-red-500"
+            : "border-[#16243c]/25 hover:bg-slate-200 focus-visible:border-slate-500",
           triggerClassName,
         )}
       >
