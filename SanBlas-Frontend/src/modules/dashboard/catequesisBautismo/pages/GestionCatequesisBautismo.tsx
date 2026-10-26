@@ -43,6 +43,7 @@ import {
   type InscripcionCatequesisBautismo,
 } from "../../../catequesisBautismo/types";
 import { validarCertificacion } from "../../../catequesisBautismo/validarCatequesisBautismo";
+import { MOTIVO_RECHAZO_MAXIMO, validarMotivoRechazo } from "../../../cica/validarRechazoCica";
 import { useSolicitudesCatequesisBautismo } from "../hooks/useSolicitudesCatequesisBautismo";
 import {
   getEstadoBadgeClass,
@@ -165,8 +166,9 @@ const GestionCatequesisBautismo = () => {
 
   const rechazar = async () => {
     if (!seleccion) return;
-    if (!motivo.trim()) {
-      setErrorAccion("La observación es obligatoria al rechazar.");
+    const errorMotivo = validarMotivoRechazo(motivo);
+    if (errorMotivo) {
+      setErrorAccion(errorMotivo);
       return;
     }
     setErrorAccion(null);
@@ -174,7 +176,7 @@ const GestionCatequesisBautismo = () => {
       observacionAdministrativa: motivo.trim(),
     });
     if (resultado.ok) {
-      showToast("Solicitud rechazada correctamente", "error");
+      showToast("Solicitud rechazada correctamente", "success");
       setConfirmacion(null);
       setSeleccion(null);
       return;
@@ -529,6 +531,9 @@ const GestionCatequesisBautismo = () => {
         confirmLabel="Rechazar solicitud"
         pendingLabel="Rechazando..."
         isPending={guardando}
+        confirmVariant="danger"
+        iconoAdvertencia
+        confirmDisabled={validarMotivoRechazo(motivo) !== null}
         onConfirm={() => void rechazar()}
         onCancel={() => setConfirmacion(null)}
         overlayClassName="fixed inset-0 z-[1400] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
@@ -546,11 +551,12 @@ const GestionCatequesisBautismo = () => {
               if (errorAccion) setErrorAccion(null);
             }}
             rows={3}
+            maxLength={MOTIVO_RECHAZO_MAXIMO}
             placeholder="Ej: No completó las charlas."
-            hasError={Boolean(errorAccion)}
+            hasError={Boolean(errorAccion || (motivo.trim() && validarMotivoRechazo(motivo)))}
             disabled={guardando}
           />
-          <FieldError message={errorAccion} />
+          <FieldError message={errorAccion ?? (motivo.trim() ? validarMotivoRechazo(motivo) : null)} />
         </label>
       </ConfirmacionAccionModal>
       <ConfirmacionAccionModal
