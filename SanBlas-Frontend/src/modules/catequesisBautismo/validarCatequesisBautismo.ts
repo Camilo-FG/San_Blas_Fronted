@@ -1,11 +1,14 @@
 import type { CondicionBautismo, EstadoCivilBautismo } from "./types";
 import { PROVINCIAS_COSTA_RICA } from "./types";
+import { obtenerFaltantesBautismo } from "./faltantesBautismo";
+import { ESTADOS_CIVILES_BAUTISMO } from "./estadosCivilesBautismo";
+import { CONDICIONES_BAUTISMO } from "./condicionesBautismo";
 import { validarCedulaIdentificacion, type TipoCedula } from "../../shared/utils/cedulaIdentificacion";
 
 export const MAX_NOMBRE_BAUTISMO = 25;
 export const MAX_APELLIDO_BAUTISMO = 25;
 
-export const TELEFONO_BAUTISMO = /^\d{4}-\d{4}$/;
+export const TELEFONO_BAUTISMO = /^[1-9]\d{3}-\d{4}$/;
 const LETRAS_CON_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
 const LETRAS_SIN_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/;
 
@@ -16,7 +19,7 @@ export const filtrarApellidoBautismo = (valor: string) =>
   valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, "").slice(0, MAX_APELLIDO_BAUTISMO);
 
 export const filtrarTelefonoBautismo = (valor: string) => {
-  const soloNumeros = valor.replace(/\D/g, "").slice(0, 8);
+  const soloNumeros = valor.replace(/\D/g, "").replace(/^0+/, "").slice(0, 8);
   return soloNumeros.length > 4
     ? `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4)}`
     : soloNumeros;
@@ -91,7 +94,9 @@ export const validarFormularioCatequesisBautismo = (
   else if (!TELEFONO_BAUTISMO.test(form.telefono.trim()))
     errores.telefono = "El formato debe ser 8888-8888.";
 
-  if (!form.estadoCivil) errores.estadoCivil = "Seleccione el estado civil.";
+  if (!form.estadoCivil.trim()) errores.estadoCivil = "Seleccione el estado civil.";
+  else if (!ESTADOS_CIVILES_BAUTISMO.includes(form.estadoCivil as EstadoCivilBautismo))
+    errores.estadoCivil = "Seleccione un estado civil válido.";
   poner(
     "parroquiaOrigen",
     mensajeNombre(form.parroquiaOrigen, "La parroquia de origen", true, true)?.replace(
@@ -113,8 +118,14 @@ export const validarFormularioCatequesisBautismo = (
   if (!form.canton.trim()) errores.canton = "Seleccione un cantón.";
   if (!form.distrito.trim()) errores.distrito = "Seleccione un distrito.";
   poner("barrio", mensajeNombre(form.barrio, "El barrio", true, true));
-  if (!form.condicion) errores.condicion = "Seleccione su condición.";
+  if (!form.condicion.trim()) errores.condicion = "Seleccione su condición.";
+  else if (!CONDICIONES_BAUTISMO.includes(form.condicion as CondicionBautismo))
+    errores.condicion = "Seleccione una condición válida.";
 
+  // Priorizar el mensaje de obligatorio sobre el de formato si solo hay espacios.
+  for (const { campos } of obtenerFaltantesBautismo(form)) {
+    for (const { campo, mensaje } of campos) errores[campo] = mensaje;
+  }
   return errores;
 };
 

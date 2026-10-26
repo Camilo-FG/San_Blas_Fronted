@@ -71,7 +71,7 @@ export function UbicacionCostaRicaCampos({
       <div className={claseCampo}>
         <Label required>Provincia</Label>
         <select
-          className={cn(claseSelect, "cursor-pointer disabled:cursor-not-allowed")}
+          className={cn(claseSelect, "cursor-pointer disabled:cursor-not-allowed", errores.provincia && "border-red-400! bg-danger-bg!")}
           value={valor.provincia}
           disabled={disabled || provinciasQuery.isPending}
           aria-invalid={Boolean(errores.provincia)}
@@ -104,6 +104,7 @@ export function UbicacionCostaRicaCampos({
           className={cn(
             claseSelect,
             cantonBloqueado ? "cursor-not-allowed" : "cursor-pointer",
+            errores.canton && "border-red-400! bg-danger-bg!",
           )}
           value={valor.canton}
           disabled={cantonBloqueado}
@@ -141,6 +142,7 @@ export function UbicacionCostaRicaCampos({
           className={cn(
             claseSelect,
             distritoBloqueado ? "cursor-not-allowed" : "cursor-pointer",
+            errores.distrito && "border-red-400! bg-danger-bg!",
           )}
           value={valor.distrito}
           disabled={distritoBloqueado}

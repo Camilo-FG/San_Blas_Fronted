@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { IdentificacionCedula } from "../../../shared/components/IdentificacionCedula";
 import { UbicacionCostaRicaCampos } from "../../../shared/components/UbicacionCostaRicaCampos";
 import { useAutocompletarCedula } from "../../../shared/hooks/useAutocompletarCedula";
@@ -90,10 +90,12 @@ function Campo({
   mostrarContador?: boolean;
   id?: string;
 }) {
+  const generado = useId();
+  id = id ?? generado;
   return (
     <div className={`flex flex-col gap-1 text-sm ${className ?? ""}`}>
       <div className="flex items-baseline justify-between gap-2">
-        <Label required={obligatorio} className={mostrarContador ? "mb-0" : undefined}>
+        <Label htmlFor={id} required={obligatorio} className={mostrarContador ? "mb-0" : undefined}>
           {etiqueta}
         </Label>
         {mostrarContador && maxLength ? (
@@ -111,17 +113,30 @@ function Campo({
         maxLength={maxLength}
         hasError={Boolean(error)}
         aria-invalid={Boolean(error)}
+        aria-describedby={error && id ? `${id}-error` : undefined}
         onChange={(event) => onChange(event.target.value)}
       />
-      <FieldError message={error} />
+      <FieldError id={id ? `${id}-error` : undefined} message={error} />
     </div>
   );
 }
 
 const CicaPage = () => {
+  const formularioRef = useRef<HTMLFormElement>(null);
+  const [intentoFoco, setIntentoFoco] = useState(0);
   const [form, setForm] = useState(vacio);
   const { estado: estadoCedula, verificar } = useAutocompletarCedula();
   const [errores, setErrores] = useState<Record<string, string>>({});
+
+  // Se ejecuta tras renderizar los errores, en el orden real de los controles.
+  useEffect(() => {
+    if (!intentoFoco) return;
+    const primero = formularioRef.current?.querySelector<HTMLElement>(
+      'input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"]',
+    );
+    primero?.focus({ preventScroll: true });
+    primero?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  }, [intentoFoco]);
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [listo, setListo] = useState<{ mensaje: string; estado: string } | null>(null);
@@ -138,6 +153,7 @@ const CicaPage = () => {
     setErrores((actual) => {
       const siguiente = { ...actual };
       delete siguiente[clave];
+      if (clave === "esCatolico" && valor === "si") delete siguiente.otraIglesia;
       if (SACRAMENTOS_CICA.some((sacramento) => sacramento.clave === clave)) {
         delete siguiente.sacramentos;
       }
@@ -190,27 +206,17 @@ const CicaPage = () => {
 
   const enviar = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (enviando) return;
     setErrorEnvio(null);
     const encontrados = validarFormularioCica(form);
-    if (form.tipoCedula === "nacional" && estadoCedula !== "encontrada") {
+    if (!encontrados.cedula && form.tipoCedula === "nacional" && estadoCedula !== "encontrada") {
       encontrados.cedula = "Verifique la cédula antes de enviar la inscripción.";
     }
     setErrores(encontrados);
-    if (
-      encontrados.estadoCivil ||
-      encontrados.conyugeNombre ||
-      encontrados.conyugeApellido1
-    ) {
-      document.getElementById("cica-conyuge-nombre")?.focus();
-      const seccionEstadoCivil = document.getElementById("cica-estado-civil");
-      if (typeof seccionEstadoCivil?.scrollIntoView === "function") {
-        seccionEstadoCivil.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }
+    if (Object.keys(encontrados).length > 0) {
+      setIntentoFoco((actual) => actual + 1);
+      return;
     }
-    if (Object.keys(encontrados).length > 0) return;
 
     setEnviando(true);
     try {
@@ -233,6 +239,7 @@ const CicaPage = () => {
   };
 
   const consultar = async () => {
+    if (consultando) return;
     const cedula = cedulaConsulta.trim();
     if (!PATRON_CEDULA.test(cedula)) {
       setErrorConsulta("La cédula debe tener 9 dígitos (nacional) o 12 (extranjera).");
@@ -312,7 +319,7 @@ const CicaPage = () => {
               </div>
             </Card>
           ) : (
-            <form className="mt-6 flex flex-col gap-5" onSubmit={enviar} noValidate>
+            <form ref={formularioRef} className="mt-6 flex flex-col gap-5" onSubmit={enviar} noValidate>
               <fieldset className="grid gap-3 sm:grid-cols-3">
                 <legend className="mb-2 font-heading text-lg font-extrabold text-royal-blue">
                   Identificación
@@ -544,7 +551,8 @@ const CicaPage = () => {
                   maxLength={MAX_TEXTO_CICA}
                   placeholder="Ej: Prefiere el grupo de los sábados."
                   value={form.observacion}
-                  hasError={Boolean(errores.observacion)}
+                    hasError={Boolean(errores.observacion)}
+                    aria-invalid={Boolean(errores.observacion)}
                   onChange={(event) =>
                     set("observacion", event.target.value.slice(0, MAX_TEXTO_CICA))
                   }
@@ -576,7 +584,13 @@ const CicaPage = () => {
                 inputMode="numeric"
                 maxLength={12}
                 placeholder="Ej: 102340567"
-                onChange={(event) => setCedulaConsulta(event.target.value.replace(/\D/g, "").slice(0, 12))}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                    event.preventDefault();
+                    void consultar();
+                  }
+                }}
+                onChange={(event) => setCedulaConsulta(event.target.value.replace(/\D/g, "").replace(/^0+/, "").slice(0, 12))}
               />
             </div>
             <Button

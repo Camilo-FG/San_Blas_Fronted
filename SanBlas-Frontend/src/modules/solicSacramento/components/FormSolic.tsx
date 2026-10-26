@@ -15,7 +15,7 @@ import { SubidaImagen, type ArchivoImagen } from "./SubidaImagen";
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
 
 const formatearCedula = (valor: string) => {
-  const digitos = soloDigitos(valor).slice(0, 9);
+  const digitos = soloDigitos(valor).replace(/^0+/, "").slice(0, 9);
   if (digitos.length <= 1) return digitos;
   if (digitos.length <= 5)
     return `${digitos.slice(0, 1)}-${digitos.slice(1)}`;
@@ -23,7 +23,7 @@ const formatearCedula = (valor: string) => {
 };
 
 const formatearTelefono = (valor: string) => {
-  const digitos = soloDigitos(valor).slice(0, 8);
+  const digitos = soloDigitos(valor).replace(/^0+/, "").slice(0, 8);
   if (digitos.length <= 4) return digitos;
   return `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
 };
@@ -48,6 +48,7 @@ const validarSegundoApellido = (valor: string) =>
 const validarCedula = (valor: string, tipo: "nacional" | "extranjera") => {
   const cedula = soloDigitos(valor);
   if (!cedula) return "La cédula es obligatoria.";
+  if (cedula.startsWith("0")) return "La cédula no puede iniciar con cero.";
   if (tipo === "nacional") {
     if (cedula.length !== 9) return "La cédula debe tener 9 dígitos.";
   } else {
@@ -68,7 +69,7 @@ const validarCorreo = (valor: string) => {
 const validarTelefono = (valor: string) => {
   const telefono = soloDigitos(valor);
   if (!telefono) return "El teléfono es obligatorio.";
-  if (!/^\d{8}$/.test(telefono)) {
+  if (!/^[1-9]\d{7}$/.test(telefono)) {
     return "El teléfono debe contener exactamente 8 dígitos numéricos.";
   }
   return undefined;
@@ -690,7 +691,7 @@ const FormSolic = () => {
                         const formatted =
                           tipoCedula === "nacional"
                             ? formatearCedula(e.target.value)
-                            : soloDigitos(e.target.value).slice(0, 12);
+                            : soloDigitos(e.target.value).replace(/^0+/, "").slice(0, 12);
                         field.handleChange(formatted);
 
                         // Detect post-validation modification

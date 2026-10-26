@@ -65,7 +65,7 @@ const GestionSacramentos = () => {
   }, [nombreInput, cedulaInput, libroInput, folioInput, asientoInput]);
 
   const aplicarMascaraCedula = (valor: string) => {
-    const digitos = valor.replace(/\D/g, '').slice(0, 9);
+    const digitos = valor.replace(/\D/g, '').replace(/^0+/, '').slice(0, 9);
     if (digitos.length <= 1) return digitos;
     if (digitos.length <= 5) return `${digitos[0]}-${digitos.slice(1)}`;
     return `${digitos[0]}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
