@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { cn } from "./cn";
 
 type ToastType = "success" | "error" | "warning" | "info";
@@ -128,6 +128,7 @@ function AnilloProgreso({
 }
 
 function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
+  const reducirMovimiento = useReducedMotion();
   const icons = {
     success: <CheckCircle size={20} className="text-success" />,
     error: <X size={20} className="text-white" />,
@@ -160,19 +161,50 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
             aria-live="polite"
             aria-label="Notificaciones"
           >
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
               {grupo.map((toast) => (
                 <motion.div
                   key={toast.id}
+                  layout
                   className={cn(
-                    "pointer-events-auto min-w-[280px] max-w-[400px] rounded-xl border px-4 py-3 shadow-lg",
+                    "pointer-events-auto min-w-[280px] max-w-[400px] rounded-xl border px-4 py-3 shadow-lg will-change-transform",
                     bgClasses[toast.type],
                   )}
                   role="alert"
-                  initial={{ opacity: 0, x: 90 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 110 }}
-                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  initial={
+                    reducirMovimiento
+                      ? { opacity: 0 }
+                      : {
+                          opacity: 0,
+                          y: posicion === "top-right" ? -14 : 14,
+                          scale: 0.96,
+                        }
+                  }
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={
+                    reducirMovimiento
+                      ? { opacity: 0 }
+                      : {
+                          opacity: 0,
+                          y: posicion === "top-right" ? -10 : 10,
+                          scale: 0.97,
+                          transition: {
+                            duration: 0.16,
+                            ease: [0.4, 0, 1, 1],
+                          },
+                        }
+                  }
+                  transition={
+                    reducirMovimiento
+                      ? { duration: 0.15, ease: "easeOut" }
+                      : {
+                          type: "spring",
+                          stiffness: 460,
+                          damping: 34,
+                          mass: 0.7,
+                          opacity: { duration: 0.18, ease: "easeOut" },
+                        }
+                  }
                 >
                   <div className="flex items-center gap-3">
                     {toast.type !== "success" && toast.type !== "error" && (
