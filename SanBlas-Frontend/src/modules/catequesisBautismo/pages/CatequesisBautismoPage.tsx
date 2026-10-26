@@ -430,7 +430,7 @@ const CatequesisBautismoPage = () => {
                 inputMode="numeric"
                 maxLength={12}
                 placeholder="Ej: 102340567"
-                onChange={(event) => setCedulaConsulta(event.target.value.replace(/\D/g, "").slice(0, 12))}
+                onChange={(event) => setCedulaConsulta(event.target.value.replace(/\D/g, "").replace(/^0+/, "").slice(0, 12))}
               />
             </div>
             <Button

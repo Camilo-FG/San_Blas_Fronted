@@ -96,8 +96,8 @@ for (const [nombre, Pagina, consultar] of [
         { target: { value: "extranjera" } },
       );
       const input = screen.getByRole("textbox", { name: /^Cédula/ });
-      fireEvent.change(input, { target: { value: "012345678901" } });
-      expect(input).toHaveValue("012345678901");
+      fireEvent.change(input, { target: { value: "112345678901" } });
+      expect(input).toHaveValue("112345678901");
       expect(obtenerDatosCedula).not.toHaveBeenCalled();
       expect(
         screen.getByText("Complete el nombre y los apellidos manualmente."),
@@ -110,7 +110,7 @@ for (const [nombre, Pagina, consultar] of [
       const storage = vi.spyOn(Storage.prototype, "setItem");
       const { container } = render(<Pagina />);
       fireEvent.change(screen.getByLabelText("Tipo de cédula", { exact: false }), { target: { value: "extranjera" } });
-      fireEvent.change(screen.getByRole("textbox", { name: /^Cédula/ }), { target: { value: "012345678901" } });
+      fireEvent.change(screen.getByRole("textbox", { name: /^Cédula/ }), { target: { value: "112345678901" } });
       // Completa los demás obligatorios para probar el envío real del formulario, no solo el input.
       for (const input of Array.from(container.querySelectorAll<HTMLInputElement>('input[type="text"]'))) {
         if (!input.value) fireEvent.change(input, { target: { value: "Prueba" } });
@@ -135,7 +135,7 @@ for (const [nombre, Pagina, consultar] of [
         fireEvent.click(screen.getByRole("radio", { name: "Padre/Madre" }));
       }
       fireEvent.submit(container.querySelector("form")!);
-      await waitFor(() => expect(crear).toHaveBeenCalledWith(expect.objectContaining({ cedula: "012345678901", tipoCedula: "extranjera" })));
+      await waitFor(() => expect(crear).toHaveBeenCalledWith(expect.objectContaining({ cedula: "112345678901", tipoCedula: "extranjera" })));
       expect(storage).not.toHaveBeenCalled();
       expect(obtenerDatosCedula).not.toHaveBeenCalled();
     });
@@ -167,18 +167,28 @@ for (const [nombre, Pagina, consultar] of [
       expect(crearInscripcionCatequesisBautismo).not.toHaveBeenCalled();
     });
 
+    it("no permite ceros iniciales al consultar estados y conserva los internos", () => {
+      render(<Pagina />);
+      fireEvent.click(screen.getByRole("button", { name: "Consultar estado" }));
+      const input = screen.getByPlaceholderText("Ej: 102340567");
+      fireEvent.change(input, { target: { value: "0" } });
+      expect(input).toHaveValue("");
+      fireEvent.change(input, { target: { value: "000102340567" } });
+      expect(input).toHaveValue("102340567");
+    });
+
     it("consulta el estado con la cédula extranjera completa", async () => {
       vi.mocked(consultar).mockResolvedValue([]);
       render(<Pagina />);
       fireEvent.click(screen.getByRole("button", { name: "Consultar estado" }));
       fireEvent.change(screen.getByPlaceholderText("Ej: 102340567"), {
-        target: { value: "012345678901" },
+        target: { value: "112345678901" },
       });
       fireEvent.click(
         screen.getByRole("button", { name: /^Consultar$/ }),
       );
       await waitFor(() =>
-        expect(consultar).toHaveBeenCalledWith("012345678901"),
+        expect(consultar).toHaveBeenCalledWith("112345678901"),
       );
     });
   });

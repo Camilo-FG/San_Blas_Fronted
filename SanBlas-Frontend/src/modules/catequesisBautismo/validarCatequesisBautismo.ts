@@ -5,7 +5,7 @@ import { validarCedulaIdentificacion, type TipoCedula } from "../../shared/utils
 export const MAX_NOMBRE_BAUTISMO = 25;
 export const MAX_APELLIDO_BAUTISMO = 25;
 
-export const TELEFONO_BAUTISMO = /^\d{4}-\d{4}$/;
+export const TELEFONO_BAUTISMO = /^[1-9]\d{3}-\d{4}$/;
 const LETRAS_CON_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
 const LETRAS_SIN_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/;
 
@@ -16,7 +16,7 @@ export const filtrarApellidoBautismo = (valor: string) =>
   valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, "").slice(0, MAX_APELLIDO_BAUTISMO);
 
 export const filtrarTelefonoBautismo = (valor: string) => {
-  const soloNumeros = valor.replace(/\D/g, "").slice(0, 8);
+  const soloNumeros = valor.replace(/\D/g, "").replace(/^0+/, "").slice(0, 8);
   return soloNumeros.length > 4
     ? `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4)}`
     : soloNumeros;

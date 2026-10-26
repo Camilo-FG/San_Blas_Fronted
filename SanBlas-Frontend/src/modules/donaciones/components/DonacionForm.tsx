@@ -176,7 +176,7 @@ export default function DonacionForm() {
     if (!formData.anonimo) {
       if (!formData.telefono.trim()) {
         nuevosErrores.telefono = "El teléfono es requerido.";
-      } else if (!/^\d{4}-\d{4}$/.test(formData.telefono)) {
+      } else if (!/^[1-9]\d{3}-\d{4}$/.test(formData.telefono)) {
         nuevosErrores.telefono = "El formato debe ser 8888-8888.";
       }
     }
@@ -202,7 +202,7 @@ export default function DonacionForm() {
   };
 
   const handleTelefono = (value: string) => {
-    const soloNumeros = value.replace(/\D/g, "").slice(0, 8);
+    const soloNumeros = value.replace(/\D/g, "").replace(/^0+/, "").slice(0, 8);
     const formateado =
       soloNumeros.length > 4
         ? `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4)}`

@@ -76,7 +76,7 @@ const ErrorMsg = ({ errors, clave }: { errors: Record<string, string>; clave: st
 
 const formatearCedulaCR = (valor: string): string => {
   const digitos = valor.replace(/\D/g, '');
-  const limpiados = digitos.startsWith('0') ? digitos.slice(1) : digitos.slice(0, 9);
+  const limpiados = digitos.replace(/^0+/, '').slice(0, 9);
   if (limpiados.length <= 1) return limpiados;
   if (limpiados.length <= 5) return `${limpiados[0]}-${limpiados.slice(1)}`;
   return `${limpiados[0]}-${limpiados.slice(1, 5)}-${limpiados.slice(5)}`;
