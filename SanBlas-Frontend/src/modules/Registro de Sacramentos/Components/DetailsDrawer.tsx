@@ -132,7 +132,7 @@ const DetailsDrawer = ({ isOpen, onClose, sacramentoId }: Props) => {
         </div>
 
         {/* Cuerpo: el acta en papel */}
-        <div className="flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4">
+        <div className="scrollbar-contenedor flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4">
           {isPending && (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
               <Loader2 size={28} className="animate-spin text-text-muted dark:text-[#7f8da3]" />

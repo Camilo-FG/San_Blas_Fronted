@@ -890,7 +890,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 scrollbar-sacramental space-y-4 overflow-y-auto p-6">
+            <div className="min-h-0 flex-1 scrollbar-contenedor space-y-4 overflow-y-auto p-6">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>
                   <Label required>Filial</Label>

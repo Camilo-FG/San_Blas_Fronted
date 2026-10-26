@@ -626,7 +626,7 @@ export default function LandingSectionModal({
               <X size={20} />
             </button>
           </header>
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-5 sm:px-6">
+          <div className="scrollbar-contenedor flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-5 sm:px-6">
             {camposFormulario}
           </div>
           {pieFormulario}

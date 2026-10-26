@@ -835,7 +835,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-          <div className="max-h-[60vh] scrollbar-sacramental space-y-4 overflow-y-auto p-6">
+          <div className="max-h-[60vh] scrollbar-contenedor space-y-4 overflow-y-auto p-6">
             {catalogoCargando ? (
               <div className="flex items-center gap-2 py-6 text-sm text-text-secondary dark:text-[#b7c3d4]">
                 <Loader2 size={18} className="animate-spin" /> Cargando catálogos...
