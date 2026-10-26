@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Button, cn, Input, Label, useToast } from '../../../shared/ui';
 import { Loader2 } from 'lucide-react';
 import { useFocusTrap } from '../../../shared/hooks/useFocusTrap';
@@ -334,8 +335,6 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
   useEffect(() => {
     setConsultasCedula({});
   }, [isOpen, sacramentoId]);
-
-  if (!isOpen) return null;
 
   const setCampoPersona = (
     setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
@@ -826,149 +825,165 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
   const cargandoFicha = ficha.isPending || detalleQuery.isPending;
 
   return (
-    <div ref={modalRef} className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 dark:bg-black/60" onClick={onClose}>
-      <div
-        className="flex max-h-[90vh] w-[90%] max-w-[820px] flex-col overflow-hidden rounded-xl bg-white dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-surface-muted px-6 py-5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
-          <div>
-            <h2 className="m-0 text-lg text-slate-800 dark:text-[#f3f6fa]">EDITAR ACTA SACRAMENTAL</h2>
-            <p className="m-0 mt-0.5 text-sm text-slate-500 dark:text-[#7f8da3]">
-              {personaSacramental?.persona
-                ? [personaSacramental.persona.nombre, personaSacramental.persona.primerApellido].filter(Boolean).join(' ') +
-                  (personaSacramental.persona.cedula ? ` · ${personaSacramental.persona.cedula}` : '')
-                : ''}
-            </p>
-          </div>
-          <button
-            type="button"
-            aria-label="Cerrar"
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
-            onClick={onClose}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          ref={modalRef}
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 dark:bg-black/60"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.16, ease: 'easeIn' } }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          onClick={onClose}
+        >
+          <motion.div
+            className="flex max-h-[90vh] w-[90%] max-w-[820px] transform-gpu flex-col overflow-hidden rounded-xl bg-white dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+            initial={{ opacity: 0, scale: 0.97, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 8, transition: { duration: 0.16, ease: 'easeIn' } }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            onClick={(e) => e.stopPropagation()}
           >
-            ×
-          </button>
-        </div>
-
-        <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-gray-200 px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
-          {TIPOS.map((t) => {
-            const disponible = habilitado(t);
-            return (
-              <button
-                key={t}
-                type="button"
-                disabled={!disponible}
-                title={
-                  disponible
-                    ? undefined
-                    : 'Complete el sacramento anterior para desbloquear este'
-                }
-                className={cn(
-                  'shrink-0 border-0 bg-transparent px-5 py-3 text-sm font-medium transition-colors',
-                  !disponible
-                    ? 'cursor-not-allowed text-gray-300 dark:text-[#7f8da3]'
-                    : 'cursor-pointer text-gray-500 hover:text-blue-600 dark:text-[#b7c3d4] dark:hover:text-[#d9a928]',
-                  activeTab === t &&
-                    disponible &&
-                    'border-b-2 border-blue-600 text-blue-600 dark:border-[#d9a928] dark:text-[#d9a928]',
-                )}
-                onClick={() => {
-                  setActiveTab(t);
-                  setErrors({});
-                }}
-              >
-                {TIPO_SACRAMENTO_LABEL[t].toUpperCase()}
-              </button>
-            );
-          })}
-        </div>
-
-        {cargandoFicha ? (
-          <div className="flex min-h-0 flex-1 items-center justify-center gap-2 py-12 text-sm text-text-secondary dark:text-[#b7c3d4]">
-            <Loader2 size={20} className="animate-spin" /> Cargando ficha...
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 scrollbar-contenedor space-y-4 overflow-y-auto p-6">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div>
-                  <Label required>Filial</Label>
-                  <select
-                    value={idParroquia}
-                    onChange={(e) => setIdParroquia(e.target.value)}
-                    className={inputClass(Boolean(errors.idParroquia))}
-                  >
-                    <option value="">Seleccione...</option>
-                    {opcionesLugarCelebracion(
-                      parroquias,
-                      sacramentoDelTab?.parroquia ?? null,
-                    ).map((lugar) => (
-                      <option key={lugar.id} value={lugar.id}>
-                        {lugar.nombre}
-                      </option>
-                    ))}
-                  </select>
-                  <ErrorMsg errors={errors} clave="idParroquia" />
-                </div>
-                <div>
-                  <Label required>Presbítero</Label>
-                  <select
-                    value={idPresbitero}
-                    onChange={(e) => setIdPresbitero(e.target.value)}
-                    className={inputClass(Boolean(errors.idPresbitero))}
-                  >
-                    <option value="">Seleccione...</option>
-                    {(presbiteros ?? []).map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nombre} {p.primerApellido}
-                      </option>
-                    ))}
-                  </select>
-                  <ErrorMsg errors={errors} clave="idPresbitero" />
-                </div>
-                <div>
-                  <Label required>Fecha de celebración</Label>
-                  <Input
-                    type="date"
-                    className={inputClass(Boolean(errors.fechaSacramento))}
-                    value={fechaSacramento}
-                    onChange={(e) => setFechaSacramento(e.target.value)}
-                  />
-                  <ErrorMsg errors={errors} clave="fechaSacramento" />
-                </div>
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-surface-muted px-6 py-5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
+              <div>
+                <h2 className="m-0 text-lg text-slate-800 dark:text-[#f3f6fa]">EDITAR ACTA SACRAMENTAL</h2>
+                <p className="m-0 mt-0.5 text-sm text-slate-500 dark:text-[#7f8da3]">
+                  {personaSacramental?.persona
+                    ? [personaSacramental.persona.nombre, personaSacramental.persona.primerApellido].filter(Boolean).join(' ') +
+                      (personaSacramental.persona.cedula ? ` · ${personaSacramental.persona.cedula}` : '')
+                    : ''}
+                </p>
               </div>
+              <button
+                type="button"
+                aria-label="Cerrar"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
+                onClick={onClose}
+              >
+                ×
+              </button>
+            </div>
 
-              {activeTab === 'bautismo' && renderBautismo()}
-              {activeTab === 'matrimonio' && renderMatrimonio()}
+            <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-gray-200 px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
+              {TIPOS.map((t) => {
+                const disponible = habilitado(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    disabled={!disponible}
+                    title={
+                      disponible
+                        ? undefined
+                        : 'Complete el sacramento anterior para desbloquear este'
+                    }
+                    className={cn(
+                      'shrink-0 border-0 bg-transparent px-5 py-3 text-sm font-medium transition-colors',
+                      !disponible
+                        ? 'cursor-not-allowed text-gray-300 dark:text-[#7f8da3]'
+                        : 'cursor-pointer text-gray-500 hover:text-blue-600 dark:text-[#b7c3d4] dark:hover:text-[#d9a928]',
+                      activeTab === t &&
+                        disponible &&
+                        'border-b-2 border-blue-600 text-blue-600 dark:border-[#d9a928] dark:text-[#d9a928]',
+                    )}
+                    onClick={() => {
+                      setActiveTab(t);
+                      setErrors({});
+                    }}
+                  >
+                    {TIPO_SACRAMENTO_LABEL[t].toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
 
-              {activeTab === 'bautismo' && (
-                <div>
-                  <Label>Observaciones</Label>
-                  <Input type="text" maxLength={500} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
-                  <p className="m-0 mt-1 text-right text-xs text-slate-400 dark:text-[#7f8da3]">
-                    {observaciones.length}/500 caracteres
-                  </p>
+            {cargandoFicha ? (
+              <div className="flex min-h-0 flex-1 items-center justify-center gap-2 py-12 text-sm text-text-secondary dark:text-[#b7c3d4]">
+                <Loader2 size={20} className="animate-spin" /> Cargando ficha...
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
+                <div className="min-h-0 flex-1 scrollbar-contenedor space-y-4 overflow-y-auto p-6">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div>
+                      <Label required>Filial</Label>
+                      <select
+                        value={idParroquia}
+                        onChange={(e) => setIdParroquia(e.target.value)}
+                        className={inputClass(Boolean(errors.idParroquia))}
+                      >
+                        <option value="">Seleccione...</option>
+                        {opcionesLugarCelebracion(
+                          parroquias,
+                          sacramentoDelTab?.parroquia ?? null,
+                        ).map((lugar) => (
+                          <option key={lugar.id} value={lugar.id}>
+                            {lugar.nombre}
+                          </option>
+                        ))}
+                      </select>
+                      <ErrorMsg errors={errors} clave="idParroquia" />
+                    </div>
+                    <div>
+                      <Label required>Presbítero</Label>
+                      <select
+                        value={idPresbitero}
+                        onChange={(e) => setIdPresbitero(e.target.value)}
+                        className={inputClass(Boolean(errors.idPresbitero))}
+                      >
+                        <option value="">Seleccione...</option>
+                        {(presbiteros ?? []).map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.nombre} {p.primerApellido}
+                          </option>
+                        ))}
+                      </select>
+                      <ErrorMsg errors={errors} clave="idPresbitero" />
+                    </div>
+                    <div>
+                      <Label required>Fecha de celebración</Label>
+                      <Input
+                        type="date"
+                        className={inputClass(Boolean(errors.fechaSacramento))}
+                        value={fechaSacramento}
+                        onChange={(e) => setFechaSacramento(e.target.value)}
+                      />
+                      <ErrorMsg errors={errors} clave="fechaSacramento" />
+                    </div>
+                  </div>
+
+                  {activeTab === 'bautismo' && renderBautismo()}
+                  {activeTab === 'matrimonio' && renderMatrimonio()}
+
+                  {activeTab === 'bautismo' && (
+                    <div>
+                      <Label>Observaciones</Label>
+                      <Input type="text" maxLength={500} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
+                      <p className="m-0 mt-1 text-right text-xs text-slate-400 dark:text-[#7f8da3]">
+                        {observaciones.length}/500 caracteres
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <div className="flex shrink-0 justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
-              <Button type="submit" variant="royal" disabled={saving}>
-                {saving
-                  ? 'GUARDANDO...'
-                  : existeEnTab
-                    ? 'GUARDAR CAMBIOS'
-                    : `REGISTRAR ${TIPO_SACRAMENTO_LABEL[activeTab].toUpperCase()}`}
-              </Button>
-              <Button type="button" variant="secondary" onClick={onClose} disabled={saving} className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!">
-                CANCELAR
-              </Button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+                <div className="flex shrink-0 justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
+                  <Button type="submit" variant="royal" disabled={saving}>
+                    {saving
+                      ? 'GUARDANDO...'
+                      : existeEnTab
+                        ? 'GUARDAR CAMBIOS'
+                        : `REGISTRAR ${TIPO_SACRAMENTO_LABEL[activeTab].toUpperCase()}`}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={onClose} disabled={saving} className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!">
+                    CANCELAR
+                  </Button>
+                </div>
+              </form>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
