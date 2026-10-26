@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "./cn";
@@ -69,7 +70,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toasts, showToast, dismissToast }}>
       {children}
-      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      {typeof document !== "undefined" &&
+        createPortal(
+          <ToastContainer toasts={toasts} onDismiss={dismissToast} />,
+          document.body,
+        )}
     </ToastContext.Provider>
   );
 }
@@ -146,7 +151,7 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
         return (
           <div
             key={posicion}
-            className={`fixed z-[1400] flex flex-col gap-2 pointer-events-none ${
+            className={`fixed z-[100000] flex flex-col gap-2 pointer-events-none ${
               posicion === "top-right"
                 ? "top-20 right-4"
                 : "right-4 bottom-4 flex-col-reverse"

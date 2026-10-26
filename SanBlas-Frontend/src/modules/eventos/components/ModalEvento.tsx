@@ -120,7 +120,7 @@ export function ModalEvento({
           ) : null}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-8 max-sm:p-5">
+        <div className="scrollbar-contenedor min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-8 max-sm:p-5">
           <h3
             id="evento-modal-titulo"
             className="mt-0 mb-3 font-heading text-[1.75rem] leading-tight text-royal-blue max-sm:text-[1.5rem]"

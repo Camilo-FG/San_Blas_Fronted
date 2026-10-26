@@ -410,7 +410,7 @@ export default function ServiciosCarousel() {
                 </button>
               </div>
 
-              <div className="max-h-[65vh] overflow-y-auto p-6 max-sm:max-h-[58vh] max-sm:p-5">
+              <div className="scrollbar-contenedor max-h-[65vh] overflow-y-auto p-6 max-sm:max-h-[58vh] max-sm:p-5">
                 <span className="inline-block rounded-full bg-royal-blue px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-royal-gold">
                   {selectedService.category}
                 </span>

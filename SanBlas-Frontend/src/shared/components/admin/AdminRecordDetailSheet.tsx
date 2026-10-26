@@ -138,8 +138,8 @@ export function AdminRecordDetailSheet({
         <div
           className={
             hideHeader
-              ? "min-h-0 flex-1 overflow-y-auto px-5 pt-14 pb-5 md:px-8"
-              : "min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-8"
+              ? "scrollbar-contenedor min-h-0 flex-1 overflow-y-auto px-5 pt-14 pb-5 md:px-8"
+              : "scrollbar-contenedor min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-8"
           }
         >
           {children}

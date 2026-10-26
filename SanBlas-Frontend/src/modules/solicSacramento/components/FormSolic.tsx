@@ -587,9 +587,9 @@ const FormSolic = () => {
                   aria-haspopup="listbox"
                   aria-expanded={tipoCedulaAbierto}
                   onClick={() => setTipoCedulaAbierto((prev) => !prev)}
-                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 ${
+                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:border-slate-500 focus-visible:outline-none hover:bg-slate-200 ${
                     tipoCedulaAbierto
-                      ? "border-blue-400 bg-surface"
+                      ? "border-slate-500 bg-surface"
                       : "border-border-strong"
                   }`}
                 >

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Button, cn, Input, Label, useToast } from '../../../shared/ui';
 import { Loader2 } from 'lucide-react';
 import { useFocusTrap } from '../../../shared/hooks/useFocusTrap';
+import { useEscapeKey } from '../../../shared/hooks/useEscapeKey';
 import { useListarParroquias } from '../hooks/hooksNuevos/useListarParroquias';
 import { useListarPresbiteros } from '../hooks/hooksNuevos/useListarPresbiteros';
 import {
@@ -40,7 +42,7 @@ const inputClass = (hasError = false) =>
     'w-full rounded-md border px-3 py-2.5 text-sm transition-colors focus:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928]',
     hasError
       ? 'border-red-500 bg-red-50 focus:border-red-600 dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)]'
-      : 'border-gray-300 focus:border-blue-600',
+      : 'border-gray-300 focus:border-slate-500',
   );
 
 // Mensajes de validación mostrados bajo cada campo, igual que en la solicitud de sacramentos.
@@ -216,12 +218,11 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
 
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, isOpen);
+  useEscapeKey(isOpen, onClose, !saving);
 
   useEffect(() => {
     guardarBorradorSacramento({ tipo, idParroquia, idPresbitero, fechaSacramento, observaciones, bautizado, padre, madre, padrino, madrina, abuelos, persona, contrayente1, contrayente2, detalleBautismo, detalleMatrimonio });
   }, [tipo, idParroquia, idPresbitero, fechaSacramento, observaciones, bautizado, padre, madre, padrino, madrina, abuelos, persona, contrayente1, contrayente2, detalleBautismo, detalleMatrimonio]);
-
-  if (!isOpen) return null;
 
   // Reinicia el formulario y elimina el borrador para empezar una inscripción nueva.
   const limpiarProgreso = (mostrarMensaje = true) => {
@@ -780,143 +781,155 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const catalogoCargando = cargandoParroquias || cargandoPresbiteros;
 
   return (
-    <div
-      ref={modalRef}
-      className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 dark:bg-black/60"
-      role="presentation"
-    >
-      <div
-        className="flex max-h-[90vh] w-[90%] max-w-[800px] flex-col overflow-hidden rounded-xl bg-white dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Inscripción sacramental"
-      >
-        <div className="flex flex-col gap-3 border-b border-gray-200 bg-surface-muted px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
-          <h2 className="m-0 text-base text-slate-800 sm:text-lg dark:text-[#f3f6fa]">INSCRIPCIÓN SACRAMENTAL</h2>
-          <div className="flex items-center justify-between gap-2 sm:justify-end">
-            <Button type="button" variant="secondary" className="min-h-8 rounded-lg px-3 py-1 text-xs dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!" onClick={limpiarProgreso} disabled={saving}>
-              LIMPIAR PROGRESO
-            </Button>
-            <button
-              type="button"
-              aria-label="Cerrar"
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
-              onClick={onClose}
-            >
-              ×
-            </button>
-          </div>
-        </div>
-
-        <div className="flex gap-2 border-b border-gray-200 px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
-          {TIPOS.map((t) => {
-            const disponible = habilitado(t);
-            return (
-              <button
-                key={t}
-                type="button"
-                disabled={!disponible}
-                title={disponible ? undefined : 'Complete el sacramento anterior para desbloquear este'}
-                className={cn(
-                  'px-5 py-3 text-sm font-medium transition-colors',
-                  !disponible
-                    ? 'cursor-not-allowed border-0 bg-transparent text-gray-300 dark:text-[#7f8da3]'
-                    : 'cursor-pointer border-0 bg-transparent text-gray-500 hover:text-blue-600 dark:text-[#b7c3d4] dark:hover:text-[#d9a928]',
-                  tipo === t && disponible && 'border-b-2 border-blue-600 text-blue-600 dark:border-[#d9a928] dark:text-[#d9a928]',
-                )}
-                onClick={() => cambiarTab(t)}
-              >
-                {TIPO_SACRAMENTO_LABEL[t].toUpperCase()}
-              </button>
-            );
-          })}
-        </div>
-
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="max-h-[60vh] space-y-4 overflow-y-auto p-6">
-            {catalogoCargando ? (
-              <div className="flex items-center gap-2 py-6 text-sm text-text-secondary dark:text-[#b7c3d4]">
-                <Loader2 size={18} className="animate-spin" /> Cargando catálogos...
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          ref={modalRef}
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 dark:bg-black/60"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.16, ease: 'easeIn' } }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          role="presentation"
+        >
+          <motion.div
+            className="flex max-h-[90vh] w-[90%] max-w-[800px] transform-gpu flex-col overflow-hidden rounded-xl bg-white dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+            initial={{ opacity: 0, scale: 0.97, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 8, transition: { duration: 0.16, ease: 'easeIn' } }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Inscripción sacramental"
+          >
+            <div className="flex flex-col gap-3 border-b border-gray-200 bg-surface-muted px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
+              <h2 className="m-0 text-base text-slate-800 sm:text-lg dark:text-[#f3f6fa]">INSCRIPCIÓN SACRAMENTAL</h2>
+              <div className="flex items-center justify-between gap-2 sm:justify-end">
+                <Button type="button" variant="secondary" className="min-h-8 rounded-lg px-3 py-1 text-xs dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!" onClick={limpiarProgreso} disabled={saving}>
+                  LIMPIAR PROGRESO
+                </Button>
+                <button
+                  type="button"
+                  aria-label="Cerrar"
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
+                  onClick={onClose}
+                >
+                  ×
+                </button>
               </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div>
-                    <Label required>Filial</Label>
-                    <select
-                      value={idParroquia}
-                      onChange={(e) => setIdParroquia(e.target.value)}
-                      className={inputClass(Boolean(errors.idParroquia))}
-                    >
-                      <option value="">Seleccione...</option>
-                      {opcionesLugarCelebracion(parroquias).map((lugar) => (
-                        <option key={lugar.id} value={lugar.id}>
-                          {lugar.nombre}
-                        </option>
-                      ))}
-                    </select>
-                    <ErrorMsg errors={errors} clave="idParroquia" />
-                  </div>
-                  <div>
-                  <Label required>Presbítero</Label>
-                  <select
-                    value={idPresbitero}
-                    onChange={(e) => setIdPresbitero(e.target.value)}
-                    className={inputClass(Boolean(errors.idPresbitero))}
+            </div>
+
+            <div className="flex gap-2 border-b border-gray-200 px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
+              {TIPOS.map((t) => {
+                const disponible = habilitado(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    disabled={!disponible}
+                    title={disponible ? undefined : 'Complete el sacramento anterior para desbloquear este'}
+                    className={cn(
+                      'px-5 py-3 text-sm font-medium transition-colors',
+                      !disponible
+                        ? 'cursor-not-allowed border-0 bg-transparent text-gray-300 dark:text-[#7f8da3]'
+                        : 'cursor-pointer border-0 bg-transparent text-gray-500 hover:text-blue-600 dark:text-[#b7c3d4] dark:hover:text-[#d9a928]',
+                      tipo === t && disponible && 'border-b-2 border-blue-600 text-blue-600 dark:border-[#d9a928] dark:text-[#d9a928]',
+                    )}
+                    onClick={() => cambiarTab(t)}
                   >
-                      <option value="">Seleccione...</option>
-                      {(presbiteros ?? []).map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.nombre} {p.primerApellido}
-                        </option>
-                      ))}
-                    </select>
-                    <ErrorMsg errors={errors} clave="idPresbitero" />
-                  </div>
-                  <div>
-                    <Label required>Fecha de celebración</Label>
-                    <Input
-                      type="date"
-                      className={inputClass(Boolean(errors.fechaSacramento))}
-                      value={fechaSacramento}
-                      onChange={(e) => setFechaSacramento(e.target.value)}
-                    />
-                    <ErrorMsg errors={errors} clave="fechaSacramento" />
-                  </div>
-                </div>
+                    {TIPO_SACRAMENTO_LABEL[t].toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
 
-                {tipo === 'bautismo' && renderBautismo()}
-                {tipo === 'matrimonio' && renderMatrimonio()}
-
-                {tipo === 'bautismo' && (
-                  <div>
-                    <Label>Observaciones</Label>
-                    <Input
-                      type="text"
-                      maxLength={500}
-                      value={observaciones}
-                      onChange={(e) => setObservaciones(e.target.value)}
-                    />
-                    <p className="m-0 mt-1 text-right text-xs text-slate-400 dark:text-[#7f8da3]">
-                      {observaciones.length}/500 caracteres
-                    </p>
+            <form onSubmit={handleSubmit} noValidate>
+              <div className="max-h-[60vh] scrollbar-contenedor space-y-4 overflow-y-auto p-6">
+                {catalogoCargando ? (
+                  <div className="flex items-center gap-2 py-6 text-sm text-text-secondary dark:text-[#b7c3d4]">
+                    <Loader2 size={18} className="animate-spin" /> Cargando catálogos...
                   </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <div>
+                        <Label required>Filial</Label>
+                        <select
+                          value={idParroquia}
+                          onChange={(e) => setIdParroquia(e.target.value)}
+                          className={inputClass(Boolean(errors.idParroquia))}
+                        >
+                          <option value="">Seleccione...</option>
+                          {opcionesLugarCelebracion(parroquias).map((lugar) => (
+                            <option key={lugar.id} value={lugar.id}>
+                              {lugar.nombre}
+                            </option>
+                          ))}
+                        </select>
+                        <ErrorMsg errors={errors} clave="idParroquia" />
+                      </div>
+                      <div>
+                      <Label required>Presbítero</Label>
+                      <select
+                        value={idPresbitero}
+                        onChange={(e) => setIdPresbitero(e.target.value)}
+                        className={inputClass(Boolean(errors.idPresbitero))}
+                      >
+                          <option value="">Seleccione...</option>
+                          {(presbiteros ?? []).map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.nombre} {p.primerApellido}
+                            </option>
+                          ))}
+                        </select>
+                        <ErrorMsg errors={errors} clave="idPresbitero" />
+                      </div>
+                      <div>
+                        <Label required>Fecha de celebración</Label>
+                        <Input
+                          type="date"
+                          className={inputClass(Boolean(errors.fechaSacramento))}
+                          value={fechaSacramento}
+                          onChange={(e) => setFechaSacramento(e.target.value)}
+                        />
+                        <ErrorMsg errors={errors} clave="fechaSacramento" />
+                      </div>
+                    </div>
+
+                    {tipo === 'bautismo' && renderBautismo()}
+                    {tipo === 'matrimonio' && renderMatrimonio()}
+
+                    {tipo === 'bautismo' && (
+                      <div>
+                        <Label>Observaciones</Label>
+                        <Input
+                          type="text"
+                          maxLength={500}
+                          value={observaciones}
+                          onChange={(e) => setObservaciones(e.target.value)}
+                        />
+                        <p className="m-0 mt-1 text-right text-xs text-slate-400 dark:text-[#7f8da3]">
+                          {observaciones.length}/500 caracteres
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </div>
+              </div>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-surface-muted px-4 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
-            <Button type="submit" variant="royal" className="w-full sm:w-auto" disabled={saving || catalogoCargando}>
-              {saving ? 'GUARDANDO...' : 'INSCRIBIR ACTA'}
-            </Button>
-            <Button type="button" variant="secondary" className="w-full sm:w-auto dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!" onClick={onClose} disabled={saving}>
-              CANCELAR
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+              <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-surface-muted px-4 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
+                <Button type="submit" variant="royal" className="w-full sm:w-auto" disabled={saving || catalogoCargando}>
+                  {saving ? 'GUARDANDO...' : 'INSCRIBIR ACTA'}
+                </Button>
+                <Button type="button" variant="secondary" className="w-full sm:w-auto dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!" onClick={onClose} disabled={saving}>
+                  CANCELAR
+                </Button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
