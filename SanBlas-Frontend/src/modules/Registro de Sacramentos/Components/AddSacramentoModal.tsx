@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, cn, Input, Label, useToast } from '../../../shared/ui';
 import { Loader2 } from 'lucide-react';
 import { useFocusTrap } from '../../../shared/hooks/useFocusTrap';
+import { useEscapeKey } from '../../../shared/hooks/useEscapeKey';
 import { useListarParroquias } from '../hooks/hooksNuevos/useListarParroquias';
 import { useListarPresbiteros } from '../hooks/hooksNuevos/useListarPresbiteros';
 import {
@@ -216,6 +217,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
 
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, isOpen);
+  useEscapeKey(isOpen, onClose, !saving);
 
   useEffect(() => {
     guardarBorradorSacramento({ tipo, idParroquia, idPresbitero, fechaSacramento, observaciones, bautizado, padre, madre, padrino, madrina, abuelos, persona, contrayente1, contrayente2, detalleBautismo, detalleMatrimonio });
@@ -833,7 +835,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-          <div className="max-h-[60vh] space-y-4 overflow-y-auto p-6">
+          <div className="max-h-[60vh] scrollbar-sacramental space-y-4 overflow-y-auto p-6">
             {catalogoCargando ? (
               <div className="flex items-center gap-2 py-6 text-sm text-text-secondary dark:text-[#b7c3d4]">
                 <Loader2 size={18} className="animate-spin" /> Cargando catálogos...

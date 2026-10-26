@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useEscapeKey } from '../../../shared/hooks/useEscapeKey';
 import { Loader2 } from 'lucide-react';
 import { useObtenerSacramentosPersona } from '../hooks/hooksNuevos/useObtenerSacramentosPersona';
 import {
@@ -79,18 +79,11 @@ const renderBautismo = (detalle: DetalleBautismo) => (
 );
 
 const DetailsDrawer = ({ isOpen, onClose, sacramentoId }: Props) => {
+  useEscapeKey(isOpen, onClose);
+
   // El agregado de la persona se consulta por el id del acta seleccionada.
   const { data: sacramental, isPending, error } =
     useObtenerSacramentosPersona(sacramentoId);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
 
   const persona = sacramental?.persona;
 

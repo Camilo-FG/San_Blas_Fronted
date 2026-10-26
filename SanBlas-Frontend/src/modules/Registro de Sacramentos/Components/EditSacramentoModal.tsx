@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, cn, Input, Label, useToast } from '../../../shared/ui';
 import { Loader2 } from 'lucide-react';
 import { useFocusTrap } from '../../../shared/hooks/useFocusTrap';
+import { useEscapeKey } from '../../../shared/hooks/useEscapeKey';
 import { useObtenerSacramentosPersona } from '../hooks/hooksNuevos/useObtenerSacramentosPersona';
 import { useObtenerSacramentoNuevo } from '../hooks/hooksNuevos/useObtenerSacramentoNuevo';
 import { useListarParroquias } from '../hooks/hooksNuevos/useListarParroquias';
@@ -212,6 +213,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
 
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, isOpen);
+  useEscapeKey(isOpen, onClose, !saving);
 
   const personaSacramental = ficha.data;
   const tieneBautismo = Boolean(personaSacramental?.bautismo);
@@ -332,15 +334,6 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
   useEffect(() => {
     setConsultasCedula({});
   }, [isOpen, sacramentoId]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -897,7 +890,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
+            <div className="min-h-0 flex-1 scrollbar-sacramental space-y-4 overflow-y-auto p-6">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>
                   <Label required>Filial</Label>
