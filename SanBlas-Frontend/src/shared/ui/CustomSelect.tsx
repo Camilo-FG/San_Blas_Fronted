@@ -18,6 +18,7 @@ type CustomSelectProps = {
   disabled?: boolean;
   maxVisibleOptions?: number;
   menuHaciaArriba?: boolean;
+  ariaLabel?: string;
   ref?: Ref<HTMLButtonElement>;
   // opcionales para personalizar por llamada (p. ej. modo oscuro solo en admin)
   triggerClassName?: string;
@@ -38,7 +39,8 @@ export function CustomSelect({
   hasError,
   disabled,
   maxVisibleOptions,
-  menuHaciaArriba = false,
+  menuHaciaArriba,
+  ariaLabel,
   ref,
   triggerClassName,
   menuClassName,
@@ -47,26 +49,78 @@ export function CustomSelect({
   const [open, setOpen] = useState(false);
   const [focusIndex, setFocusIndex] = useState(-1);
   const [maxHeight, setMaxHeight] = useState<number>(240);
+  const [abrirHaciaArriba, setAbrirHaciaArriba] = useState(Boolean(menuHaciaArriba));
   const contenedorRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
   const selected = options.find((o) => o.value === value);
 
+  const obtenerContenedorRecortado = useCallback(
+    (elemento: HTMLElement | null): HTMLElement | null => {
+      let actual = elemento?.parentElement ?? null;
+
+      while (actual && actual !== document.body) {
+        const estilo = window.getComputedStyle(actual);
+        const overflowY = estilo.overflowY;
+        const recorta =
+          overflowY === "auto" ||
+          overflowY === "scroll" ||
+          overflowY === "hidden" ||
+          overflowY === "clip" ||
+          overflowY === "overlay";
+
+        if (recorta) return actual;
+        actual = actual.parentElement;
+      }
+
+      return null;
+    },
+    [],
+  );
+
   const calcMaxHeight = useCallback(() => {
     if (!triggerRef.current) return;
+
     const rect = triggerRef.current.getBoundingClientRect();
-    const triggerBottom = rect.bottom + window.scrollY;
-    const viewportBottom = window.scrollY + window.innerHeight;
+    const contenedor = obtenerContenedorRecortado(triggerRef.current);
+    const rectContenedor = contenedor?.getBoundingClientRect();
     const footer = document.querySelector("footer");
-    const footerTop = footer ? footer.getBoundingClientRect().top + window.scrollY : viewportBottom;
-    const available = footerTop - triggerBottom - GAP;
+    const footerTop =
+      contenedor || !footer ? window.innerHeight : footer.getBoundingClientRect().top;
+
+    const limiteSuperior = Math.max(0, rectContenedor?.top ?? 0);
+    const limiteInferior = Math.min(
+      window.innerHeight,
+      rectContenedor?.bottom ?? window.innerHeight,
+      footerTop,
+    );
+    const espacioAbajo = limiteInferior - rect.bottom - GAP;
+    const espacioArriba = rect.top - limiteSuperior - GAP;
+
     const fullHeight = options.length * OPTION_HEIGHT + DROPDOWN_PADDING * 2;
     const cappedHeight = maxVisibleOptions
       ? maxVisibleOptions * OPTION_HEIGHT + DROPDOWN_PADDING * 2
       : fullHeight;
-    setMaxHeight(Math.min(cappedHeight, Math.max(available, OPTION_HEIGHT * 2)));
-  }, [options.length, maxVisibleOptions]);
+    const altoDeseado = Math.min(cappedHeight, fullHeight);
+    const abrirArriba =
+      menuHaciaArriba ??
+      (espacioAbajo < altoDeseado && espacioArriba > espacioAbajo);
+    const espacioDisponible = abrirArriba ? espacioArriba : espacioAbajo;
+
+    setAbrirHaciaArriba(abrirArriba);
+    setMaxHeight(
+      Math.max(
+        Math.min(altoDeseado, espacioDisponible),
+        OPTION_HEIGHT + DROPDOWN_PADDING * 2,
+      ),
+    );
+  }, [
+    options.length,
+    maxVisibleOptions,
+    menuHaciaArriba,
+    obtenerContenedorRecortado,
+  ]);
 
   const closeAndRefocus = useCallback(() => {
     setOpen(false);
@@ -134,12 +188,25 @@ export function CustomSelect({
       });
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const cerrarAlRedimensionar = () => {
+      setOpen(false);
+      setFocusIndex(-1);
+    };
+
+    window.addEventListener("resize", cerrarAlRedimensionar);
+    return () => window.removeEventListener("resize", cerrarAlRedimensionar);
+  }, [open]);
+
   const handleTriggerKeyDown = (e: React.KeyboardEvent) => {
     if (disabled) return;
 
     if (e.key === "Escape") {
       if (open) {
         e.preventDefault();
+        e.stopPropagation();
         closeAndRefocus();
       }
       return;
@@ -196,6 +263,7 @@ export function CustomSelect({
   const handleOptionKeyDown = (e: React.KeyboardEvent, optValue: string) => {
     if (e.key === "Escape") {
       e.preventDefault();
+      e.stopPropagation();
       closeAndRefocus();
       return;
     }
@@ -244,6 +312,7 @@ export function CustomSelect({
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-label={ariaLabel}
         onClick={() => {
           if (!open) calcMaxHeight();
           setOpen((prev) => !prev);
@@ -281,19 +350,19 @@ export function CustomSelect({
             role="listbox"
             initial={{
               opacity: 0,
-              y: menuHaciaArriba ? 6 : -6,
+              y: abrirHaciaArriba ? 6 : -6,
               scale: 0.98,
             }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{
               opacity: 0,
-              y: menuHaciaArriba ? 6 : -6,
+              y: abrirHaciaArriba ? 6 : -6,
               scale: 0.98,
             }}
             transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
             className={cn(
               "absolute left-0 z-[9999] w-full overflow-auto rounded-[8px] border-2 border-[#16243c]/25 bg-white p-1 shadow-[0_16px_35px_rgba(6,15,32,0.18)]",
-              menuHaciaArriba ? "bottom-full mb-1.5" : "top-full mt-1.5",
+              abrirHaciaArriba ? "bottom-full mb-1.5" : "top-full mt-1.5",
               menuClassName,
             )}
             style={{ maxHeight }}
@@ -309,7 +378,7 @@ export function CustomSelect({
                     onClick={() => selectOption(option.value)}
                     onKeyDown={(e) => handleOptionKeyDown(e, option.value)}
                     className={cn(
-                      "flex w-full cursor-pointer items-center rounded-[6px] px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:outline-none",
+                      "flex w-full cursor-pointer items-center rounded-[6px] px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none",
                       enfocado
                         ? "bg-[#aa7323]/20 text-[#aa7323]"
                         : activo

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Button, cn, Input, Label, useToast } from '../../../shared/ui';
+import { Button, cn, CustomSelect, Input, Label, useToast } from '../../../shared/ui';
 import { Loader2 } from 'lucide-react';
 import { useFocusTrap } from '../../../shared/hooks/useFocusTrap';
 import { useEscapeKey } from '../../../shared/hooks/useEscapeKey';
@@ -24,9 +24,15 @@ import {
   numeroValido,
   soloLetras,
   soloNumeros,
+  soloTextoSeguro,
   textoEnRango,
+  textoSeguroValido,
 } from '../../../shared/utils/formValidation';
 import { opcionesLugarCelebracion } from '../constants/filialesCelebracion';
+import {
+  opcionesParentescoAbuelo,
+  PARENTESCOS_ABUELOS,
+} from '../constants/parentescosAbuelos';
 import { obtenerDatosCedula } from '../../../services/cedulaService';
 
 interface Props {
@@ -39,12 +45,8 @@ interface Props {
 
 const TIPOS: TipoSacramento[] = ['bautismo', 'comunion', 'confirmacion', 'matrimonio'];
 
-const PARENTESCOS: ParentescoAbuelo[] = [
-  'abuelo_paterno',
-  'abuela_paterna',
-  'abuelo_materno',
-  'abuela_materna',
-];
+const LUGAR_NACIMIENTO_MAX = 60;
+const OBSERVACIONES_MAX = 500;
 
 const inputClass = (hasError = false) =>
   cn(
@@ -53,6 +55,20 @@ const inputClass = (hasError = false) =>
       ? 'border-red-500 bg-red-50 focus:border-red-600 dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)]'
       : 'border-gray-300 focus:border-slate-500',
   );
+
+const selectTriggerClass = (hasError = false) =>
+  cn(
+    'rounded-md! border! px-3! py-2.5! text-sm! font-normal! text-slate-900!',
+    hasError
+      ? 'border-red-500! bg-red-50! hover:bg-red-50! focus-visible:border-red-600! dark:border-[#e66a6a]! dark:bg-[rgba(230,106,106,0.10)]! dark:hover:bg-[rgba(230,106,106,0.10)]! dark:text-[#f3f6fa]!'
+      : 'border-gray-300! bg-white! hover:bg-white! focus-visible:border-slate-500! dark:border-[rgba(220,230,242,0.12)]! dark:bg-[#0f1d33]! dark:text-[#f3f6fa]! dark:hover:bg-[#0f1d33]! dark:focus-visible:border-[#d9a928]!',
+  );
+
+const selectMenuClass =
+  'rounded-md! border! border-gray-200! bg-white! shadow-[0_16px_35px_rgba(6,15,32,0.14)]! dark:border-[rgba(220,230,242,0.12)]! dark:bg-[#0f1d33]! dark:shadow-[0_18px_40px_rgba(0,0,0,0.5)]!';
+
+const selectOptionClass =
+  'font-normal! dark:text-[#c7d2e3]! dark:hover:bg-white/[0.06]! dark:hover:text-[#f3f6fa]!';
 
 // Mensajes de validación mostrados bajo cada campo, igual que en la solicitud de sacramentos.
 const MENSAJES: Record<string, string> = {
@@ -160,7 +176,7 @@ const bautismoDesdeDetalle = (detalle: DetalleBautismo): BautismoForm => ({
   })),
   fechaNacimiento: detalle.fechaNacimiento ?? '',
   horaNacimiento: detalle.horaNacimiento ?? '',
-  lugarNacimiento: detalle.lugarNacimiento ?? '',
+  lugarNacimiento: soloTextoSeguro(detalle.lugarNacimiento ?? '', LUGAR_NACIMIENTO_MAX),
   libro: detalle.libro ?? '',
   folio: detalle.folio ?? '',
   asiento: detalle.asiento ?? '',
@@ -317,7 +333,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
     setIdParroquia(String(detalle.parroquia?.id ?? ''));
     setIdPresbitero(detalle.presbitero ? String(detalle.presbitero.id) : '');
     setFechaSacramento(detalle.fechaSacramento ?? '');
-    setObservaciones(detalle.observaciones ?? '');
+    setObservaciones(soloTextoSeguro(detalle.observaciones ?? '', OBSERVACIONES_MAX));
   }, [isOpen, detalleQuery.data]);
 
   // Al cambiar de pestaña, precarga los datos base de ese sacramento si existe.
@@ -327,7 +343,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
     setIdParroquia(String(detalle.parroquia?.id ?? ''));
     setIdPresbitero(detalle.presbitero ? String(detalle.presbitero.id) : '');
     setFechaSacramento(detalle.fechaSacramento ?? '');
-    setObservaciones(detalle.observaciones ?? '');
+    setObservaciones(soloTextoSeguro(detalle.observaciones ?? '', OBSERVACIONES_MAX));
     setErrors({});
   }, [isOpen, activeTab, existeEnTab]);
 
@@ -359,7 +375,14 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
     valor: string,
   ) => {
     const numerico = ['libro', 'folio', 'asiento'].includes(campo);
-    setBautismo((prev) => ({ ...prev, [campo]: numerico ? soloNumeros(valor) : valor }));
+    setBautismo((prev) => ({
+      ...prev,
+      [campo]: numerico
+        ? soloNumeros(valor)
+        : campo === 'lugarNacimiento'
+          ? soloTextoSeguro(valor, LUGAR_NACIMIENTO_MAX)
+          : valor,
+    }));
   };
 
   const setCampoMatrimonio = (
@@ -479,7 +502,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
 
   const agregarAbueloBautismo = () => {
     const usados = bautismo.abuelos.map((a) => a.parentesco);
-    const disponible = PARENTESCOS.find((p) => !usados.includes(p));
+    const disponible = PARENTESCOS_ABUELOS.find((p) => !usados.includes(p));
     if (!disponible) {
       showToast('Ya están registrados los 4 abuelos', 'error');
       return;
@@ -527,6 +550,11 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
       if (!bautismo.horaNacimiento) nuevos.horaNacimiento = MENSAJES.horaNacimiento;
       if (!bautismo.lugarNacimiento.trim())
         nuevos.lugarNacimiento = MENSAJES.lugarNacimiento;
+      else if (!textoSeguroValido(bautismo.lugarNacimiento, LUGAR_NACIMIENTO_MAX))
+        nuevos.lugarNacimiento =
+          'El lugar de nacimiento contiene caracteres no permitidos.';
+      if (observaciones.trim() && !textoSeguroValido(observaciones, OBSERVACIONES_MAX))
+        nuevos.observaciones = 'Las observaciones contienen caracteres no permitidos.';
       if (
         bautismo.fechaNacimiento &&
         fechaSacramento &&
@@ -555,7 +583,9 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
     idPresbitero: idPresbitero ? Number(idPresbitero) : undefined,
     fechaSacramento,
     // Las observaciones solo se registran en el bautismo; los demás sacramentos van únicamente con lugar y fecha.
-    ...(activeTab === 'bautismo' ? { observaciones: observaciones.trim() || undefined } : {}),
+    ...(activeTab === 'bautismo'
+      ? { observaciones: soloTextoSeguro(observaciones, OBSERVACIONES_MAX).trim() || undefined }
+      : {}),
   });
 
   const construirSeccion = () => {
@@ -572,7 +602,9 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
             : undefined,
           fechaNacimiento: bautismo.fechaNacimiento || undefined,
           horaNacimiento: bautismo.horaNacimiento || undefined,
-          lugarNacimiento: (bautismo.lugarNacimiento || '').trim() || undefined,
+          lugarNacimiento:
+            soloTextoSeguro(bautismo.lugarNacimiento || '', LUGAR_NACIMIENTO_MAX).trim() ||
+            undefined,
           libro: (bautismo.libro || '').trim() || undefined,
           folio: (bautismo.folio || '').trim() || undefined,
           asiento: (bautismo.asiento || '').trim() || undefined,
@@ -715,30 +747,31 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
             const estadoCedulaAbuelo = estadoConsultaCedula(`abuelo-${idx}`, ab.cedula);
             const abueloBloqueado =
               cedulaDigitosValidos(ab.cedula).length === 9 && estadoCedulaAbuelo === null;
+            const parentescosUsados = bautismo.abuelos
+              .filter((_, i) => i !== idx)
+              .map((a) => a.parentesco);
             return (
             <div key={idx} className="rounded-md border border-gray-200 p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
-              <select
+              <CustomSelect
+                className="mb-2"
                 value={ab.parentesco}
-                onChange={(e) =>
+                onChange={(parentesco) =>
                   setBautismo((prev) => ({
                     ...prev,
                     abuelos: prev.abuelos.map((a, i) =>
-                      i === idx ? { ...a, parentesco: e.target.value as ParentescoAbuelo } : a,
+                      i === idx
+                        ? { ...a, parentesco: parentesco as ParentescoAbuelo }
+                        : a,
                     ),
                   }))
                 }
-                className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:focus:border-[#d9a928]"
-              >
-                {PARENTESCOS.map((p) => (
-                  <option
-                    key={p}
-                    value={p}
-                    disabled={bautismo.abuelos.some((a, i) => a.parentesco === p && i !== idx)}
-                  >
-                    {p.replaceAll('_', ' ')}
-                  </option>
-                ))}
-              </select>
+                options={opcionesParentescoAbuelo(parentescosUsados, ab.parentesco)}
+                ariaLabel="Parentesco del abuelo"
+                maxVisibleOptions={4}
+                triggerClassName={selectTriggerClass()}
+                menuClassName={selectMenuClass}
+                optionClassName={selectOptionClass}
+              />
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div>
                   <div className="relative">
@@ -779,7 +812,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
         </div>
         <div>
           <Label required>Lugar de nacimiento</Label>
-          <Input type="text" maxLength={60} className={inputClass(Boolean(errors.lugarNacimiento))} value={bautismo.lugarNacimiento} onChange={(e) => setCampoBautismo('lugarNacimiento', e.target.value)} />
+          <Input type="text" maxLength={LUGAR_NACIMIENTO_MAX} className={inputClass(Boolean(errors.lugarNacimiento))} value={bautismo.lugarNacimiento} onChange={(e) => setCampoBautismo('lugarNacimiento', e.target.value)} />
           <ErrorMsg errors={errors} clave="lugarNacimiento" />
         </div>
         <div>
@@ -907,37 +940,43 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <div>
                       <Label required>Filial</Label>
-                      <select
+                      <CustomSelect
                         value={idParroquia}
-                        onChange={(e) => setIdParroquia(e.target.value)}
-                        className={inputClass(Boolean(errors.idParroquia))}
-                      >
-                        <option value="">Seleccione...</option>
-                        {opcionesLugarCelebracion(
+                        onChange={setIdParroquia}
+                        options={opcionesLugarCelebracion(
                           parroquias,
                           sacramentoDelTab?.parroquia ?? null,
-                        ).map((lugar) => (
-                          <option key={lugar.id} value={lugar.id}>
-                            {lugar.nombre}
-                          </option>
-                        ))}
-                      </select>
+                        ).map((lugar) => ({
+                          label: lugar.nombre,
+                          value: String(lugar.id),
+                        }))}
+                        placeholder="Seleccione..."
+                        ariaLabel="Filial"
+                        hasError={Boolean(errors.idParroquia)}
+                        maxVisibleOptions={5}
+                        triggerClassName={selectTriggerClass(Boolean(errors.idParroquia))}
+                        menuClassName={selectMenuClass}
+                        optionClassName={selectOptionClass}
+                      />
                       <ErrorMsg errors={errors} clave="idParroquia" />
                     </div>
                     <div>
                       <Label required>Presbítero</Label>
-                      <select
+                      <CustomSelect
                         value={idPresbitero}
-                        onChange={(e) => setIdPresbitero(e.target.value)}
-                        className={inputClass(Boolean(errors.idPresbitero))}
-                      >
-                        <option value="">Seleccione...</option>
-                        {(presbiteros ?? []).map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.nombre} {p.primerApellido}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={setIdPresbitero}
+                        options={(presbiteros ?? []).map((p) => ({
+                          label: `${p.nombre} ${p.primerApellido}`,
+                          value: String(p.id),
+                        }))}
+                        placeholder="Seleccione..."
+                        ariaLabel="Presbítero"
+                        hasError={Boolean(errors.idPresbitero)}
+                        maxVisibleOptions={5}
+                        triggerClassName={selectTriggerClass(Boolean(errors.idPresbitero))}
+                        menuClassName={selectMenuClass}
+                        optionClassName={selectOptionClass}
+                      />
                       <ErrorMsg errors={errors} clave="idPresbitero" />
                     </div>
                     <div>
@@ -958,9 +997,17 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
                   {activeTab === 'bautismo' && (
                     <div>
                       <Label>Observaciones</Label>
-                      <Input type="text" maxLength={500} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
+                      <Input
+                        type="text"
+                        maxLength={OBSERVACIONES_MAX}
+                        value={observaciones}
+                        onChange={(e) =>
+                          setObservaciones(soloTextoSeguro(e.target.value, OBSERVACIONES_MAX))
+                        }
+                      />
+                      <ErrorMsg errors={errors} clave="observaciones" />
                       <p className="m-0 mt-1 text-right text-xs text-slate-400 dark:text-[#7f8da3]">
-                        {observaciones.length}/500 caracteres
+                        {observaciones.length}/{OBSERVACIONES_MAX} caracteres
                       </p>
                     </div>
                   )}
