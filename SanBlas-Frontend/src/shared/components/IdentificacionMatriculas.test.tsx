@@ -131,8 +131,8 @@ for (const [nombre, Pagina, consultar] of [
         fireEvent.click(screen.getByRole("checkbox", { name: "Bautizo" }));
         fireEvent.click(screen.getByRole("radio", { name: "Católico" }));
       } else {
-        fireEvent.click(screen.getByRole("radio", { name: "Soltero(a)" }));
-        fireEvent.click(screen.getByRole("radio", { name: "Padre/Madre" }));
+        fireEvent.change(screen.getByLabelText(/^Estado civil/), { target: { value: "soltero" } });
+        fireEvent.change(screen.getByLabelText(/^Condición/), { target: { value: "padre_madre" } });
       }
       fireEvent.submit(container.querySelector("form")!);
       await waitFor(() => expect(crear).toHaveBeenCalledWith(expect.objectContaining({ cedula: "112345678901", tipoCedula: "extranjera" })));
@@ -175,6 +175,31 @@ for (const [nombre, Pagina, consultar] of [
       expect(input).toHaveValue("");
       fireEvent.change(input, { target: { value: "000102340567" } });
       expect(input).toHaveValue("102340567");
+    });
+
+    it("consulta el estado con Enter y no duplica la petición mientras carga", async () => {
+      let resolver!: (valor: []) => void;
+      vi.mocked(consultar).mockImplementationOnce(() => new Promise<[]>((resolve) => { resolver = resolve; }));
+      render(<Pagina />);
+      fireEvent.click(screen.getByRole("button", { name: "Consultar estado" }));
+      const input = screen.getByPlaceholderText("Ej: 102340567");
+      fireEvent.change(input, { target: { value: "102340567" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+      await waitFor(() => expect(consultar).toHaveBeenCalledTimes(1));
+      fireEvent.keyDown(input, { key: "Enter" });
+      expect(consultar).toHaveBeenCalledTimes(1);
+      resolver([]);
+      await screen.findByText("No hay solicitudes con esa cédula.");
+    });
+
+    it("Enter conserva la validación de la cédula", () => {
+      render(<Pagina />);
+      fireEvent.click(screen.getByRole("button", { name: "Consultar estado" }));
+      const input = screen.getByPlaceholderText("Ej: 102340567");
+      fireEvent.change(input, { target: { value: "123" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+      expect(consultar).not.toHaveBeenCalled();
+      expect(screen.getByText("La cédula debe tener 9 dígitos (nacional) o 12 (extranjera).")).toBeInTheDocument();
     });
 
     it("consulta el estado con la cédula extranjera completa", async () => {
