@@ -1,5 +1,5 @@
 import SeoHead from "../../../seo/SeoHead";
-import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -155,26 +155,9 @@ function esRutaDeCatequesis(pathname: string) {
   ].some((ruta) => pathname === ruta || pathname.startsWith(`${ruta}/`));
 }
 
-function getUserInitial(email?: string | null): string {
-  if (!email) return "A";
-  return email.charAt(0).toUpperCase();
-}
-
-function getRoleLabel(role?: string | null): string {
-  if (!role) return "Usuario";
-  const clave = role.toLowerCase();
-  if (clave === "secretario" || clave === "admin") return "Secretario";
-  if (clave === "catequista") return "Catequista";
-  if (clave === "gestor-eventos") return "Gestor de Eventos";
-  if (clave === "gestor-donaciones") return "Personal de Donaciones";
-  if (clave === "user") return "Usuario";
-  return role;
-}
-
 function Dashboard() {
-  const { user, logout, tienePermiso } = useAuth();
+  const { tienePermiso } = useAuth();
   const { esOscuro, cambiandoTema, alternarTema } = useTheme();
-  const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [barraExpandida, setBarraExpandida] = useState(false);
@@ -230,11 +213,6 @@ function Dashboard() {
     };
   }, [menuAbierto]);
 
-  const handleLogout = () => {
-    logout();
-    navigate({ to: Rutas.login });
-  };
-
   return (
     <>
       <SeoHead page="/login" overrides={{ robots: "noindex, nofollow", title: "Panel Administrativo | Parroquia San Blas", description: "Panel de administración de la Parroquia San Blas de Nicoya." }} />
@@ -258,13 +236,6 @@ function Dashboard() {
             ADMIN
           </span>
           <NotificacionesPanel variante="oscuro" />
-          <Link
-            to={Rutas.dashboardUrl.perfil}
-            aria-label="Ver mi perfil"
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gold font-heading text-[10px] font-bold text-brand-blue uppercase no-underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-          >
-            {getUserInitial(user?.email)}
-          </Link>
           <button
             type="button"
             onClick={() => setMenuAbierto((prev) => !prev)}
@@ -529,42 +500,6 @@ function Dashboard() {
               </span>
             </button>
           </nav>
-        </div>
-
-        <div className="shrink-0 border-t border-gray-800 bg-[#050a12] px-4 py-4 text-xs">
-          <Link
-            to={Rutas.dashboardUrl.perfil}
-            className={cn(
-              "mb-3 flex items-center gap-2.5 rounded-lg p-1.5 no-underline transition-colors hover:bg-white/5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-              pathname === Rutas.dashboardUrl.perfil && "bg-white/5",
-            )}
-            aria-label="Ver mi perfil"
-          >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-gold font-heading text-[10px] font-bold text-brand-blue uppercase">
-              {getUserInitial(user?.email)}
-            </div>
-            <div className={cn("min-w-0 overflow-hidden whitespace-nowrap transition-opacity duration-150", !barraExpandida ? "lg:pointer-events-none lg:opacity-0" : "lg:opacity-100")}>
-              <p className="truncate whitespace-nowrap text-[11px] font-bold text-white">
-                {getRoleLabel(user?.role)}
-              </p>
-              <p className="truncate whitespace-nowrap text-[9px] text-gray-500">{user?.email}</p>
-            </div>
-          </Link>
-          <div className={cn("grid min-w-56 grid-cols-2 gap-2 overflow-hidden transition-[max-height,opacity] duration-200", !barraExpandida ? "lg:max-h-0 lg:opacity-0" : "lg:max-h-16 lg:opacity-100")}>
-            <Link
-              to={Rutas.home}
-              className="w-full rounded bg-white/5 py-1.5 text-center text-[10px] font-semibold whitespace-nowrap text-gray-400 no-underline transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-            >
-              Ver sitio
-            </Link>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="w-full cursor-pointer rounded border-none bg-red-900/20 py-1.5 text-center text-[10px] font-semibold whitespace-nowrap text-red-400 transition-colors hover:bg-red-900/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-            >
-              Cerrar sesión
-            </button>
-          </div>
         </div>
       </aside>
 
