@@ -28,6 +28,7 @@ interface ToastContextValue {
   toasts: Toast[];
   showToast: (message: string, type: ToastType, options?: ToastOptions) => void;
   dismissToast: (id: number) => void;
+  dismissAllToasts: () => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -57,18 +58,38 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const dismissAllToasts = useCallback(() => {
+    setToasts([]);
+  }, []);
+
+  // Espejo del estado para que el listener establecido abajo decida con los
+  // toasts al día sin re-registrar el efecto en cada cambio de lista.
+  const toastsRef = useRef(toasts);
+  toastsRef.current = toasts;
+
+  // Las alertas tienen prioridad: un Escape con toasts visibles descarta el
+  // más reciente (uno por uno) y corta la propagación para que los modales
+  // que escuchan en window (useEscapeKey o cerrarConEsc) no se cierren en la
+  // misma pulsación mientras queden alertas activas.
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setToasts((prev) => (prev.length > 0 ? prev.slice(0, -1) : prev));
-      }
+      if (event.key !== "Escape") return;
+      if (toastsRef.current.length === 0) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      setToasts((prev) => prev.slice(0, -1));
     };
+
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   return (
-    <ToastContext.Provider value={{ toasts, showToast, dismissToast }}>
+    <ToastContext.Provider
+      value={{ toasts, showToast, dismissToast, dismissAllToasts }}
+    >
       {children}
       {typeof document !== "undefined" &&
         createPortal(
@@ -145,6 +166,12 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
 
   const posiciones: ToastPosition[] = ["top-right", "bottom-right"];
 
+  // Las alertas entran deslizándose desde el borde derecho de la pantalla y
+  // se retiran hacia ese mismo borde: el desplazamiento cubre todo el ancho
+  // visible para que nunca "aparezcan de la nada". Solo anima transform y
+  // opacity, de modo que corre en el compositor a 60 fps.
+  const deslizamiento = typeof window === "undefined" ? 600 : window.innerWidth;
+
   return (
     <>
       {posiciones.map((posicion) => {
@@ -176,20 +203,18 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
                       ? { opacity: 0 }
                       : {
                           opacity: 0,
-                          y: posicion === "top-right" ? -14 : 14,
-                          scale: 0.96,
+                          x: deslizamiento,
                         }
                   }
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  animate={{ opacity: 1, x: 0 }}
                   exit={
                     reducirMovimiento
                       ? { opacity: 0 }
                       : {
                           opacity: 0,
-                          y: posicion === "top-right" ? -10 : 10,
-                          scale: 0.97,
+                          x: deslizamiento,
                           transition: {
-                            duration: 0.16,
+                            duration: 0.26,
                             ease: [0.4, 0, 1, 1],
                           },
                         }
