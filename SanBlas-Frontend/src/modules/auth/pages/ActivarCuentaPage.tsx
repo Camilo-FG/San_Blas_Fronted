@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowLeft, MailCheck } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, MailCheck } from "lucide-react";
 import { ApiError } from "../../../services/apiClient";
 import {
   activarCuenta,
@@ -9,9 +9,13 @@ import {
   validarEnlaceActivacion,
 } from "../../../services/authService";
 import Rutas from "../../../routes/Rutas";
-import { Button, FieldError, Input, Label } from "../../../shared/ui";
+import { Button, FieldError, Input, Label, cn } from "../../../shared/ui";
 import SeoHead from "../../../seo/SeoHead";
 import { mensajeErrorCorreo } from "../validarCorreo";
+import {
+  mensajeErrorConfirmacion,
+  mensajeErrorContrasena,
+} from "../validarContrasena";
 import {
   esErrorDeRed,
   MENSAJE_SIN_INTERNET_ENLACE,
@@ -37,6 +41,10 @@ interface ActivarCuentaPageProps {
 export default function ActivarCuentaPage({ token }: ActivarCuentaPageProps) {
   const correoId = useId();
   const errorCorreoId = useId();
+  const contrasenaId = useId();
+  const confirmacionId = useId();
+  const errorContrasenaId = useId();
+  const errorConfirmacionId = useId();
   const [estadoEnlace, setEstadoEnlace] = useState<EstadoEnlace>(
     TOKEN_ACTIVACION.test(token) ? "comprobando" : "rechazado",
   );
@@ -48,6 +56,14 @@ export default function ActivarCuentaPage({ token }: ActivarCuentaPageProps) {
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [errorCampo, setErrorCampo] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
+  const [errorContrasena, setErrorContrasena] = useState<string | null>(null);
+  const [errorConfirmacion, setErrorConfirmacion] = useState<string | null>(
+    null,
+  );
   const [reenvioListo, setReenvioListo] = useState(false);
   const [enviandoReenvio, setEnviandoReenvio] = useState(false);
   const reducirMovimiento = useReducedMotion();
@@ -84,23 +100,36 @@ export default function ActivarCuentaPage({ token }: ActivarCuentaPageProps) {
     };
   }, [formatoValido, reintento, token]);
 
-  const handleActivar = async () => {
+  const handleActivar = async (event: React.FormEvent) => {
+    event.preventDefault();
     setErrorEnvio(null);
     if (estadoEnlace !== "valido") return;
+
+    const errorClave = mensajeErrorContrasena(password);
+    const errorRepeticion = mensajeErrorConfirmacion(confirmPassword, password);
+    setErrorContrasena(errorClave);
+    setErrorConfirmacion(errorRepeticion);
+    if (errorClave || errorRepeticion) return;
+
     if (!navigator.onLine) {
       setErrorEnvio(MENSAJE_SIN_INTERNET_ENLACE);
       return;
     }
     setLoading(true);
     try {
-      await activarCuenta(token);
+      await activarCuenta({ token, password, confirmPassword });
       setEstadoEnlace("activado");
     } catch (err) {
       const mensaje =
         err instanceof ApiError
           ? err.message
           : "No se pudo activar la cuenta. Intente nuevamente.";
-      if (err instanceof ApiError && err.status === 400) {
+      if (
+        err instanceof ApiError &&
+        err.status === 400 &&
+        mensaje !== "Las contraseñas no coinciden" &&
+        !mensaje.startsWith("La contraseña debe")
+      ) {
         setMensajeEnlace(mensaje);
         setEstadoEnlace("rechazado");
         return;
@@ -180,7 +209,7 @@ export default function ActivarCuentaPage({ token }: ActivarCuentaPageProps) {
             <div className="flex flex-col gap-6" role="status">
               <p className="m-0 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-relaxed text-emerald-900 sm:text-base">
                 Tu cuenta fue activada correctamente. Ya puedes iniciar sesión
-                con el correo y la contraseña que te asignaron.
+                con tu correo y la contraseña que elegiste.
               </p>
               <Link
                 to={Rutas.login}
@@ -269,22 +298,113 @@ export default function ActivarCuentaPage({ token }: ActivarCuentaPageProps) {
               )}
             </div>
           ) : (
-            <div className="flex flex-col gap-6">
-              <p className="m-0 text-base leading-relaxed text-text-muted">
-                Confirma la activación de tu cuenta para poder iniciar sesión en
-                el sistema de la Parroquia San Blas.
+            <form onSubmit={(e) => void handleActivar(e)} noValidate>
+              <p className="mb-8 text-base leading-relaxed text-text-muted">
+                Elige tu contraseña para activar la cuenta. Debe tener al menos
+                8 caracteres, con una mayúscula, una minúscula y un número.
               </p>
-              <FieldError message={errorEnvio} />
+
+              <div className="mb-5 flex flex-col gap-2">
+                <Label htmlFor={contrasenaId} required className="mb-0 text-royal-blue">
+                  Contraseña
+                </Label>
+                <div className="relative flex items-center">
+                  <Input
+                    id={contrasenaId}
+                    type={mostrarPassword ? "text" : "password"}
+                    name="new-password"
+                    value={password}
+                    onChange={(event) => {
+                      setPassword(event.target.value);
+                      if (errorContrasena) setErrorContrasena(null);
+                    }}
+                    autoComplete="new-password"
+                    aria-invalid={Boolean(errorContrasena)}
+                    aria-describedby={
+                      errorContrasena ? errorContrasenaId : undefined
+                    }
+                    hasError={Boolean(errorContrasena)}
+                    className="min-h-12 px-4 py-3 pr-12 text-base"
+                  />
+                  <button
+                    type="button"
+                    className={cn(
+                      "absolute right-2.5 inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-text-muted",
+                    )}
+                    onClick={() => setMostrarPassword((valor) => !valor)}
+                    aria-label={
+                      mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                    }
+                    aria-pressed={mostrarPassword}
+                  >
+                    {mostrarPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                <FieldError id={errorContrasenaId} message={errorContrasena} />
+              </div>
+
+              <div className="mb-6 flex flex-col gap-2">
+                <Label
+                  htmlFor={confirmacionId}
+                  required
+                  className="mb-0 text-royal-blue"
+                >
+                  Confirmar contraseña
+                </Label>
+                <div className="relative flex items-center">
+                  <Input
+                    id={confirmacionId}
+                    type={mostrarConfirmacion ? "text" : "password"}
+                    name="confirm-password"
+                    value={confirmPassword}
+                    onChange={(event) => {
+                      setConfirmPassword(event.target.value);
+                      if (errorConfirmacion) setErrorConfirmacion(null);
+                    }}
+                    autoComplete="new-password"
+                    aria-invalid={Boolean(errorConfirmacion)}
+                    aria-describedby={
+                      errorConfirmacion ? errorConfirmacionId : undefined
+                    }
+                    hasError={Boolean(errorConfirmacion)}
+                    className="min-h-12 px-4 py-3 pr-12 text-base"
+                  />
+                  <button
+                    type="button"
+                    className={cn(
+                      "absolute right-2.5 inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-text-muted",
+                    )}
+                    onClick={() => setMostrarConfirmacion((valor) => !valor)}
+                    aria-label={
+                      mostrarConfirmacion
+                        ? "Ocultar contraseña"
+                        : "Mostrar contraseña"
+                    }
+                    aria-pressed={mostrarConfirmacion}
+                  >
+                    {mostrarConfirmacion ? (
+                      <EyeOff size={20} />
+                    ) : (
+                      <Eye size={20} />
+                    )}
+                  </button>
+                </div>
+                <FieldError
+                  id={errorConfirmacionId}
+                  message={errorConfirmacion}
+                />
+              </div>
+
+              <FieldError message={errorEnvio} className="mb-5" />
               <Button
-                type="button"
+                type="submit"
                 variant="royal"
                 className="w-full min-h-12 text-base"
                 disabled={loading}
-                onClick={() => void handleActivar()}
               >
                 {loading ? "Activando..." : "Activar cuenta"}
               </Button>
-            </div>
+            </form>
           )}
         </div>
       </section>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Archive,
   CheckCircle,
@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
 import { AdminPaginationBar } from "../../../../shared/components/admin/AdminPaginationBar";
-import { usePaginacionCliente } from "../../../../shared/hooks/usePaginacionCliente";
+import { usePaginacionServidor } from "../../../../shared/hooks/usePaginacionServidor";
 import { useDebouncedValue } from "../../../../shared/hooks/useDebouncedValue";
 import {
   AdminModule,
@@ -54,15 +54,6 @@ import {
 const inputAdmin =
   "min-h-11 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]";
 
-const coincideBusqueda = (item: InscripcionCatequesisBautismo, texto: string) => {
-  const consulta = texto.trim().toLowerCase();
-  if (!consulta) return true;
-  return [nombreCompleto(item), item.cedula, item.telefono, item.parroquiaOrigen]
-    .join(" ")
-    .toLowerCase()
-    .includes(consulta);
-};
-
 const certificadoVacio: CertificadoBautismo = {
   fechaInicioCatequesis: "",
   fechaFinalizacionCatequesis: "",
@@ -71,6 +62,11 @@ const certificadoVacio: CertificadoBautismo = {
 
 const GestionCatequesisBautismo = () => {
   const { showToast } = useToast();
+  const [vista, setVista] = useState<"solicitudes" | "historial">("solicitudes");
+  const [filtro, setFiltro] = useState<"todos" | "Aprobada" | "Rechazada">("todos");
+  const [busqueda, setBusqueda] = useState("");
+  const busquedaDebounced = useDebouncedValue(busqueda, 400);
+  const paginacion = usePaginacionServidor(`${vista}|${filtro}|${busquedaDebounced}`);
   const {
     pendientes,
     historial,
@@ -81,10 +77,9 @@ const GestionCatequesisBautismo = () => {
     guardando,
     eliminar,
     eliminando,
-  } = useSolicitudesCatequesisBautismo();
-  const [vista, setVista] = useState<"solicitudes" | "historial">("solicitudes");
-  const [filtro, setFiltro] = useState<"todos" | "Aprobada" | "Rechazada">("todos");
-  const [busqueda, setBusqueda] = useState("");
+    total, totales,
+  } = useSolicitudesCatequesisBautismo({ vista, estado: vista === 'historial' && filtro !== 'todos' ? filtro : undefined,
+    busqueda: busquedaDebounced, page: paginacion.pagina, limit: paginacion.registrosPorPagina });
   const [seleccion, setSeleccion] = useState<InscripcionCatequesisBautismo | null>(null);
   const [motivo, setMotivo] = useState("");
   const [certificado, setCertificado] = useState(certificadoVacio);
@@ -94,28 +89,16 @@ const GestionCatequesisBautismo = () => {
   const [eliminarSeleccion, setEliminarSeleccion] =
     useState<InscripcionCatequesisBautismo | null>(null);
 
-  // Debounce de la búsqueda para no recalcular filas ni resetear la página con cada tecla, igual que catequesis.
-  const busquedaDebounced = useDebouncedValue(busqueda, 400);
+  const aprobadas = totales?.aprobadas ?? 0;
+  const rechazadas = totales?.rechazadas ?? 0;
+  const filas = vista === 'solicitudes' ? pendientes : historial;
+  const visibles = filas;
+  const { setTotal } = paginacion;
 
-  const aprobadas = historial.filter((item) => item.estado === "Aprobada").length;
-  const rechazadas = historial.filter((item) => item.estado === "Rechazada").length;
-
-  const filas = useMemo(() => {
-    const base =
-      vista === "solicitudes"
-        ? pendientes
-        : historial.filter((item) => filtro === "todos" || item.estado === filtro);
-    return base.filter((item) => coincideBusqueda(item, busquedaDebounced));
-  }, [busquedaDebounced, filtro, historial, pendientes, vista]);
-
-  // Paginación en cliente con el hook compartido: sanea la página cuando el dataset encoge (antes el "Siguiente" se trababa).
-  const paginacion = usePaginacionCliente(filas, 10);
-  const { visibles, reiniciar } = paginacion;
-
-  // Al cambiar de vista o filtros volvemos a la primera página.
+  // El total llega del servidor, no del número de filas visibles.
   useEffect(() => {
-    reiniciar();
-  }, [vista, filtro, busquedaDebounced, reiniciar]);
+    if (total !== undefined) setTotal(total);
+  }, [total, setTotal]);
 
   const hayFiltros = busqueda.trim() !== "" || (vista === "historial" && filtro !== "todos");
 
@@ -253,7 +236,7 @@ const GestionCatequesisBautismo = () => {
               Total pendientes
             </span>
             <strong className="mt-1.5 block font-heading text-3xl text-royal-blue dark:text-[#f3f6fa]">
-              {pendientes.length}
+              {totales?.pendientes ?? 0}
             </strong>
           </div>
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-[rgba(242,163,74,0.12)] dark:text-[#f2a34a]">

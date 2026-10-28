@@ -57,24 +57,20 @@ const GestionUsuarios = () => {
         nombre: string;
         correo: string;
         telefono: string;
-        contraseña: string;
-        confirmarContraseña: string;
         roles: string[];
     }) => {
         const resultado = await crearUsuario({
             userName: userData.nombre,
             email: userData.correo,
             phoneNumber: userData.telefono,
-            password: userData.contraseña,
-            confirmPassword: userData.confirmarContraseña,
             roles: userData.roles,
         });
 
         if (resultado.ok) {
             showToast(
                 resultado.correoActivacionEnviado
-                    ? 'Usuario creado. Se envió el correo de activación.'
-                    : 'Usuario creado, pero no se pudo enviar el correo de activación. Reenvíelo desde el perfil.',
+                    ? `Invitación enviada a ${userData.correo}.`
+                    : `Usuario creado como pendiente, pero no se pudo enviar el correo a ${userData.correo}. Reenvíe la invitación desde el perfil.`,
                 resultado.correoActivacionEnviado ? 'success' : 'warning',
             );
             setIsModalOpen(false);

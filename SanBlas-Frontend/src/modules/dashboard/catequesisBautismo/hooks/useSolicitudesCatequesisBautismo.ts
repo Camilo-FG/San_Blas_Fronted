@@ -1,10 +1,11 @@
 import { useCallback } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { usePaginaMatriculas } from '../../../../shared/hooks/usePaginaMatriculas';
+import type { FiltrosMatriculas } from '../../../../services/matriculasPaginadas';
 import { ApiError } from "../../../../services/apiClient";
 import {
   actualizarEstadoCatequesisBautismo,
   eliminarInscripcionCatequesisBautismo,
-  listarInscripcionesCatequesisBautismo,
 } from "../../../catequesisBautismo/catequesisBautismoService";
 import type {
   CertificarCatequesisBautismo,
@@ -24,22 +25,11 @@ type CambioEstado = {
   extra?: CertificarCatequesisBautismo | { observacionAdministrativa: string };
 };
 
-export function useSolicitudesCatequesisBautismo() {
+export function useSolicitudesCatequesisBautismo(filtros: FiltrosMatriculas) {
   const queryClient = useQueryClient();
 
-  const solicitudesQuery = useQuery({
-    queryKey: SOLICITUDES_KEY,
-    queryFn: async () =>
-      (await listarInscripcionesCatequesisBautismo("solicitudes")) ?? [],
-    refetchOnWindowFocus: false,
-  });
-
-  const historialQuery = useQuery({
-    queryKey: HISTORIAL_KEY,
-    queryFn: async () =>
-      (await listarInscripcionesCatequesisBautismo("historial")) ?? [],
-    refetchOnWindowFocus: false,
-  });
+  const listado = usePaginaMatriculas<InscripcionCatequesisBautismo>(
+    filtros.vista === 'historial' ? HISTORIAL_KEY[0] : SOLICITUDES_KEY[0], '/catequesis-bautismo', filtros);
 
   const cambiarEstadoMutation = useMutation({
     mutationFn: ({ id, estado, extra }: CambioEstado) =>
@@ -98,16 +88,17 @@ export function useSolicitudesCatequesisBautismo() {
   );
 
   const reintentar = useCallback(() => {
-    void solicitudesQuery.refetch();
-    void historialQuery.refetch();
-  }, [historialQuery, solicitudesQuery]);
+    void listado.refetch();
+  }, [listado]);
 
-  const errorCarga = solicitudesQuery.error ?? historialQuery.error ?? null;
+  const errorCarga = listado.error ?? null;
 
   return {
-    pendientes: solicitudesQuery.data ?? [],
-    historial: historialQuery.data ?? [],
-    cargando: solicitudesQuery.isPending || historialQuery.isPending,
+    pendientes: filtros.vista === 'solicitudes' ? listado.data?.data ?? [] : [],
+    historial: filtros.vista === 'historial' ? listado.data?.data ?? [] : [],
+    total: listado.data?.total,
+    totales: listado.data?.totales,
+    cargando: listado.isPending,
     error: errorCarga
       ? mensajeDeError(errorCarga, "No se pudieron cargar las solicitudes.")
       : "",

@@ -20,7 +20,7 @@ import {
     useReactTable,
     SortingState,
 } from '@tanstack/react-table';
-import { Usuario } from '../../../../types/Usuario';
+import { etiquetaEstadoUsuario, Usuario } from '../../../../types/Usuario';
 import { etiquetaRol, type Rol } from '../../../../types/Rol';
 import { useAuth } from '../../../../context/AuthContext';
 import UpdateUserModal from '../UpdateUserModal/UpdateUserModal';
@@ -226,18 +226,26 @@ export const UserList = ({
             }),
             columnHelper.accessor('state', {
                 header: 'Estado',
-                cell: (info) => (
-                    <Badge
-                        variant={info.getValue() ? 'success' : 'danger'}
-                        className={
-                            info.getValue()
-                                ? 'dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]'
-                                : 'dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]'
-                        }
-                    >
-                        {info.getValue() ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                ),
+                cell: (info) => {
+                    const usuario = info.row.original;
+                    const etiqueta = etiquetaEstadoUsuario(usuario);
+                    const activo = usuario.state;
+                    const pendiente = Boolean(usuario.pendienteActivacion);
+                    return (
+                        <Badge
+                            variant={activo ? 'success' : pendiente ? 'warning' : 'danger'}
+                            className={
+                                activo
+                                    ? 'dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]'
+                                    : pendiente
+                                      ? 'dark:border-amber-400 dark:bg-[rgba(245,158,11,0.12)] dark:text-amber-300'
+                                      : 'dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]'
+                            }
+                        >
+                            {etiqueta}
+                        </Badge>
+                    );
+                },
             }),
             columnHelper.accessor('creationDate', {
                 header: 'Fecha de Creación',
@@ -396,7 +404,7 @@ export const UserList = ({
                         >
                             <option value="all">Todos</option>
                             <option value="active">Activo</option>
-                            <option value="inactive">Inactivo</option>
+                            <option value="inactive">Inactivo / pendiente</option>
                         </Select>
                     </div>
                     <div className="flex gap-2">
@@ -558,14 +566,22 @@ export const UserList = ({
                                         subtitle={etiquetaRol(usuario.role, roles)}
                                         badges={
                                             <Badge
-                                                variant={usuario.state ? 'success' : 'danger'}
+                                                variant={
+                                                    usuario.state
+                                                        ? 'success'
+                                                        : usuario.pendienteActivacion
+                                                          ? 'warning'
+                                                          : 'danger'
+                                                }
                                                 className={
                                                     usuario.state
                                                         ? 'dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]'
-                                                        : 'dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]'
+                                                        : usuario.pendienteActivacion
+                                                          ? 'dark:border-amber-400 dark:bg-[rgba(245,158,11,0.12)] dark:text-amber-300'
+                                                          : 'dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]'
                                                 }
                                             >
-                                                {usuario.state ? 'Activo' : 'Inactivo'}
+                                                {etiquetaEstadoUsuario(usuario)}
                                             </Badge>
                                         }
                                         meta={[
@@ -704,7 +720,9 @@ export const UserList = ({
                             ?{' '}
                             {usuarioAEliminar.state
                                 ? 'Esta acción no se puede deshacer: la cuenta quedará inactiva y dejará de aparecer en el listado.'
-                                : 'La cuenta ya está inactiva: se eliminará de forma permanente y el correo quedará libre.'}
+                                : usuarioAEliminar.pendienteActivacion
+                                  ? 'La invitación se cancelará: la cuenta se eliminará de forma permanente y el correo quedará libre.'
+                                  : 'La cuenta ya está inactiva: se eliminará de forma permanente y el correo quedará libre.'}
                         </>
                     ) : (
                         ''
@@ -760,7 +778,9 @@ export const UserList = ({
                             ? { userName: normalizarTexto(data.nombre) }
                             : {}),
                         phoneNumber: normalizarTexto(data.telefono),
-                        ...(data.contraseña.trim()
+                        ...(data.contraseña.trim() &&
+                        usuarioEditando.state &&
+                        !usuarioEditando.pendienteActivacion
                             ? {
                                   password: data.contraseña.trim(),
                                   confirmPassword: data.contraseña.trim(),

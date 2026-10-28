@@ -2,11 +2,13 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import GestionCatequesisBautismo from "./GestionCatequesisBautismo";
-import { actualizarEstadoCatequesisBautismo, listarInscripcionesCatequesisBautismo } from "../../../catequesisBautismo/catequesisBautismoService";
+import { actualizarEstadoCatequesisBautismo } from "../../../catequesisBautismo/catequesisBautismoService";
+import { listarPaginaMatriculas } from '../../../../services/matriculasPaginadas';
 import type { InscripcionCatequesisBautismo } from "../../../catequesisBautismo/types";
 import { ApiError } from "../../../../services/apiClient";
 
 const { showToast } = vi.hoisted(() => ({ showToast: vi.fn() }));
+vi.mock('../../../../services/matriculasPaginadas', () => ({ listarPaginaMatriculas: vi.fn() }));
 vi.mock("../../../../shared/ui", async (original) => ({
   ...await original<typeof import("../../../../shared/ui")>(),
   useToast: () => ({ showToast }),
@@ -27,15 +29,17 @@ const solicitud: InscripcionCatequesisBautismo = {
   fechaSolicitud: "2026-01-01T12:00:00Z", fechaActualizacionEstado: null,
 };
 
+const pagina = (data: InscripcionCatequesisBautismo[]) => ({ data, total: data.length, page: 1, limit: 10, totales: { pendientes: 1, aprobadas: 0, rechazadas: 0 } });
+
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(listarInscripcionesCatequesisBautismo).mockImplementation(async (vista) => vista === "solicitudes" ? [{ ...solicitud }] : []);
+  vi.mocked(listarPaginaMatriculas).mockImplementation(async (_ruta, filtros) => pagina(filtros.vista === "solicitudes" ? [{ ...solicitud }] : []));
 });
 
 async function abrir(estado = "Pendiente") {
   const registro = { ...solicitud, estado };
-  vi.mocked(listarInscripcionesCatequesisBautismo).mockImplementation(async (vista) =>
-    (vista === "solicitudes") === (estado === "Pendiente") ? [registro] : [],
+  vi.mocked(listarPaginaMatriculas).mockImplementation(async (_ruta, filtros) =>
+    pagina((filtros.vista === "solicitudes") === (estado === "Pendiente") ? [registro] : []),
   );
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   const invalidar = vi.spyOn(client, "invalidateQueries");
@@ -50,7 +54,10 @@ describe("rechazo de solicitudes de bautismo", () => {
   it("bloquea vacío, espacios y menos de cinco caracteres", async () => {
     await abrir();
     const rechazar = screen.getByRole("button", { name: "Rechazar" });
-    expect(rechazar).toHaveClass("bg-red-600");
+    expect(screen.getByRole("button", { name: "Aprobar" })).toHaveClass("bg-royal-blue");
+    expect(rechazar).toHaveClass("bg-slate-200", "hover:bg-slate-300!", "dark:bg-white/5!", "dark:hover:bg-white/15!");
+    expect(rechazar).toHaveStyle({ backgroundColor: "#e2e8f0" });
+    expect(rechazar).not.toHaveClass("bg-red-600");
     fireEvent.click(rechazar);
     const confirmar = screen.getByRole("button", { name: "Rechazar solicitud" });
     const motivo = screen.getByPlaceholderText("Ej: No completó las charlas.");
@@ -80,7 +87,7 @@ describe("rechazo de solicitudes de bautismo", () => {
 
   it("envía el motivo recortado, invalida ambas listas y confirma el éxito", async () => {
     vi.mocked(actualizarEstadoCatequesisBautismo).mockImplementationOnce(async () => {
-      vi.mocked(listarInscripcionesCatequesisBautismo).mockImplementation(async (vista) => vista === "solicitudes" ? [] : [{ ...solicitud, estado: "Rechazada" }]);
+      vi.mocked(listarPaginaMatriculas).mockImplementation(async (_ruta, filtros) => pagina(filtros.vista === "solicitudes" ? [] : [{ ...solicitud, estado: "Rechazada" }]));
       return { ...solicitud, estado: "Rechazada" };
     });
     const { invalidar } = await abrir();

@@ -60,17 +60,22 @@ const UpdateUserModal: React.FC<Props> = ({
       estado: true,
     },
     onSubmit: async ({ value }) => {
+      const puedeEditarContrasena =
+        Boolean(usuario?.state) && !usuario?.pendienteActivacion;
       onSave({
         ...value,
         nombre: normalizarTexto(value.nombre),
         correo: normalizarTexto(value.correo),
         telefono: normalizarTexto(value.telefono),
-        contraseña: value.contraseña.trim(),
+        contraseña: puedeEditarContrasena ? value.contraseña.trim() : '',
       });
     },
   });
 
   const { user: usuarioSesion } = useAuth();
+  // Solo cuentas activas: pendientes eligen contraseña al activar.
+  const puedeEditarContrasena =
+    Boolean(usuario?.state) && !usuario?.pendienteActivacion;
   // controla si se ve o se oculta el texto de la nueva contraseña
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   // solo un secretario puede otorgar el rol secretario
@@ -329,9 +334,18 @@ const UpdateUserModal: React.FC<Props> = ({
             <form.Field
               name="contraseña"
               validators={{
-                onChange: ({ value }) => validarContraseña(value),
-                onBlur: ({ value }) => validarContraseña(value),
-                onSubmit: ({ value }) => validarContraseña(value),
+                onChange: ({ value }) =>
+                  puedeEditarContrasena
+                    ? validarContraseña(value)
+                    : undefined,
+                onBlur: ({ value }) =>
+                  puedeEditarContrasena
+                    ? validarContraseña(value)
+                    : undefined,
+                onSubmit: ({ value }) =>
+                  puedeEditarContrasena
+                    ? validarContraseña(value)
+                    : undefined,
               }}
             >
               {(field) => {
@@ -359,9 +373,14 @@ const UpdateUserModal: React.FC<Props> = ({
                       <Input
                         id="u-contraseña"
                         type={mostrarContrasena ? 'text' : 'password'}
-                        placeholder="Dejar vacío para no cambiar"
+                        placeholder={
+                          puedeEditarContrasena
+                            ? 'Dejar vacío para no cambiar'
+                            : 'No disponible hasta activar la cuenta'
+                        }
                         value={field.state.value}
                         hasError={field.state.meta.errors.length > 0}
+                        disabled={!puedeEditarContrasena}
                         onChange={(e) =>
                           field.handleChange(
                             e.target.value.replace(/[^a-zA-Z0-9]/g, ''),
@@ -380,11 +399,12 @@ const UpdateUserModal: React.FC<Props> = ({
                         onClick={() => setMostrarContrasena((prev) => !prev)}
                         aria-label={mostrarContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                         aria-pressed={mostrarContrasena}
+                        disabled={!puedeEditarContrasena}
                       >
                         {mostrarContrasena ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                     </div>
-                    {valor ? (
+                    {puedeEditarContrasena && valor ? (
                       <div className="mt-2 flex items-center gap-2" aria-live="polite">
                         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong dark:bg-white/10">
                           <div
@@ -398,7 +418,9 @@ const UpdateUserModal: React.FC<Props> = ({
                       </div>
                     ) : null}
                     <p className="mt-1 text-xs text-text-muted dark:text-[#7f8da3]">
-                      Incluya mayúscula, minúscula y número.
+                      {puedeEditarContrasena
+                        ? 'Incluya mayúscula, minúscula y número.'
+                        : 'La contraseña la define el usuario al activar la invitación.'}
                     </p>
                     <FieldError message={field.state.meta.errors[0]} />
                   </div>

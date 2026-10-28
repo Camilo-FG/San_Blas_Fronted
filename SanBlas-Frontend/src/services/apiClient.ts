@@ -63,10 +63,22 @@ apiClient.interceptors.response.use(
       const isRestablecerRequest = url
         .toLowerCase()
         .includes("/auth/restablecer-contrasena");
-      const isValidarEnlaceRequest = url
+      const isValidarEnlaceRequest =
+        url.toLowerCase().includes("/auth/validar-enlace-recuperacion") ||
+        url.toLowerCase().includes("/auth/validar-enlace-activacion");
+      const isActivarCuentaRequest = url
         .toLowerCase()
-        .includes("/auth/validar-enlace-recuperacion");
+        .includes("/auth/activar-cuenta");
+      const isReenviarActivacionRequest = url
+        .toLowerCase()
+        .includes("/auth/reenviar-activacion");
       const isConsultaCedula = url.toLowerCase().includes("/usuario/cedula/");
+      const esAuthPublica =
+        isRecuperarRequest ||
+        isRestablecerRequest ||
+        isValidarEnlaceRequest ||
+        isActivarCuentaRequest ||
+        isReenviarActivacionRequest;
 
       if (
         config &&
@@ -74,9 +86,7 @@ apiClient.interceptors.response.use(
         !isRefreshRequest &&
         !isSessionRequest &&
         !isLogoutRequest &&
-        !isRecuperarRequest &&
-        !isRestablecerRequest &&
-        !isValidarEnlaceRequest &&
+        !esAuthPublica &&
         !isConsultaCedula &&
         !config._retry
       ) {
@@ -92,7 +102,7 @@ apiClient.interceptors.response.use(
         }
       }
 
-      if (!isLoginRequest && !isRefreshRequest && !isSessionRequest && !isLogoutRequest && !isRecuperarRequest && !isRestablecerRequest && !isValidarEnlaceRequest && !isConsultaCedula) {
+      if (!isLoginRequest && !isRefreshRequest && !isSessionRequest && !isLogoutRequest && !esAuthPublica && !isConsultaCedula) {
         clearAuthToken();
         const currentPath = window.location.pathname;
         if (!currentPath.startsWith("/login") && !redirigiendoAlLogin) {

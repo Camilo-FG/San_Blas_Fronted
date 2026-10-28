@@ -115,9 +115,13 @@ export const validarEnlaceActivacion = async (
   }
 };
 
-export const activarCuenta = async (token: string): Promise<void> => {
+export const activarCuenta = async (datos: {
+  token: string;
+  password: string;
+  confirmPassword: string;
+}): Promise<void> => {
   try {
-    await apiClient.post("/auth/activar-cuenta", { token });
+    await apiClient.post("/auth/activar-cuenta", datos);
   } catch (error) {
     handleApiError(error);
   }
