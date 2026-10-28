@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
 import { AdminPaginationBar } from "../../../../shared/components/admin/AdminPaginationBar";
+import { ExportarMatriculas } from "../../../../shared/components/admin/ExportarMatriculas";
 import { usePaginacionServidor } from "../../../../shared/hooks/usePaginacionServidor";
 import { useDebouncedValue } from "../../../../shared/hooks/useDebouncedValue";
 import {
@@ -314,6 +315,7 @@ const GestionCatequesisBautismo = () => {
             <RotateCcw size={15} strokeWidth={2} />
             Limpiar
           </button>
+          <ExportarMatriculas modulo="bautismo" disabled={cargando} />
         </div>
       </AdminToolbar>
 
