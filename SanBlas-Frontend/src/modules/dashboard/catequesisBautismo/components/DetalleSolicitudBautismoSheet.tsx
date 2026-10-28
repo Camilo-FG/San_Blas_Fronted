@@ -129,9 +129,11 @@ export function DetalleSolicitudBautismoSheet({
             >
               Aprobar
             </Button>
+            {/* Mismo gris que CICA; el rojo queda para el estado y la confirmación de rechazo. */}
             <Button
-              variant="danger"
-              className="rounded-lg!"
+              variant="secondary"
+              style={{ backgroundColor: "#e2e8f0" }}
+              className="rounded-lg! duration-150 ease-out hover:bg-slate-300! enabled:hover:text-[#dcb55a] dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
               disabled={guardando}
               onClick={onRechazar}
             >

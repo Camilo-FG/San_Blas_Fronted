@@ -1,7 +1,6 @@
 import { useQueries } from "@tanstack/react-query";
 import { useAuth } from "../../../context/AuthContext";
-import { listarInscripcionesCica } from "../../cica/cicaService";
-import { listarInscripcionesCatequesisBautismo } from "../../catequesisBautismo/catequesisBautismoService";
+import { listarPaginaMatriculas } from '../../../services/matriculasPaginadas';
 import { obtenerSolicitudesCatequesis } from "../../../services/catequesis/catequesisService";
 import { obtenerDonaciones } from "../../../services/donacionesService";
 import { obtenerSolicitudesSacramentos } from "../../../services/constancias/constanciasService";
@@ -41,8 +40,8 @@ export function useNotificacionesPanel() {
       {
         queryKey: [...NOTIFICACIONES_PANEL_KEY, "cica"] as const,
         queryFn: async () => {
-          const data = (await listarInscripcionesCica("solicitudes")) ?? [];
-          return data.length;
+          const pagina = await listarPaginaMatriculas('/cica', { vista: 'solicitudes', page: 1, limit: 1 });
+          return pagina.total;
         },
         enabled: puedeCatequesis,
         refetchInterval: REFETCH_MS,
@@ -51,9 +50,8 @@ export function useNotificacionesPanel() {
       {
         queryKey: [...NOTIFICACIONES_PANEL_KEY, "bautismo"] as const,
         queryFn: async () => {
-          const data =
-            (await listarInscripcionesCatequesisBautismo("solicitudes")) ?? [];
-          return data.length;
+          const pagina = await listarPaginaMatriculas('/catequesis-bautismo', { vista: 'solicitudes', page: 1, limit: 1 });
+          return pagina.total;
         },
         enabled: puedeCatequesis,
         refetchInterval: REFETCH_MS,
