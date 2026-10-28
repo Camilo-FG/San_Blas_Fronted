@@ -21,8 +21,10 @@ import { CONDICIONES_BAUTISMO, ETIQUETA_CONDICION, AYUDA_CONDICION_BAUTISMO } fr
 import {
   filtrarApellidoBautismo,
   filtrarNombreBautismo,
+  filtrarNacionalidadBautismo,
   filtrarTelefonoBautismo,
   MAX_APELLIDO_BAUTISMO,
+  MAX_NACIONALIDAD_BAUTISMO,
   MAX_NOMBRE_BAUTISMO,
   validarFormularioCatequesisBautismo,
   type FormularioCatequesisBautismo,
@@ -38,6 +40,7 @@ const vacio: FormularioCatequesisBautismo = {
   fechaNacimiento: "",
   cedula: "",
   tipoCedula: "nacional",
+  nacionalidad: "Costarricense",
   telefono: "",
   estadoCivil: "",
   parroquiaOrigen: "",
@@ -126,9 +129,23 @@ const CatequesisBautismoPage = () => {
     set(clave, filtrarApellidoBautismo(valor));
 
   // Reinicia los datos de la persona al cambiar de cédula; una respuesta atrasada no debe llenar otra solicitud.
+  // Con cédula nacional la nacionalidad nace "Costarricense"; con extranjera queda libre para editarla.
   const cambiarIdentificacion = (valor: string, tipo: TipoCedula) => {
     const cedula = limpiarCedula(valor, tipo);
-    setForm((actual) => ({ ...actual, cedula, tipoCedula: tipo, nombre: "", apellido1: "", apellido2: "" }));
+    setForm((actual) => ({
+      ...actual,
+      cedula,
+      tipoCedula: tipo,
+      nombre: "",
+      apellido1: "",
+      apellido2: "",
+      nacionalidad:
+        tipo === "nacional"
+          ? "Costarricense"
+          : actual.nacionalidad === "Costarricense"
+            ? ""
+            : actual.nacionalidad,
+    }));
     setErrores((actual) => {
       const siguiente = { ...actual };
       for (const clave of ["cedula", "nombre", "apellido1", "apellido2"]) delete siguiente[clave];
@@ -304,6 +321,14 @@ const CatequesisBautismoPage = () => {
                   valor={form.fechaNacimiento}
                   error={errores.fechaNacimiento}
                   onChange={(valor) => set("fechaNacimiento", valor)}
+                />
+                <Campo
+                  etiqueta="Nacionalidad"
+                  maxLength={MAX_NACIONALIDAD_BAUTISMO}
+                  placeholder="Ej: Costarricense"
+                  valor={form.nacionalidad}
+                  error={errores.nacionalidad}
+                  onChange={(valor) => set("nacionalidad", filtrarNacionalidadBautismo(valor))}
                 />
                 <Campo
                   etiqueta="Teléfono"

@@ -2,6 +2,7 @@ import {
   CalendarDays,
   CheckCircle,
   Church,
+  Globe,
   Heart,
   MapPin,
   Phone,
@@ -156,6 +157,8 @@ export function DetalleSolicitudBautismoSheet({
             </p>
             <Separador />
             <Campo label="Cédula" value={valorOGuion(solicitud.cedula)} tabular icon={<User size={16} className="shrink-0" />} />
+            <Separador />
+            <Campo label="Nacionalidad" value={valorOGuion(solicitud.nacionalidad)} icon={<Globe size={16} className="shrink-0" />} />
             <Separador />
             <Campo
               label="Nacimiento"

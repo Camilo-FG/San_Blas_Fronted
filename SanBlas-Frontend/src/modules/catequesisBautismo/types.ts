@@ -27,6 +27,7 @@ export interface InscripcionCatequesisBautismo {
   apellido2: string | null;
   fechaNacimiento: string;
   cedula: string;
+  nacionalidad: string | null;
   telefono: string;
   estadoCivil: EstadoCivilBautismo;
   parroquiaOrigen: string;
@@ -51,6 +52,7 @@ export interface CrearInscripcionCatequesisBautismo {
   apellido2: string | null;
   fechaNacimiento: string;
   cedula: string;
+  nacionalidad: string | null;
   telefono: string;
   estadoCivil: EstadoCivilBautismo;
   parroquiaOrigen: string;

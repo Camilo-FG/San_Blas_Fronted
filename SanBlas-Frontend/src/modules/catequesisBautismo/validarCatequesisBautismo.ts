@@ -7,6 +7,7 @@ import { validarCedulaIdentificacion, type TipoCedula } from "../../shared/utils
 
 export const MAX_NOMBRE_BAUTISMO = 25;
 export const MAX_APELLIDO_BAUTISMO = 25;
+export const MAX_NACIONALIDAD_BAUTISMO = 25;
 
 export const TELEFONO_BAUTISMO = /^[1-9]\d{3}-\d{4}$/;
 const LETRAS_CON_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
@@ -17,6 +18,10 @@ export const filtrarNombreBautismo = (valor: string) =>
 
 export const filtrarApellidoBautismo = (valor: string) =>
   valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, "").slice(0, MAX_APELLIDO_BAUTISMO);
+
+// La nacionalidad admite letras y espacios: "Costarricense", "Nicaragüense", etc.
+export const filtrarNacionalidadBautismo = (valor: string) =>
+  valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "").slice(0, MAX_NACIONALIDAD_BAUTISMO);
 
 export const filtrarTelefonoBautismo = (valor: string) => {
   const soloNumeros = valor.replace(/\D/g, "").replace(/^0+/, "").slice(0, 8);
@@ -32,6 +37,7 @@ export type FormularioCatequesisBautismo = {
   fechaNacimiento: string;
   cedula: string;
   tipoCedula: TipoCedula;
+  nacionalidad: string;
   telefono: string;
   estadoCivil: EstadoCivilBautismo | "";
   parroquiaOrigen: string;
@@ -89,6 +95,15 @@ export const validarFormularioCatequesisBautismo = (
   poner("fechaNacimiento", mensajeFechaNacimientoBautismo(form.fechaNacimiento));
 
   poner("cedula", validarCedulaIdentificacion(form.cedula, form.tipoCedula));
+
+  // La nacionalidad es opcional; si se indica, solo letras y espacios.
+  poner(
+    "nacionalidad",
+    mensajeNombre(form.nacionalidad, "La nacionalidad", false, true)?.replace(
+      "es obligatorio.",
+      "es obligatoria.",
+    ) ?? null,
+  );
 
   if (!form.telefono.trim()) errores.telefono = "El teléfono es obligatorio.";
   else if (!TELEFONO_BAUTISMO.test(form.telefono.trim()))

@@ -87,6 +87,7 @@ describe("Cédulas nacionales y extranjeras de catequesis", () => {
       fechaNacimiento: "",
       cedula: "112345678901",
       tipoCedula: "extranjera",
+      nacionalidad: "",
       telefono: "",
       estadoCivil: "",
       parroquiaOrigen: "",
