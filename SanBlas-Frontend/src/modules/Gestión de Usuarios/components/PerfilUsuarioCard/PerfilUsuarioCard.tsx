@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { AlertOctagon, Mail, Send, User, UserCheck } from "lucide-react";
-import type { Usuario } from "../../../../types/Usuario";
+import {
+  etiquetaEstadoUsuario,
+  type Usuario,
+} from "../../../../types/Usuario";
 import { etiquetaRol, type Rol } from "../../../../types/Rol";
 import { useAuth } from "../../../../context/AuthContext";
 import { ApiError } from "../../../../services/apiClient";
@@ -46,13 +49,17 @@ export function PerfilUsuarioCard({
   const { showToast } = useToast();
   const { actualizarUsuario, loading: actualizando } = useUpdateUser();
   const [activo, setActivo] = useState(usuario.state);
+  const [pendienteActivacion, setPendienteActivacion] = useState(
+    Boolean(usuario.pendienteActivacion),
+  );
   const [confirmando, setConfirmando] = useState(false);
   const [reenviando, setReenviando] = useState(false);
 
   useEffect(() => {
     setActivo(usuario.state);
+    setPendienteActivacion(Boolean(usuario.pendienteActivacion));
     setConfirmando(false);
-  }, [usuario.id, usuario.state]);
+  }, [usuario.id, usuario.state, usuario.pendienteActivacion]);
 
   const nombre = usuario.userName || usuario.email || "Usuario";
   const correo = usuario.email || "—";
@@ -152,14 +159,21 @@ export function PerfilUsuarioCard({
         </div>
         <div className="flex flex-wrap gap-1.5 sm:ml-auto">
           <Badge
-            variant={activo ? "success" : "danger"}
+            variant={
+              activo ? "success" : pendienteActivacion ? "warning" : "danger"
+            }
             className={
               activo
                 ? "dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]"
-                : "dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]"
+                : pendienteActivacion
+                  ? "dark:border-amber-400 dark:bg-[rgba(245,158,11,0.12)] dark:text-amber-300"
+                  : "dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]"
             }
           >
-            {activo ? "Activo" : "Inactivo"}
+            {etiquetaEstadoUsuario({
+              state: activo,
+              pendienteActivacion,
+            })}
           </Badge>
         </div>
       </div>
@@ -192,33 +206,40 @@ export function PerfilUsuarioCard({
             No puede desactivar su propia cuenta, para desactivar, por favor
             comuníquese con el personal secretario.
           </p>
+        ) : !activo && pendienteActivacion ? (
+          <div className="flex flex-col gap-3">
+            <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
+              <AlertOctagon size={18} className="mt-0.5 shrink-0 text-amber-600" />
+              Invitación pendiente: aún no activó la cuenta ni eligió
+              contraseña. Puede reenviar el enlace o eliminar la cuenta desde el
+              listado.
+            </p>
+            <Button
+              variant="royal"
+              className="self-start"
+              onClick={() => void reenviarActivacion()}
+              disabled={reenviando || actualizando}
+            >
+              <Send size={16} />
+              {reenviando ? "Enviando..." : "Reenviar invitación"}
+            </Button>
+          </div>
         ) : !activo ? (
           <div className="flex flex-col gap-3">
             <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
               <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
-              Esta cuenta está inactiva y no puede iniciar sesión. Reenvíe el
-              enlace de activación o reactívela manualmente si corresponde.
+              Esta cuenta está inactiva y no puede iniciar sesión. Puede
+              reactivarla o eliminarla desde el listado.
             </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="royal"
-                className="self-start"
-                onClick={() => void reenviarActivacion()}
-                disabled={reenviando || actualizando}
-              >
-                <Send size={16} />
-                {reenviando ? "Enviando..." : "Reenviar activación"}
-              </Button>
-              <Button
-                variant="outline"
-                className="self-start"
-                onClick={() => void confirmarReactivacion()}
-                disabled={actualizando || reenviando}
-              >
-                <UserCheck size={16} />
-                {actualizando ? "Reactivando..." : "Reactivar cuenta"}
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              className="self-start"
+              onClick={() => void confirmarReactivacion()}
+              disabled={actualizando || reenviando}
+            >
+              <UserCheck size={16} />
+              {actualizando ? "Reactivando..." : "Reactivar cuenta"}
+            </Button>
           </div>
         ) : (
           <div>

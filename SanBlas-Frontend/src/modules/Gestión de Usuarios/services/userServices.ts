@@ -5,8 +5,6 @@ import { normalizarTexto } from '../Utils/normalizarTexto';
 const mapCreateToBackend = (userData: UserCreate) => ({
   nombre: normalizarTexto(userData.userName),
   email: normalizarTexto(userData.email),
-  password: userData.password.trim(),
-  confirmPassword: userData.confirmPassword.trim(),
   ...(userData.roles && userData.roles.length > 0
     ? { roles: userData.roles }
     : {}),
@@ -43,20 +41,28 @@ const leerEstado = (data: Record<string, unknown>): boolean => {
   return true;
 };
 
-const mapBackendToFrontend = (data: Record<string, unknown>): Usuario => ({
-  id: data.id as number,
-  userName: ((data.nombre as string) ?? (data.userName as string)) ?? '',
-  email: (data.email as string) ?? '',
-  phoneNumber: ((data.telefono as string) ?? (data.phoneNumber as string) ?? ''),
-  role: (data.role as string) ?? 'user',
-  roles: Array.isArray(data.roles)
-    ? (data.roles as unknown[]).filter(
-        (rol): rol is string => typeof rol === 'string',
-      )
-    : undefined,
-  state: leerEstado(data),
-  creationDate: leerFechaCreacion(data),
-});
+const mapBackendToFrontend = (data: Record<string, unknown>): Usuario => {
+  const state = leerEstado(data);
+  return {
+    id: data.id as number,
+    userName: ((data.nombre as string) ?? (data.userName as string)) ?? '',
+    email: (data.email as string) ?? '',
+    phoneNumber:
+      ((data.telefono as string) ?? (data.phoneNumber as string) ?? ''),
+    role: (data.role as string) ?? 'user',
+    roles: Array.isArray(data.roles)
+      ? (data.roles as unknown[]).filter(
+          (rol): rol is string => typeof rol === 'string',
+        )
+      : undefined,
+    state,
+    pendienteActivacion:
+      typeof data.pendienteActivacion === 'boolean'
+        ? data.pendienteActivacion
+        : !state,
+    creationDate: leerFechaCreacion(data),
+  };
+};
 
 export const getUsers = async (): Promise<Usuario[]> => {
   try {
