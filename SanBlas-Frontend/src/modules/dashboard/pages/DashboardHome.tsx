@@ -18,7 +18,6 @@ import { ApiError } from "../../../services/apiClient";
 import Rutas from "../../../routes/Rutas";
 import { ErrorMessage } from "../../../shared/ui";
 import { useAuth } from "../../../context/AuthContext";
-import DashboardCharts from "../components/DashboardCharts";
 
 type CardKey = keyof DashboardStats;
 
@@ -248,10 +247,6 @@ function DashboardHome() {
             );
           })}
         </div>
-      )}
-
-      {!error && stats && cardsVisibles.length > 0 && (
-        <DashboardCharts stats={stats} tienePermiso={tienePermiso} />
       )}
 
       {muestraLanding && (
