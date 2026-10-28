@@ -111,8 +111,8 @@ function ChartCard({
   empty?: boolean;
 }) {
   return (
-    <article className="rounded-2xl border border-border bg-surface p-4 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
-      <h3 className="mb-2 m-0 text-sm font-bold text-royal-blue dark:text-[#d9a928]">
+    <article className="rounded-2xl border border-border bg-surface p-3 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
+      <h3 className="mb-1.5 m-0 text-xs font-bold text-royal-blue dark:text-[#d9a928]">
         {title}
       </h3>
       {empty ? (
@@ -120,7 +120,7 @@ function ChartCard({
           Sin datos para graficar
         </p>
       ) : (
-        <div className="h-44 w-full min-w-0 sm:h-48">{children}</div>
+        <div className="h-32 w-full min-w-0 sm:h-36">{children}</div>
       )}
     </article>
   );
@@ -148,8 +148,8 @@ function PieEstado({
           nameKey="name"
           cx="50%"
           cy="50%"
-          innerRadius={36}
-          outerRadius={58}
+          innerRadius={28}
+          outerRadius={46}
           paddingAngle={2}
         >
           {chartData.map((entry, index) => (
@@ -169,8 +169,8 @@ function PieEstado({
         />
         <Legend
           verticalAlign="bottom"
-          height={36}
-          wrapperStyle={{ fontSize: 12 }}
+          height={28}
+          wrapperStyle={{ fontSize: 10 }}
         />
       </PieChart>
     </ResponsiveContainer>
@@ -279,7 +279,7 @@ function DashboardCharts({ stats, tienePermiso }: DashboardChartsProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 lg:gap-4">
         {resumenModulos.length > 0 && (
           <ChartCard title="Totales por módulo" empty={resumenModulos.every((d) => d.total === 0)}>
             <ResponsiveContainer width="100%" height="100%">
