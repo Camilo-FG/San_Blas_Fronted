@@ -85,6 +85,13 @@ export default function ActivarCuentaPage({ token }: ActivarCuentaPageProps) {
           setEstadoEnlace("rechazado");
           return;
         }
+        if (err instanceof ApiError && err.status === 429) {
+          setMensajeEnlace(
+            "Demasiados intentos. Espere un minuto y pulse Reintentar.",
+          );
+          setEstadoEnlace("sin-conexion");
+          return;
+        }
         setMensajeEnlace(
           esErrorDeRed(err) || !navigator.onLine
             ? MENSAJE_SIN_INTERNET_ENLACE
