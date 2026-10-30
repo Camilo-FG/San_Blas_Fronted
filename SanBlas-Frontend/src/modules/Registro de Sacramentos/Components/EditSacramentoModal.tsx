@@ -19,6 +19,7 @@ import {
   TIPO_SACRAMENTO_LABEL,
 } from '../../../types/sacramentosNuevos';
 import {
+  CEDULA_DIGITOS,
   cedulaDigitosValidos,
   cedulaValida,
   numeroValido,
@@ -35,7 +36,7 @@ import {
 } from '../constants/parentescosAbuelos';
 import { obtenerDatosCedula } from '../../../services/cedulaService';
 import {
-  MAX_CEDULA,
+  MAX_CEDULA_NACIONAL,
   MAX_LIBRO,
   MAX_LUGAR_NACIMIENTO as LUGAR_NACIMIENTO_MAX,
   MAX_NOMBRE_PERSONA,
@@ -702,7 +703,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <div className="relative">
-              <Input type="text" placeholder="Cédula (0-0000-0000)" maxLength={MAX_CEDULA} className={cn(inputClass(Boolean(errors[`${prefijo}Cedula`])), 'pr-10')} value={persona.cedula} aria-invalid={estadoCedula === 'no_encontrada' || undefined} onChange={(e) => {
+              <Input type="text" placeholder="Cédula (0-0000-0000)" maxLength={MAX_CEDULA_NACIONAL} className={cn(inputClass(Boolean(errors[`${prefijo}Cedula`])), 'pr-10')} value={persona.cedula} aria-invalid={estadoCedula === 'no_encontrada' || undefined} onChange={(e) => {
                 const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
                 setCampoPersona(setter, 'cedula', e.target.value);
                 if (cedulaDigitosValidos(cedula).length === 9) {
@@ -717,7 +718,11 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
               )}
             </div>
             {renderAvisoCedula(prefijo, persona.cedula)}
-            <ContadorCaracteres actual={persona.cedula.length} maximo={MAX_CEDULA} />
+            <ContadorCaracteres
+              actual={cedulaDigitosValidos(persona.cedula).length}
+              maximo={CEDULA_DIGITOS}
+              unidad="dígitos"
+            />
             <ErrorMsg errors={errors} clave={`${prefijo}Cedula`} />
           </div>
           <div>
@@ -783,7 +788,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div>
                   <div className="relative">
-                    <Input type="text" placeholder="Cédula" maxLength={MAX_CEDULA} value={ab.cedula} className="pr-10" onChange={(e) => {
+                    <Input type="text" placeholder="Cédula" maxLength={MAX_CEDULA_NACIONAL} value={ab.cedula} className="pr-10" onChange={(e) => {
                       setAbueloBautismoCampo(idx, 'cedula', e.target.value);
                       const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
                       if (cedulaDigitosValidos(cedula).length === 9) {
@@ -793,7 +798,11 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
                     {campoCedulaCargando === `abuelo-${idx}` && <Loader2 aria-label="Buscando datos de la cédula" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue" />}
                   </div>
                   {renderAvisoCedula(`abuelo-${idx}`, ab.cedula)}
-                  <ContadorCaracteres actual={ab.cedula.length} maximo={MAX_CEDULA} />
+                  <ContadorCaracteres
+                    actual={cedulaDigitosValidos(ab.cedula).length}
+                    maximo={CEDULA_DIGITOS}
+                    unidad="dígitos"
+                  />
                 </div>
                 <div>
                   <Input type="text" placeholder="Nombre" maxLength={MAX_NOMBRE_PERSONA} value={ab.nombre} disabled={abueloBloqueado} onChange={(e) => setAbueloBautismoCampo(idx, 'nombre', e.target.value)} />

@@ -15,4 +15,9 @@ describe("ContadorCaracteres", () => {
     rerender(<ContadorCaracteres actual={6} maximo={6} />);
     expect(screen.getByText("6/6 caracteres")).toBeInTheDocument();
   });
+
+  it("puede usar otra unidad, como dígitos para la cédula", () => {
+    render(<ContadorCaracteres actual={9} maximo={9} unidad="dígitos" />);
+    expect(screen.getByText("9/9 dígitos")).toBeInTheDocument();
+  });
 });
