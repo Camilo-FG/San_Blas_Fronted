@@ -52,7 +52,7 @@ export function obtenerFaltantesCica(form: FormularioCica) {
 }
 
 export const TELEFONO_CICA = /^[1-9]\d{3}-\d{4}$/;
-export const CORREO_CICA = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+export const CORREO_CICA = /^[\p{L}0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/u;
 const LETRAS_CON_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
 const LETRAS_SIN_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/;
 
