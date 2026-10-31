@@ -60,16 +60,13 @@
   from = "/404"
   to = "/404.html"
   status = 404
-  force = true
 
-# URL desconocida: 404 real
-# Públicas: Netlify Pretty URLs sirve /horarios/ desde horarios/index.html
-# (no forzar rewrite a index.html: provoca bucle 301 con Pretty URLs).
+# URL desconocida: 404 (SIN force: no pisar index.html, assets ni imágenes).
+# Públicas: Pretty URLs sirve /horarios/ desde horarios/index.html.
 [[redirects]]
   from = "/*"
   to = "/404.html"
   status = 404
-  force = true
 
 [[headers]]
   for = "/index.html"
