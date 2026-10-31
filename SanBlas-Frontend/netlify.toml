@@ -19,110 +19,189 @@
   status = 301
   force = true
 
-# Sin trailing slash canónico (/horarios/ → /horarios)
-[[redirects]]
-  from = "/*/"
-  to = "/:splat"
-  status = 301
-  force = true
-
 # Auth + dashboard: SPA CSR (incl. enlaces por correo)
 [[redirects]]
   from = "/login"
   to = "/index.html"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/recuperar-contrasena"
   to = "/index.html"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/reset-password"
   to = "/index.html"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/activar-cuenta"
   to = "/index.html"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/dashboard"
   to = "/index.html"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/dashboard/*"
   to = "/index.html"
   status = 200
+  force = true
 
-# Públicas: HTML prerenderizado hace shadowing; si falta, fallback SPA.
+# Públicas sin trailing slash: evita 301 de Pretty URLs (/horarios → /horarios/)
+# force sirve el HTML prerenderizado en /ruta/index.html con 200.
+[[redirects]]
+  from = "/sobre-nosotros/"
+  to = "/sobre-nosotros"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/sobre-nosotros"
-  to = "/index.html"
+  to = "/sobre-nosotros/index.html"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/historia/"
+  to = "/historia"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/historia"
-  to = "/index.html"
+  to = "/historia/index.html"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/horarios/"
+  to = "/horarios"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/horarios"
-  to = "/index.html"
+  to = "/horarios/index.html"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/contacto/"
+  to = "/contacto"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/contacto"
-  to = "/index.html"
+  to = "/contacto/index.html"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/eventos/"
+  to = "/eventos"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/eventos"
-  to = "/index.html"
+  to = "/eventos/index.html"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/bautizos/"
+  to = "/bautizos"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/bautizos"
-  to = "/index.html"
+  to = "/bautizos/index.html"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/solicitudes-catequesis/"
+  to = "/solicitudes-catequesis"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/solicitudes-catequesis"
-  to = "/index.html"
+  to = "/solicitudes-catequesis/index.html"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/solicitudes-cica/"
+  to = "/solicitudes-cica"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/solicitudes-cica"
-  to = "/index.html"
+  to = "/solicitudes-cica/index.html"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/solicitudes-catequesis-bautismo/"
+  to = "/solicitudes-catequesis-bautismo"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/solicitudes-catequesis-bautismo"
-  to = "/index.html"
+  to = "/solicitudes-catequesis-bautismo/index.html"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/solicitudes-sacramentos/"
+  to = "/solicitudes-sacramentos"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/solicitudes-sacramentos"
-  to = "/index.html"
+  to = "/solicitudes-sacramentos/index.html"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/donaciones/"
+  to = "/donaciones"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/donaciones"
-  to = "/index.html"
+  to = "/donaciones/index.html"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/404"
   to = "/404.html"
   status = 404
+  force = true
 
-# URL desconocida: 404 real
+# URL desconocida: 404 real (force para no caer en SPA/home)
 [[redirects]]
   from = "/*"
   to = "/404.html"
   status = 404
+  force = true
 
 [[headers]]
   for = "/index.html"
