@@ -5,6 +5,13 @@
 [build.environment]
   NODE_VERSION = "22"
 
+# Dominio canónico: Netlify → parroquiasanblas.org (antes del SPA fallback)
+[[redirects]]
+  from = "https://sanblasfrontend.netlify.app/*"
+  to = "https://parroquiasanblas.org/:splat"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
