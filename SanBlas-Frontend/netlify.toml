@@ -19,7 +19,7 @@
   status = 301
   force = true
 
-# Auth + dashboard: SPA CSR (incl. enlaces por correo)
+# Auth + dashboard: SPA CSR
 [[redirects]]
   from = "/login"
   to = "/index.html"
@@ -56,147 +56,15 @@
   status = 200
   force = true
 
-# Públicas sin trailing slash: evita 301 de Pretty URLs (/horarios → /horarios/)
-# force sirve el HTML prerenderizado en /ruta/index.html con 200.
-[[redirects]]
-  from = "/sobre-nosotros/"
-  to = "/sobre-nosotros"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/sobre-nosotros"
-  to = "/sobre-nosotros/index.html"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/historia/"
-  to = "/historia"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/historia"
-  to = "/historia/index.html"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/horarios/"
-  to = "/horarios"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/horarios"
-  to = "/horarios/index.html"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/contacto/"
-  to = "/contacto"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/contacto"
-  to = "/contacto/index.html"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/eventos/"
-  to = "/eventos"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/eventos"
-  to = "/eventos/index.html"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/bautizos/"
-  to = "/bautizos"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/bautizos"
-  to = "/bautizos/index.html"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/solicitudes-catequesis/"
-  to = "/solicitudes-catequesis"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/solicitudes-catequesis"
-  to = "/solicitudes-catequesis/index.html"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/solicitudes-cica/"
-  to = "/solicitudes-cica"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/solicitudes-cica"
-  to = "/solicitudes-cica/index.html"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/solicitudes-catequesis-bautismo/"
-  to = "/solicitudes-catequesis-bautismo"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/solicitudes-catequesis-bautismo"
-  to = "/solicitudes-catequesis-bautismo/index.html"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/solicitudes-sacramentos/"
-  to = "/solicitudes-sacramentos"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/solicitudes-sacramentos"
-  to = "/solicitudes-sacramentos/index.html"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/donaciones/"
-  to = "/donaciones"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/donaciones"
-  to = "/donaciones/index.html"
-  status = 200
-  force = true
-
 [[redirects]]
   from = "/404"
   to = "/404.html"
   status = 404
   force = true
 
-# URL desconocida: 404 real (force para no caer en SPA/home)
+# URL desconocida: 404 real
+# Públicas: Netlify Pretty URLs sirve /horarios/ desde horarios/index.html
+# (no forzar rewrite a index.html: provoca bucle 301 con Pretty URLs).
 [[redirects]]
   from = "/*"
   to = "/404.html"

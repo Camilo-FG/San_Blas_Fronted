@@ -25,10 +25,17 @@ export default function SeoHead({
 }: SeoHeadProps) {
   const base = pageMetadata[page];
   const meta = base ? { ...base, ...overrides } : null;
-  const path = page === "/" ? "" : page.replace(/\/+$/, "");
-  const canonical = (
-    meta?.canonical || `${SITE_URL}${path}`
-  ).replace(/^(https?:\/\/[^/]+)\/+$/, "$1");
+  // Netlify Pretty URLs sirve /ruta/ desde ruta/index.html → canónico con slash
+  // en páginas públicas indexables (evita pelear con 301 de Pretty URLs).
+  const pathBare = page === "/" ? "" : page.replace(/\/+$/, "");
+  let canonical = meta?.canonical || `${SITE_URL}${pathBare}`;
+  const isPublicIndexable =
+    page !== "/" && !(meta?.robots ?? "index, follow").includes("noindex");
+  if (isPublicIndexable) {
+    canonical = canonical.replace(/\/?$/, "/");
+  } else if (page === "/") {
+    canonical = SITE_URL;
+  }
 
   useEffect(() => {
     clearPrerenderReady();
