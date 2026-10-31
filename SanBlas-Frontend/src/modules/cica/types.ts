@@ -1,6 +1,12 @@
 import type { TipoCedula } from "../../shared/utils/cedulaIdentificacion";
 
-export type EstadoCivilCica = "soltero" | "matrimonio_civil" | "union_libre";
+export type EstadoCivilCica =
+  | "soltero"
+  | "matrimonio_civil"
+  | "matrimonio_catolico"
+  | "union_libre"
+  | "union_civil"
+  | "divorciado";
 
 export interface InscripcionCica {
   id: number;
@@ -25,6 +31,9 @@ export interface InscripcionCica {
   madreNombre: string;
   madreApellido1: string;
   madreApellido2: string | null;
+  provincia: string;
+  canton: string;
+  distrito: string;
   direccionHogar: string;
   esCatolico: boolean;
   otraIglesia: string | null;
@@ -58,6 +67,9 @@ export interface CrearInscripcionCica {
   madreNombre: string;
   madreApellido1: string;
   madreApellido2: string | null;
+  provincia: string;
+  canton: string;
+  distrito: string;
   direccionHogar: string;
   esCatolico: boolean;
   otraIglesia: string | null;

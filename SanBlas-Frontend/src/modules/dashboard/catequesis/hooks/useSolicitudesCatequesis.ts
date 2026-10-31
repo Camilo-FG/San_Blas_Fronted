@@ -2,12 +2,14 @@ import { useCallback, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   actualizarEstadoSolicitud,
+  eliminarSolicitudCatequesis,
   exportarInscripcionesCatequesis,
   obtenerHistorialCatequesis,
   obtenerSolicitudCatequesisPorId,
   obtenerSolicitudesCatequesis,
 } from "../services/catequesisService";
 import { ApiError } from "../../../../services/apiClient";
+import { invalidarNotificacionesPanel } from "../../hooks/notificacionesPanelQuery";
 
 // Filtros que el backend soporta en GET /inscripciones-catequesis
 export interface SolicitudesCatequesisFiltros {
@@ -118,6 +120,7 @@ export const useSolicitudesCatequesis = (
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: HISTORIAL_KEY });
+      invalidarNotificacionesPanel(queryClient);
     },
     onError: (error: unknown) => {
       setAccionError(
@@ -129,6 +132,31 @@ export const useSolicitudesCatequesis = (
   });
 
   const guardando = cambiarEstadoMutation.isPending;
+
+  const eliminarMutation = useMutation({
+    mutationFn: (id: number) => eliminarSolicitudCatequesis(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: HISTORIAL_KEY });
+      invalidarNotificacionesPanel(queryClient);
+    },
+  });
+
+  const eliminar = useCallback(
+    async (id: number): Promise<{ ok: true } | { ok: false; mensaje: string }> => {
+      try {
+        await eliminarMutation.mutateAsync(id);
+        return { ok: true };
+      } catch (error) {
+        const mensaje =
+          error instanceof ApiError
+            ? error.message
+            : "No se pudo eliminar la solicitud.";
+        return { ok: false, mensaje };
+      }
+    },
+    [eliminarMutation],
+  );
 
   // Se conserva la firma original para no romper al consumidor: devuelve ok/mensaje
   const cambiarEstado = useCallback(
@@ -215,6 +243,8 @@ export const useSolicitudesCatequesis = (
     obtenerDetalle,
     cambiarEstado,
     exportarExcel,
+    eliminar,
+    eliminando: eliminarMutation.isPending,
     cargando,
     filtrando,
     guardando,

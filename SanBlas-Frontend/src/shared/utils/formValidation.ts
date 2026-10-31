@@ -19,6 +19,25 @@ export const soloNumeros = (valor: string, max = 20): string =>
 export const soloCorreo = (valor: string, max = 50): string =>
   valor.replace(/[^a-zA-Z0-9@._+-]/g, '').slice(0, max);
 
+// Texto libre para observaciones y lugares: letras (incluye acentos y ñ),
+// números, espacios y puntuación básica. Se excluyen comillas, ángulos,
+// punto y coma, barra invertida, operadores y secuencias de comentarios SQL.
+const caracteresTextoNoSeguro = /[^\p{L}\p{N} .,:()\-/¿?¡!°]/gu;
+const textoLibreSeguro = /^(?!.*--)[\p{L}\p{N} .,:()\-/¿?¡!°]*$/u;
+
+export const soloTextoSeguro = (valor: string, max = 500): string =>
+  valor
+    .replace(caracteresTextoNoSeguro, '')
+    .replace(/-{2,}/g, '-')
+    .replace(/ {2,}/g, ' ')
+    .replace(/^ /, '')
+    .slice(0, max);
+
+export const textoSeguroValido = (valor: string, max = 500): boolean => {
+  const limpio = valor.trim();
+  return limpio.length <= max && textoLibreSeguro.test(limpio);
+};
+
 // Solo dígitos para la cédula: no letras, primer dígito del 1 al 9, hasta 9 dígitos.
 const soloCedulaDigitos = (valor: string): string => {
   const digitos = valor.replace(/\D/g, '');

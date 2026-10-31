@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2 } from "lucide-react"; // spinner pa cuando se está enviando (no deja picar dos veces)
 import {
@@ -10,6 +10,7 @@ import {
   Modal,
   Textarea,
 } from "../../../shared/ui";
+import { useProvinciasCR } from "../../../shared/hooks/useUbicacionesCostaRica";
 import { FILIALES_CATEQUESIS } from "../constants/filialesCatequesis";
 import { NIVELES_CATEQUESIS } from "../constants/nivelesCatequesis";
 import { MONTO_INSCRIPCION_CATEQUESIS } from "../constants/catequesisInformacion";
@@ -27,7 +28,8 @@ interface CatequesisFormProps {
   loading: boolean;
 }
 
-const PROVINCIAS_CRC: { label: string; value: string }[] = [
+/** Respaldo si la API de ubicaciones no responde. */
+const PROVINCIAS_CRC_RESPALDO: { label: string; value: string }[] = [
   { label: "San José", value: "San José" },
   { label: "Alajuela", value: "Alajuela" },
   { label: "Cartago", value: "Cartago" },
@@ -268,7 +270,7 @@ const mensajeFechaNacimientoCatequizando = (
   return null;
 };
 const limitarTelefono = (valor: string): string => {
-  const digits = valor.replace(/\D/g, "").slice(0, 8);
+  const digits = valor.replace(/\D/g, "").replace(/^0+/, "").slice(0, 8);
   if (digits.length > 4) {
     return `${digits.slice(0, 4)}-${digits.slice(4)}`;
   }
@@ -332,6 +334,16 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     sinpe: "8878-3025",
     lineamientosUrl: "/lineamientos-catequesis-24-25.pdf",
   });
+
+  const provinciasQuery = useProvinciasCR();
+  const opcionesProvincia = useMemo(() => {
+    const desdeApi = (provinciasQuery.data ?? []).map((provincia) => ({
+      label: provincia.nombre,
+      value: provincia.nombre,
+    }));
+    if (desdeApi.length === 0) return PROVINCIAS_CRC_RESPALDO;
+    return [...desdeApi, { label: "Otros", value: "Otros" }];
+  }, [provinciasQuery.data]);
 
   useEffect(() => {
     const formulario = formRef.current;
@@ -609,7 +621,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
     }
 
     if (
-      !/^\d{4}-\d{4}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
+      !/^[1-9]\d{3}-\d{4}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
     ) {
       newErrors.telefonoPersonaInscribe =
         "El teléfono debe contener 8 dígitos.";
@@ -646,7 +658,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
         newErrors.provinciaMadre = "Digite la provincia.";
       }
 
-      if (!/^\d{4}-\d{4}$/.test(form.madreCatequizando.telefono)) {
+      if (!/^[1-9]\d{3}-\d{4}$/.test(form.madreCatequizando.telefono)) {
         newErrors.telefonoMadre = "El teléfono debe contener 8 dígitos.";
       }
     }
@@ -740,7 +752,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
         stepErrors.correoPersonaInscribe = "Digite un correo válido.";
       if (
-        !/^\d{4}-\d{4}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
+        !/^[1-9]\d{3}-\d{4}$/.test(form.inscripcion.personaQueInscribe.telefono ?? "")
       ) {
         stepErrors.telefonoPersonaInscribe =
           "El teléfono debe contener 8 dígitos.";
@@ -766,7 +778,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           stepErrors.ciudadMadre = "Digite la ciudad.";
         if (!form.madreCatequizando.direccion.provincia?.trim())
           stepErrors.provinciaMadre = "Digite la provincia.";
-        if (!/^\d{4}-\d{4}$/.test(form.madreCatequizando.telefono)) {
+        if (!/^[1-9]\d{3}-\d{4}$/.test(form.madreCatequizando.telefono)) {
           stepErrors.telefonoMadre = "El teléfono debe contener 8 dígitos.";
         }
       }
@@ -794,7 +806,7 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
           stepErrors.provinciaPadre = "Digite la provincia.";
         if (
           form.padreCatequizando.telefono &&
-          !/^\d{4}-\d{4}$/.test(form.padreCatequizando.telefono)
+          !/^[1-9]\d{3}-\d{4}$/.test(form.padreCatequizando.telefono)
         ) {
           stepErrors.telefonoPadre = "El teléfono debe contener 8 dígitos.";
         }
@@ -1621,8 +1633,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     valor || null,
                   )
                 }
-                options={PROVINCIAS_CRC}
+                options={opcionesProvincia}
                 hasError={!!errors.provinciaMadre}
+                disabled={provinciasQuery.isPending}
               />
               {errors.provinciaMadre && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">
@@ -1849,8 +1862,9 @@ const CatequesisForm = ({ onSubmit, loading }: CatequesisFormProps) => {
                     valor || null,
                   )
                 }
-                options={PROVINCIAS_CRC}
+                options={opcionesProvincia}
                 hasError={!!errors.provinciaPadre}
+                disabled={provinciasQuery.isPending}
               />
               {errors.provinciaPadre && (
                 <p data-field-error className="m-0 text-xs font-medium text-red-600">

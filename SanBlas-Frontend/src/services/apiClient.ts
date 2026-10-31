@@ -63,9 +63,22 @@ apiClient.interceptors.response.use(
       const isRestablecerRequest = url
         .toLowerCase()
         .includes("/auth/restablecer-contrasena");
-      const isValidarEnlaceRequest = url
+      const isValidarEnlaceRequest =
+        url.toLowerCase().includes("/auth/validar-enlace-recuperacion") ||
+        url.toLowerCase().includes("/auth/validar-enlace-activacion");
+      const isActivarCuentaRequest = url
         .toLowerCase()
-        .includes("/auth/validar-enlace-recuperacion");
+        .includes("/auth/activar-cuenta");
+      const isReenviarActivacionRequest = url
+        .toLowerCase()
+        .includes("/auth/reenviar-activacion");
+      const isConsultaCedula = url.toLowerCase().includes("/usuario/cedula/");
+      const esAuthPublica =
+        isRecuperarRequest ||
+        isRestablecerRequest ||
+        isValidarEnlaceRequest ||
+        isActivarCuentaRequest ||
+        isReenviarActivacionRequest;
 
       if (
         config &&
@@ -73,9 +86,8 @@ apiClient.interceptors.response.use(
         !isRefreshRequest &&
         !isSessionRequest &&
         !isLogoutRequest &&
-        !isRecuperarRequest &&
-        !isRestablecerRequest &&
-        !isValidarEnlaceRequest &&
+        !esAuthPublica &&
+        !isConsultaCedula &&
         !config._retry
       ) {
         config._retry = true;
@@ -90,7 +102,7 @@ apiClient.interceptors.response.use(
         }
       }
 
-      if (!isLoginRequest && !isRefreshRequest && !isSessionRequest && !isLogoutRequest && !isRecuperarRequest && !isRestablecerRequest && !isValidarEnlaceRequest) {
+      if (!isLoginRequest && !isRefreshRequest && !isSessionRequest && !isLogoutRequest && !esAuthPublica && !isConsultaCedula) {
         clearAuthToken();
         const currentPath = window.location.pathname;
         if (!currentPath.startsWith("/login") && !redirigiendoAlLogin) {
@@ -210,5 +222,7 @@ const isTechnicalApiMessage = (message: string): boolean =>
   /(query failed|syntax error|typeorm|exception|stack|sql|postgres|ECONN|internal server error|at \w+\()/i.test(
     message,
   ) ||
+  // 404 crudo de Nest ("Cannot DELETE /cica/1") cuando la ruta no existe en el backend en ejecución
+  /^\s*cannot\s+(get|post|put|delete|patch)\s+\//i.test(message) ||
   // 401 crudo de proxies/CDN sin body del backend: cae al mensaje amable por estado
   /^\s*unauthorized\s*$/i.test(message);

@@ -1,17 +1,25 @@
 import { apiClient } from "./apiClient";
 
-const consultasCedula = new Map<string, Promise<DatosCedula | null>>();
-
-export const existeCedula = async (cedula: string): Promise<boolean> => {
-  const { data } = await apiClient.get(`/usuario/cedula/${cedula}`);
-  return Boolean(data) && Object.keys(data).length > 0;
-};
+// Respuesta del backend: distingue "no existe" de "el proveedor falló".
+type RespuestaBackend =
+  | { estado: "encontrada"; nombre: string }
+  | { estado: "no_encontrada" }
+  | { estado: "error" };
 
 export interface DatosCedula {
   nombre: string;
   primerApellido: string;
   segundoApellido: string;
 }
+
+export type ResultadoCedula =
+  | { estado: "encontrada"; datos: DatosCedula }
+  | { estado: "no_encontrada" }
+  | { estado: "error" };
+
+// Dedupe de consultas en curso por cédula. Solo se conservan los aciertos;
+// los negativos se sueltan para permitir reintentar (el backend los cachea 5 min).
+const consultasCedula = new Map<string, Promise<ResultadoCedula>>();
 
 const capitalizarNombre = (valor: string): string =>
   valor
@@ -43,24 +51,48 @@ const parsearNombre = (valor: string): DatosCedula | null => {
   };
 };
 
-export const obtenerDatosCedula = async (cedula: string): Promise<DatosCedula | null> => {
+const consultarCedula = async (
+  cedulaNormalizada: string,
+): Promise<ResultadoCedula> => {
+  const { data } = await apiClient.get<RespuestaBackend | string | null>(
+    `/usuario/cedula/${cedulaNormalizada}`,
+  );
+
+  // Compatibilidad con la respuesta anterior (texto plano) mientras el backend
+  // nuevo termina de desplegarse.
+  if (typeof data === "string") {
+    const datos = parsearNombre(data);
+    return datos
+      ? { estado: "encontrada", datos }
+      : { estado: "no_encontrada" };
+  }
+
+  if (data && data.estado === "encontrada") {
+    const datos = parsearNombre(data.nombre);
+    return datos
+      ? { estado: "encontrada", datos }
+      : { estado: "no_encontrada" };
+  }
+
+  if (data && data.estado === "error") return { estado: "error" };
+
+  return { estado: "no_encontrada" };
+};
+
+export const obtenerDatosCedula = async (
+  cedula: string,
+): Promise<ResultadoCedula> => {
   const cedulaNormalizada = cedula.replace(/\D/g, "");
-  const consultaEnCurso = consultasCedula.get(cedulaNormalizada);
-  if (consultaEnCurso) return consultaEnCurso;
+  const enCurso = consultasCedula.get(cedulaNormalizada);
+  if (enCurso) return enCurso;
 
-  const consulta = apiClient
-    .get<unknown>(`/usuario/cedula/${cedulaNormalizada}`)
-    .then(({ data }) => {
-      if (!data) return null;
-
-      // El backend mantiene texto plano para no romper los consumidores existentes.
-      if (typeof data === "string") return parsearNombre(data);
-
-      return null;
-    })
-    .catch((error) => {
-      consultasCedula.delete(cedulaNormalizada); // un fallo de red no se guarda para poder reintentar
-      throw error;
+  const consulta = consultarCedula(cedulaNormalizada)
+    .catch((): ResultadoCedula => ({ estado: "error" }))
+    .then((resultado) => {
+      if (resultado.estado !== "encontrada") {
+        consultasCedula.delete(cedulaNormalizada);
+      }
+      return resultado;
     });
 
   consultasCedula.set(cedulaNormalizada, consulta);

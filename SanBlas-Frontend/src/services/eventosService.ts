@@ -48,7 +48,8 @@ const normalizarEvento = (evento: Evento): Evento => ({
   publicado: Boolean(evento.publicado),
 });
 
-const payloadCalendario = (payload: EventoPayload): EventoPayload => ({
+// El back no acepta `publicado` en create/update (ValidationPipe forbidNonWhitelisted).
+const payloadCalendario = (payload: EventoPayload) => ({
   titulo: payload.titulo,
   descripcion: payload.descripcion,
   fechaInicio: fechaPayload(payload.fechaInicio) ?? payload.fechaInicio,
@@ -56,7 +57,6 @@ const payloadCalendario = (payload: EventoPayload): EventoPayload => ({
   lugar: payload.lugar,
   hora: extraerHora(payload.hora),
   imagenUrl: textoOpcional(payload.imagenUrl),
-  publicado: payload.publicado,
 });
 
 export const obtenerEventosPublicos = async (): Promise<Evento[]> => {

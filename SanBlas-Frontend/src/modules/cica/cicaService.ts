@@ -61,3 +61,11 @@ export const actualizarEstadoCica = async (
     handleApiError(error);
   }
 };
+
+export const eliminarInscripcionCica = async (id: number): Promise<void> => {
+  try {
+    await apiClient.delete(`/cica/${id}`);
+  } catch (error) {
+    handleApiError(error);
+  }
+};

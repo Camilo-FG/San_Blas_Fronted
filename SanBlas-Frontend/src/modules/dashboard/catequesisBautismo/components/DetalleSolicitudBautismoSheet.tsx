@@ -2,6 +2,7 @@ import {
   CalendarDays,
   CheckCircle,
   Church,
+  Globe,
   Heart,
   MapPin,
   Phone,
@@ -129,6 +130,7 @@ export function DetalleSolicitudBautismoSheet({
             >
               Aprobar
             </Button>
+            {/* Mismo gris que CICA; el rojo queda para el estado y la confirmación de rechazo. */}
             <Button
               variant="secondary"
               style={{ backgroundColor: "#e2e8f0" }}
@@ -157,6 +159,8 @@ export function DetalleSolicitudBautismoSheet({
             </p>
             <Separador />
             <Campo label="Cédula" value={valorOGuion(solicitud.cedula)} tabular icon={<User size={16} className="shrink-0" />} />
+            <Separador />
+            <Campo label="Nacionalidad" value={valorOGuion(solicitud.nacionalidad)} icon={<Globe size={16} className="shrink-0" />} />
             <Separador />
             <Campo
               label="Nacimiento"

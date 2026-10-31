@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
-import { AlertOctagon, Mail, Shield, User } from "lucide-react";
-import type { Usuario } from "../../../../types/Usuario";
+import { AlertOctagon, Mail, Send, User, UserCheck } from "lucide-react";
+import {
+  etiquetaEstadoUsuario,
+  type Usuario,
+} from "../../../../types/Usuario";
 import { etiquetaRol, type Rol } from "../../../../types/Rol";
 import { useAuth } from "../../../../context/AuthContext";
+import { ApiError } from "../../../../services/apiClient";
 import { useToast } from "../../../../shared/ui";
 import {
   Badge,
@@ -12,6 +16,7 @@ import {
   cn,
 } from "../../../../shared/ui";
 import { useUpdateUser } from "../../hooks/hooksUsuarios/useUpdateUser";
+import { reenviarActivacionUsuario } from "../../services/userServices";
 
 const formatFechaCreacion = (fecha?: string | null) => {
   if (!fecha) return "—";
@@ -42,14 +47,19 @@ export function PerfilUsuarioCard({
 }: PerfilUsuarioCardProps) {
   const { user: usuarioSesion } = useAuth();
   const { showToast } = useToast();
-  const { actualizarUsuario, loading: desactivando } = useUpdateUser();
+  const { actualizarUsuario, loading: actualizando } = useUpdateUser();
   const [activo, setActivo] = useState(usuario.state);
+  const [pendienteActivacion, setPendienteActivacion] = useState(
+    Boolean(usuario.pendienteActivacion),
+  );
   const [confirmando, setConfirmando] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
 
   useEffect(() => {
     setActivo(usuario.state);
+    setPendienteActivacion(Boolean(usuario.pendienteActivacion));
     setConfirmando(false);
-  }, [usuario.id, usuario.state]);
+  }, [usuario.id, usuario.state, usuario.pendienteActivacion]);
 
   const nombre = usuario.userName || usuario.email || "Usuario";
   const correo = usuario.email || "—";
@@ -93,6 +103,34 @@ export function PerfilUsuarioCard({
     setConfirmando(false);
   };
 
+  const confirmarReactivacion = async () => {
+    const resultado = await actualizarUsuario(usuario.id, { state: true });
+    if (resultado.ok) {
+      setActivo(true);
+      showToast("Cuenta reactivada correctamente", "success");
+      onEstadoCambiado?.(true);
+      return;
+    }
+    showToast(resultado.mensaje, "error");
+  };
+
+  const reenviarActivacion = async () => {
+    setReenviando(true);
+    try {
+      await reenviarActivacionUsuario(usuario.id);
+      showToast("Se envió un nuevo enlace de activación.", "success");
+    } catch (err) {
+      showToast(
+        err instanceof ApiError
+          ? err.message
+          : "No se pudo reenviar el enlace de activación.",
+        "error",
+      );
+    } finally {
+      setReenviando(false);
+    }
+  };
+
   return (
     <Card className={cn("p-0 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]", className)}>
       <div
@@ -121,14 +159,21 @@ export function PerfilUsuarioCard({
         </div>
         <div className="flex flex-wrap gap-1.5 sm:ml-auto">
           <Badge
-            variant={activo ? "success" : "danger"}
+            variant={
+              activo ? "success" : pendienteActivacion ? "warning" : "danger"
+            }
             className={
               activo
                 ? "dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]"
-                : "dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]"
+                : pendienteActivacion
+                  ? "dark:border-amber-400 dark:bg-[rgba(245,158,11,0.12)] dark:text-amber-300"
+                  : "dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]"
             }
           >
-            {activo ? "Activo" : "Inactivo"}
+            {etiquetaEstadoUsuario({
+              state: activo,
+              pendienteActivacion,
+            })}
           </Badge>
         </div>
       </div>
@@ -147,18 +192,55 @@ export function PerfilUsuarioCard({
         ))}
       </dl>
 
-      <div className="border-t border-border-strong bg-danger-bg/40 px-5 py-4 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
+      <div
+        className={cn(
+          "border-t border-border-strong px-5 py-4 dark:border-[rgba(220,230,242,0.12)]",
+          !activo && !esUsuarioActual
+            ? "bg-surface-muted dark:bg-[#0f1d33]"
+            : "bg-danger-bg/40 dark:bg-[#0f1d33]",
+        )}
+      >
         {esUsuarioActual ? (
           <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
             <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
             No puede desactivar su propia cuenta, para desactivar, por favor
             comuníquese con el personal secretario.
           </p>
+        ) : !activo && pendienteActivacion ? (
+          <div className="flex flex-col gap-3">
+            <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
+              <AlertOctagon size={18} className="mt-0.5 shrink-0 text-amber-600" />
+              Invitación pendiente: aún no activó la cuenta ni eligió
+              contraseña. Puede reenviar el enlace o eliminar la cuenta desde el
+              listado.
+            </p>
+            <Button
+              variant="royal"
+              className="self-start"
+              onClick={() => void reenviarActivacion()}
+              disabled={reenviando || actualizando}
+            >
+              <Send size={16} />
+              {reenviando ? "Enviando..." : "Reenviar invitación"}
+            </Button>
+          </div>
         ) : !activo ? (
-          <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
-            <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
-            Esta cuenta está inactiva y no aparece en el listado.
-          </p>
+          <div className="flex flex-col gap-3">
+            <p className="m-0 flex items-start gap-2 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
+              <AlertOctagon size={18} className="mt-0.5 shrink-0 text-danger" />
+              Esta cuenta está inactiva y no puede iniciar sesión. Puede
+              reactivarla o eliminarla desde el listado.
+            </p>
+            <Button
+              variant="outline"
+              className="self-start"
+              onClick={() => void confirmarReactivacion()}
+              disabled={actualizando || reenviando}
+            >
+              <UserCheck size={16} />
+              {actualizando ? "Reactivando..." : "Reactivar cuenta"}
+            </Button>
+          </div>
         ) : (
           <div>
             <div className="flex items-start gap-2.5">
@@ -175,7 +257,7 @@ export function PerfilUsuarioCard({
               variant="danger"
               className="mt-3 shrink-0 self-start"
               onClick={() => setConfirmando(true)}
-              disabled={desactivando}
+              disabled={actualizando}
             >
               Desactivar cuenta
             </Button>
@@ -200,7 +282,7 @@ export function PerfilUsuarioCard({
         }
         confirmLabel="Sí, desactivar"
         pendingLabel="Desactivando..."
-        isPending={desactivando}
+        isPending={actualizando}
         overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
         className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_p.text-text-secondary]:text-[#b7c3d4] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
         cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"

@@ -1,7 +1,26 @@
-import { useState } from 'react';
-import { Shield, ShieldCheck, Trash2, UserRound } from 'lucide-react';
-import { Badge, Button, ConfirmacionAccionModal, useToast } from '../../../../shared/ui';
-import { etiquetaPermiso, type Rol } from '../../../../types/Rol';
+import { useEffect, useState } from 'react';
+import {
+  ChevronDown,
+  Lock,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+} from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import {
+  Badge,
+  Button,
+  ConfirmacionAccionModal,
+  cn,
+  useToast,
+} from '../../../../shared/ui';
+import {
+  CLAVES_ROL_SISTEMA,
+  esRolDelSistema,
+  etiquetaPermiso,
+  type Rol,
+} from '../../../../types/Rol';
 import type { Usuario } from '../../../../types/Usuario';
 import { useDeleteRol } from '../../hooks/hooksUsuarios/useDeleteRol';
 
@@ -10,32 +29,266 @@ interface RolesYPermisosProps {
   roles: Rol[];
   onCrearRol: () => void;
   onRolEliminado?: () => void;
+  /** Se incrementa al crear un rol para abrir la subpestaña de personalizados. */
+  irAPersonalizadosToken?: number;
+  /** Clave del rol recién creado para resaltarlo en verde. */
+  claveRolRecienCreado?: string | null;
+  onResaltadoRolConsumido?: () => void;
 }
 
-// Claves que nunca se pueden eliminar desde el panel (espejo del backend).
-const CLAVES_NO_ELIMINABLES = [
-  'admin',
-  'user',
-  'secretario',
-  'catequista',
-  'gestor-eventos',
-  'gestor-donaciones',
-];
+interface RolCardProps {
+  rol: Rol;
+  asignados: number;
+  onEliminar: (rol: Rol) => void;
+  resaltar?: boolean;
+  onResaltadoTerminado?: () => void;
+}
+
+function RolCard({
+  rol,
+  asignados,
+  onEliminar,
+  resaltar = false,
+  onResaltadoTerminado,
+}: RolCardProps) {
+  const [permisosAbiertos, setPermisosAbiertos] = useState(false);
+  const reducirMovimiento = useReducedMotion();
+  const esAdmin = rol.clave === 'admin' || rol.clave === 'secretario';
+  const delSistema = esRolDelSistema(rol);
+  const Icono = esAdmin ? ShieldCheck : delSistema ? Shield : Sparkles;
+  const puedeEliminar =
+    !delSistema &&
+    !(CLAVES_ROL_SISTEMA as readonly string[]).includes(rol.clave);
+  const panelId = `permisos-rol-${rol.clave}`;
+
+  useEffect(() => {
+    if (!resaltar || !reducirMovimiento) return;
+    const t = window.setTimeout(() => onResaltadoTerminado?.(), 2500);
+    return () => window.clearTimeout(t);
+  }, [resaltar, reducirMovimiento, onResaltadoTerminado]);
+
+  return (
+    <motion.article
+      className={cn(
+        'flex flex-col gap-4 rounded-2xl border bg-surface p-5 shadow-sm dark:bg-[#0a1425] dark:shadow-none',
+        delSistema
+          ? 'border-royal-blue/15 dark:border-[rgba(217,169,40,0.22)]'
+          : 'border-border-strong dark:border-[rgba(220,230,242,0.12)]',
+        resaltar &&
+          'border-emerald-500 ring-2 ring-emerald-400/40 dark:border-emerald-400 dark:ring-emerald-400/30',
+      )}
+      animate={
+        resaltar && !reducirMovimiento
+          ? {
+              boxShadow: [
+                '0 0 0 0 rgba(34,197,94,0)',
+                '0 0 0 6px rgba(34,197,94,0.4)',
+                '0 0 0 0 rgba(34,197,94,0)',
+                '0 0 0 6px rgba(34,197,94,0.4)',
+                '0 1px 2px 0 rgba(0,0,0,0.05)',
+              ],
+            }
+          : undefined
+      }
+      transition={
+        resaltar && !reducirMovimiento
+          ? { duration: 2.4, ease: 'easeInOut', times: [0, 0.25, 0.5, 0.75, 1] }
+          : undefined
+      }
+      onAnimationComplete={() => {
+        if (resaltar && !reducirMovimiento) onResaltadoTerminado?.();
+      }}
+    >
+      <header className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              'flex size-11 shrink-0 items-center justify-center rounded-xl',
+              delSistema
+                ? 'bg-royal-blue/8 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]'
+                : 'bg-[#aa7323]/10 text-[#aa7323] dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]',
+            )}
+          >
+            <Icono size={22} aria-hidden="true" />
+          </div>
+          <div>
+            <h3 className="m-0 font-heading text-xl text-royal-blue dark:text-[#f3f6fa]">
+              {rol.nombre}
+            </h3>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Badge
+            variant={esAdmin ? 'info' : 'neutral'}
+            className={
+              esAdmin
+                ? 'dark:border-[#f2a34a] dark:bg-[rgba(242,163,74,0.10)] dark:text-[#f2a34a]'
+                : 'dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]'
+            }
+          >
+            {asignados} {asignados === 1 ? 'cuenta' : 'cuentas'}
+          </Badge>
+          {puedeEliminar ? (
+            <button
+              type="button"
+              onClick={() => onEliminar(rol)}
+              disabled={asignados > 0}
+              title={
+                asignados > 0
+                  ? 'No se puede eliminar: tiene cuentas asignadas'
+                  : `Eliminar rol ${rol.nombre}`
+              }
+              aria-label={`Eliminar rol ${rol.nombre}`}
+              className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-40 dark:text-[#7f8da3] dark:hover:bg-[rgba(230,106,106,0.12)] dark:hover:text-[#e66a6a]"
+            >
+              <Trash2 size={16} />
+            </button>
+          ) : (
+            <span
+              className="inline-flex size-9 items-center justify-center rounded-lg text-text-muted dark:text-[#7f8da3]"
+              title="Rol protegido: no se puede eliminar"
+            >
+              <Lock size={15} aria-hidden="true" />
+            </span>
+          )}
+        </div>
+      </header>
+
+      {rol.descripcion ? (
+        <p className="m-0 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
+          {rol.descripcion}
+        </p>
+      ) : null}
+
+      <div
+        className={cn(
+          'overflow-hidden rounded-xl border border-border-strong/70 transition-colors duration-300 dark:border-[rgba(220,230,242,0.12)]',
+          permisosAbiertos
+            ? 'bg-surface-muted/70 dark:bg-[#0f1d33]/80'
+            : 'bg-surface-muted/40 dark:bg-[#0f1d33]/50',
+        )}
+      >
+        <button
+          type="button"
+          aria-expanded={permisosAbiertos}
+          aria-controls={panelId}
+          onClick={() => setPermisosAbiertos((abierto) => !abierto)}
+          className="flex w-full cursor-pointer items-center justify-between gap-2 border-0 bg-transparent px-3 py-2.5 text-left text-xs font-extrabold tracking-wider text-royal-blue uppercase transition-colors hover:bg-royal-blue/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#d9a928] dark:hover:bg-[rgba(217,169,40,0.08)]"
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <Shield size={14} aria-hidden="true" />
+            Permisos
+            <span className="rounded-full bg-royal-blue/10 px-2 py-0.5 text-[10px] font-bold tracking-normal text-royal-blue normal-case dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]">
+              {rol.permisos.length}
+            </span>
+          </span>
+          <ChevronDown
+            size={16}
+            aria-hidden="true"
+            className={cn(
+              'shrink-0 text-text-muted transition-transform duration-300 ease-out dark:text-[#7f8da3]',
+              permisosAbiertos && 'rotate-180',
+            )}
+          />
+        </button>
+
+        <div
+          id={panelId}
+          className={cn(
+            'grid transition-[grid-template-rows] duration-300 ease-out',
+            permisosAbiertos ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+          )}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <div
+              className={cn(
+                'border-t border-border-strong/60 px-3 pt-2 pb-3 transition-opacity duration-300 dark:border-[rgba(220,230,242,0.10)]',
+                permisosAbiertos ? 'opacity-100' : 'opacity-0',
+              )}
+            >
+              {rol.permisos.length > 0 ? (
+                <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                  {rol.permisos.map((permiso, indice) => (
+                    <li
+                      key={permiso}
+                      className={cn(
+                        'rounded-xl bg-surface px-3 py-2 text-sm leading-relaxed text-text transition-all duration-300 ease-out dark:border-[rgba(220,230,242,0.12)] dark:bg-[#08111f] dark:text-[#f3f6fa]',
+                        permisosAbiertos
+                          ? 'translate-y-0 opacity-100'
+                          : 'translate-y-1 opacity-0',
+                      )}
+                      style={{
+                        transitionDelay: permisosAbiertos
+                          ? `${Math.min(indice, 8) * 35}ms`
+                          : '0ms',
+                      }}
+                    >
+                      {etiquetaPermiso(permiso)}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="m-0 rounded-xl bg-surface px-3 py-2 text-sm text-text-muted dark:bg-[#08111f] dark:text-[#7f8da3]">
+                  Sin acceso al panel administrativo.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
+type SubpestanaRoles = 'sistema' | 'personalizados';
 
 export function RolesYPermisos({
   users,
   roles,
   onCrearRol,
   onRolEliminado,
+  irAPersonalizadosToken = 0,
+  claveRolRecienCreado = null,
+  onResaltadoRolConsumido,
 }: RolesYPermisosProps) {
   const { showToast } = useToast();
   const { eliminarRol, loading: eliminando } = useDeleteRol();
   const [rolAEliminar, setRolAEliminar] = useState<Rol | null>(null);
+  const [subpestana, setSubpestana] =
+    useState<SubpestanaRoles>('sistema');
+  const [claveResaltada, setClaveResaltada] = useState<string | null>(null);
+  const reducirMovimiento = useReducedMotion();
+
+  useEffect(() => {
+    if (irAPersonalizadosToken > 0) {
+      setSubpestana('personalizados');
+    }
+  }, [irAPersonalizadosToken]);
+
+  useEffect(() => {
+    if (!claveRolRecienCreado) return;
+    setClaveResaltada(claveRolRecienCreado);
+  }, [claveRolRecienCreado]);
 
   const cuentasConRol = (clave: string) =>
     users.filter(
       (usuario) => usuario.role === clave || usuario.roles?.includes(clave),
     ).length;
+
+  const animacionPanel = reducirMovimiento
+    ? { initial: false as const, animate: { opacity: 1 }, exit: { opacity: 1 } }
+    : {
+        initial: { opacity: 0, y: 10 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -8 },
+      };
+
+  // 'user' no se ofrece ni se muestra: no da acceso al panel y no se asigna desde aquí.
+  const rolesVisibles = roles.filter((rol) => rol.clave !== 'user');
+  const rolesSistema = rolesVisibles.filter((rol) => esRolDelSistema(rol));
+  const rolesPersonalizados = rolesVisibles.filter(
+    (rol) => !esRolDelSistema(rol),
+  );
 
   const handleConfirmarEliminar = async () => {
     if (!rolAEliminar) return;
@@ -48,109 +301,175 @@ export function RolesYPermisos({
     setRolAEliminar(null);
     onRolEliminado?.();
   };
+
+  const subpestanas: {
+    id: SubpestanaRoles;
+    label: string;
+    cantidad: number;
+    icono: typeof ShieldCheck;
+  }[] = [
+    {
+      id: 'sistema',
+      label: 'Roles del sistema',
+      cantidad: rolesSistema.length,
+      icono: ShieldCheck,
+    },
+    {
+      id: 'personalizados',
+      label: 'Roles personalizados',
+      cantidad: rolesPersonalizados.length,
+      icono: Sparkles,
+    },
+  ];
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <p className="m-0 text-sm leading-relaxed text-text-muted dark:text-[#7f8da3]">
-          Cree roles y asígnelos al crear o editar un usuario. Los permisos
-          indican a qué módulos del panel puede entrar.
+        <p className="m-0 max-w-2xl text-sm leading-relaxed text-text-muted dark:text-[#7f8da3]">
+          Los permisos indican a qué módulos del panel puede entrar cada
+          cuenta. Alterne entre roles del sistema y personalizados con las
+          pestañas de abajo.
         </p>
         <Button variant="royal" className="shrink-0" onClick={onCrearRol}>
-          + Crear rol
+          + Crear rol personalizado
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {roles.length === 0 ? (
-          <p className="m-0 rounded-2xl border border-border-strong bg-surface px-4 py-10 text-center text-sm text-text-muted lg:col-span-2 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:text-[#7f8da3]">
-            Aún no hay roles. Cree el primero con el botón Crear rol.
-          </p>
-        ) : (
-          roles.map((rol) => {
-          const Icon = rol.clave === 'admin' ? ShieldCheck : UserRound;
-          const asignados = cuentasConRol(rol.clave);
-
+      <div
+        role="tablist"
+        aria-label="Tipo de roles"
+        className="flex flex-wrap gap-1 border-b border-border-strong dark:border-[rgba(220,230,242,0.12)]"
+      >
+        {subpestanas.map((item) => {
+          const activa = subpestana === item.id;
+          const IconoTab = item.icono;
           return (
-            <article
-              key={rol.clave}
-              className="flex flex-col gap-4 rounded-2xl border border-border-strong bg-surface p-5 shadow-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-none"
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              id={`tab-roles-${item.id}`}
+              aria-selected={activa}
+              aria-controls={`panel-roles-${item.id}`}
+              tabIndex={activa ? 0 : -1}
+              className={cn(
+                'inline-flex cursor-pointer items-center gap-2 border-0 border-b-2 bg-transparent px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-focus-ring',
+                activa
+                  ? 'border-royal-blue text-royal-blue dark:border-[#d9a928] dark:text-[#d9a928]'
+                  : 'border-transparent text-text-muted hover:text-royal-blue dark:text-[#7f8da3] dark:hover:text-[#d9a928]',
+              )}
+              onClick={() => setSubpestana(item.id)}
             >
-              <header className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-royal-blue/8 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]">
-                    <Icon size={22} aria-hidden="true" />
+              <IconoTab size={16} aria-hidden="true" />
+              {item.label}
+              <Badge
+                variant={activa ? 'info' : 'neutral'}
+                className={
+                  activa
+                    ? 'dark:border-[rgba(217,169,40,0.25)] dark:bg-[rgba(217,169,40,0.12)] dark:text-[#d9a928]'
+                    : 'dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]'
+                }
+              >
+                {item.cantidad}
+              </Badge>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="relative min-h-[12rem]">
+        <AnimatePresence mode="wait" initial={false}>
+          {subpestana === 'sistema' ? (
+            <motion.div
+              key="sistema"
+              id="panel-roles-sistema"
+              role="tabpanel"
+              aria-labelledby="tab-roles-sistema"
+              className="flex flex-col gap-4"
+              initial={animacionPanel.initial}
+              animate={animacionPanel.animate}
+              exit={animacionPanel.exit}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <p className="m-0 text-sm leading-relaxed text-text-muted dark:text-[#7f8da3]">
+                Definidos por la plataforma. No se pueden eliminar ni cambiar
+                sus permisos.
+              </p>
+              {rolesSistema.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  {rolesSistema.map((rol) => (
+                    <RolCard
+                      key={rol.clave}
+                      rol={rol}
+                      asignados={cuentasConRol(rol.clave)}
+                      onEliminar={setRolAEliminar}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border-strong bg-surface px-4 py-10 text-center dark:border-[rgba(220,230,242,0.16)] dark:bg-[#0a1425]">
+                  <div className="flex size-11 items-center justify-center rounded-xl bg-royal-blue/8 text-royal-blue dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]">
+                    <ShieldCheck size={22} aria-hidden="true" />
+                  </div>
+                  <p className="m-0 text-sm text-text-muted dark:text-[#7f8da3]">
+                    No hay roles del sistema para mostrar.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="personalizados"
+              id="panel-roles-personalizados"
+              role="tabpanel"
+              aria-labelledby="tab-roles-personalizados"
+              className="flex flex-col gap-4"
+              initial={animacionPanel.initial}
+              animate={animacionPanel.animate}
+              exit={animacionPanel.exit}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <p className="m-0 text-sm leading-relaxed text-text-muted dark:text-[#7f8da3]">
+                Creados por usted para ajustar el acceso a los módulos de la
+                parroquia.
+              </p>
+              {rolesPersonalizados.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  {rolesPersonalizados.map((rol) => (
+                    <RolCard
+                      key={rol.clave}
+                      rol={rol}
+                      asignados={cuentasConRol(rol.clave)}
+                      onEliminar={setRolAEliminar}
+                      resaltar={claveResaltada === rol.clave}
+                      onResaltadoTerminado={() => {
+                        setClaveResaltada(null);
+                        onResaltadoRolConsumido?.();
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border-strong bg-surface px-4 py-10 text-center dark:border-[rgba(220,230,242,0.16)] dark:bg-[#0a1425]">
+                  <div className="flex size-11 items-center justify-center rounded-xl bg-[#aa7323]/10 text-[#aa7323] dark:bg-[rgba(217,169,40,0.14)] dark:text-[#d9a928]">
+                    <Sparkles size={22} aria-hidden="true" />
                   </div>
                   <div>
-                    <h3 className="m-0 font-heading text-xl text-royal-blue dark:text-[#f3f6fa]">
-                      {rol.nombre}
-                    </h3>
-                    <p className="m-0 mt-0.5 text-xs font-semibold tracking-wide text-text-muted uppercase dark:text-[#7f8da3]">
-                      {rol.esSistema ? 'Rol del sistema' : `Código: ${rol.clave}`}
+                    <p className="m-0 text-sm font-semibold text-text dark:text-[#f3f6fa]">
+                      Aún no hay roles personalizados
+                    </p>
+                    <p className="m-0 mt-1 text-sm text-text-muted dark:text-[#7f8da3]">
+                      Cree uno para otorgar solo los permisos que necesita.
                     </p>
                   </div>
+                  <Button variant="royal" onClick={onCrearRol}>
+                    + Crear rol personalizado
+                  </Button>
                 </div>
-                <div className="flex shrink-0 items-center gap-1.5">
-                  <Badge
-                    variant={rol.clave === 'admin' ? 'info' : 'neutral'}
-                    className={
-                      rol.clave === 'admin'
-                        ? 'dark:border-[#f2a34a] dark:bg-[rgba(242,163,74,0.10)] dark:text-[#f2a34a]'
-                        : 'dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]'
-                    }
-                  >
-                    {asignados} {asignados === 1 ? 'cuenta' : 'cuentas'}
-                  </Badge>
-                  {!rol.esSistema && !CLAVES_NO_ELIMINABLES.includes(rol.clave) && (
-                    <button
-                      type="button"
-                      onClick={() => setRolAEliminar(rol)}
-                      disabled={asignados > 0}
-                      title={
-                        asignados > 0
-                          ? 'No se puede eliminar: tiene cuentas asignadas'
-                          : `Eliminar rol ${rol.nombre}`
-                      }
-                      aria-label={`Eliminar rol ${rol.nombre}`}
-                      className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-40 dark:text-[#7f8da3] dark:hover:bg-[rgba(230,106,106,0.12)] dark:hover:text-[#e66a6a]"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
-              </header>
-
-              {rol.descripcion ? (
-                <p className="m-0 text-sm leading-relaxed text-text-secondary dark:text-[#b7c3d4]">
-                  {rol.descripcion}
-                </p>
-              ) : null}
-
-              <div>
-                <p className="mb-2 flex items-center gap-1.5 text-xs font-extrabold tracking-wider text-royal-blue uppercase dark:text-[#d9a928]">
-                  <Shield size={14} aria-hidden="true" />
-                  Permisos
-                </p>
-                {rol.permisos.length > 0 ? (
-                  <ul className="m-0 flex list-none flex-col gap-2 p-0">
-                    {rol.permisos.map((permiso) => (
-                      <li
-                        key={permiso}
-                        className="rounded-xl bg-surface-muted px-3 py-2 text-sm leading-relaxed text-text dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa]"
-                      >
-                        {etiquetaPermiso(permiso)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="m-0 rounded-xl bg-surface-muted px-3 py-2 text-sm text-text-muted dark:bg-[#0f1d33] dark:text-[#7f8da3]">
-                    Sin acceso al panel administrativo.
-                  </p>
-                )}
-              </div>
-            </article>
-          );
-        })
-        )}
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <ConfirmacionAccionModal

@@ -1007,7 +1007,7 @@ const mensaje =
               )
             }
             placeholder="Nombre completo"
-            className="min-h-11 w-[220px] shrink-0 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)]"
+            className="min-h-11 w-[220px] shrink-0 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)]"
             aria-label="Filtrar por nombre completo"
           />
           <input
@@ -1018,7 +1018,7 @@ const mensaje =
               setFiltroCedula(soloDigitos(e.target.value).slice(0, 9))
             }
             placeholder="Cédula"
-            className="min-h-11 w-[150px] shrink-0 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm tabular-nums text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)]"
+            className="min-h-11 w-[150px] shrink-0 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm tabular-nums text-slate-900 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)]"
             aria-label="Filtrar por cédula"
           />
           <div
@@ -1030,9 +1030,9 @@ const mensaje =
               aria-haspopup="listbox"
               aria-expanded={filtroEstadoMenuAbierto}
               onClick={() => setFiltroEstadoMenuAbierto((prev) => !prev)}
-              className={`flex min-h-11 w-[150px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)] dark:outline-none dark:transition ${
+              className={`flex min-h-11 w-[150px] cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-slate-500 focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus:ring-2 dark:focus:ring-[rgba(217,169,40,0.24)] dark:outline-none dark:transition ${
                 filtroEstadoMenuAbierto
-                  ? "border-blue-400 bg-surface dark:border-[#d9a928]"
+                  ? "border-slate-500 bg-surface dark:border-[#d9a928]"
                   : "border-border-strong"
               }`}
             >
@@ -1447,7 +1447,7 @@ const mensaje =
                         aria-haspopup="listbox"
                         aria-expanded={estadoMenuAbierto}
                         onClick={() => setEstadoMenuAbierto((prev) => !prev)}
-                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-white/10 dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/10"
+                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[#16243c]/10 bg-white px-3 py-2.5 text-sm font-medium text-[#16243c] transition-colors duration-100 ease-out hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:border-slate-500 focus-visible:outline-none dark:border-white/10 dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/10"
                       >
                         <span>
                           {solicitudSeleccionada.Estado ?? "Pendiente"}
@@ -1609,9 +1609,9 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                   aria-haspopup="listbox"
                   aria-expanded={motivoMenuAbierto}
                   onClick={() => setMotivoMenuAbierto((prev) => !prev)}
-                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
+                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:border-slate-500 focus-visible:outline-none hover:bg-slate-200 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
                     motivoMenuAbierto
-                      ? "border-blue-400 bg-surface dark:border-[#d9a928] dark:bg-[#0f1d33]"
+                      ? "border-slate-500 bg-surface dark:border-[#d9a928] dark:bg-[#0f1d33]"
                       : "border-border-strong"
                   }`}
                 >
@@ -1858,9 +1858,9 @@ className="rounded-lg! duration-400 ease-in-out hover:bg-royal-blue! enabled:hov
                   onClick={() =>
                     setTamanoPaginaMenuAbierto((prev) => !prev)
                   }
-                  className={`flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
+                  className={`flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] ${
                     tamanoPaginaMenuAbierto
-                      ? "border-blue-400 bg-surface dark:border-[#d9a928]"
+                      ? "border-slate-500 bg-surface dark:border-[#d9a928]"
                       : "border-border-strong"
                   }`}
                   aria-label="Cantidad de registros por página"

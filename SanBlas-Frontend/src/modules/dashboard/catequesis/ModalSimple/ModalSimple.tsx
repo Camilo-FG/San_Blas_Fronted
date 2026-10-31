@@ -13,7 +13,7 @@ function ModalSimple({ children, onClose }: ModalSimpleProps) {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[1000px] max-h-[calc(100vh-36px)] overflow-y-auto rounded-[18px] bg-[#fffdf7] p-[22px] shadow-[0_25px_80px_rgba(15,23,42,0.35)] animate-modal-simple-fade sm:max-h-[calc(100vh-80px)] sm:rounded-3xl sm:p-8"
+        className="scrollbar-contenedor relative w-full max-w-[1000px] max-h-[calc(100vh-36px)] overflow-y-auto rounded-[18px] bg-[#fffdf7] p-[22px] shadow-[0_25px_80px_rgba(15,23,42,0.35)] animate-modal-simple-fade sm:max-h-[calc(100vh-80px)] sm:rounded-3xl sm:p-8"
         onClick={(event) => event.stopPropagation()}
       >
         <button

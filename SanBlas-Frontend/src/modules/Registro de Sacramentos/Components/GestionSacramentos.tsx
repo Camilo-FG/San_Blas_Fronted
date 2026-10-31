@@ -26,10 +26,9 @@ const GestionSacramentos = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const [drawerCedula, setDrawerCedula] = useState<string | null>(null);
+  const [drawerSacramentoId, setDrawerSacramentoId] = useState<number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
-  const [editCedula, setEditCedula] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
@@ -66,7 +65,7 @@ const GestionSacramentos = () => {
   }, [nombreInput, cedulaInput, libroInput, folioInput, asientoInput]);
 
   const aplicarMascaraCedula = (valor: string) => {
-    const digitos = valor.replace(/\D/g, '').slice(0, 9);
+    const digitos = valor.replace(/\D/g, '').replace(/^0+/, '').slice(0, 9);
     if (digitos.length <= 1) return digitos;
     if (digitos.length <= 5) return `${digitos[0]}-${digitos.slice(1)}`;
     return `${digitos[0]}-${digitos.slice(1, 5)}-${digitos.slice(5)}`;
@@ -76,23 +75,18 @@ const GestionSacramentos = () => {
     return valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
   };
 
-  const handleViewDetails = (sacramento: { cedula: string | null }) => {
-    if (!sacramento.cedula) {
-      showToast('Este registro no tiene cédula asociada.', 'error');
-      return;
-    }
-    setDrawerCedula(sacramento.cedula);
+  const handleViewDetails = (sacramento: { id: number; cedula: string | null }) => {
+    setDrawerSacramentoId(sacramento.id);
     setDrawerOpen(true);
   };
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
-    setDrawerCedula(null);
+    setDrawerSacramentoId(null);
   };
 
   const handleEdit = (sacramento: { id: number; cedula: string | null }) => {
     setEditId(sacramento.id);
-    setEditCedula(sacramento.cedula);
     setEditModalOpen(true);
   };
 
@@ -261,7 +255,7 @@ const GestionSacramentos = () => {
       <DetailsDrawer
         isOpen={drawerOpen}
         onClose={handleCloseDrawer}
-        cedula={drawerCedula}
+        sacramentoId={drawerSacramentoId}
       />
 
       <AddSacramentoModal
@@ -275,7 +269,6 @@ const GestionSacramentos = () => {
         isOpen={editModalOpen}
         onClose={() => setEditModalOpen(false)}
         sacramentoId={editId}
-        cedula={editCedula}
         onUpdate={handleUpdateSacramento}
         onCreate={handleSaveAdd}
       />

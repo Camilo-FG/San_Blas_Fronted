@@ -45,6 +45,10 @@ export const restoreSession = async (): Promise<AuthUser | null> => {
   restorePromise ??= apiClient
     .get<LoginResponse>("/auth/session")
     .then(({ data }) => {
+      if (!data?.user) {
+        clearSession();
+        return null;
+      }
       setCurrentUser(data.user);
       return data.user;
     })
@@ -96,6 +100,38 @@ export const restablecerContrasena = async (datos: {
 }): Promise<void> => {
   try {
     await apiClient.post("/auth/restablecer-contrasena", datos);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const validarEnlaceActivacion = async (
+  token: string,
+): Promise<void> => {
+  try {
+    await apiClient.post("/auth/validar-enlace-activacion", { token });
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const activarCuenta = async (datos: {
+  token: string;
+  password: string;
+  confirmPassword: string;
+}): Promise<void> => {
+  try {
+    await apiClient.post("/auth/activar-cuenta", datos);
+  } catch (error) {
+    handleApiError(error);
+  }
+};
+
+export const reenviarActivacion = async (email: string): Promise<void> => {
+  try {
+    await apiClient.post("/auth/reenviar-activacion", {
+      email: email.trim(),
+    });
   } catch (error) {
     handleApiError(error);
   }

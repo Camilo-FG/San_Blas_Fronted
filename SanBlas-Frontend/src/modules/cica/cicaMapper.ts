@@ -1,5 +1,6 @@
 import type { FormularioCica } from "./validarCica";
 import type { CrearInscripcionCica, EstadoCivilCica } from "./types";
+import { requiereConyugeCica } from "./estadosCivilesCica";
 
 const limpiar = (valor: string) => valor.trim();
 const nuloSiVacio = (valor: string) => {
@@ -8,7 +9,7 @@ const nuloSiVacio = (valor: string) => {
 };
 
 export function mapearFormularioCica(form: FormularioCica): CrearInscripcionCica {
-  const esSoltero = form.estadoCivil === "soltero";
+  const conyuge = requiereConyugeCica(form.estadoCivil);
   const esCatolico = form.esCatolico === "si";
 
   return {
@@ -22,9 +23,9 @@ export function mapearFormularioCica(form: FormularioCica): CrearInscripcionCica
     telefono: limpiar(form.telefono),
     correo: limpiar(form.correo),
     estadoCivil: form.estadoCivil as EstadoCivilCica,
-    conyugeNombre: esSoltero ? null : limpiar(form.conyugeNombre),
-    conyugeApellido1: esSoltero ? null : limpiar(form.conyugeApellido1),
-    conyugeApellido2: esSoltero ? null : nuloSiVacio(form.conyugeApellido2),
+    conyugeNombre: conyuge ? nuloSiVacio(form.conyugeNombre) : null,
+    conyugeApellido1: conyuge ? nuloSiVacio(form.conyugeApellido1) : null,
+    conyugeApellido2: conyuge ? nuloSiVacio(form.conyugeApellido2) : null,
     necesitaBautizo: form.necesitaBautizo,
     necesitaPrimeraComunion: form.necesitaPrimeraComunion,
     necesitaConfirmacion: form.necesitaConfirmacion,
@@ -34,6 +35,9 @@ export function mapearFormularioCica(form: FormularioCica): CrearInscripcionCica
     madreNombre: limpiar(form.madreNombre),
     madreApellido1: limpiar(form.madreApellido1),
     madreApellido2: nuloSiVacio(form.madreApellido2),
+    provincia: limpiar(form.provincia),
+    canton: limpiar(form.canton),
+    distrito: limpiar(form.distrito),
     direccionHogar: limpiar(form.direccionHogar),
     esCatolico,
     otraIglesia: esCatolico ? null : limpiar(form.otraIglesia),

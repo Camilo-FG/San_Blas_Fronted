@@ -15,7 +15,7 @@ import { SubidaImagen, type ArchivoImagen } from "./SubidaImagen";
 const soloDigitos = (valor: string) => valor.replace(/\D/g, "");
 
 const formatearCedula = (valor: string) => {
-  const digitos = soloDigitos(valor).slice(0, 9);
+  const digitos = soloDigitos(valor).replace(/^0+/, "").slice(0, 9);
   if (digitos.length <= 1) return digitos;
   if (digitos.length <= 5)
     return `${digitos.slice(0, 1)}-${digitos.slice(1)}`;
@@ -23,7 +23,7 @@ const formatearCedula = (valor: string) => {
 };
 
 const formatearTelefono = (valor: string) => {
-  const digitos = soloDigitos(valor).slice(0, 8);
+  const digitos = soloDigitos(valor).replace(/^0+/, "").slice(0, 8);
   if (digitos.length <= 4) return digitos;
   return `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
 };
@@ -48,6 +48,7 @@ const validarSegundoApellido = (valor: string) =>
 const validarCedula = (valor: string, tipo: "nacional" | "extranjera") => {
   const cedula = soloDigitos(valor);
   if (!cedula) return "La cédula es obligatoria.";
+  if (cedula.startsWith("0")) return "La cédula no puede iniciar con cero.";
   if (tipo === "nacional") {
     if (cedula.length !== 9) return "La cédula debe tener 9 dígitos.";
   } else {
@@ -68,7 +69,7 @@ const validarCorreo = (valor: string) => {
 const validarTelefono = (valor: string) => {
   const telefono = soloDigitos(valor);
   if (!telefono) return "El teléfono es obligatorio.";
-  if (!/^\d{8}$/.test(telefono)) {
+  if (!/^[1-9]\d{7}$/.test(telefono)) {
     return "El teléfono debe contener exactamente 8 dígitos numéricos.";
   }
   return undefined;
@@ -289,12 +290,13 @@ const FormSolic = () => {
 
         try {
           // Forced minimum 2-second loading
-          const [datos] = await Promise.all([
+          const [resultado] = await Promise.all([
             obtenerDatosCedula(digitos),
             new Promise((resolve) => setTimeout(resolve, 2000)),
           ]);
 
-          if (datos) {
+          if (resultado.estado === "encontrada") {
+            const datos = resultado.datos;
             setCedulaValida(true);
             setDatosCedulaValidada(datos);
             setErrorCedula(null);
@@ -316,7 +318,11 @@ const FormSolic = () => {
           } else {
             setCedulaValida(false);
             setDatosCedulaValidada(null);
-            setErrorCedula("La cédula ingresada no existe.");
+            setErrorCedula(
+              resultado.estado === "error"
+                ? "No se pudo verificar la cédula. Intente nuevamente."
+                : "La cédula ingresada no existe.",
+            );
           }
         } catch {
           setCedulaValida(false);
@@ -581,9 +587,9 @@ const FormSolic = () => {
                   aria-haspopup="listbox"
                   aria-expanded={tipoCedulaAbierto}
                   onClick={() => setTipoCedulaAbierto((prev) => !prev)}
-                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none hover:bg-slate-200 ${
+                  className={`flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 transition-colors duration-150 ease-out focus-visible:border-slate-500 focus-visible:outline-none hover:bg-slate-200 ${
                     tipoCedulaAbierto
-                      ? "border-blue-400 bg-surface"
+                      ? "border-slate-500 bg-surface"
                       : "border-border-strong"
                   }`}
                 >
@@ -685,7 +691,7 @@ const FormSolic = () => {
                         const formatted =
                           tipoCedula === "nacional"
                             ? formatearCedula(e.target.value)
-                            : soloDigitos(e.target.value).slice(0, 12);
+                            : soloDigitos(e.target.value).replace(/^0+/, "").slice(0, 12);
                         field.handleChange(formatted);
 
                         // Detect post-validation modification

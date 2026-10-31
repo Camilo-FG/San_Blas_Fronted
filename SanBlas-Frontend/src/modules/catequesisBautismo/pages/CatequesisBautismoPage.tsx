@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IdentificacionCedula } from "../../../shared/components/IdentificacionCedula";
 import { useAutocompletarCedula } from "../../../shared/hooks/useAutocompletarCedula";
 import { limpiarCedula, PATRON_CEDULA, type TipoCedula } from "../../../shared/utils/cedulaIdentificacion";
 import { ApiError } from "../../../services/apiClient";
 import SeoHead from "../../../seo/SeoHead";
 import Rutas from "../../../routes/Rutas";
-import { Button, Badge, Card, ErrorMessage, FieldError, Input, Label } from "../../../shared/ui";
+import { UbicacionCostaRicaCampos } from "../../../shared/components/UbicacionCostaRicaCampos";
+import { Button, Badge, Card, ErrorMessage, FieldError, Input, Label, Select } from "../../../shared/ui";
 import {
   consultarInscripcionCatequesisBautismo,
   crearInscripcionCatequesisBautismo,
@@ -15,18 +16,15 @@ import {
   getEstadoBadgeVariant,
   textoEstadoCica,
 } from "../../cica/estadoCica";
-import {
-  ETIQUETA_CONDICION,
-  ETIQUETA_ESTADO_CIVIL,
-  PROVINCIAS_COSTA_RICA,
-  type CondicionBautismo,
-  type EstadoCivilBautismo,
-} from "../types";
+import { ESTADOS_CIVILES_BAUTISMO, ETIQUETA_ESTADO_CIVIL } from "../estadosCivilesBautismo";
+import { CONDICIONES_BAUTISMO, ETIQUETA_CONDICION, AYUDA_CONDICION_BAUTISMO } from "../condicionesBautismo";
 import {
   filtrarApellidoBautismo,
   filtrarNombreBautismo,
+  filtrarNacionalidadBautismo,
   filtrarTelefonoBautismo,
   MAX_APELLIDO_BAUTISMO,
+  MAX_NACIONALIDAD_BAUTISMO,
   MAX_NOMBRE_BAUTISMO,
   validarFormularioCatequesisBautismo,
   type FormularioCatequesisBautismo,
@@ -42,6 +40,7 @@ const vacio: FormularioCatequesisBautismo = {
   fechaNacimiento: "",
   cedula: "",
   tipoCedula: "nacional",
+  nacionalidad: "Costarricense",
   telefono: "",
   estadoCivil: "",
   parroquiaOrigen: "",
@@ -92,6 +91,16 @@ function Campo({
 }
 
 const CatequesisBautismoPage = () => {
+  const formularioRef = useRef<HTMLFormElement>(null);
+  const [intentoFoco, setIntentoFoco] = useState(0);
+  useEffect(() => {
+    if (!intentoFoco) return;
+    const primero = formularioRef.current?.querySelector<HTMLElement>(
+      'input[aria-invalid="true"], select[aria-invalid="true"]',
+    );
+    primero?.focus({ preventScroll: true });
+    primero?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  }, [intentoFoco]);
   const [form, setForm] = useState(vacio);
   const { estado: estadoCedula, verificar } = useAutocompletarCedula();
   const [errores, setErrores] = useState<Record<string, string>>({});
@@ -120,9 +129,23 @@ const CatequesisBautismoPage = () => {
     set(clave, filtrarApellidoBautismo(valor));
 
   // Reinicia los datos de la persona al cambiar de cédula; una respuesta atrasada no debe llenar otra solicitud.
+  // Con cédula nacional la nacionalidad nace "Costarricense"; con extranjera queda libre para editarla.
   const cambiarIdentificacion = (valor: string, tipo: TipoCedula) => {
     const cedula = limpiarCedula(valor, tipo);
-    setForm((actual) => ({ ...actual, cedula, tipoCedula: tipo, nombre: "", apellido1: "", apellido2: "" }));
+    setForm((actual) => ({
+      ...actual,
+      cedula,
+      tipoCedula: tipo,
+      nombre: "",
+      apellido1: "",
+      apellido2: "",
+      nacionalidad:
+        tipo === "nacional"
+          ? "Costarricense"
+          : actual.nacionalidad === "Costarricense"
+            ? ""
+            : actual.nacionalidad,
+    }));
     setErrores((actual) => {
       const siguiente = { ...actual };
       for (const clave of ["cedula", "nombre", "apellido1", "apellido2"]) delete siguiente[clave];
@@ -142,11 +165,14 @@ const CatequesisBautismoPage = () => {
     event.preventDefault();
     setErrorEnvio(null);
     const encontrados = validarFormularioCatequesisBautismo(form);
-    if (form.tipoCedula === "nacional" && estadoCedula !== "encontrada") {
+    if (!encontrados.cedula && form.tipoCedula === "nacional" && estadoCedula !== "encontrada") {
       encontrados.cedula = "Verifique la cédula antes de enviar la inscripción.";
     }
     setErrores(encontrados);
-    if (Object.keys(encontrados).length > 0) return;
+    if (Object.keys(encontrados).length > 0) {
+      setIntentoFoco((actual) => actual + 1);
+      return;
+    }
 
     setEnviando(true);
     try {
@@ -171,6 +197,7 @@ const CatequesisBautismoPage = () => {
   };
 
   const consultar = async () => {
+    if (consultando) return;
     const cedula = cedulaConsulta.trim();
     if (!PATRON_CEDULA.test(cedula)) {
       setErrorConsulta("La cédula debe tener 9 dígitos (nacional) o 12 (extranjera).");
@@ -251,7 +278,7 @@ const CatequesisBautismoPage = () => {
               </div>
             </Card>
           ) : (
-            <form className="mt-6 flex flex-col gap-5" onSubmit={enviar} noValidate>
+            <form ref={formularioRef} className="mt-6 flex flex-col gap-5" onSubmit={enviar} noValidate>
               <fieldset className="grid gap-3 sm:grid-cols-3">
                 <legend className="mb-2 font-heading text-lg font-extrabold text-royal-blue">
                   Identificación
@@ -296,6 +323,14 @@ const CatequesisBautismoPage = () => {
                   onChange={(valor) => set("fechaNacimiento", valor)}
                 />
                 <Campo
+                  etiqueta="Nacionalidad"
+                  maxLength={MAX_NACIONALIDAD_BAUTISMO}
+                  placeholder="Ej: Costarricense"
+                  valor={form.nacionalidad}
+                  error={errores.nacionalidad}
+                  onChange={(valor) => set("nacionalidad", filtrarNacionalidadBautismo(valor))}
+                />
+                <Campo
                   etiqueta="Teléfono"
                   obligatorio
                   maxLength={9}
@@ -310,47 +345,49 @@ const CatequesisBautismoPage = () => {
                 <legend className="mb-2 font-heading text-lg font-extrabold text-royal-blue">
                   Estado civil
                 </legend>
-                <div className="flex flex-wrap gap-4 text-sm">
-                  {(
-                    Object.entries(ETIQUETA_ESTADO_CIVIL) as [
-                      EstadoCivilBautismo,
-                      string,
-                    ][]
-                  ).map(([valor, etiqueta]) => (
-                    <label key={valor} className="inline-flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="estadoCivil"
-                        checked={form.estadoCivil === valor}
-                        onChange={() => set("estadoCivil", valor)}
-                      />
-                      {etiqueta}
-                    </label>
+                <Label htmlFor="bautismo-estado-civil" required>Estado civil</Label>
+                <Select
+                  id="bautismo-estado-civil"
+                  value={form.estadoCivil}
+                  hasError={Boolean(errores.estadoCivil)}
+                  aria-invalid={Boolean(errores.estadoCivil)}
+                  aria-required="true"
+                  aria-describedby={errores.estadoCivil ? "bautismo-estado-civil-error" : undefined}
+                  disabled={enviando}
+                  onChange={(event) => set("estadoCivil", event.target.value)}
+                >
+                  <option value="">Seleccione su estado civil</option>
+                  {ESTADOS_CIVILES_BAUTISMO.map((valor) => (
+                    <option key={valor} value={valor}>{ETIQUETA_ESTADO_CIVIL[valor]}</option>
                   ))}
-                </div>
-                <FieldError message={errores.estadoCivil} />
+                </Select>
+                <FieldError id="bautismo-estado-civil-error" message={errores.estadoCivil} />
               </fieldset>
 
               <fieldset>
                 <legend className="mb-2 font-heading text-lg font-extrabold text-royal-blue">
                   Condición
                 </legend>
-                <div className="flex flex-wrap gap-4 text-sm">
-                  {(
-                    Object.entries(ETIQUETA_CONDICION) as [CondicionBautismo, string][]
-                  ).map(([valor, etiqueta]) => (
-                    <label key={valor} className="inline-flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="condicion"
-                        checked={form.condicion === valor}
-                        onChange={() => set("condicion", valor)}
-                      />
-                      {etiqueta}
-                    </label>
+                <Label htmlFor="bautismo-condicion" required>Condición</Label>
+                <Select
+                  id="bautismo-condicion"
+                  value={form.condicion}
+                  hasError={Boolean(errores.condicion)}
+                  aria-invalid={Boolean(errores.condicion)}
+                  aria-required="true"
+                  aria-describedby={`bautismo-condicion-ayuda${errores.condicion ? " bautismo-condicion-error" : ""}`}
+                  disabled={enviando}
+                  onChange={(event) => set("condicion", event.target.value)}
+                >
+                  <option value="">Seleccione su condición</option>
+                  {CONDICIONES_BAUTISMO.map((valor) => (
+                    <option key={valor} value={valor}>{ETIQUETA_CONDICION[valor]}</option>
                   ))}
-                </div>
-                <FieldError message={errores.condicion} />
+                </Select>
+                <p id="bautismo-condicion-ayuda" aria-live="polite" className="mt-2 text-sm text-text-secondary">
+                  {form.condicion ? AYUDA_CONDICION_BAUTISMO[form.condicion] : "Seleccione la condición en la que participará en la catequesis."}
+                </p>
+                <FieldError id="bautismo-condicion-error" message={errores.condicion} />
               </fieldset>
 
               <fieldset className="grid gap-3 sm:grid-cols-2">
@@ -366,40 +403,29 @@ const CatequesisBautismoPage = () => {
                   error={errores.parroquiaOrigen}
                   onChange={alNombre("parroquiaOrigen")}
                 />
-                <div className="flex flex-col gap-1 text-sm">
-                  <Label required>Provincia</Label>
-                  <select
-                    className={campo}
-                    value={form.provincia}
-                    aria-invalid={Boolean(errores.provincia)}
-                    onChange={(event) => set("provincia", event.target.value)}
-                  >
-                    <option value="">Seleccione la provincia</option>
-                    {PROVINCIAS_COSTA_RICA.map((provincia) => (
-                      <option key={provincia} value={provincia}>
-                        {provincia}
-                      </option>
-                    ))}
-                  </select>
-                  <FieldError message={errores.provincia} />
-                </div>
-                <Campo
-                  etiqueta="Cantón"
-                  obligatorio
-                  maxLength={MAX_NOMBRE_BAUTISMO}
-                  placeholder="Ej: Nicoya"
-                  valor={form.canton}
-                  error={errores.canton}
-                  onChange={alNombre("canton")}
-                />
-                <Campo
-                  etiqueta="Distrito"
-                  obligatorio
-                  maxLength={MAX_NOMBRE_BAUTISMO}
-                  placeholder="Ej: Nicoya"
-                  valor={form.distrito}
-                  error={errores.distrito}
-                  onChange={alNombre("distrito")}
+                <UbicacionCostaRicaCampos
+                  valor={{
+                    provincia: form.provincia,
+                    canton: form.canton,
+                    distrito: form.distrito,
+                  }}
+                  onChange={(ubicacion) => {
+                    setForm((prev) => ({ ...prev, ...ubicacion }));
+                    setErrores((prev) => {
+                      const siguiente = { ...prev };
+                      delete siguiente.provincia;
+                      delete siguiente.canton;
+                      delete siguiente.distrito;
+                      return siguiente;
+                    });
+                  }}
+                  errores={{
+                    provincia: errores.provincia,
+                    canton: errores.canton,
+                    distrito: errores.distrito,
+                  }}
+                  disabled={enviando}
+                  selectClassName={campo}
                 />
                 <Campo
                   etiqueta="Barrio"
@@ -441,7 +467,13 @@ const CatequesisBautismoPage = () => {
                 inputMode="numeric"
                 maxLength={12}
                 placeholder="Ej: 102340567"
-                onChange={(event) => setCedulaConsulta(event.target.value.replace(/\D/g, "").slice(0, 12))}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                    event.preventDefault();
+                    void consultar();
+                  }
+                }}
+                onChange={(event) => setCedulaConsulta(event.target.value.replace(/\D/g, "").replace(/^0+/, "").slice(0, 12))}
               />
             </div>
             <Button

@@ -35,6 +35,20 @@ export const ROLES_ASIGNABLES = [
   "gestor-donaciones",
 ] as const;
 
+/** Claves reservadas de la plataforma (espejo del backend). */
+export const CLAVES_ROL_SISTEMA = [
+  "admin",
+  "user",
+  "secretario",
+  "catequista",
+  "gestor-eventos",
+  "gestor-donaciones",
+] as const;
+
+export const esRolDelSistema = (rol: Pick<Rol, "clave" | "esSistema">) =>
+  rol.esSistema ||
+  (CLAVES_ROL_SISTEMA as readonly string[]).includes(rol.clave);
+
 export type PermisoRolId = (typeof PERMISOS_ROL)[number]["id"];
 
 export const opcionesSelectRol = (

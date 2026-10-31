@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Archive,
   CheckCircle,
@@ -7,11 +7,13 @@ import {
   Inbox,
   Loader2,
   RotateCcw,
+  Trash2,
   XCircle,
 } from "lucide-react";
 import { AdminRecordCard } from "../../../../shared/components/admin/AdminRecordCard";
 import { AdminPaginationBar } from "../../../../shared/components/admin/AdminPaginationBar";
-import { usePaginacionCliente } from "../../../../shared/hooks/usePaginacionCliente";
+import { ExportarMatriculas } from "../../../../shared/components/admin/ExportarMatriculas";
+import { usePaginacionServidor } from "../../../../shared/hooks/usePaginacionServidor";
 import { useDebouncedValue } from "../../../../shared/hooks/useDebouncedValue";
 import {
   AdminModule,
@@ -43,23 +45,23 @@ import {
   getEstadoBadgeVariant,
   textoEstadoCica,
 } from "../../../cica/estadoCica";
+import {
+  MOTIVO_RECHAZO_MAXIMO,
+  validarMotivoRechazo,
+} from "../../../cica/validarRechazoCica";
 import type { InscripcionCica } from "../../../cica/types";
 import { useSolicitudesCica } from "../hooks/useSolicitudesCica";
 
 const inputAdmin =
-  "min-h-11 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]";
-
-const coincideBusqueda = (item: InscripcionCica, texto: string) => {
-  const consulta = texto.trim().toLowerCase();
-  if (!consulta) return true;
-  return [nombreCompleto(item), item.cedula, item.telefono, item.correo]
-    .join(" ")
-    .toLowerCase()
-    .includes(consulta);
-};
+  "min-h-11 rounded-xl border border-border-strong bg-surface-muted px-3.5 py-2.5 text-sm text-slate-900 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]";
 
 const GestionSolicitudesCica = () => {
   const { showToast } = useToast();
+  const [vista, setVista] = useState<"solicitudes" | "historial">("solicitudes");
+  const [filtro, setFiltro] = useState<"todos" | "Aprobada" | "Rechazada">("todos");
+  const [busqueda, setBusqueda] = useState("");
+  const busquedaDebounced = useDebouncedValue(busqueda, 400);
+  const paginacion = usePaginacionServidor(`${vista}|${filtro}|${busquedaDebounced}`);
   const {
     pendientes,
     historial,
@@ -68,37 +70,27 @@ const GestionSolicitudesCica = () => {
     reintentar,
     cambiarEstado,
     guardando,
-  } = useSolicitudesCica();
-  const [vista, setVista] = useState<"solicitudes" | "historial">("solicitudes");
-  const [filtro, setFiltro] = useState<"todos" | "Aprobada" | "Rechazada">("todos");
-  const [busqueda, setBusqueda] = useState("");
+    eliminar,
+    eliminando,
+    total, totales,
+  } = useSolicitudesCica({ vista, estado: vista === 'historial' && filtro !== 'todos' ? filtro : undefined,
+    busqueda: busquedaDebounced, page: paginacion.pagina, limit: paginacion.registrosPorPagina });
   const [seleccion, setSeleccion] = useState<InscripcionCica | null>(null);
   const [motivo, setMotivo] = useState("");
   const [errorAccion, setErrorAccion] = useState<string | null>(null);
   const [confirmacion, setConfirmacion] = useState<"aprobar" | "rechazar" | null>(null);
+  const [eliminarSeleccion, setEliminarSeleccion] = useState<InscripcionCica | null>(null);
 
-  // Debounce de la búsqueda para no recalcular filas ni resetear la página con cada tecla, igual que catequesis.
-  const busquedaDebounced = useDebouncedValue(busqueda, 400);
+  const aprobadas = totales?.aprobadas ?? 0;
+  const rechazadas = totales?.rechazadas ?? 0;
+  const filas = vista === 'solicitudes' ? pendientes : historial;
+  const visibles = filas;
+  const { setTotal } = paginacion;
 
-  const aprobadas = historial.filter((item) => item.estado === "Aprobada").length;
-  const rechazadas = historial.filter((item) => item.estado === "Rechazada").length;
-
-  const filas = useMemo(() => {
-    const base =
-      vista === "solicitudes"
-        ? pendientes
-        : historial.filter((item) => filtro === "todos" || item.estado === filtro);
-    return base.filter((item) => coincideBusqueda(item, busquedaDebounced));
-  }, [busquedaDebounced, filtro, historial, pendientes, vista]);
-
-  // Paginación en cliente con el hook compartido: sanea la página cuando el dataset encoge (antes el "Siguiente" se trababa).
-  const paginacion = usePaginacionCliente(filas, 10);
-  const { visibles, reiniciar } = paginacion;
-
-  // Al cambiar de vista o filtros volvemos a la primera página.
+  // No usamos el largo de la página como total ni reseteamos durante la carga.
   useEffect(() => {
-    reiniciar();
-  }, [vista, filtro, busquedaDebounced, reiniciar]);
+    if (total !== undefined) setTotal(total);
+  }, [total, setTotal]);
 
   const hayFiltros = busqueda.trim() !== "" || (vista === "historial" && filtro !== "todos");
 
@@ -115,8 +107,10 @@ const GestionSolicitudesCica = () => {
 
   const cambiar = async (estado: "Aprobada" | "Rechazada") => {
     if (!seleccion) return;
-    if (estado === "Rechazada" && !motivo.trim()) {
-      setErrorAccion("La observación es obligatoria al rechazar.");
+    const errorMotivo =
+      estado === "Rechazada" ? validarMotivoRechazo(motivo) : null;
+    if (errorMotivo) {
+      setErrorAccion(errorMotivo);
       return;
     }
     setErrorAccion(null);
@@ -138,6 +132,17 @@ const GestionSolicitudesCica = () => {
       return;
     }
     setErrorAccion(resultado.mensaje);
+    showToast(resultado.mensaje, "error");
+  };
+
+  const confirmarEliminar = async () => {
+    if (!eliminarSeleccion) return;
+    const resultado = await eliminar(eliminarSeleccion.id);
+    if (resultado.ok) {
+      showToast("Solicitud eliminada correctamente", "success");
+      setEliminarSeleccion(null);
+      return;
+    }
     showToast(resultado.mensaje, "error");
   };
 
@@ -198,7 +203,7 @@ const GestionSolicitudesCica = () => {
               Total pendientes
             </span>
             <strong className="mt-1.5 block font-heading text-3xl text-royal-blue dark:text-[#f3f6fa]">
-              {pendientes.length}
+              {totales?.pendientes ?? 0}
             </strong>
           </div>
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-[rgba(242,163,74,0.12)] dark:text-[#f2a34a]">
@@ -276,6 +281,7 @@ const GestionSolicitudesCica = () => {
             <RotateCcw size={15} strokeWidth={2} />
             Limpiar
           </button>
+          <ExportarMatriculas modulo="cica" disabled={cargando} />
         </div>
       </AdminToolbar>
 
@@ -343,19 +349,32 @@ const GestionSolicitudesCica = () => {
                         </Badge>
                       </AdminTableCell>
                       <AdminTableCell>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSeleccion(item);
-                            setMotivo("");
-                            setErrorAccion(null);
-                            setConfirmacion(null);
-                          }}
-                          aria-label={`Ver detalle de ${nombreCompleto(item)}`}
-                          className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
-                        >
-                          <Eye size={17} strokeWidth={1.5} />
-                        </button>
+                        <span className="inline-flex items-center gap-0.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSeleccion(item);
+                              setMotivo("");
+                              setErrorAccion(null);
+                              setConfirmacion(null);
+                            }}
+                            aria-label={`Ver detalle de ${nombreCompleto(item)}`}
+                            className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-info-bg hover:text-info focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]"
+                          >
+                            <Eye size={17} strokeWidth={1.5} />
+                          </button>
+                          {vista === "historial" && (
+                            <button
+                              type="button"
+                              onClick={() => setEliminarSeleccion(item)}
+                              aria-label={`Eliminar solicitud de ${nombreCompleto(item)}`}
+                              title="Eliminar solicitud"
+                              className="inline-flex cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-2 text-text-secondary transition-colors hover:bg-danger-bg hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#e66a6a]"
+                            >
+                              <Trash2 size={17} strokeWidth={1.5} />
+                            </button>
+                          )}
+                        </span>
                       </AdminTableCell>
                     </AdminTableRow>
                   ))}
@@ -382,13 +401,29 @@ const GestionSolicitudesCica = () => {
                   { label: "Teléfono", value: item.telefono },
                   { label: "Sacramentos", value: sacramentos(item) },
                 ]}
-                onViewDetail={() => {
-                  setSeleccion(item);
-                  setMotivo("");
-                  setErrorAccion(null);
-                  setConfirmacion(null);
-                }}
-                viewLabel="Ver detalle"
+                actions={[
+                  {
+                    label: "Ver detalle",
+                    icon: <Eye size={15} />,
+                    variant: "primary",
+                    onClick: () => {
+                      setSeleccion(item);
+                      setMotivo("");
+                      setErrorAccion(null);
+                      setConfirmacion(null);
+                    },
+                  },
+                  ...(vista === "historial"
+                    ? [
+                        {
+                          label: "Eliminar",
+                          icon: <Trash2 size={15} />,
+                          variant: "danger" as const,
+                          onClick: () => setEliminarSeleccion(item),
+                        },
+                      ]
+                    : []),
+                ]}
               />
             ))}
           </div>
@@ -451,6 +486,9 @@ const GestionSolicitudesCica = () => {
         confirmLabel="Rechazar solicitud"
         pendingLabel="Rechazando..."
         isPending={guardando}
+        confirmVariant="danger"
+        iconoAdvertencia
+        confirmDisabled={validarMotivoRechazo(motivo) !== null}
         onConfirm={() => void cambiar("Rechazada")}
         onCancel={() => setConfirmacion(null)}
         overlayClassName="fixed inset-0 z-[1400] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
@@ -468,13 +506,39 @@ const GestionSolicitudesCica = () => {
               if (errorAccion) setErrorAccion(null);
             }}
             rows={3}
+            maxLength={MOTIVO_RECHAZO_MAXIMO}
             placeholder="Ej: Falta confirmar la cédula."
-            hasError={Boolean(errorAccion)}
+            hasError={
+              Boolean(errorAccion) ||
+              (motivo.trim().length > 0 &&
+                validarMotivoRechazo(motivo) !== null)
+            }
             disabled={guardando}
           />
-          <FieldError message={errorAccion} />
+          <FieldError
+            message={
+              errorAccion ??
+              (motivo.trim().length > 0 ? validarMotivoRechazo(motivo) : null)
+            }
+          />
         </label>
       </ConfirmacionAccionModal>
+      <ConfirmacionAccionModal
+        open={eliminarSeleccion !== null}
+        title="Eliminar solicitud"
+        parteSubrayada="Eliminar del historial"
+        mensaje={`¿Estás seguro/a que quieres eliminar la solicitud de ${eliminarSeleccion ? nombreCompleto(eliminarSeleccion) : ""}? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        pendingLabel="Eliminando..."
+        isPending={eliminando}
+        iconoAdvertencia
+        confirmVariant="danger"
+        onConfirm={() => void confirmarEliminar()}
+        onCancel={() => setEliminarSeleccion(null)}
+        overlayClassName="fixed inset-0 z-[1400] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
+        className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+        cancelClassName="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
+      />
     </AdminModule>
   );
 };

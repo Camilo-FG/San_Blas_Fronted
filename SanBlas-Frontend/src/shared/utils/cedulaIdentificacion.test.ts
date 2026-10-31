@@ -19,7 +19,7 @@ describe("Cédulas nacionales y extranjeras de catequesis", () => {
   it("valida según el tipo y rechaza longitudes intermedias o letras", () => {
     expect(validarCedulaIdentificacion("102340567", "nacional")).toBeNull();
     expect(
-      validarCedulaIdentificacion("012345678901", "extranjera"),
+      validarCedulaIdentificacion("112345678901", "extranjera"),
     ).toBeNull();
     expect(
       validarCedulaIdentificacion("012345678901", "nacional"),
@@ -32,9 +32,13 @@ describe("Cédulas nacionales y extranjeras de catequesis", () => {
     }
   });
 
-  it("elimina separadores pero preserva los doce dígitos y los ceros iniciales", () => {
+  it("elimina separadores y ceros iniciales sin quitar ceros internos", () => {
     expect(limpiarCedula("1-0234-0567", "nacional")).toBe("102340567");
-    expect(limpiarCedula("012345678901", "extranjera")).toBe("012345678901");
+    expect(limpiarCedula("00123456789012", "extranjera")).toBe("123456789012");
+    expect(limpiarCedula("000", "nacional")).toBe("");
+    expect(validarCedulaIdentificacion("012345678901", "extranjera")).toBe("La cédula no puede iniciar con cero.");
+    expect(validarCedulaIdentificacion("012345678", "nacional")).toBe("La cédula no puede iniciar con cero.");
+    expect(PATRON_CEDULA.test("012345678901")).toBe(false);
   });
 
   it("CICA valida y envía completa la cédula extranjera", () => {
@@ -62,12 +66,15 @@ describe("Cédulas nacionales y extranjeras de catequesis", () => {
         "otraIglesia",
         "observacion",
       ].map((clave) => [clave, ""]),
-      ["cedula", "012345678901"],
+      ["cedula", "112345678901"],
       ["tipoCedula", "extranjera"],
+      ["provincia", "Guanacaste"],
+      ["canton", "Nicoya"],
+      ["distrito", "Nicoya"],
     ]) as FormularioCica;
     expect(validarFormularioCica(form).cedula).toBeUndefined();
     expect(mapearFormularioCica(form)).toMatchObject({
-      cedula: "012345678901",
+      cedula: "112345678901",
       tipoCedula: "extranjera",
     });
   });
@@ -78,8 +85,9 @@ describe("Cédulas nacionales y extranjeras de catequesis", () => {
       apellido1: "",
       apellido2: "",
       fechaNacimiento: "",
-      cedula: "012345678901",
+      cedula: "112345678901",
       tipoCedula: "extranjera",
+      nacionalidad: "",
       telefono: "",
       estadoCivil: "",
       parroquiaOrigen: "",
@@ -91,7 +99,7 @@ describe("Cédulas nacionales y extranjeras de catequesis", () => {
     } satisfies FormularioCatequesisBautismo;
     expect(validarFormularioCatequesisBautismo(form).cedula).toBeUndefined();
     expect(mapearFormularioBautismo(form)).toMatchObject({
-      cedula: "012345678901",
+      cedula: "112345678901",
       tipoCedula: "extranjera",
     });
   });

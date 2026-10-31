@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { cn } from "./cn";
 
 type ToastType = "success" | "error" | "warning" | "info";
@@ -27,6 +28,7 @@ interface ToastContextValue {
   toasts: Toast[];
   showToast: (message: string, type: ToastType, options?: ToastOptions) => void;
   dismissToast: (id: number) => void;
+  dismissAllToasts: () => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -56,20 +58,44 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const dismissAllToasts = useCallback(() => {
+    setToasts([]);
+  }, []);
+
+  // Espejo del estado para que el listener establecido abajo decida con los
+  // toasts al día sin re-registrar el efecto en cada cambio de lista.
+  const toastsRef = useRef(toasts);
+  toastsRef.current = toasts;
+
+  // Las alertas tienen prioridad: un Escape con toasts visibles descarta el
+  // más reciente (uno por uno) y corta la propagación para que los modales
+  // que escuchan en window (useEscapeKey o cerrarConEsc) no se cierren en la
+  // misma pulsación mientras queden alertas activas.
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setToasts((prev) => (prev.length > 0 ? prev.slice(0, -1) : prev));
-      }
+      if (event.key !== "Escape") return;
+      if (toastsRef.current.length === 0) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      setToasts((prev) => prev.slice(0, -1));
     };
+
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   return (
-    <ToastContext.Provider value={{ toasts, showToast, dismissToast }}>
+    <ToastContext.Provider
+      value={{ toasts, showToast, dismissToast, dismissAllToasts }}
+    >
       {children}
-      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      {typeof document !== "undefined" &&
+        createPortal(
+          <ToastContainer toasts={toasts} onDismiss={dismissToast} />,
+          document.body,
+        )}
     </ToastContext.Provider>
   );
 }
@@ -123,6 +149,7 @@ function AnilloProgreso({
 }
 
 function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
+  const reducirMovimiento = useReducedMotion();
   const icons = {
     success: <CheckCircle size={20} className="text-success" />,
     error: <X size={20} className="text-white" />,
@@ -139,6 +166,12 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
 
   const posiciones: ToastPosition[] = ["top-right", "bottom-right"];
 
+  // Las alertas entran deslizándose desde el borde derecho de la pantalla y
+  // se retiran hacia ese mismo borde: el desplazamiento cubre todo el ancho
+  // visible para que nunca "aparezcan de la nada". Solo anima transform y
+  // opacity, de modo que corre en el compositor a 60 fps.
+  const deslizamiento = typeof window === "undefined" ? 600 : window.innerWidth;
+
   return (
     <>
       {posiciones.map((posicion) => {
@@ -146,7 +179,7 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
         return (
           <div
             key={posicion}
-            className={`fixed z-[1400] flex flex-col gap-2 pointer-events-none ${
+            className={`fixed z-[100000] flex flex-col gap-2 pointer-events-none ${
               posicion === "top-right"
                 ? "top-20 right-4"
                 : "right-4 bottom-4 flex-col-reverse"
@@ -155,19 +188,48 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
             aria-live="polite"
             aria-label="Notificaciones"
           >
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
               {grupo.map((toast) => (
                 <motion.div
                   key={toast.id}
+                  layout
                   className={cn(
-                    "pointer-events-auto min-w-[280px] max-w-[400px] rounded-xl border px-4 py-3 shadow-lg",
+                    "pointer-events-auto min-w-[280px] max-w-[400px] rounded-xl border px-4 py-3 shadow-lg will-change-transform",
                     bgClasses[toast.type],
                   )}
                   role="alert"
-                  initial={{ opacity: 0, x: 90 }}
+                  initial={
+                    reducirMovimiento
+                      ? { opacity: 0 }
+                      : {
+                          opacity: 0,
+                          x: deslizamiento,
+                        }
+                  }
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 110 }}
-                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  exit={
+                    reducirMovimiento
+                      ? { opacity: 0 }
+                      : {
+                          opacity: 0,
+                          x: deslizamiento,
+                          transition: {
+                            duration: 0.26,
+                            ease: [0.4, 0, 1, 1],
+                          },
+                        }
+                  }
+                  transition={
+                    reducirMovimiento
+                      ? { duration: 0.15, ease: "easeOut" }
+                      : {
+                          type: "spring",
+                          stiffness: 460,
+                          damping: 34,
+                          mass: 0.7,
+                          opacity: { duration: 0.18, ease: "easeOut" },
+                        }
+                  }
                 >
                   <div className="flex items-center gap-3">
                     {toast.type !== "success" && toast.type !== "error" && (

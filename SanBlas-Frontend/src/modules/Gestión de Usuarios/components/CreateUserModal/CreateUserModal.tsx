@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { Eye, EyeOff } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { type Usuario } from '../../../../types/Usuario';
 import {
+  esRolDelSistema,
   opcionesSelectRol,
   type Rol,
 } from '../../../../types/Rol';
@@ -16,16 +17,13 @@ import {
 } from '../../../../shared/ui';
 import { normalizarTexto } from '../../Utils/normalizarTexto';
 
-// estilos del botón de ojo para mostrar/ocultar contraseña (mismo look que el login)
-const BOTON_OJO =
-  'absolute right-2.5 inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-text-muted transition-colors hover:bg-royal-blue/5 hover:text-royal-blue focus-visible:ring-2 focus-visible:ring-royal-blue/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:hover:text-[#d9a928]';
+const MAX_NOMBRE = 100;
+const MAX_CORREO = 254;
 
 interface CreateUserData {
   nombre: string;
   correo: string;
   telefono: string;
-  contraseña: string;
-  confirmarContraseña: string;
   roles: string[];
 }
 
@@ -37,33 +35,6 @@ interface Props {
   roles: Rol[];
   guardando?: boolean;
 }
-
-// saca la lista de reglas que todavía le faltan (misma regla fuerte del backend: @Matches + @MinLength(8) del RegisterDto)
-const obtenerReglasFaltantes = (v: string): string[] => {
-  const faltantes: string[] = [];
-  if (v.length < 8) faltantes.push('mínimo 8 caracteres');
-  if (!/[a-z]/.test(v)) faltantes.push('una minúscula');
-  if (!/[A-Z]/.test(v)) faltantes.push('una mayúscula');
-  if (!/\d/.test(v)) faltantes.push('un número');
-  return faltantes;
-};
-
-// calcula la fortaleza de 0 a 4 según cuántas reglas cumple (pa la barrita visual)
-const calcularFortaleza = (v: string): number => {
-  let puntos = 0;
-  if (v.length >= 8) puntos += 1;
-  if (/[a-z]/.test(v)) puntos += 1;
-  if (/[A-Z]/.test(v)) puntos += 1;
-  if (/\d/.test(v)) puntos += 1;
-  return puntos;
-};
-
-// textos y colores de la barrita según el puntaje
-const describirFortaleza = (puntos: number): { texto: string; clase: string } => {
-  if (puntos <= 1) return { texto: 'Débil', clase: 'bg-red-500' };
-  if (puntos <= 3) return { texto: 'Media', clase: 'bg-amber-500' };
-  return { texto: 'Fuerte', clase: 'bg-emerald-500' };
-};
 
 const mensajeErrorCampo = (errors: unknown[]) => {
   const first = errors[0];
@@ -83,9 +54,6 @@ const CreateUserModal: React.FC<Props> = ({
       nombre: '',
       correo: '',
       telefono: '',
-      contraseña: '',
-      confirmarContraseña: '',
-      // sin rol precargado: 'user' ya no se ofrece y el validador obliga a elegir uno visible
       roles: [] as string[],
     },
     onSubmit: async ({ value }) => {
@@ -94,8 +62,6 @@ const CreateUserModal: React.FC<Props> = ({
         nombre: normalizarTexto(value.nombre),
         correo: normalizarTexto(value.correo),
         telefono: normalizarTexto(value.telefono),
-        contraseña: value.contraseña.trim(),
-        confirmarContraseña: value.confirmarContraseña.trim(),
       });
       if (ok) {
         form.reset();
@@ -104,9 +70,6 @@ const CreateUserModal: React.FC<Props> = ({
   });
 
   const { user: usuarioSesion } = useAuth();
-  // controlan si se ve o se oculta el texto de cada contraseña
-  const [mostrarContrasena, setMostrarContrasena] = useState(false);
-  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
   const rolesSesion: string[] =
     usuarioSesion?.roles && usuarioSesion.roles.length > 0
       ? usuarioSesion.roles
@@ -114,15 +77,21 @@ const CreateUserModal: React.FC<Props> = ({
   const esSecretarioSesion = rolesSesion.some(
     (rol) => rol.toLowerCase() === 'secretario',
   );
-  // Todos los roles del backend, no solo los del sistema: se excluye
-  // 'user' siempre y 'secretario' salvo sesión de secretario, que es
-  // quien único puede otorgarlo.
   const rolesAsignables = roles
     .map((rol) => rol.clave)
     .filter(
       (clave) =>
         clave !== 'user' && (esSecretarioSesion || clave !== 'secretario'),
     );
+  const opcionesRol = opcionesSelectRol(roles, undefined, rolesAsignables);
+  const rolesSistemaOpciones = opcionesRol.filter((opcion) => {
+    const rol = roles.find((item) => item.clave === opcion.clave);
+    return rol ? esRolDelSistema(rol) : false;
+  });
+  const rolesPersonalizadosOpciones = opcionesRol.filter((opcion) => {
+    const rol = roles.find((item) => item.clave === opcion.clave);
+    return rol ? !esRolDelSistema(rol) : false;
+  });
 
   useEffect(() => {
     if (!isOpen) {
@@ -130,10 +99,9 @@ const CreateUserModal: React.FC<Props> = ({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const validateEmail = (email: string) => {
-    const validDomainsRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|es|org)$/i;
+    const validDomainsRegex =
+      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|es|org)$/i;
     return validDomainsRegex.test(email);
   };
 
@@ -153,22 +121,17 @@ const CreateUserModal: React.FC<Props> = ({
     form.setFieldValue('nombre', normalizarTexto(valores.nombre));
     form.setFieldValue('correo', normalizarTexto(valores.correo));
     form.setFieldValue('telefono', normalizarTexto(valores.telefono));
-    form.setFieldValue('contraseña', valores.contraseña.trim());
-    form.setFieldValue('confirmarContraseña', valores.confirmarContraseña.trim());
   };
 
   const validarNombre = (value: string) => {
     const v = normalizarTexto(value);
     if (!v) return 'El nombre es requerido.';
     if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
-    if (v.length > 60) return 'El nombre no puede superar los 60 caracteres.';
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+$/.test(v)) return 'El nombre solo puede contener letras y números.';
-    if (
-      users.some(
-        (u) => normalizarTexto(u.userName).toLowerCase() === v.toLowerCase(),
-      )
-    ) {
-      return 'Ya existe un usuario con este nombre.';
+    if (v.length > MAX_NOMBRE) {
+      return `El nombre no puede superar los ${MAX_NOMBRE} caracteres.`;
+    }
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+$/.test(v)) {
+      return 'El nombre solo puede contener letras y números.';
     }
     return undefined;
   };
@@ -176,9 +139,10 @@ const CreateUserModal: React.FC<Props> = ({
   const validarCorreo = (value: string) => {
     const v = normalizarTexto(value);
     if (!v) return 'El correo es requerido.';
-    if (v.length > 40) return 'El correo no puede superar los 40 caracteres.';
+    if (v.length > MAX_CORREO) {
+      return `El correo no puede superar los ${MAX_CORREO} caracteres.`;
+    }
     if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v)) {
-      // Tiene .com/.es/.org en medio pero con caracteres después (ej: usuario@ga.com12).
       if (/\.(com|es|org)(?![a-zA-Z])/i.test(v)) {
         return 'El correo debe terminar en .com, .es o .org, sin caracteres después del dominio.';
       }
@@ -200,38 +164,18 @@ const CreateUserModal: React.FC<Props> = ({
     return undefined;
   };
 
-  // valida el formato de la contraseña regla por regla (misma regla que el backend con @Matches)
-  const validarContraseña = (value: string) => {
-    const v = value.trim();
-    if (!v) return 'La contraseña es requerida.';
-    if (v.length > 64) return 'La contraseña no puede superar 64 caracteres.';
-    const faltantes = obtenerReglasFaltantes(v);
-    if (faltantes.length > 0) {
-      return `Falta: ${faltantes.join(', ')}.`; // le dice exactamente qué regla le falta
-    }
-    return undefined;
-  };
-
-  const validarConfirmacion = (value: string) => {
-    const v = value.trim();
-    if (!v) return 'Confirme la contraseña.';
-    if (v !== form.getFieldValue('contraseña').trim()) return 'Las contraseñas no coinciden.';
-    return undefined;
-  };
-
-  // al menos un rol obligatorio (sin precarga: el usuario debe elegir uno visible)
   const validarRoles = (value: string[]) => {
     if (!value || value.length === 0) return 'Seleccione al menos un rol.';
     return undefined;
   };
 
-  return (
+  const contenidoModal = (
     <Modal
       onClose={guardando ? () => undefined : onClose}
       title="Crear nuevo usuario"
       cerrarAlClicFuera={false}
-      overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
-      className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] dark:[scrollbar-color:#475569_transparent]"
+      overlayTransparente
+      className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
     >
       <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue dark:text-[#f3f6fa]">
         Crear nuevo usuario
@@ -256,9 +200,9 @@ const CreateUserModal: React.FC<Props> = ({
             {(field) => (
               <div>
                 <Label htmlFor="nombre" required>
-                  Nombre de usuario
+                  Nombre completo
                   <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
-                    ({field.state.value.length}/60)
+                    ({field.state.value.length}/{MAX_NOMBRE})
                   </span>
                 </Label>
                 <Input
@@ -269,14 +213,17 @@ const CreateUserModal: React.FC<Props> = ({
                   hasError={field.state.meta.errors.length > 0}
                   onChange={(e) =>
                     field.handleChange(
-                      e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]/g, ''),
+                      e.target.value.replace(
+                        /[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]/g,
+                        '',
+                      ),
                     )
                   }
                   onBlur={() => {
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
-                  maxLength={60}
+                  maxLength={MAX_NOMBRE}
                   disabled={guardando}
                 />
                 <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
@@ -296,14 +243,14 @@ const CreateUserModal: React.FC<Props> = ({
                 <Label htmlFor="correo" required>
                   Correo electrónico
                   <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
-                    ({field.state.value.length}/40)
+                    ({field.state.value.length}/{MAX_CORREO})
                   </span>
                 </Label>
-                  <Input
-                    id="correo"
-                    type="email"
-                    autoComplete="off"
-                    placeholder="Ej: ejemplo@correo.com"
+                <Input
+                  id="correo"
+                  type="email"
+                  autoComplete="off"
+                  placeholder="Ej: ejemplo@correo.com"
                   value={field.state.value}
                   hasError={field.state.meta.errors.length > 0}
                   onChange={(e) =>
@@ -315,169 +262,46 @@ const CreateUserModal: React.FC<Props> = ({
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
-                  maxLength={40}
+                  maxLength={MAX_CORREO}
                   disabled={guardando}
                 />
+                <p className="mt-1.5 text-xs text-text-muted dark:text-[#7f8da3]">
+                  Se enviará un enlace de activación a este correo. El usuario
+                  elegirá su contraseña al abrirlo.
+                </p>
                 <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
               </div>
             )}
           </form.Field>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <form.Field
-              name="telefono"
-              validators={{
-                onBlur: ({ value }) => validarTelefono(value),
-                onSubmit: ({ value }) => validarTelefono(value),
-              }}
-            >
-              {(field) => (
-                <div>
-                  <Label htmlFor="telefono" required>
-                    Teléfono
-                  </Label>
-                  <Input
-                    id="telefono"
-                    type="tel"
-                    placeholder="Ej: 8888-8888"
-                    value={field.state.value}
-                    hasError={field.state.meta.errors.length > 0}
-                    onChange={(e) => field.handleChange(formatTelefono(e.target.value))}
-                    onBlur={() => {
-                      field.handleChange(normalizarTexto(field.state.value));
-                      field.handleBlur();
-                    }}
-                    maxLength={9}
-                    disabled={guardando}
-                  />
-                  <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
-                </div>
-              )}
-            </form.Field>
-
-            <form.Field
-              name="contraseña"
-              validators={{
-                onChange: ({ value }) => validarContraseña(value), // valida en tiempo real mientras escribe
-                onBlur: ({ value }) => validarContraseña(value),
-                onSubmit: ({ value }) => validarContraseña(value),
-              }}
-            >
-              {(field) => {
-              // puntaje y etiqueta pa la ayuda visual de fortaleza
-              const valor = field.state.value.trim();
-              const puntos = valor ? calcularFortaleza(valor) : 0;
-              const fortaleza = describirFortaleza(puntos);
-              return (
-                <div>
-                  <Label htmlFor="nueva-contrasena-usuario" required>
-                    Contraseña
-                    <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
-                      ({field.state.value.length}/64)
-                    </span>
-                  </Label>
-                  <div className="relative flex items-center">
-                    <Input
-                      id="nueva-contrasena-usuario"
-                      name="nueva-contrasena-usuario"
-                      type={mostrarContrasena ? 'text' : 'password'}
-                      autoComplete="new-password"
-                      placeholder="Escriba una contraseña"
-                      value={field.state.value}
-                      hasError={field.state.meta.errors.length > 0}
-                      onChange={(e) =>
-                        field.handleChange(
-                          e.target.value.replace(/[^a-zA-Z0-9]/g, ''),
-                        )
-                      }
-                      onBlur={() => {
-                        field.handleChange(field.state.value.trim());
-                        field.handleBlur();
-                      }}
-                      maxLength={64}
-                      disabled={guardando}
-                      className="pr-12"
-                    />
-                    <button
-                      type="button"
-                      className={BOTON_OJO}
-                      onClick={() => setMostrarContrasena((prev) => !prev)}
-                      aria-label={mostrarContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                      aria-pressed={mostrarContrasena}
-                      disabled={guardando}
-                    >
-                      {mostrarContrasena ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
-                  </div>
-                  {valor ? ( // solo muestra la barrita si ya escribió algo
-                    <div className="mt-2 flex items-center gap-2" aria-live="polite">
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong dark:bg-white/10">
-                        <div
-                          className={`h-full rounded-full transition-all ${fortaleza.clase}`}
-                          style={{ width: `${(puntos / 4) * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-semibold text-text-muted dark:text-[#7f8da3]">
-                        {fortaleza.texto}
-                      </span>
-                    </div>
-                  ) : null}
-                  <p className="mt-1 text-xs text-text-muted dark:text-[#7f8da3]">
-                    Incluya mayúscula, minúscula y número.
-                  </p>
-                  <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
-                </div>
-              );
-            }}
-            </form.Field>
-          </div>
-
           <form.Field
-            name="confirmarContraseña"
+            name="telefono"
             validators={{
-              onChange: ({ value }) => validarConfirmacion(value), // valida en tiempo real si coincide
-              onBlur: ({ value }) => validarConfirmacion(value),
-              onSubmit: ({ value }) => validarConfirmacion(value),
+              onBlur: ({ value }) => validarTelefono(value),
+              onSubmit: ({ value }) => validarTelefono(value),
             }}
           >
             {(field) => (
               <div>
-                <Label htmlFor="confirmar-contrasena-usuario" required>
-                  Confirmar contraseña
+                <Label htmlFor="telefono" required>
+                  Teléfono
                 </Label>
-                <div className="relative flex items-center">
-                  <Input
-                    id="confirmar-contrasena-usuario"
-                    name="confirmar-contrasena-usuario"
-                    type={mostrarConfirmacion ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    placeholder="Repita la contraseña"
-                    value={field.state.value}
-                    hasError={field.state.meta.errors.length > 0}
-                    onChange={(e) =>
-                      field.handleChange(
-                        e.target.value.replace(/[^a-zA-Z0-9]/g, ''),
-                      )
-                    }
-                    onBlur={() => {
-                      field.handleChange(field.state.value.trim());
-                      field.handleBlur();
-                    }}
-                    maxLength={64}
-                    disabled={guardando}
-                    className="pr-12"
-                  />
-                  <button
-                    type="button"
-                    className={BOTON_OJO}
-                    onClick={() => setMostrarConfirmacion((prev) => !prev)}
-                    aria-label={mostrarConfirmacion ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                    aria-pressed={mostrarConfirmacion}
-                    disabled={guardando}
-                  >
-                    {mostrarConfirmacion ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
+                <Input
+                  id="telefono"
+                  type="tel"
+                  placeholder="Ej: 8888-8888"
+                  value={field.state.value}
+                  hasError={field.state.meta.errors.length > 0}
+                  onChange={(e) =>
+                    field.handleChange(formatTelefono(e.target.value))
+                  }
+                  onBlur={() => {
+                    field.handleChange(normalizarTexto(field.state.value));
+                    field.handleBlur();
+                  }}
+                  maxLength={9}
+                  disabled={guardando}
+                />
                 <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
               </div>
             )}
@@ -491,63 +315,134 @@ const CreateUserModal: React.FC<Props> = ({
               onSubmit: ({ value }) => validarRoles(value),
             }}
           >
-            {(field) => (
-              <div>
-                <Label id="roles-usuario-titulo" required>
-                  Roles del usuario
-                </Label>
-                <div
-                  role="group"
-                  aria-labelledby="roles-usuario-titulo"
-                  className="flex max-h-48 flex-col gap-2 overflow-y-auto rounded-xl border border-border-strong bg-surface-muted p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
-                >
-                  {opcionesSelectRol(
-                    roles,
-                    undefined,
-                    rolesAsignables,
-                  ).map((rol) => {
-                    const marcado = field.state.value.includes(rol.clave);
-                    return (
-                      <label
-                        key={rol.clave}
-                        className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-text dark:text-[#f3f6fa]"
+            {(field) => {
+              const renderCheckboxRol = (rol: {
+                clave: string;
+                nombre: string;
+              }) => {
+                const marcado = field.state.value.includes(rol.clave);
+                return (
+                  <label
+                    key={rol.clave}
+                    className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-text dark:text-[#f3f6fa]"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={marcado}
+                      disabled={guardando}
+                      onChange={() => {
+                        const actual = field.state.value;
+                        field.handleChange(
+                          marcado
+                            ? actual.filter((r) => r !== rol.clave)
+                            : [...actual, rol.clave],
+                        );
+                      }}
+                      onBlur={field.handleBlur}
+                      className="h-4 w-4 shrink-0 cursor-pointer accent-royal-blue"
+                    />
+                    <span>{rol.nombre}</span>
+                  </label>
+                );
+              };
+
+              return (
+                <div>
+                  <Label id="roles-usuario-titulo" required>
+                    Roles del usuario
+                  </Label>
+                  <div
+                    role="group"
+                    aria-labelledby="roles-usuario-titulo"
+                    className="flex max-h-60 flex-col gap-3 overflow-y-auto rounded-xl border border-border-strong bg-surface-muted p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+                  >
+                    {rolesSistemaOpciones.length > 0 && (
+                      <div>
+                        <p
+                          id="roles-sistema-titulo"
+                          className="mb-1.5 text-[11px] font-bold tracking-wide text-royal-blue uppercase dark:text-[#d9a928]"
+                        >
+                          Roles del sistema
+                        </p>
+                        <div
+                          role="group"
+                          aria-labelledby="roles-sistema-titulo"
+                          className="flex flex-col gap-2"
+                        >
+                          {rolesSistemaOpciones.map(renderCheckboxRol)}
+                        </div>
+                      </div>
+                    )}
+
+                    {rolesPersonalizadosOpciones.length > 0 && (
+                      <div
+                        className={
+                          rolesSistemaOpciones.length > 0
+                            ? 'border-t border-border-strong pt-3 dark:border-[rgba(220,230,242,0.12)]'
+                            : undefined
+                        }
                       >
-                        <input
-                          type="checkbox"
-                          checked={marcado}
-                          disabled={guardando}
-                          onChange={() => {
-                            const actual = field.state.value;
-                            field.handleChange(
-                              marcado
-                                ? actual.filter((r) => r !== rol.clave)
-                                : [...actual, rol.clave],
-                            );
-                          }}
-                          onBlur={field.handleBlur}
-                          className="h-4 w-4 shrink-0 cursor-pointer accent-royal-blue"
-                        />
-                        <span>{rol.nombre}</span>
-                      </label>
-                    );
-                  })}
+                        <p
+                          id="roles-personalizados-titulo"
+                          className="mb-1.5 text-[11px] font-bold tracking-wide text-text-muted uppercase dark:text-[#7f8da3]"
+                        >
+                          Roles personalizados
+                        </p>
+                        <div
+                          role="group"
+                          aria-labelledby="roles-personalizados-titulo"
+                          className="flex flex-col gap-2"
+                        >
+                          {rolesPersonalizadosOpciones.map(renderCheckboxRol)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <FieldError
+                    message={mensajeErrorCampo(field.state.meta.errors)}
+                  />
                 </div>
-                <FieldError message={mensajeErrorCampo(field.state.meta.errors)} />
-              </div>
-            )}
+              );
+            }}
           </form.Field>
         </div>
 
         <div className="mt-6 flex flex-col gap-2 border-t border-border-strong pt-4 sm:flex-row sm:justify-end dark:border-[rgba(220,230,242,0.12)]">
           <Button type="submit" variant="royal" disabled={guardando}>
-            {guardando ? 'Creando...' : 'Crear usuario'}
+            {guardando ? 'Enviando...' : 'Crear y enviar invitación'}
           </Button>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={guardando} className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            disabled={guardando}
+            className="dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
+          >
             Cancelar
           </Button>
         </div>
       </form>
     </Modal>
+  );
+
+  return (
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            key="crear-usuario-backdrop"
+            className="fixed inset-0 z-[1199] bg-[#060f20]/[0.78] backdrop-blur-[6px] dark:bg-black/60"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
+      {isOpen && contenidoModal}
+    </>
   );
 };
 

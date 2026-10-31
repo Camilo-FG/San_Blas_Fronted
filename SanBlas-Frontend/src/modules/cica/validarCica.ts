@@ -1,4 +1,6 @@
 import type { EstadoCivilCica } from "./types";
+import { ESTADOS_CIVILES_CICA, requiereConyugeCica } from "./estadosCivilesCica";
+import { agruparErroresCica } from "./erroresFormularioCica";
 import { SACRAMENTOS_CICA } from "./sacramentosCica";
 import { validarCedulaIdentificacion, type TipoCedula } from "../../shared/utils/cedulaIdentificacion";
 
@@ -7,9 +9,50 @@ export const MAX_APELLIDO_CICA = 25;
 export const MAX_DIRECCION_CICA = 100;
 export const MAX_TEXTO_CICA = 200;
 export const MIN_DIRECCION_CICA = 10;
+export const MIN_CONYUGE_CICA = 3;
 
-export const TELEFONO_CICA = /^\d{4}-\d{4}$/;
-export const CORREO_CICA = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+// Mismo patrón requerido(): los espacios no cuentan como contenido.
+const requerido = (valor: string, mensaje: string): string | null =>
+  valor.trim() ? null : mensaje;
+
+export function obtenerFaltantesCica(form: FormularioCica) {
+  const errores: Record<string, string> = {};
+  const exigir = (campo: keyof FormularioCica, mensaje: string) => {
+    const error = requerido(String(form[campo] ?? ""), mensaje);
+    if (error) errores[campo] = error;
+  };
+  exigir("nombre", "El nombre es obligatorio.");
+  exigir("apellido1", "El primer apellido es obligatorio.");
+  exigir("fechaNacimiento", "La fecha de nacimiento es obligatoria.");
+  exigir("cedula", "La cédula es obligatoria.");
+  exigir("nacionalidad", "La nacionalidad es obligatoria.");
+  exigir("telefono", "El teléfono es obligatorio.");
+  exigir("correo", "El correo es obligatorio.");
+  exigir("estadoCivil", "Seleccione el estado civil.");
+  if (requiereConyugeCica(form.estadoCivil)) {
+    exigir("conyugeNombre", "El nombre del cónyuge o compañero(a) es obligatorio.");
+    exigir("conyugeApellido1", "El primer apellido del cónyuge o compañero(a) es obligatorio.");
+  }
+  if (!SACRAMENTOS_CICA.some(({ clave }) => form[clave])) {
+    errores.sacramentos = "Marque al menos un sacramento que necesite.";
+  }
+  exigir("padreNombre", "El nombre del padre es obligatorio.");
+  exigir("padreApellido1", "El primer apellido del padre es obligatorio.");
+  exigir("madreNombre", "El nombre de la madre es obligatorio.");
+  exigir("madreApellido1", "El primer apellido de la madre es obligatorio.");
+  exigir("provincia", "Seleccione una provincia.");
+  exigir("canton", "Seleccione un cantón.");
+  exigir("distrito", "Seleccione un distrito.");
+  exigir("direccionHogar", "La dirección del hogar es obligatoria.");
+  exigir("esCatolico", "Indique si es católico o de otra religión.");
+  if (form.esCatolico === "no") {
+    exigir("otraIglesia", "Indique el nombre de la otra religión.");
+  }
+  return agruparErroresCica(errores);
+}
+
+export const TELEFONO_CICA = /^[1-9]\d{3}-\d{4}$/;
+export const CORREO_CICA = /^[\p{L}0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/u;
 const LETRAS_CON_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
 const LETRAS_SIN_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/;
 
@@ -20,7 +63,7 @@ export const filtrarApellidoCica = (valor: string) =>
   valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, "").slice(0, MAX_APELLIDO_CICA);
 
 export const filtrarTelefonoCica = (valor: string) => {
-  const soloNumeros = valor.replace(/\D/g, "").slice(0, 8);
+  const soloNumeros = valor.replace(/\D/g, "").replace(/^0+/, "").slice(0, 8);
   return soloNumeros.length > 4
     ? `${soloNumeros.slice(0, 4)}-${soloNumeros.slice(4)}`
     : soloNumeros;
@@ -49,11 +92,24 @@ export type FormularioCica = {
   madreNombre: string;
   madreApellido1: string;
   madreApellido2: string;
+  provincia: string;
+  canton: string;
+  distrito: string;
   direccionHogar: string;
   esCatolico: "" | "si" | "no";
   otraIglesia: string;
   observacion: string;
 };
+
+export const PROVINCIAS_COSTA_RICA_CICA = [
+  "San José",
+  "Alajuela",
+  "Cartago",
+  "Heredia",
+  "Guanacaste",
+  "Puntarenas",
+  "Limón",
+] as const;
 
 const mensajeNombre = (
   valor: string,
@@ -120,35 +176,45 @@ export const validarFormularioCica = (
     errores.correo = "Ingrese un correo válido. Ej: nombre@dominio.com";
 
   if (!form.estadoCivil) errores.estadoCivil = "Seleccione el estado civil.";
-  if (form.estadoCivil && form.estadoCivil !== "soltero") {
-    poner(
-      "conyugeNombre",
-      mensajeNombre(
-        form.conyugeNombre,
-        "El nombre del cónyuge o compañero(a)",
-        true,
-        true,
-      ),
-    );
-    poner(
-      "conyugeApellido1",
-      mensajeNombre(
-        form.conyugeApellido1,
-        "El primer apellido del cónyuge o compañero(a)",
-        true,
-        false,
-      ),
-    );
-    poner(
-      "conyugeApellido2",
-      mensajeNombre(
-        form.conyugeApellido2,
-        "El segundo apellido del cónyuge o compañero(a)",
-        false,
-        false,
-      ),
-    );
+  else if (!ESTADOS_CIVILES_CICA.some(({ valor }) => valor === form.estadoCivil))
+    errores.estadoCivil = "Seleccione un estado civil válido.";
+  if (form.estadoCivil && requiereConyugeCica(form.estadoCivil)) {
+    const nombreConyuge = form.conyugeNombre.trim();
+    if (!nombreConyuge) {
+      errores.conyugeNombre =
+        "El nombre del cónyuge o compañero(a) es obligatorio.";
+    } else if (nombreConyuge.length < MIN_CONYUGE_CICA) {
+      errores.conyugeNombre = `El nombre del cónyuge o compañero(a) debe tener al menos ${MIN_CONYUGE_CICA} caracteres.`;
+    } else {
+      poner(
+        "conyugeNombre",
+        mensajeNombre(
+          form.conyugeNombre,
+          "El nombre del cónyuge o compañero(a)",
+          true,
+          true,
+        ),
+      );
+    }
   }
+  poner(
+    "conyugeApellido1",
+    mensajeNombre(
+      form.conyugeApellido1,
+      "El primer apellido del cónyuge o compañero(a)",
+      requiereConyugeCica(form.estadoCivil),
+      false,
+    ),
+  );
+  poner(
+    "conyugeApellido2",
+    mensajeNombre(
+      form.conyugeApellido2,
+      "El segundo apellido del cónyuge o compañero(a)",
+      false,
+      false,
+    ),
+  );
 
   const seleccionados = SACRAMENTOS_CICA.filter(
     (sacramento) => form[sacramento.clave],
@@ -176,6 +242,18 @@ export const validarFormularioCica = (
     mensajeNombre(form.madreApellido2, "El segundo apellido de la madre", false, false),
   );
 
+  if (!form.provincia.trim()) {
+    errores.provincia = "Seleccione una provincia.";
+  } else if (
+    !PROVINCIAS_COSTA_RICA_CICA.includes(
+      form.provincia as (typeof PROVINCIAS_COSTA_RICA_CICA)[number],
+    )
+  ) {
+    errores.provincia = "Seleccione una provincia válida.";
+  }
+  if (!form.canton.trim()) errores.canton = "Seleccione un cantón.";
+  if (!form.distrito.trim()) errores.distrito = "Seleccione un distrito.";
+
   const direccion = form.direccionHogar.trim();
   if (!direccion) errores.direccionHogar = "La dirección del hogar es obligatoria.";
   else if (direccion.length < MIN_DIRECCION_CICA)
@@ -184,21 +262,27 @@ export const validarFormularioCica = (
     errores.direccionHogar = "La dirección no puede superar los 100 caracteres.";
 
   if (!form.esCatolico)
-    errores.esCatolico = "Indique si es católico o de otra iglesia.";
+    errores.esCatolico = "Indique si es católico o de otra religión.";
+  else if (form.esCatolico !== "si" && form.esCatolico !== "no")
+    errores.esCatolico = "Seleccione una opción de religión válida.";
   if (form.esCatolico === "no") {
     const iglesia = form.otraIglesia.trim();
     if (iglesia.length < 2) {
       errores.otraIglesia =
-        "Indique el nombre de la otra iglesia. Debe tener al menos 2 caracteres.";
+        "Indique el nombre de la otra religión. Debe tener al menos 2 caracteres.";
     } else if (!LETRAS_CON_ESPACIO.test(iglesia)) {
-      errores.otraIglesia = "El nombre de la otra iglesia solo puede contener letras.";
+      errores.otraIglesia = "El nombre de la otra religión solo puede contener letras.";
     } else if (iglesia.length > MAX_NOMBRE_CICA) {
-      errores.otraIglesia = "El nombre de la otra iglesia no puede superar los 25 caracteres.";
+      errores.otraIglesia = "El nombre de la otra religión no puede superar los 25 caracteres.";
     }
   }
 
   if (form.observacion.trim().length > MAX_TEXTO_CICA)
     errores.observacion = "La observación no puede superar los 200 caracteres.";
 
+  // La detección centralizada prevalece sobre errores de formato en campos vacíos.
+  for (const { campos } of obtenerFaltantesCica(form)) {
+    for (const { campo, mensaje } of campos) errores[campo] = mensaje;
+  }
   return errores;
 };

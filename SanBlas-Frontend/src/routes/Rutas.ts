@@ -29,6 +29,7 @@ const Rutas = {
   login: "/login",
   recuperarContrasena: "/recuperar-contrasena",
   restablecerContrasena: "/reset-password",
+  activarCuenta: "/activar-cuenta",
   dashboard: dashboardBase,
 
   dashboardPath,

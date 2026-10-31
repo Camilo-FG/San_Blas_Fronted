@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, cn, Input, Label, useToast } from '../../../shared/ui';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Button, cn, ContadorCaracteres, CustomSelect, Input, Label, useToast } from '../../../shared/ui';
 import { Loader2 } from 'lucide-react';
 import { useFocusTrap } from '../../../shared/hooks/useFocusTrap';
+import { useEscapeKey } from '../../../shared/hooks/useEscapeKey';
 import { useListarParroquias } from '../hooks/hooksNuevos/useListarParroquias';
 import { useListarPresbiteros } from '../hooks/hooksNuevos/useListarPresbiteros';
 import {
@@ -12,12 +14,27 @@ import {
   TIPO_SACRAMENTO_LABEL,
 } from '../../../types/sacramentosNuevos';
 import {
+  CEDULA_DIGITOS,
   cedulaDigitosValidos,
   soloLetras,
   soloNumeros,
+  soloTextoSeguro,
+  textoSeguroValido,
 } from '../../../shared/utils/formValidation';
 import { opcionesLugarCelebracion } from '../constants/filialesCelebracion';
+import {
+  opcionesParentescoAbuelo,
+  PARENTESCOS_ABUELOS,
+} from '../constants/parentescosAbuelos';
 import { obtenerDatosCedula } from '../../../services/cedulaService';
+import { erroresVisibles, marcarTocado, mismosErrores, type CamposTocados } from '../utils/validacionEnVivo';
+import {
+  MAX_CEDULA_NACIONAL,
+  MAX_LIBRO,
+  MAX_LUGAR_NACIMIENTO as LUGAR_NACIMIENTO_MAX,
+  MAX_NOMBRE_PERSONA,
+  MAX_OBSERVACIONES as OBSERVACIONES_MAX,
+} from '../constants/limitesCampos';
 
 interface Props {
   isOpen: boolean;
@@ -28,20 +45,27 @@ interface Props {
 
 const TIPOS: TipoSacramento[] = ['bautismo', 'comunion', 'confirmacion', 'matrimonio'];
 
-const PARENTESCOS: ParentescoAbuelo[] = [
-  'abuelo_paterno',
-  'abuela_paterna',
-  'abuelo_materno',
-  'abuela_materna',
-];
-
 const inputClass = (hasError = false) =>
   cn(
     'w-full rounded-md border px-3 py-2.5 text-sm transition-colors focus:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:focus:border-[#d9a928]',
     hasError
       ? 'border-red-500 bg-red-50 focus:border-red-600 dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)]'
-      : 'border-gray-300 focus:border-blue-600',
+      : 'border-gray-300 focus:border-slate-500',
   );
+
+const selectTriggerClass = (hasError = false) =>
+  cn(
+    'rounded-md! border! px-3! py-2.5! text-sm! font-normal! text-slate-900!',
+    hasError
+      ? 'border-red-500! bg-red-50! hover:bg-red-50! focus-visible:border-red-600! dark:border-[#e66a6a]! dark:bg-[rgba(230,106,106,0.10)]! dark:hover:bg-[rgba(230,106,106,0.10)]! dark:text-[#f3f6fa]!'
+      : 'border-gray-300! bg-white! hover:bg-white! focus-visible:border-slate-500! dark:border-[rgba(220,230,242,0.12)]! dark:bg-[#0f1d33]! dark:text-[#f3f6fa]! dark:hover:bg-[#0f1d33]! dark:focus-visible:border-[#d9a928]!',
+  );
+
+const selectMenuClass =
+  'rounded-md! border! border-gray-200! bg-white! shadow-[0_16px_35px_rgba(6,15,32,0.14)]! dark:border-[rgba(220,230,242,0.12)]! dark:bg-[#0f1d33]! dark:shadow-[0_18px_40px_rgba(0,0,0,0.5)]!';
+
+const selectOptionClass =
+  'font-normal! dark:text-[#c7d2e3]! dark:hover:bg-white/[0.06]! dark:hover:text-[#f3f6fa]!';
 
 // Mensajes de validación mostrados bajo cada campo, igual que en la solicitud de sacramentos.
 const MENSAJES: Record<string, string> = {
@@ -67,7 +91,7 @@ const ErrorMsg = ({ errors, clave }: { errors: Record<string, string>; clave: st
 
 const formatearCedulaCR = (valor: string): string => {
   const digitos = valor.replace(/\D/g, '');
-  const limpiados = digitos.startsWith('0') ? digitos.slice(1) : digitos.slice(0, 9);
+  const limpiados = digitos.replace(/^0+/, '').slice(0, 9);
   if (limpiados.length <= 1) return limpiados;
   if (limpiados.length <= 5) return `${limpiados[0]}-${limpiados.slice(1)}`;
   return `${limpiados[0]}-${limpiados.slice(1, 5)}-${limpiados.slice(5)}`;
@@ -159,10 +183,44 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const [idParroquia, setIdParroquia] = useState(borradorInicial?.idParroquia ?? '');
   const [idPresbitero, setIdPresbitero] = useState(borradorInicial?.idPresbitero ?? '');
   const [fechaSacramento, setFechaSacramento] = useState(borradorInicial?.fechaSacramento ?? '');
-  const [observaciones, setObservaciones] = useState(borradorInicial?.observaciones ?? '');
+  const [observaciones, setObservaciones] = useState(() =>
+    soloTextoSeguro(borradorInicial?.observaciones ?? '', OBSERVACIONES_MAX),
+  );
   const [saving, setSaving] = useState(false);
   const [campoCedulaCargando, setCampoCedulaCargando] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Campos que el usuario ya visitó (escribió o salió de ellos) y si ya intentó
+  // guardar: deciden cuáles mensajes de error se muestran en la validación en vivo.
+  const [tocados, setTocados] = useState<CamposTocados>({});
+  const [intentado, setIntentado] = useState(false);
+  // Resultado de la consulta de cédula por campo (bautizado, padre, ..., abuelo-0).
+  // Va aparte de `errors` porque ese estado se limpia al cambiar de pestaña.
+  const [consultasCedula, setConsultasCedula] = useState<
+    Record<string, { digitos: string; estado: 'no_encontrada' | 'error' }>
+  >({});
+
+  // Devuelve el estado solo si corresponde a la cédula actual (evita mensajes
+  // de una consulta vieja cuando el usuario ya cambió el número).
+  const estadoConsultaCedula = (prefijo: string, cedula: string) => {
+    const digitos = cedulaDigitosValidos(cedula);
+    const registro = consultasCedula[prefijo];
+    return registro && registro.digitos === digitos ? registro.estado : null;
+  };
+
+  const renderAvisoCedula = (prefijo: string, cedula: string) => {
+    const estado = estadoConsultaCedula(prefijo, cedula);
+    if (estado !== 'no_encontrada' && estado !== 'error') return null;
+    return (
+      <span
+        role="alert"
+        className="mt-1 block text-xs font-semibold text-red-500 dark:text-[#e66a6a]"
+      >
+        {estado === 'no_encontrada'
+          ? 'Cédula no encontrada'
+          : 'No se pudo verificar la cédula. Intente nuevamente.'}
+      </span>
+    );
+  };
 
   const [bautizado, setBautizado] = useState<PersonaForm>(borradorInicial?.bautizado ?? personaVacia);
   const [padre, setPadre] = useState<PersonaForm>(borradorInicial?.padre ?? personaVacia);
@@ -173,13 +231,19 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const [persona, setPersona] = useState<PersonaForm>(borradorInicial?.persona ?? personaVacia);
   const [contrayente1, setContrayente1] = useState<PersonaForm>(borradorInicial?.contrayente1 ?? personaVacia);
   const [contrayente2, setContrayente2] = useState<PersonaForm>(borradorInicial?.contrayente2 ?? personaVacia);
-  const [detalleBautismo, setDetalleBautismo] = useState(borradorInicial?.detalleBautismo ?? {
-    fechaNacimiento: '',
-    horaNacimiento: '',
-    lugarNacimiento: '',
-    libro: '',
-    folio: '',
-    asiento: '',
+  const [detalleBautismo, setDetalleBautismo] = useState(() => {
+    const inicial = borradorInicial?.detalleBautismo ?? {
+      fechaNacimiento: '',
+      horaNacimiento: '',
+      lugarNacimiento: '',
+      libro: '',
+      folio: '',
+      asiento: '',
+    };
+    return {
+      ...inicial,
+      lugarNacimiento: soloTextoSeguro(inicial.lugarNacimiento ?? '', LUGAR_NACIMIENTO_MAX),
+    };
   });
   const [detalleMatrimonio, setDetalleMatrimonio] = useState(borradorInicial?.detalleMatrimonio ?? {
     libro: '',
@@ -188,12 +252,11 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
 
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, isOpen);
+  useEscapeKey(isOpen, onClose, !saving);
 
   useEffect(() => {
     guardarBorradorSacramento({ tipo, idParroquia, idPresbitero, fechaSacramento, observaciones, bautizado, padre, madre, padrino, madrina, abuelos, persona, contrayente1, contrayente2, detalleBautismo, detalleMatrimonio });
   }, [tipo, idParroquia, idPresbitero, fechaSacramento, observaciones, bautizado, padre, madre, padrino, madrina, abuelos, persona, contrayente1, contrayente2, detalleBautismo, detalleMatrimonio]);
-
-  if (!isOpen) return null;
 
   // Reinicia el formulario y elimina el borrador para empezar una inscripción nueva.
   const limpiarProgreso = (mostrarMensaje = true) => {
@@ -217,6 +280,9 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     setDetalleMatrimonio(vacio.detalleMatrimonio);
     setCampoCedulaCargando(null);
     setErrors({});
+    setTocados({});
+    setIntentado(false);
+    setConsultasCedula({});
     if (mostrarMensaje) {
       showToast('Progreso eliminado. Puede iniciar una inscripción nueva.', 'success');
     }
@@ -273,6 +339,8 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       setContrayente1((prev) => ({ ...base, ...prev }));
     }
     setErrors({});
+    setTocados({});
+    setIntentado(false);
     setTipo(nuevo);
   };
 
@@ -281,6 +349,12 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     campo: keyof PersonaForm,
     valor: string,
   ) => {
+    // Si se borra la cédula por completo, los nombres inyectados por el
+    // autocompletado deben limpiarse para no mezclar cédulas con nombres ajenos.
+    if (campo === 'cedula' && cedulaDigitosValidos(valor).length === 0) {
+      setter(() => ({ cedula: '', nombre: '', primerApellido: '', segundoApellido: '' }));
+      return;
+    }
     setter((prev) => ({
       ...prev,
       [campo]:
@@ -288,31 +362,47 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     }));
   };
 
-  // Al completar la cédula, consulta la API y llena solo los campos que el usuario no haya escrito.
+  // Al completar la cédula, consulta la API y sobrescribe nombre y apellidos con
+  // los de esa cédula (al cambiarla se reemplazan los datos anteriores).
   const autocompletarPorCedula = async (
     setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
     cedula: string,
-    persona: PersonaForm,
     campo: string,
   ) => {
     const digitos = cedulaDigitosValidos(cedula);
     if (digitos.length !== 9) return;
-    // Si nombre y apellidos ya están llenos, no tiene sentido consultar.
-    if (persona.nombre.trim() && persona.primerApellido.trim()) return;
     setCampoCedulaCargando(campo);
     try {
-      const datos = await obtenerDatosCedula(cedula);
-      if (!datos) return;
-      setter((prev) => ({
-        ...prev,
-        nombre: prev.nombre.trim() ? prev.nombre : datos.nombre,
-        primerApellido: prev.primerApellido.trim()
-          ? prev.primerApellido
-          : datos.primerApellido,
-        segundoApellido: prev.segundoApellido.trim()
-          ? prev.segundoApellido
-          : datos.segundoApellido,
-      }));
+      const resultado = await obtenerDatosCedula(cedula);
+      setter((prev) => {
+        // Si el usuario cambió la cédula mientras se consultaba, no sobrescribir.
+        if (cedulaDigitosValidos(prev.cedula) !== digitos) return prev;
+        if (resultado.estado === 'encontrada') {
+          return {
+            ...prev,
+            nombre: resultado.datos.nombre,
+            primerApellido: resultado.datos.primerApellido,
+            segundoApellido: resultado.datos.segundoApellido,
+          };
+        }
+        // Cédula inexistente o proveedor caído: se limpian los nombres, pero los
+        // campos quedan habilitados para escribirlos a mano.
+        return {
+          ...prev,
+          nombre: '',
+          primerApellido: '',
+          segundoApellido: '',
+        };
+      });
+      setConsultasCedula((prev) => {
+        const siguiente = { ...prev };
+        if (resultado.estado === 'encontrada') {
+          delete siguiente[campo];
+        } else {
+          siguiente[campo] = { digitos, estado: resultado.estado };
+        }
+        return siguiente;
+      });
     } finally {
       setCampoCedulaCargando((actual) => (actual === campo ? null : actual));
     }
@@ -322,11 +412,13 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     setAbuelos((prev) =>
       prev.map((ab, i) =>
         i === idx
-          ? {
-              ...ab,
-              [campo]:
-                campo === 'cedula' ? formatearCedulaCR(cedulaDigitosValidos(valor)) : soloLetras(valor),
-            }
+          ? campo === 'cedula' && cedulaDigitosValidos(valor).length === 0
+            ? { ...ab, cedula: '', nombre: '', primerApellido: '', segundoApellido: '' }
+            : {
+                ...ab,
+                [campo]:
+                  campo === 'cedula' ? formatearCedulaCR(cedulaDigitosValidos(valor)) : soloLetras(valor),
+              }
           : ab,
       ),
     );
@@ -336,24 +428,40 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const autocompletarAbueloPorCedula = async (idx: number, abuelo: PersonaForm & { parentesco: ParentescoAbuelo }) => {
     const digitos = cedulaDigitosValidos(abuelo.cedula);
     if (digitos.length !== 9) return;
-    if (abuelo.nombre.trim() && abuelo.primerApellido.trim()) return;
     const campo = `abuelo-${idx}`;
     setCampoCedulaCargando(campo);
     try {
-      const datos = await obtenerDatosCedula(abuelo.cedula);
-      if (!datos) return;
+      const resultado = await obtenerDatosCedula(abuelo.cedula);
       setAbuelos((prev) =>
-        prev.map((a, i) =>
-          i === idx
-            ? {
-                ...a,
-                nombre: a.nombre.trim() ? a.nombre : datos.nombre,
-                primerApellido: a.primerApellido.trim() ? a.primerApellido : datos.primerApellido,
-                segundoApellido: a.segundoApellido.trim() ? a.segundoApellido : datos.segundoApellido,
-              }
-            : a,
-        ),
+        prev.map((a, i) => {
+          if (i !== idx) return a;
+          // Si el usuario cambió la cédula mientras se consultaba, no sobrescribir.
+          if (cedulaDigitosValidos(a.cedula) !== digitos) return a;
+          if (resultado.estado === 'encontrada') {
+            return {
+              ...a,
+              nombre: resultado.datos.nombre,
+              primerApellido: resultado.datos.primerApellido,
+              segundoApellido: resultado.datos.segundoApellido,
+            };
+          }
+          return {
+            ...a,
+            nombre: '',
+            primerApellido: '',
+            segundoApellido: '',
+          };
+        }),
       );
+      setConsultasCedula((prev) => {
+        const siguiente = { ...prev };
+        if (resultado.estado === 'encontrada') {
+          delete siguiente[campo];
+        } else {
+          siguiente[campo] = { digitos, estado: resultado.estado };
+        }
+        return siguiente;
+      });
     } finally {
       setCampoCedulaCargando((actual) => (actual === campo ? null : actual));
     }
@@ -367,7 +475,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
 
   const agregarAbuelo = () => {
     const usados = abuelos.map((a) => a.parentesco);
-    const disponible = PARENTESCOS.find((p) => !usados.includes(p));
+    const disponible = PARENTESCOS_ABUELOS.find((p) => !usados.includes(p));
     if (!disponible) {
       showToast('Ya están registrados los 4 abuelos', 'error');
       return;
@@ -375,7 +483,8 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     setAbuelos((prev) => [...prev, { ...personaVacia(), parentesco: disponible }]);
   };
 
-  const validar = (): boolean => {
+  // Cálculo puro de los errores del formulario actual (sin efectos secundarios).
+  const calcularErrores = (): Record<string, string> => {
     const nuevos: Record<string, string> = {};
     if (!idParroquia) nuevos.idParroquia = MENSAJES.idParroquia;
     if (!idPresbitero) nuevos.idPresbitero = MENSAJES.idPresbitero;
@@ -393,9 +502,14 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       if (!detalleBautismo.horaNacimiento) nuevos.horaNacimiento = MENSAJES.horaNacimiento;
       if (!detalleBautismo.lugarNacimiento.trim())
         nuevos.lugarNacimiento = MENSAJES.lugarNacimiento;
+      else if (!textoSeguroValido(detalleBautismo.lugarNacimiento, LUGAR_NACIMIENTO_MAX))
+        nuevos.lugarNacimiento =
+          'El lugar de nacimiento contiene caracteres no permitidos.';
       if (!detalleBautismo.libro.trim()) nuevos.libro = MENSAJES.libro;
       if (!detalleBautismo.folio.trim()) nuevos.folio = MENSAJES.folio;
       if (!detalleBautismo.asiento.trim()) nuevos.asiento = MENSAJES.asiento;
+      if (observaciones.trim() && !textoSeguroValido(observaciones, OBSERVACIONES_MAX))
+        nuevos.observaciones = 'Las observaciones contienen caracteres no permitidos.';
       if (
         detalleBautismo.fechaNacimiento &&
         fechaSacramento &&
@@ -414,8 +528,50 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     }
     // Comunión/confirmación no llevan datos de persona: usan la del bautismo.
 
+    return nuevos;
+  };
+
+  // Solo se ejecuta al guardar: publica todos los errores y enciende la validación en vivo.
+  const validar = (): boolean => {
+    const nuevos = calcularErrores();
     setErrors(nuevos);
+    setIntentado(true);
     return Object.keys(nuevos).length === 0;
+  };
+
+  // Validación en vivo: recalcula al cambiar cualquier valor y publica solo los
+  // mensajes de campos que el usuario ya tocó (o de los ya visibles). Así el
+  // aviso desaparece apenas se corrige y aparece al salir de un campo vacío,
+  // sin necesidad de intentar guardar.
+  useEffect(() => {
+    setErrors((anteriores) => {
+      const visibles = erroresVisibles(calcularErrores(), anteriores, tocados, intentado);
+      return mismosErrores(anteriores, visibles) ? anteriores : visibles;
+    });
+  }, [
+    tipo,
+    idParroquia,
+    idPresbitero,
+    fechaSacramento,
+    bautizado,
+    padre,
+    madre,
+    padrino,
+    madrina,
+    abuelos,
+    contrayente2,
+    detalleBautismo,
+    detalleMatrimonio,
+    observaciones,
+    tocados,
+    intentado,
+  ]);
+
+  // Marca como tocado el campo del que se salió o en el que se escribió, para
+  // que la validación en vivo reaccione sin esperar al envío del formulario.
+  const marcarCampoTocado = (e: React.SyntheticEvent<HTMLFormElement>) => {
+    const clave = (e.target as HTMLInputElement).name;
+    if (clave) setTocados((t) => marcarTocado(t, clave));
   };
 
   const personaInput = (p: PersonaForm) => ({
@@ -432,7 +588,9 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       idPresbitero: idPresbitero ? Number(idPresbitero) : undefined,
       fechaSacramento,
       // Las observaciones solo aplican al bautismo; los demás sacramentos van únicamente con lugar y fecha.
-      ...(tipo === 'bautismo' ? { observaciones: observaciones.trim() || undefined } : {}),
+      ...(tipo === 'bautismo'
+        ? { observaciones: soloTextoSeguro(observaciones, OBSERVACIONES_MAX).trim() || undefined }
+        : {}),
     };
     if (tipo === 'bautismo') {
       return {
@@ -448,7 +606,9 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
             : undefined,
           fechaNacimiento: detalleBautismo.fechaNacimiento || undefined,
           horaNacimiento: detalleBautismo.horaNacimiento || undefined,
-          lugarNacimiento: detalleBautismo.lugarNacimiento.trim() || undefined,
+          lugarNacimiento:
+            soloTextoSeguro(detalleBautismo.lugarNacimiento, LUGAR_NACIMIENTO_MAX).trim() ||
+            undefined,
           libro: detalleBautismo.libro.trim() || undefined,
           folio: detalleBautismo.folio.trim() || undefined,
           asiento: detalleBautismo.asiento.trim() || undefined,
@@ -511,68 +671,95 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     persona: PersonaForm,
     setter: React.Dispatch<React.SetStateAction<PersonaForm>>,
     prefijo: string,
-  ) => (
-    <div className="mb-5">
-      <Label>{titulo}</Label>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="relative">
-          <Input
-            type="text"
-            placeholder="Cédula (0-0000-0000)"
-            maxLength={12}
-            className={cn(inputClass(Boolean(errors[`${prefijo}Cedula`])), 'pr-10')}
-            value={persona.cedula}
-            onChange={(e) => {
-              const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
-              setPersonaCampo(setter, 'cedula', e.target.value);
-              if (cedulaDigitosValidos(cedula).length === 9) {
-                void autocompletarPorCedula(setter, cedula, { ...persona, cedula }, prefijo);
-              }
-            }}
-            onBlur={() => void autocompletarPorCedula(setter, persona.cedula, persona, prefijo)}
-          />
-          {campoCedulaCargando === prefijo && (
-            <Loader2
-              aria-label="Buscando datos de la cédula"
-              className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue"
+  ) => {
+    // Con cédula completa se bloquean los nombres porque se autocompletan; si
+    // la cédula no existe (o el proveedor falló) se habilitan para escribir a mano.
+    const estadoCedula = estadoConsultaCedula(prefijo, persona.cedula);
+    const nombresBloqueados =
+      cedulaDigitosValidos(persona.cedula).length === 9 && estadoCedula === null;
+    return (
+      <div className="mb-5">
+        <Label>{titulo}</Label>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Cédula (0-0000-0000)"
+                maxLength={MAX_CEDULA_NACIONAL}
+                className={cn(inputClass(Boolean(errors[`${prefijo}Cedula`])), 'pr-10')}
+                value={persona.cedula}
+                aria-invalid={estadoCedula === 'no_encontrada' || undefined}
+                onChange={(e) => {
+                  const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
+                  setPersonaCampo(setter, 'cedula', e.target.value);
+                  if (cedulaDigitosValidos(cedula).length === 9) {
+                    void autocompletarPorCedula(setter, cedula, prefijo);
+                  }
+                }}
+              />
+              {campoCedulaCargando === prefijo && (
+                <Loader2
+                  aria-label="Buscando datos de la cédula"
+                  className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue"
+                />
+              )}
+            </div>
+            {renderAvisoCedula(prefijo, persona.cedula)}
+            <ContadorCaracteres
+              actual={cedulaDigitosValidos(persona.cedula).length}
+              maximo={CEDULA_DIGITOS}
+              unidad="dígitos"
             />
-          )}
-        </div>
-        <div>
-          <Input
-            type="text"
-            placeholder="Nombre"
-            maxLength={30}
-            className={inputClass(Boolean(errors[`${prefijo}Nombre`]))}
-            value={persona.nombre}
-            onChange={(e) => setPersonaCampo(setter, 'nombre', e.target.value)}
-          />
-          <ErrorMsg errors={errors} clave={`${prefijo}Nombre`} />
-        </div>
-        <div>
-          <Input
-            type="text"
-            placeholder="Primer apellido"
-            maxLength={30}
-            className={inputClass(Boolean(errors[`${prefijo}PrimerApellido`]))}
-            value={persona.primerApellido}
-            onChange={(e) => setPersonaCampo(setter, 'primerApellido', e.target.value)}
-          />
-          <ErrorMsg errors={errors} clave={`${prefijo}PrimerApellido`} />
-        </div>
-        <div>
-          <Input
-            type="text"
-            placeholder="Segundo apellido"
-            maxLength={30}
-            className={inputClass(Boolean(errors[`${prefijo}SegundoApellido`]))}
-            value={persona.segundoApellido}
-            onChange={(e) => setPersonaCampo(setter, 'segundoApellido', e.target.value)}
-          />
+          </div>
+          <div>
+            <Input
+              type="text"
+              placeholder="Nombre"
+              name={`${prefijo}Nombre`}
+              maxLength={MAX_NOMBRE_PERSONA}
+              className={inputClass(Boolean(errors[`${prefijo}Nombre`]))}
+              value={persona.nombre}
+              disabled={nombresBloqueados}
+              title={nombresBloqueados ? 'Borre la cédula para cambiar el nombre.' : undefined}
+              onChange={(e) => setPersonaCampo(setter, 'nombre', e.target.value)}
+            />
+            <ErrorMsg errors={errors} clave={`${prefijo}Nombre`} />
+            <ContadorCaracteres actual={persona.nombre.length} maximo={MAX_NOMBRE_PERSONA} />
+          </div>
+          <div>
+            <Input
+              type="text"
+              placeholder="Primer apellido"
+              name={`${prefijo}PrimerApellido`}
+              maxLength={MAX_NOMBRE_PERSONA}
+              className={inputClass(Boolean(errors[`${prefijo}PrimerApellido`]))}
+              value={persona.primerApellido}
+              disabled={nombresBloqueados}
+              title={nombresBloqueados ? 'Borre la cédula para cambiar el apellido.' : undefined}
+              onChange={(e) => setPersonaCampo(setter, 'primerApellido', e.target.value)}
+            />
+            <ErrorMsg errors={errors} clave={`${prefijo}PrimerApellido`} />
+            <ContadorCaracteres actual={persona.primerApellido.length} maximo={MAX_NOMBRE_PERSONA} />
+          </div>
+          <div>
+            <Input
+              type="text"
+              placeholder="Segundo apellido"
+              name={`${prefijo}SegundoApellido`}
+              maxLength={MAX_NOMBRE_PERSONA}
+              className={inputClass(Boolean(errors[`${prefijo}SegundoApellido`]))}
+              value={persona.segundoApellido}
+              disabled={nombresBloqueados}
+              title={nombresBloqueados ? 'Borre la cédula para cambiar el apellido.' : undefined}
+              onChange={(e) => setPersonaCampo(setter, 'segundoApellido', e.target.value)}
+            />
+            <ContadorCaracteres actual={persona.segundoApellido.length} maximo={MAX_NOMBRE_PERSONA} />
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderBautismo = () => (
     <>
@@ -585,34 +772,69 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       <div className="mb-5">
         <Label>Abuelos (opcional)</Label>
         <div className="space-y-3">
-          {abuelos.map((ab, idx) => (
+          {abuelos.map((ab, idx) => {
+            const estadoCedulaAbuelo = estadoConsultaCedula(`abuelo-${idx}`, ab.cedula);
+            const abueloBloqueado =
+              cedulaDigitosValidos(ab.cedula).length === 9 && estadoCedulaAbuelo === null;
+            const parentescosUsados = abuelos
+              .filter((_, i) => i !== idx)
+              .map((a) => a.parentesco);
+            return (
             <div key={idx} className="rounded-md border border-gray-200 p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
-              <select
+              <CustomSelect
+                className="mb-2"
                 value={ab.parentesco}
-                onChange={(e) =>
+                onChange={(parentesco) =>
                   setAbuelos((prev) =>
-                    prev.map((a, i) => (i === idx ? { ...a, parentesco: e.target.value as ParentescoAbuelo } : a)),
+                    prev.map((a, i) =>
+                      i === idx
+                        ? { ...a, parentesco: parentesco as ParentescoAbuelo }
+                        : a,
+                    ),
                   )
                 }
-                className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:focus:border-[#d9a928]"
-              >
-                {PARENTESCOS.map((p) => (
-                  <option key={p} value={p} disabled={abuelos.some((a, i) => a.parentesco === p && i !== idx)}>
-                    {p.replaceAll('_', ' ')}
-                  </option>
-                ))}
-              </select>
+                options={opcionesParentescoAbuelo(parentescosUsados, ab.parentesco)}
+                ariaLabel="Parentesco del abuelo"
+                maxVisibleOptions={4}
+                triggerClassName={selectTriggerClass()}
+                menuClassName={selectMenuClass}
+                optionClassName={selectOptionClass}
+              />
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="relative">
-                  <Input type="text" placeholder="Cédula" maxLength={12} value={ab.cedula} className="pr-10" onChange={(e) => setAbueloCampo(idx, 'cedula', e.target.value)} onBlur={() => void autocompletarAbueloPorCedula(idx, ab)} />
-                  {campoCedulaCargando === `abuelo-${idx}` && <Loader2 aria-label="Buscando datos de la cédula" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue" />}
+                <div>
+                  <div className="relative">
+                    <Input type="text" placeholder="Cédula" maxLength={MAX_CEDULA_NACIONAL} value={ab.cedula} className="pr-10" onChange={(e) => {
+                      setAbueloCampo(idx, 'cedula', e.target.value);
+                      const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
+                      if (cedulaDigitosValidos(cedula).length === 9) {
+                        void autocompletarAbueloPorCedula(idx, { ...ab, cedula });
+                      }
+                    }} />
+                    {campoCedulaCargando === `abuelo-${idx}` && <Loader2 aria-label="Buscando datos de la cédula" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue" />}
+                  </div>
+                  {renderAvisoCedula(`abuelo-${idx}`, ab.cedula)}
+                  <ContadorCaracteres
+                    actual={cedulaDigitosValidos(ab.cedula).length}
+                    maximo={CEDULA_DIGITOS}
+                    unidad="dígitos"
+                  />
                 </div>
-                <Input type="text" placeholder="Nombre" maxLength={30} value={ab.nombre} onChange={(e) => setAbueloCampo(idx, 'nombre', e.target.value)} />
-                <Input type="text" placeholder="Primer apellido" maxLength={30} value={ab.primerApellido} onChange={(e) => setAbueloCampo(idx, 'primerApellido', e.target.value)} />
-                <Input type="text" placeholder="Segundo apellido" maxLength={30} value={ab.segundoApellido} onChange={(e) => setAbueloCampo(idx, 'segundoApellido', e.target.value)} />
+                <div>
+                  <Input type="text" placeholder="Nombre" maxLength={MAX_NOMBRE_PERSONA} value={ab.nombre} disabled={abueloBloqueado} title={abueloBloqueado ? 'Borre la cédula para cambiar el nombre.' : undefined} onChange={(e) => setAbueloCampo(idx, 'nombre', e.target.value)} />
+                  <ContadorCaracteres actual={ab.nombre.length} maximo={MAX_NOMBRE_PERSONA} />
+                </div>
+                <div>
+                  <Input type="text" placeholder="Primer apellido" maxLength={MAX_NOMBRE_PERSONA} value={ab.primerApellido} disabled={abueloBloqueado} onChange={(e) => setAbueloCampo(idx, 'primerApellido', e.target.value)} />
+                  <ContadorCaracteres actual={ab.primerApellido.length} maximo={MAX_NOMBRE_PERSONA} />
+                </div>
+                <div>
+                  <Input type="text" placeholder="Segundo apellido" maxLength={MAX_NOMBRE_PERSONA} value={ab.segundoApellido} disabled={abueloBloqueado} onChange={(e) => setAbueloCampo(idx, 'segundoApellido', e.target.value)} />
+                  <ContadorCaracteres actual={ab.segundoApellido.length} maximo={MAX_NOMBRE_PERSONA} />
+                </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
         <Button type="button" variant="secondary" onClick={agregarAbuelo} className="mt-2 dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!">
           + Agregar abuelo
@@ -622,36 +844,40 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
           <Label required>Fecha de nacimiento</Label>
-          <Input type="date" className={inputClass(Boolean(errors.fechaNacimiento))} max={fechaSacramento || undefined} value={detalleBautismo.fechaNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, fechaNacimiento: e.target.value }))} />
+          <Input type="date" name="fechaNacimiento" className={inputClass(Boolean(errors.fechaNacimiento))} max={fechaSacramento || undefined} value={detalleBautismo.fechaNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, fechaNacimiento: e.target.value }))} />
           <ErrorMsg errors={errors} clave="fechaNacimiento" />
         </div>
         <div>
           <Label required>Hora de nacimiento</Label>
-          <Input type="time" className={inputClass(Boolean(errors.horaNacimiento))} value={detalleBautismo.horaNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, horaNacimiento: e.target.value }))} />
+          <Input type="time" name="horaNacimiento" className={inputClass(Boolean(errors.horaNacimiento))} value={detalleBautismo.horaNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, horaNacimiento: e.target.value }))} />
           <ErrorMsg errors={errors} clave="horaNacimiento" />
         </div>
         <div>
           <Label required>Lugar de nacimiento</Label>
-          <Input type="text" maxLength={60} className={inputClass(Boolean(errors.lugarNacimiento))} value={detalleBautismo.lugarNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, lugarNacimiento: e.target.value }))} />
+          <Input type="text" name="lugarNacimiento" maxLength={LUGAR_NACIMIENTO_MAX} className={inputClass(Boolean(errors.lugarNacimiento))} value={detalleBautismo.lugarNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, lugarNacimiento: soloTextoSeguro(e.target.value, LUGAR_NACIMIENTO_MAX) }))} />
           <ErrorMsg errors={errors} clave="lugarNacimiento" />
+          <ContadorCaracteres actual={detalleBautismo.lugarNacimiento.length} maximo={LUGAR_NACIMIENTO_MAX} />
         </div>
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
           <Label required>Libro</Label>
-          <Input type="text" maxLength={6} className={inputClass(Boolean(errors.libro))} value={detalleBautismo.libro} onChange={(e) => setDetalleBautismoCampo('libro', e.target.value)} />
+          <Input type="text" name="libro" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.libro))} value={detalleBautismo.libro} onChange={(e) => setDetalleBautismoCampo('libro', e.target.value)} />
           <ErrorMsg errors={errors} clave="libro" />
+          <ContadorCaracteres actual={detalleBautismo.libro.length} maximo={MAX_LIBRO} />
         </div>
         <div>
           <Label required>Folio</Label>
-          <Input type="text" maxLength={6} className={inputClass(Boolean(errors.folio))} value={detalleBautismo.folio} onChange={(e) => setDetalleBautismoCampo('folio', e.target.value)} />
+          <Input type="text" name="folio" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.folio))} value={detalleBautismo.folio} onChange={(e) => setDetalleBautismoCampo('folio', e.target.value)} />
           <ErrorMsg errors={errors} clave="folio" />
+          <ContadorCaracteres actual={detalleBautismo.folio.length} maximo={MAX_LIBRO} />
         </div>
         <div>
           <Label required>Asiento</Label>
-          <Input type="text" maxLength={6} className={inputClass(Boolean(errors.asiento))} value={detalleBautismo.asiento} onChange={(e) => setDetalleBautismoCampo('asiento', e.target.value)} />
+          <Input type="text" name="asiento" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.asiento))} value={detalleBautismo.asiento} onChange={(e) => setDetalleBautismoCampo('asiento', e.target.value)} />
           <ErrorMsg errors={errors} clave="asiento" />
+          <ContadorCaracteres actual={detalleBautismo.asiento.length} maximo={MAX_LIBRO} />
         </div>
       </div>
     </>
@@ -666,13 +892,15 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label required>Libro</Label>
-          <Input type="text" maxLength={6} className={inputClass(Boolean(errors.libro))} value={detalleMatrimonio.libro} onChange={(e) => setDetalleMatrimonioCampo('libro', e.target.value)} />
+          <Input type="text" name="libro" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.libro))} value={detalleMatrimonio.libro} onChange={(e) => setDetalleMatrimonioCampo('libro', e.target.value)} />
           <ErrorMsg errors={errors} clave="libro" />
+          <ContadorCaracteres actual={detalleMatrimonio.libro.length} maximo={MAX_LIBRO} />
         </div>
         <div>
           <Label required>Folio</Label>
-          <Input type="text" maxLength={6} className={inputClass(Boolean(errors.folio))} value={detalleMatrimonio.folio} onChange={(e) => setDetalleMatrimonioCampo('folio', e.target.value)} />
+          <Input type="text" name="folio" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.folio))} value={detalleMatrimonio.folio} onChange={(e) => setDetalleMatrimonioCampo('folio', e.target.value)} />
           <ErrorMsg errors={errors} clave="folio" />
+          <ContadorCaracteres actual={detalleMatrimonio.folio.length} maximo={MAX_LIBRO} />
         </div>
       </div>
     </>
@@ -681,137 +909,170 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const catalogoCargando = cargandoParroquias || cargandoPresbiteros;
 
   return (
-    <div ref={modalRef} className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 dark:bg-black/60" onClick={onClose}>
-      <div
-        className="flex max-h-[90vh] w-[90%] max-w-[800px] flex-col overflow-hidden rounded-xl bg-white dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex flex-col gap-3 border-b border-gray-200 bg-surface-muted px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
-          <h2 className="m-0 text-base text-slate-800 sm:text-lg dark:text-[#f3f6fa]">INSCRIPCIÓN SACRAMENTAL</h2>
-          <div className="flex items-center justify-between gap-2 sm:justify-end">
-            <Button type="button" variant="secondary" className="min-h-8 rounded-lg px-3 py-1 text-xs dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!" onClick={limpiarProgreso} disabled={saving}>
-              LIMPIAR PROGRESO
-            </Button>
-            <button
-              type="button"
-              aria-label="Cerrar"
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
-              onClick={onClose}
-            >
-              ×
-            </button>
-          </div>
-        </div>
-
-        <div className="flex gap-2 border-b border-gray-200 px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
-          {TIPOS.map((t) => {
-            const disponible = habilitado(t);
-            return (
-              <button
-                key={t}
-                type="button"
-                disabled={!disponible}
-                title={disponible ? undefined : 'Complete el sacramento anterior para desbloquear este'}
-                className={cn(
-                  'px-5 py-3 text-sm font-medium transition-colors',
-                  !disponible
-                    ? 'cursor-not-allowed border-0 bg-transparent text-gray-300 dark:text-[#7f8da3]'
-                    : 'cursor-pointer border-0 bg-transparent text-gray-500 hover:text-blue-600 dark:text-[#b7c3d4] dark:hover:text-[#d9a928]',
-                  tipo === t && disponible && 'border-b-2 border-blue-600 text-blue-600 dark:border-[#d9a928] dark:text-[#d9a928]',
-                )}
-                onClick={() => cambiarTab(t)}
-              >
-                {TIPO_SACRAMENTO_LABEL[t].toUpperCase()}
-              </button>
-            );
-          })}
-        </div>
-
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="max-h-[60vh] space-y-4 overflow-y-auto p-6">
-            {catalogoCargando ? (
-              <div className="flex items-center gap-2 py-6 text-sm text-text-secondary dark:text-[#b7c3d4]">
-                <Loader2 size={18} className="animate-spin" /> Cargando catálogos...
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          ref={modalRef}
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 dark:bg-black/60"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.16, ease: 'easeIn' } }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          role="presentation"
+        >
+          <motion.div
+            className="flex max-h-[90vh] w-[90%] max-w-[800px] transform-gpu flex-col overflow-hidden rounded-xl bg-white dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
+            initial={{ opacity: 0, scale: 0.97, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 8, transition: { duration: 0.16, ease: 'easeIn' } }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Inscripción sacramental"
+          >
+            <div className="flex flex-col gap-3 border-b border-gray-200 bg-surface-muted px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
+              <h2 className="m-0 text-base text-slate-800 sm:text-lg dark:text-[#f3f6fa]">INSCRIPCIÓN SACRAMENTAL</h2>
+              <div className="flex items-center justify-between gap-2 sm:justify-end">
+                <Button type="button" variant="secondary" className="min-h-8 rounded-lg px-3 py-1 text-xs dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!" onClick={limpiarProgreso} disabled={saving}>
+                  LIMPIAR PROGRESO
+                </Button>
+                <button
+                  type="button"
+                  aria-label="Cerrar"
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-0 bg-transparent text-3xl text-gray-500 hover:bg-gray-100 dark:bg-white/5 dark:text-[#f3f6fa] dark:hover:bg-white/10"
+                  onClick={onClose}
+                >
+                  ×
+                </button>
               </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div>
-                    <Label required>Filial</Label>
-                    <select
-                      value={idParroquia}
-                      onChange={(e) => setIdParroquia(e.target.value)}
-                      className={inputClass(Boolean(errors.idParroquia))}
-                    >
-                      <option value="">Seleccione...</option>
-                      {opcionesLugarCelebracion(parroquias).map((lugar) => (
-                        <option key={lugar.id} value={lugar.id}>
-                          {lugar.nombre}
-                        </option>
-                      ))}
-                    </select>
-                    <ErrorMsg errors={errors} clave="idParroquia" />
-                  </div>
-                  <div>
-                  <Label required>Presbítero</Label>
-                  <select
-                    value={idPresbitero}
-                    onChange={(e) => setIdPresbitero(e.target.value)}
-                    className={inputClass(Boolean(errors.idPresbitero))}
+            </div>
+
+            <div className="flex gap-2 border-b border-gray-200 px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
+              {TIPOS.map((t) => {
+                const disponible = habilitado(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    disabled={!disponible}
+                    title={disponible ? undefined : 'Complete el sacramento anterior para desbloquear este'}
+                    className={cn(
+                      'px-5 py-3 text-sm font-medium transition-colors',
+                      !disponible
+                        ? 'cursor-not-allowed border-0 bg-transparent text-gray-300 dark:text-[#7f8da3]'
+                        : 'cursor-pointer border-0 bg-transparent text-gray-500 hover:text-blue-600 dark:text-[#b7c3d4] dark:hover:text-[#d9a928]',
+                      tipo === t && disponible && 'border-b-2 border-blue-600 text-blue-600 dark:border-[#d9a928] dark:text-[#d9a928]',
+                    )}
+                    onClick={() => cambiarTab(t)}
                   >
-                      <option value="">Seleccione...</option>
-                      {(presbiteros ?? []).map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.nombre} {p.primerApellido}
-                        </option>
-                      ))}
-                    </select>
-                    <ErrorMsg errors={errors} clave="idPresbitero" />
-                  </div>
-                  <div>
-                    <Label required>Fecha de celebración</Label>
-                    <Input
-                      type="date"
-                      className={inputClass(Boolean(errors.fechaSacramento))}
-                      value={fechaSacramento}
-                      onChange={(e) => setFechaSacramento(e.target.value)}
-                    />
-                    <ErrorMsg errors={errors} clave="fechaSacramento" />
-                  </div>
-                </div>
+                    {TIPO_SACRAMENTO_LABEL[t].toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
 
-                {tipo === 'bautismo' && renderBautismo()}
-                {tipo === 'matrimonio' && renderMatrimonio()}
-
-                {tipo === 'bautismo' && (
-                  <div>
-                    <Label>Observaciones</Label>
-                    <Input
-                      type="text"
-                      maxLength={500}
-                      value={observaciones}
-                      onChange={(e) => setObservaciones(e.target.value)}
-                    />
-                    <p className="m-0 mt-1 text-right text-xs text-slate-400 dark:text-[#7f8da3]">
-                      {observaciones.length}/500 caracteres
-                    </p>
+            <form onSubmit={handleSubmit} noValidate onBlur={marcarCampoTocado} onChange={marcarCampoTocado}>
+              <div className="max-h-[60vh] scrollbar-contenedor space-y-4 overflow-y-auto p-6">
+                {catalogoCargando ? (
+                  <div className="flex items-center gap-2 py-6 text-sm text-text-secondary dark:text-[#b7c3d4]">
+                    <Loader2 size={18} className="animate-spin" /> Cargando catálogos...
                   </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <div>
+                        <Label required>Filial</Label>
+                        <CustomSelect
+                          value={idParroquia}
+                          onChange={(valor) => {
+                            setIdParroquia(valor);
+                            setTocados((t) => marcarTocado(t, 'idParroquia'));
+                          }}
+                          options={opcionesLugarCelebracion(parroquias).map((lugar) => ({
+                            label: lugar.nombre,
+                            value: String(lugar.id),
+                          }))}
+                          placeholder="Seleccione..."
+                          ariaLabel="Filial"
+                          hasError={Boolean(errors.idParroquia)}
+                          maxVisibleOptions={5}
+                          triggerClassName={selectTriggerClass(Boolean(errors.idParroquia))}
+                          menuClassName={selectMenuClass}
+                          optionClassName={selectOptionClass}
+                        />
+                        <ErrorMsg errors={errors} clave="idParroquia" />
+                      </div>
+                      <div>
+                      <Label required>Presbítero</Label>
+                      <CustomSelect
+                        value={idPresbitero}
+                        onChange={(valor) => {
+                          setIdPresbitero(valor);
+                          setTocados((t) => marcarTocado(t, 'idPresbitero'));
+                        }}
+                        options={(presbiteros ?? []).map((p) => ({
+                          label: `${p.nombre} ${p.primerApellido}`,
+                          value: String(p.id),
+                        }))}
+                        placeholder="Seleccione..."
+                        ariaLabel="Presbítero"
+                        hasError={Boolean(errors.idPresbitero)}
+                        maxVisibleOptions={5}
+                        triggerClassName={selectTriggerClass(Boolean(errors.idPresbitero))}
+                        menuClassName={selectMenuClass}
+                        optionClassName={selectOptionClass}
+                      />
+                        <ErrorMsg errors={errors} clave="idPresbitero" />
+                      </div>
+                      <div>
+                        <Label required>Fecha de celebración</Label>
+                        <Input
+                          type="date"
+                          name="fechaSacramento"
+                          className={inputClass(Boolean(errors.fechaSacramento))}
+                          value={fechaSacramento}
+                          onChange={(e) => setFechaSacramento(e.target.value)}
+                        />
+                        <ErrorMsg errors={errors} clave="fechaSacramento" />
+                      </div>
+                    </div>
+
+                    {tipo === 'bautismo' && renderBautismo()}
+                    {tipo === 'matrimonio' && renderMatrimonio()}
+
+                    {tipo === 'bautismo' && (
+                      <div>
+                        <Label>Observaciones</Label>
+                        <Input
+                          type="text"
+                          name="observaciones"
+                          maxLength={OBSERVACIONES_MAX}
+                          value={observaciones}
+                          onChange={(e) =>
+                            setObservaciones(soloTextoSeguro(e.target.value, OBSERVACIONES_MAX))
+                          }
+                        />
+                        <ErrorMsg errors={errors} clave="observaciones" />
+                        <ContadorCaracteres actual={observaciones.length} maximo={OBSERVACIONES_MAX} />
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </div>
+              </div>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-surface-muted px-4 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
-            <Button type="submit" variant="royal" className="w-full sm:w-auto" disabled={saving || catalogoCargando}>
-              {saving ? 'GUARDANDO...' : 'INSCRIBIR ACTA'}
-            </Button>
-            <Button type="button" variant="secondary" className="w-full sm:w-auto dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!" onClick={onClose} disabled={saving}>
-              CANCELAR
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+              <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-surface-muted px-4 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
+                <Button type="submit" variant="royal" className="w-full sm:w-auto" disabled={saving || catalogoCargando}>
+                  {saving ? 'GUARDANDO...' : 'INSCRIBIR ACTA'}
+                </Button>
+                <Button type="button" variant="secondary" className="w-full sm:w-auto dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!" onClick={onClose} disabled={saving}>
+                  CANCELAR
+                </Button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

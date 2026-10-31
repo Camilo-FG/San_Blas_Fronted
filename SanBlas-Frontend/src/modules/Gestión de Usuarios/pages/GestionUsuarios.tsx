@@ -48,26 +48,31 @@ const GestionUsuarios = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalRolAbierto, setModalRolAbierto] = useState(false);
     const [pestana, setPestana] = useState<PestanaUsuarios>('usuarios');
+    const [irAPersonalizadosToken, setIrAPersonalizadosToken] = useState(0);
+    const [claveRolRecienCreado, setClaveRolRecienCreado] = useState<
+        string | null
+    >(null);
 
     const handleSaveUser = async (userData: {
         nombre: string;
         correo: string;
         telefono: string;
-        contraseña: string;
-        confirmarContraseña: string;
         roles: string[];
     }) => {
         const resultado = await crearUsuario({
             userName: userData.nombre,
             email: userData.correo,
             phoneNumber: userData.telefono,
-            password: userData.contraseña,
-            confirmPassword: userData.confirmarContraseña,
             roles: userData.roles,
         });
 
         if (resultado.ok) {
-            showToast('Usuario creado correctamente', 'success');
+            showToast(
+                resultado.correoActivacionEnviado
+                    ? `Invitación enviada a ${userData.correo}.`
+                    : `Usuario creado como pendiente, pero no se pudo enviar el correo a ${userData.correo}. Reenvíe la invitación desde el perfil.`,
+                resultado.correoActivacionEnviado ? 'success' : 'warning',
+            );
             setIsModalOpen(false);
             void refetch();
             void refetchPagina();
@@ -87,6 +92,9 @@ const GestionUsuarios = () => {
         if (resultado.ok) {
             showToast('Rol creado correctamente', 'success');
             setModalRolAbierto(false);
+            setPestana('roles');
+            setClaveRolRecienCreado(resultado.rol.clave);
+            setIrAPersonalizadosToken((n) => n + 1);
             void refetchRoles();
             return true;
         }
@@ -194,6 +202,11 @@ const GestionUsuarios = () => {
                             users={users}
                             roles={roles}
                             onCrearRol={() => setModalRolAbierto(true)}
+                            irAPersonalizadosToken={irAPersonalizadosToken}
+                            claveRolRecienCreado={claveRolRecienCreado}
+                            onResaltadoRolConsumido={() =>
+                                setClaveRolRecienCreado(null)
+                            }
                             onRolEliminado={() => {
                                 void refetchRoles();
                                 void refetch();

@@ -20,7 +20,7 @@ import {
     useReactTable,
     SortingState,
 } from '@tanstack/react-table';
-import { Usuario } from '../../../../types/Usuario';
+import { etiquetaEstadoUsuario, Usuario } from '../../../../types/Usuario';
 import { etiquetaRol, type Rol } from '../../../../types/Rol';
 import { useAuth } from '../../../../context/AuthContext';
 import UpdateUserModal from '../UpdateUserModal/UpdateUserModal';
@@ -145,7 +145,14 @@ export const UserList = ({
     const { eliminarUsuario, loading: eliminando } = useDeleteUser();
     const [mostrarFiltros, setMostrarFiltros] = useState(false);
     const [filtroRolTemp, setFiltroRolTemp] = useState(filtros.role ?? '');
-    const [filtroEstadoTemp, setFiltroEstadoTemp] = useState(filtros.state ?? '');
+    const [filtroEstadoTemp, setFiltroEstadoTemp] = useState(
+        filtros.state ?? 'all',
+    );
+
+    useEffect(() => {
+        setFiltroRolTemp(filtros.role ?? '');
+        setFiltroEstadoTemp(filtros.state ?? 'all');
+    }, [filtros.role, filtros.state]);
     const [textoBusqueda, setTextoBusqueda] = useState(busqueda);
     const textoDebounced = useDebouncedValue(textoBusqueda, 400);
     // último texto que nosotros mandamos, para distinguirlo de un clear que venga del padre
@@ -219,18 +226,26 @@ export const UserList = ({
             }),
             columnHelper.accessor('state', {
                 header: 'Estado',
-                cell: (info) => (
-                    <Badge
-                        variant={info.getValue() ? 'success' : 'danger'}
-                        className={
-                            info.getValue()
-                                ? 'dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]'
-                                : 'dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]'
-                        }
-                    >
-                        {info.getValue() ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                ),
+                cell: (info) => {
+                    const usuario = info.row.original;
+                    const etiqueta = etiquetaEstadoUsuario(usuario);
+                    const activo = usuario.state;
+                    const pendiente = Boolean(usuario.pendienteActivacion);
+                    return (
+                        <Badge
+                            variant={activo ? 'success' : pendiente ? 'warning' : 'danger'}
+                            className={
+                                activo
+                                    ? 'dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]'
+                                    : pendiente
+                                      ? 'dark:border-amber-400 dark:bg-[rgba(245,158,11,0.12)] dark:text-amber-300'
+                                      : 'dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]'
+                            }
+                        >
+                            {etiqueta}
+                        </Badge>
+                    );
+                },
             }),
             columnHelper.accessor('creationDate', {
                 header: 'Fecha de Creación',
@@ -387,9 +402,9 @@ export const UserList = ({
                             onChange={(e) => setFiltroEstadoTemp(e.target.value)}
                             className="min-h-10"
                         >
-                            <option value="">Todos</option>
+                            <option value="all">Todos</option>
                             <option value="active">Activo</option>
-                            <option value="inactive">Inactivo</option>
+                            <option value="inactive">Inactivo / pendiente</option>
                         </Select>
                     </div>
                     <div className="flex gap-2">
@@ -400,7 +415,7 @@ export const UserList = ({
                             onClick={() => {
                                 aplicarFiltros({
                                     role: filtroRolTemp || undefined,
-                                    state: filtroEstadoTemp || undefined,
+                                    state: filtroEstadoTemp || 'all',
                                 });
                                 aplicarBusqueda(textoBusqueda);
                             }}
@@ -410,13 +425,14 @@ export const UserList = ({
                             ) : null}
                             Buscar
                         </Button>
-                        {(filtroRolTemp || filtroEstadoTemp) && (
+                        {(filtroRolTemp ||
+                            (filtroEstadoTemp && filtroEstadoTemp !== 'all')) && (
                             <Button
                                 variant="secondary"
                                 className="min-h-10 gap-1 dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
                                 onClick={() => {
                                     setFiltroRolTemp('');
-                                    setFiltroEstadoTemp('');
+                                    setFiltroEstadoTemp('all');
                                     limpiarFiltros();
                                 }}
                             >
@@ -550,14 +566,22 @@ export const UserList = ({
                                         subtitle={etiquetaRol(usuario.role, roles)}
                                         badges={
                                             <Badge
-                                                variant={usuario.state ? 'success' : 'danger'}
+                                                variant={
+                                                    usuario.state
+                                                        ? 'success'
+                                                        : usuario.pendienteActivacion
+                                                          ? 'warning'
+                                                          : 'danger'
+                                                }
                                                 className={
                                                     usuario.state
                                                         ? 'dark:border-[#35d6a0] dark:bg-[rgba(53,214,160,0.10)] dark:text-[#35d6a0]'
-                                                        : 'dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]'
+                                                        : usuario.pendienteActivacion
+                                                          ? 'dark:border-amber-400 dark:bg-[rgba(245,158,11,0.12)] dark:text-amber-300'
+                                                          : 'dark:border-[#e66a6a] dark:bg-[rgba(230,106,106,0.10)] dark:text-[#e66a6a]'
                                                 }
                                             >
-                                                {usuario.state ? 'Activo' : 'Inactivo'}
+                                                {etiquetaEstadoUsuario(usuario)}
                                             </Badge>
                                         }
                                         meta={[
@@ -624,7 +648,7 @@ export const UserList = ({
                                 <select
                                     value={limite}
                                     onChange={(e) => setLimite(Number(e.target.value))}
-                                    className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-blue-400 focus-visible:bg-surface focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
+                                    className="min-h-10 cursor-pointer rounded-xl border border-border-strong bg-surface-muted px-2.5 text-sm tabular-nums text-slate-900 transition-colors duration-150 ease-out hover:bg-slate-200 focus-visible:border-slate-500 focus-visible:bg-surface focus-visible:outline-none dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#f3f6fa] dark:placeholder:text-[#7f8da3] dark:hover:bg-white/[0.035] dark:focus:border-[#d9a928] dark:focus-visible:bg-[#0f1d33]"
                                     aria-label="Cantidad de registros por página"
                                 >
                                     {TAMANOS_PAGINA.map((tamano) => (
@@ -685,7 +709,7 @@ export const UserList = ({
                 title="Eliminar usuario"
                 parteSubrayada="Eliminar usuario"
                 iconoAdvertencia
-                confirmVariant="danger"
+                confirmVariant="royal"
                 mensaje={
                     usuarioAEliminar ? (
                         <>
@@ -693,8 +717,12 @@ export const UserList = ({
                             <strong className="font-semibold text-text dark:text-[#f3f6fa]">
                                 {usuarioAEliminar.userName}
                             </strong>
-                            ? Esta acción no se puede deshacer: la cuenta quedará
-                            inactiva y dejará de aparecer en el listado.
+                            ?{' '}
+                            {usuarioAEliminar.state
+                                ? 'Esta acción no se puede deshacer: la cuenta quedará inactiva y dejará de aparecer en el listado.'
+                                : usuarioAEliminar.pendienteActivacion
+                                  ? 'La invitación se cancelará: la cuenta se eliminará de forma permanente y el correo quedará libre.'
+                                  : 'La cuenta ya está inactiva: se eliminará de forma permanente y el correo quedará libre.'}
                         </>
                     ) : (
                         ''
@@ -750,7 +778,9 @@ export const UserList = ({
                             ? { userName: normalizarTexto(data.nombre) }
                             : {}),
                         phoneNumber: normalizarTexto(data.telefono),
-                        ...(data.contraseña.trim()
+                        ...(data.contraseña.trim() &&
+                        usuarioEditando.state &&
+                        !usuarioEditando.pendienteActivacion
                             ? {
                                   password: data.contraseña.trim(),
                                   confirmPassword: data.contraseña.trim(),

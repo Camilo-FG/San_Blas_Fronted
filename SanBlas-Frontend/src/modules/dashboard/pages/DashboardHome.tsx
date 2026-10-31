@@ -18,7 +18,6 @@ import { ApiError } from "../../../services/apiClient";
 import Rutas from "../../../routes/Rutas";
 import { ErrorMessage } from "../../../shared/ui";
 import { useAuth } from "../../../context/AuthContext";
-import { isAdminRole } from "../../../types/Usuario";
 
 type CardKey = keyof DashboardStats;
 
@@ -27,6 +26,8 @@ interface CardConfig {
   icon: typeof Heart;
   label: string;
   color: string;
+  /** Permiso requerido para ver y abrir esta tarjeta. */
+  permiso: string;
   link?: string;
   hero?: boolean;
 }
@@ -37,6 +38,7 @@ const LANDING_CARD = {
   label: "Gestión del landing",
   description: "Edite los textos, imágenes y secciones del sitio público.",
   link: Rutas.dashboardUrl.gestionLanding,
+  permiso: "landing",
 };
 
 const cardsConfig: CardConfig[] = [
@@ -45,6 +47,7 @@ const cardsConfig: CardConfig[] = [
     icon: FileText,
     label: "Solicitudes de catequesis",
     color: "#0f766e",
+    permiso: "catequesis",
     link: Rutas.dashboardUrl.solicitudesCatequesis,
     hero: true,
   },
@@ -53,6 +56,7 @@ const cardsConfig: CardConfig[] = [
     icon: ScrollText,
     label: "Solicitudes de constancias sacramentales",
     color: "#1d4ed8",
+    permiso: "constancias",
     link: Rutas.dashboardUrl.constanciasSacramentos,
   },
   {
@@ -60,6 +64,7 @@ const cardsConfig: CardConfig[] = [
     icon: Heart,
     label: "Registros de sacramentos",
     color: "#be123c",
+    permiso: "sacramentos",
     link: Rutas.dashboardUrl.registroSacramentos,
   },
   {
@@ -67,6 +72,7 @@ const cardsConfig: CardConfig[] = [
     icon: HandHeart,
     label: "Donaciones registradas",
     color: "#b45309",
+    permiso: "donaciones",
     link: Rutas.dashboardUrl.donaciones,
   },
   {
@@ -74,6 +80,7 @@ const cardsConfig: CardConfig[] = [
     icon: Calendar,
     label: "Eventos registrados",
     color: "#7c3aed",
+    permiso: "eventos",
     link: Rutas.dashboardUrl.eventos,
   },
   {
@@ -81,6 +88,7 @@ const cardsConfig: CardConfig[] = [
     icon: Users,
     label: "Usuarios registrados",
     color: "#003366",
+    permiso: "usuarios",
     link: Rutas.dashboardUrl.gestionUsuarios,
   },
 ];
@@ -147,11 +155,15 @@ function MetricCard({ card, value }: { card: CardConfig; value: number }) {
 }
 
 function DashboardHome() {
-  const { user } = useAuth();
+  const { tienePermiso } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const esAdmin = isAdminRole(user?.role ?? "");
+
+  const cardsVisibles = cardsConfig.filter((card) =>
+    tienePermiso(card.permiso),
+  );
+  const muestraLanding = tienePermiso(LANDING_CARD.permiso);
 
   useEffect(() => {
     const cargarEstadisticas = async () => {
@@ -176,11 +188,11 @@ function DashboardHome() {
   }, []);
 
   if (cargando) {
+    const esqueletos = Math.max(cardsVisibles.length, 1);
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-        <CardSkeleton hero />
-        {Array.from({ length: 5 }).map((_, i) => (
-          <CardSkeleton key={i} />
+        {Array.from({ length: esqueletos }).map((_, i) => (
+          <CardSkeleton key={i} hero={i === 0 && cardsVisibles[0]?.hero} />
         ))}
       </div>
     );
@@ -210,9 +222,14 @@ function DashboardHome() {
 
       {error ? (
         <ErrorMessage message={error} />
+      ) : cardsVisibles.length === 0 && !muestraLanding ? (
+        <p className="m-0 rounded-2xl border border-border bg-surface px-5 py-4 text-sm text-text-muted dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:text-[#b7c3d4]">
+          No hay módulos con métricas para su rol. Use el menú lateral para
+          acceder a lo que tenga permitido.
+        </p>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-          {cardsConfig.map((card) => {
+          {cardsVisibles.map((card) => {
             const value = stats?.[card.key] ?? 0;
 
             const content = <MetricCard card={card} value={value} />;
@@ -226,14 +243,13 @@ function DashboardHome() {
                 {content}
               </Link>
             ) : (
-              content
+              <div key={card.key}>{content}</div>
             );
           })}
         </div>
       )}
 
-      {/* acceso al CMS del landing: solo administradores */}
-      {esAdmin && (
+      {muestraLanding && (
         <Link
           to={LANDING_CARD.link}
           className="group block text-inherit no-underline"

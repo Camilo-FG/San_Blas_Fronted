@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ApiError } from "../../../../services/apiClient";
+import type { Rol } from "../../../../types/Rol";
 import { crearRol, type CrearRolPayload } from "../../services/rolesService";
 
 export const useCreateRol = () => {
@@ -7,11 +8,13 @@ export const useCreateRol = () => {
 
   const crear = async (
     payload: CrearRolPayload,
-  ): Promise<{ ok: true } | { ok: false; mensaje: string }> => {
+  ): Promise<
+    { ok: true; rol: Rol } | { ok: false; mensaje: string }
+  > => {
     setLoading(true);
     try {
-      await crearRol(payload);
-      return { ok: true };
+      const rol = await crearRol(payload);
+      return { ok: true, rol };
     } catch (err) {
       const mensaje =
         err instanceof ApiError ? err.message : "No se pudo crear el rol.";

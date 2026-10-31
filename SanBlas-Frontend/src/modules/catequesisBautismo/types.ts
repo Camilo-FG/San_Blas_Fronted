@@ -1,16 +1,11 @@
 import type { TipoCedula } from "../../shared/utils/cedulaIdentificacion";
 
-export type EstadoCivilBautismo =
-  | "soltero"
-  | "matrimonio_catolico"
-  | "union_civil"
-  | "union_libre"
-  | "divorciado";
-
-export type CondicionBautismo =
-  | "padre_madre"
-  | "padrino_madrina"
-  | "formacion_catequetica";
+import type { EstadoCivilBautismo } from "./estadosCivilesBautismo";
+import type { CondicionBautismo } from "./condicionesBautismo";
+export type { EstadoCivilBautismo } from "./estadosCivilesBautismo";
+export type { CondicionBautismo } from "./condicionesBautismo";
+export { ETIQUETA_ESTADO_CIVIL } from "./estadosCivilesBautismo";
+export { ETIQUETA_CONDICION } from "./condicionesBautismo";
 
 export const PROVINCIAS_COSTA_RICA = [
   "San José",
@@ -24,19 +19,6 @@ export const PROVINCIAS_COSTA_RICA = [
 
 export type ProvinciaCostaRica = (typeof PROVINCIAS_COSTA_RICA)[number];
 
-export const ETIQUETA_ESTADO_CIVIL: Record<EstadoCivilBautismo, string> = {
-  soltero: "Soltero(a)",
-  matrimonio_catolico: "Matrimonio católico",
-  union_civil: "Unión civil",
-  union_libre: "Unión libre",
-  divorciado: "Divorciado(a)",
-};
-
-export const ETIQUETA_CONDICION: Record<CondicionBautismo, string> = {
-  padre_madre: "Padre/Madre",
-  padrino_madrina: "Padrino/Madrina",
-  formacion_catequetica: "Formación catequética",
-};
 
 export interface InscripcionCatequesisBautismo {
   id: number;
@@ -45,6 +27,7 @@ export interface InscripcionCatequesisBautismo {
   apellido2: string | null;
   fechaNacimiento: string;
   cedula: string;
+  nacionalidad: string | null;
   telefono: string;
   estadoCivil: EstadoCivilBautismo;
   parroquiaOrigen: string;
@@ -69,6 +52,7 @@ export interface CrearInscripcionCatequesisBautismo {
   apellido2: string | null;
   fechaNacimiento: string;
   cedula: string;
+  nacionalidad: string | null;
   telefono: string;
   estadoCivil: EstadoCivilBautismo;
   parroquiaOrigen: string;

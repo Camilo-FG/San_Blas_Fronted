@@ -28,6 +28,7 @@ import {
   getEstadoBadgeVariant,
   textoEstadoCica,
 } from "../../../cica/estadoCica";
+import { ETIQUETA_ESTADO_CIVIL_CICA } from "../../../cica/estadosCivilesCica";
 import type { InscripcionCica } from "../../../cica/types";
 
 type DetalleSolicitudCicaSheetProps = {
@@ -41,11 +42,7 @@ type DetalleSolicitudCicaSheetProps = {
 };
 
 // Helpers compartidos con la página: la tabla y el detalle formatean igual.
-export const etiquetaCivil: Record<string, string> = {
-  soltero: "Soltero(a)",
-  matrimonio_civil: "Matrimonio civil",
-  union_libre: "Unión libre",
-};
+export const etiquetaCivil: Record<string, string> = ETIQUETA_ESTADO_CIVIL_CICA;
 
 export const nombreCompleto = (persona: {
   nombre: string;
@@ -106,9 +103,11 @@ export function DetalleSolicitudCicaSheet({
             >
               Aprobar
             </Button>
+            {/* Rechazar va en gris como en juvenil y bautismo: el rojo solo se usa para el estado rechazado */}
             <Button
               variant="secondary"
-              className="enabled:hover:text-[#dcb55a]"
+              style={{ backgroundColor: "#e2e8f0" }}
+              className="rounded-lg! duration-150 ease-out hover:bg-slate-300! enabled:hover:text-[#dcb55a] dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!"
               disabled={guardando}
               onClick={onRechazar}
             >
@@ -155,7 +154,13 @@ export function DetalleSolicitudCicaSheet({
             <Separador />
             <Campo label="Correo" value={valorOGuion(solicitud.correo)} icon={<Mail size={16} className="shrink-0" />} />
             <Separador />
-            <Campo label="Dirección del hogar" value={valorOGuion(solicitud.direccionHogar)} icon={<MapPin size={16} className="shrink-0" />} />
+            <Campo label="Provincia" value={valorOGuion(solicitud.provincia)} icon={<MapPin size={16} className="shrink-0" />} />
+            <Separador />
+            <Campo label="Cantón" value={valorOGuion(solicitud.canton)} />
+            <Separador />
+            <Campo label="Distrito" value={valorOGuion(solicitud.distrito)} />
+            <Separador />
+            <Campo label="Dirección exacta" value={valorOGuion(solicitud.direccionHogar)} />
           </section>
         </div>
 
@@ -168,7 +173,7 @@ export function DetalleSolicitudCicaSheet({
               value={
                 solicitud.esCatolico
                   ? "Católico"
-                  : solicitud.otraIglesia?.trim() || "Otra iglesia"
+                  : solicitud.otraIglesia?.trim() || "Otra religión"
               }
               icon={<BookOpen size={16} className="shrink-0" />}
             />

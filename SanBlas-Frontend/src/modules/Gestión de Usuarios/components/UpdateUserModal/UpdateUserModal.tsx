@@ -3,6 +3,7 @@ import { useForm } from '@tanstack/react-form';
 import { Eye, EyeOff } from 'lucide-react';
 import { type Usuario } from '../../../../types/Usuario';
 import {
+  esRolDelSistema,
   opcionesSelectRol,
   type Rol,
 } from '../../../../types/Rol';
@@ -59,17 +60,22 @@ const UpdateUserModal: React.FC<Props> = ({
       estado: true,
     },
     onSubmit: async ({ value }) => {
+      const puedeEditarContrasena =
+        Boolean(usuario?.state) && !usuario?.pendienteActivacion;
       onSave({
         ...value,
         nombre: normalizarTexto(value.nombre),
         correo: normalizarTexto(value.correo),
         telefono: normalizarTexto(value.telefono),
-        contraseña: value.contraseña.trim(),
+        contraseña: puedeEditarContrasena ? value.contraseña.trim() : '',
       });
     },
   });
 
   const { user: usuarioSesion } = useAuth();
+  // Solo cuentas activas: pendientes eligen contraseña al activar.
+  const puedeEditarContrasena =
+    Boolean(usuario?.state) && !usuario?.pendienteActivacion;
   // controla si se ve o se oculta el texto de la nueva contraseña
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   // solo un secretario puede otorgar el rol secretario
@@ -141,7 +147,7 @@ const UpdateUserModal: React.FC<Props> = ({
     if (!v) return 'El nombre es requerido.';
     if (usuario && v === normalizarTexto(usuario.userName)) return undefined;
     if (v.length < 3) return 'El nombre debe tener al menos 3 caracteres.';
-    if (v.length > 60) return 'El nombre no puede superar los 60 caracteres.';
+    if (v.length > 30) return 'El nombre no puede superar los 30 caracteres.';
     if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]+$/.test(v)) return 'El nombre solo puede contener letras y números.';
     if (
       users.some(
@@ -207,7 +213,7 @@ const UpdateUserModal: React.FC<Props> = ({
       title="Editar usuario"
       cerrarAlClicFuera={false}
       overlayClassName="fixed inset-0 z-[1350] overflow-hidden overscroll-none bg-[#060f20]/35 backdrop-blur-[6px] dark:bg-black/60"
-      className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] dark:[scrollbar-color:#475569_transparent]"
+      className="dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425] dark:shadow-[0_22px_55px_rgba(0,0,0,0.6)] dark:[&_h2]:text-[#f3f6fa] dark:[&_button[aria-label]]:bg-white/5 dark:[&_button[aria-label]]:text-[#f3f6fa] dark:[&_button[aria-label]]:hover:bg-white/10"
     >
       <h3 className="mb-4 pr-10 text-lg font-bold text-royal-blue dark:text-[#f3f6fa]">
         Editar usuario
@@ -233,7 +239,7 @@ const UpdateUserModal: React.FC<Props> = ({
                 <Label htmlFor="u-nombre">
                   Nombre de usuario
                   <span className="ml-1.5 font-normal text-text-muted dark:text-[#7f8da3]">
-                    ({field.state.value.length}/60)
+                    ({field.state.value.length}/30)
                   </span>
                 </Label>
                 <Input
@@ -251,7 +257,7 @@ const UpdateUserModal: React.FC<Props> = ({
                     field.handleChange(normalizarTexto(field.state.value));
                     field.handleBlur();
                   }}
-                  maxLength={60}
+                  maxLength={30}
                 />
                 <FieldError message={field.state.meta.errors[0]} />
               </div>
@@ -328,9 +334,18 @@ const UpdateUserModal: React.FC<Props> = ({
             <form.Field
               name="contraseña"
               validators={{
-                onChange: ({ value }) => validarContraseña(value),
-                onBlur: ({ value }) => validarContraseña(value),
-                onSubmit: ({ value }) => validarContraseña(value),
+                onChange: ({ value }) =>
+                  puedeEditarContrasena
+                    ? validarContraseña(value)
+                    : undefined,
+                onBlur: ({ value }) =>
+                  puedeEditarContrasena
+                    ? validarContraseña(value)
+                    : undefined,
+                onSubmit: ({ value }) =>
+                  puedeEditarContrasena
+                    ? validarContraseña(value)
+                    : undefined,
               }}
             >
               {(field) => {
@@ -358,9 +373,14 @@ const UpdateUserModal: React.FC<Props> = ({
                       <Input
                         id="u-contraseña"
                         type={mostrarContrasena ? 'text' : 'password'}
-                        placeholder="Dejar vacío para no cambiar"
+                        placeholder={
+                          puedeEditarContrasena
+                            ? 'Dejar vacío para no cambiar'
+                            : 'No disponible hasta activar la cuenta'
+                        }
                         value={field.state.value}
                         hasError={field.state.meta.errors.length > 0}
+                        disabled={!puedeEditarContrasena}
                         onChange={(e) =>
                           field.handleChange(
                             e.target.value.replace(/[^a-zA-Z0-9]/g, ''),
@@ -379,11 +399,12 @@ const UpdateUserModal: React.FC<Props> = ({
                         onClick={() => setMostrarContrasena((prev) => !prev)}
                         aria-label={mostrarContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                         aria-pressed={mostrarContrasena}
+                        disabled={!puedeEditarContrasena}
                       >
                         {mostrarContrasena ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                     </div>
-                    {valor ? (
+                    {puedeEditarContrasena && valor ? (
                       <div className="mt-2 flex items-center gap-2" aria-live="polite">
                         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border-strong dark:bg-white/10">
                           <div
@@ -397,7 +418,9 @@ const UpdateUserModal: React.FC<Props> = ({
                       </div>
                     ) : null}
                     <p className="mt-1 text-xs text-text-muted dark:text-[#7f8da3]">
-                      Incluya mayúscula, minúscula y número.
+                      {puedeEditarContrasena
+                        ? 'Incluya mayúscula, minúscula y número.'
+                        : 'La contraseña la define el usuario al activar la invitación.'}
                     </p>
                     <FieldError message={field.state.meta.errors[0]} />
                   </div>
@@ -415,44 +438,104 @@ const UpdateUserModal: React.FC<Props> = ({
                 onSubmit: ({ value }) => validarRoles(value),
               }}
             >
-              {(field) => (
+              {(field) => {
+                const opcionesRol = opcionesSelectRol(
+                  roles,
+                  field.state.value[0],
+                  rolesAsignables,
+                );
+                const rolesSistemaOpciones = opcionesRol.filter((opcion) => {
+                  const rol = roles.find((item) => item.clave === opcion.clave);
+                  return rol ? esRolDelSistema(rol) : false;
+                });
+                const rolesPersonalizadosOpciones = opcionesRol.filter(
+                  (opcion) => {
+                    const rol = roles.find(
+                      (item) => item.clave === opcion.clave,
+                    );
+                    return rol ? !esRolDelSistema(rol) : false;
+                  },
+                );
+
+                const renderCheckboxRol = (rol: {
+                  clave: string;
+                  nombre: string;
+                }) => {
+                  const marcado = field.state.value.includes(rol.clave);
+                  return (
+                    <label
+                      key={rol.clave}
+                      className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-text dark:text-[#f3f6fa]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={marcado}
+                        disabled={esUsuarioActual}
+                        onChange={() => {
+                          const actual = field.state.value;
+                          field.handleChange(
+                            marcado
+                              ? actual.filter((r) => r !== rol.clave)
+                              : [...actual, rol.clave],
+                          );
+                        }}
+                        onBlur={field.handleBlur}
+                        className="h-4 w-4 shrink-0 cursor-pointer accent-royal-blue"
+                      />
+                      <span>{rol.nombre}</span>
+                    </label>
+                  );
+                };
+
+                return (
                 <div>
                   <Label id="u-roles-titulo">Roles del usuario</Label>
                   <div
                     role="group"
                     aria-labelledby="u-roles-titulo"
-                    className="flex max-h-48 flex-col gap-2 overflow-y-auto rounded-xl border border-border-strong bg-surface-muted p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
+                    className="flex max-h-60 flex-col gap-3 overflow-y-auto rounded-xl border border-border-strong bg-surface-muted p-3 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]"
                   >
-                    {opcionesSelectRol(
-                      roles,
-                      field.state.value[0],
-                      rolesAsignables,
-                    ).map((rol) => {
-                      const marcado = field.state.value.includes(rol.clave);
-                      return (
-                        <label
-                          key={rol.clave}
-                          className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-text dark:text-[#f3f6fa]"
+                    {rolesSistemaOpciones.length > 0 && (
+                      <div>
+                        <p
+                          id="u-roles-sistema-titulo"
+                          className="mb-1.5 text-[11px] font-bold tracking-wide text-royal-blue uppercase dark:text-[#d9a928]"
                         >
-                          <input
-                            type="checkbox"
-                            checked={marcado}
-                            disabled={esUsuarioActual}
-                            onChange={() => {
-                              const actual = field.state.value;
-                              field.handleChange(
-                                marcado
-                                  ? actual.filter((r) => r !== rol.clave)
-                                  : [...actual, rol.clave],
-                              );
-                            }}
-                            onBlur={field.handleBlur}
-                            className="h-4 w-4 shrink-0 cursor-pointer accent-royal-blue"
-                          />
-                          <span>{rol.nombre}</span>
-                        </label>
-                      );
-                    })}
+                          Roles del sistema
+                        </p>
+                        <div
+                          role="group"
+                          aria-labelledby="u-roles-sistema-titulo"
+                          className="flex flex-col gap-2"
+                        >
+                          {rolesSistemaOpciones.map(renderCheckboxRol)}
+                        </div>
+                      </div>
+                    )}
+
+                    {rolesPersonalizadosOpciones.length > 0 && (
+                      <div
+                        className={
+                          rolesSistemaOpciones.length > 0
+                            ? 'border-t border-border-strong pt-3 dark:border-[rgba(220,230,242,0.12)]'
+                            : undefined
+                        }
+                      >
+                        <p
+                          id="u-roles-personalizados-titulo"
+                          className="mb-1.5 text-[11px] font-bold tracking-wide text-text-muted uppercase dark:text-[#7f8da3]"
+                        >
+                          Roles personalizados
+                        </p>
+                        <div
+                          role="group"
+                          aria-labelledby="u-roles-personalizados-titulo"
+                          className="flex flex-col gap-2"
+                        >
+                          {rolesPersonalizadosOpciones.map(renderCheckboxRol)}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <FieldError
                     message={
@@ -467,7 +550,8 @@ const UpdateUserModal: React.FC<Props> = ({
                     </p>
                   )}
                 </div>
-              )}
+                );
+              }}
             </form.Field>
 
             <form.Field name="estado">
