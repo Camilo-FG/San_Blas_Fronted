@@ -44,6 +44,21 @@ const Home = () => {
       <SeoHead page="/" />
       <HeroSection />
       <HeroValuesSection />
+      <section
+        aria-label="Parroquia San Blas de Nicoya"
+        className="bg-surface-muted px-[8%] py-10 max-[900px]:px-8 max-sm:px-[18px]"
+      >
+        <div className="mx-auto max-w-[720px] text-center">
+          <h2 className="m-0 mb-3 font-heading text-[1.55rem] font-extrabold text-royal-blue max-sm:text-[1.3rem]">
+            Parroquia San Blas de Nicoya
+          </h2>
+          <p className="m-0 text-base leading-relaxed text-text-secondary">
+            Iglesia católica en el centro de Nicoya, Guanacaste. Encuentre
+            horarios de misa, información de bautizos, catequesis, constancias
+            sacramentales y eventos de la comunidad parroquial.
+          </p>
+        </div>
+      </section>
       <Suspense fallback={<CarouselPlaceholder />}>
         <ServiciosCarousel />
       </Suspense>

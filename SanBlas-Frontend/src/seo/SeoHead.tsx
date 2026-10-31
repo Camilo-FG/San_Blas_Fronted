@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { pageMetadata, type PageMeta } from "./metadata";
 import {
@@ -5,24 +6,45 @@ import {
   getWebSiteSchema,
   getBreadcrumbSchema,
 } from "./structuredData";
+import { clearPrerenderReady, setPrerenderReady } from "./prerenderReady";
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "./site";
 
 interface SeoHeadProps {
   page: string;
   overrides?: Partial<PageMeta>;
   jsonLd?: Record<string, unknown>[];
+  /** false mientras faltan datos críticos (API); el prerender espera a true. */
+  contentReady?: boolean;
 }
 
 export default function SeoHead({
   page,
   overrides = {},
   jsonLd = [],
+  contentReady = true,
 }: SeoHeadProps) {
   const base = pageMetadata[page];
+
+  useEffect(() => {
+    clearPrerenderReady();
+    if (!base || !contentReady) return;
+    // Deja que Helmet aplique title/metas en el DOM antes de señalizar.
+    const id = requestAnimationFrame(() => setPrerenderReady());
+    return () => {
+      cancelAnimationFrame(id);
+      clearPrerenderReady();
+    };
+  }, [base, contentReady, page, overrides, jsonLd]);
+
   if (!base) return null;
 
   const meta = { ...base, ...overrides };
-  const canonical = meta.canonical || `${SITE_URL}${page === "/" ? "" : page}`;
+  // Canónicos sin trailing slash (salvo home).
+  const path = page === "/" ? "" : page.replace(/\/+$/, "");
+  const canonical = (meta.canonical || `${SITE_URL}${path}`).replace(
+    /^(https?:\/\/[^/]+)\/+$/,
+    "$1",
+  );
   const ogImage = meta.ogImage || DEFAULT_OG_IMAGE;
   const robots = meta.robots ?? "index, follow";
 

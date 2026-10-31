@@ -10,21 +10,20 @@ export interface PageMeta {
   breadcrumbs?: { name: string; path: string }[];
 }
 
-const BRAND = "Parroquia San Blas de Nicoya";
-
+/** Titles ~50–60 chars; descriptions ~120–155. */
 export const pageMetadata: Record<string, PageMeta> = {
   [Rutas.home]: {
-    title: `${BRAND} | Fe, tradición y servicio pastoral`,
+    title: "Parroquia San Blas Nicoya | Fe y tradición",
     description:
-      "Sitio oficial de la Parroquia San Blas en Nicoya, Guanacaste. Consulte misas, horarios, bautizos, catequesis, sacramentos y eventos de la comunidad.",
+      "Sitio oficial de la Parroquia San Blas en Nicoya, Guanacaste. Misas, horarios, bautizos, catequesis, sacramentos y eventos.",
     canonical: SITE_URL,
     ogImage: `${SITE_URL}/hero.webp`,
     breadcrumbs: [{ name: "Inicio", path: "/" }],
   },
   [Rutas.sobreNosotros]: {
-    title: `Sobre nosotros | ${BRAND}`,
+    title: "Sobre nosotros | Parroquia San Blas Nicoya",
     description:
-      "Conozca la misión, el servicio pastoral y la vida comunitaria de la Parroquia San Blas de Nicoya, referente de fe en Guanacaste.",
+      "Misión, servicio pastoral y vida comunitaria de la Parroquia San Blas de Nicoya, referente de fe en Guanacaste.",
     canonical: `${SITE_URL}/sobre-nosotros`,
     ogImage: `${SITE_URL}/sobre-nosotros.jpg`,
     breadcrumbs: [
@@ -33,9 +32,9 @@ export const pageMetadata: Record<string, PageMeta> = {
     ],
   },
   [Rutas.historia]: {
-    title: `Historia y legado | ${BRAND}`,
+    title: "Historia | Parroquia San Blas de Nicoya",
     description:
-      "Descubra la historia de la Parroquia San Blas de Nicoya, una de las iglesias más antiguas de Costa Rica, con raíces desde el siglo XVI.",
+      "Historia de la Parroquia San Blas de Nicoya, una de las iglesias más antiguas de Costa Rica, desde el siglo XVI.",
     canonical: `${SITE_URL}/historia`,
     breadcrumbs: [
       { name: "Inicio", path: "/" },
@@ -43,9 +42,9 @@ export const pageMetadata: Record<string, PageMeta> = {
     ],
   },
   [Rutas.FormsolicitudesCatequesis]: {
-    title: `Inscripción a catequesis | ${BRAND}`,
+    title: "Catequesis | Parroquia San Blas Nicoya",
     description:
-      "Inscriba a niños y jóvenes en la catequesis de la Parroquia San Blas de Nicoya. Niveles, requisitos y formulario en línea.",
+      "Inscriba a niños y jóvenes en la catequesis de la Parroquia San Blas de Nicoya. Niveles, requisitos y formulario.",
     canonical: `${SITE_URL}/solicitudes-catequesis`,
     breadcrumbs: [
       { name: "Inicio", path: "/" },
@@ -53,7 +52,7 @@ export const pageMetadata: Record<string, PageMeta> = {
     ],
   },
   [Rutas.solicitudesCica]: {
-    title: `Catequesis de adultos (CICA) | ${BRAND}`,
+    title: "CICA adultos | Parroquia San Blas Nicoya",
     description:
       "Inscripción a la Catequesis de Iniciación Cristiana de Adultos (CICA) en la Parroquia San Blas de Nicoya.",
     canonical: `${SITE_URL}/solicitudes-cica`,
@@ -63,7 +62,7 @@ export const pageMetadata: Record<string, PageMeta> = {
     ],
   },
   [Rutas.FormsolicitudesCatequesisBautismo]: {
-    title: `Catequesis para el bautismo | ${BRAND}`,
+    title: "Catequesis bautismo | San Blas Nicoya",
     description:
       "Inscripción a la catequesis previa al bautismo para padres, madres y padrinos en la Parroquia San Blas de Nicoya.",
     canonical: `${SITE_URL}/solicitudes-catequesis-bautismo`,
@@ -76,9 +75,9 @@ export const pageMetadata: Record<string, PageMeta> = {
     ],
   },
   [Rutas.donacionesPublicas]: {
-    title: `Donaciones | ${BRAND}`,
+    title: "Donaciones | Parroquia San Blas Nicoya",
     description:
-      "Apoye a la Parroquia San Blas de Nicoya con su donación: SINPE Móvil, transferencia bancaria o insumos pastorales.",
+      "Apoye a la Parroquia San Blas de Nicoya: SINPE Móvil, transferencia bancaria o insumos pastorales.",
     canonical: `${SITE_URL}/donaciones`,
     breadcrumbs: [
       { name: "Inicio", path: "/" },
@@ -86,7 +85,7 @@ export const pageMetadata: Record<string, PageMeta> = {
     ],
   },
   [Rutas.SolicitudesSacramentos]: {
-    title: `Constancias sacramentales | ${BRAND}`,
+    title: "Constancias | Parroquia San Blas Nicoya",
     description:
       "Solicite constancias de bautismo, comunión, confirmación o matrimonio en la Parroquia San Blas de Nicoya.",
     canonical: `${SITE_URL}/solicitudes-sacramentos`,
@@ -96,7 +95,7 @@ export const pageMetadata: Record<string, PageMeta> = {
     ],
   },
   [Rutas.bautizos]: {
-    title: `Información de bautizos | ${BRAND}`,
+    title: "Bautizos | Parroquia San Blas de Nicoya",
     description:
       "Requisitos, charlas bautismales y pasos para solicitar el bautismo en la Parroquia San Blas de Nicoya.",
     canonical: `${SITE_URL}/bautizos`,
@@ -106,7 +105,7 @@ export const pageMetadata: Record<string, PageMeta> = {
     ],
   },
   [Rutas.horarios]: {
-    title: `Horarios de misas y atención | ${BRAND}`,
+    title: "Horarios de misa | San Blas Nicoya",
     description:
       "Horarios de misas, confesiones y atención en la oficina parroquial de San Blas de Nicoya, Guanacaste.",
     canonical: `${SITE_URL}/horarios`,
@@ -117,7 +116,7 @@ export const pageMetadata: Record<string, PageMeta> = {
     ],
   },
   [Rutas.contacto]: {
-    title: `Contacto | ${BRAND}`,
+    title: "Contacto | Parroquia San Blas de Nicoya",
     description:
       "Teléfono, correo, ubicación y horarios de atención de la Parroquia San Blas de Nicoya, Guanacaste.",
     canonical: `${SITE_URL}/contacto`,
@@ -127,38 +126,45 @@ export const pageMetadata: Record<string, PageMeta> = {
     ],
   },
   [Rutas.eventosPublicos]: {
-    title: `Próximos eventos | ${BRAND}`,
+    title: "Eventos | Parroquia San Blas de Nicoya",
     description:
-      "Actividades, celebraciones y encuentros de la comunidad parroquial San Blas de Nicoya. Consulte fechas y lugares.",
+      "Actividades, celebraciones y encuentros de la comunidad parroquial San Blas de Nicoya. Consulte fechas.",
     canonical: `${SITE_URL}/eventos`,
     breadcrumbs: [
       { name: "Inicio", path: "/" },
       { name: "Eventos", path: "/eventos" },
     ],
   },
+  [Rutas.notFound]: {
+    title: "Página no encontrada | San Blas Nicoya",
+    description:
+      "La página solicitada no existe. Vuelva al inicio o consulte horarios y contacto de la Parroquia San Blas.",
+    canonical: `${SITE_URL}/404`,
+    robots: "noindex, follow",
+  },
   [Rutas.login]: {
-    title: `Iniciar sesión | ${BRAND}`,
+    title: "Iniciar sesión | San Blas Nicoya",
     description:
       "Acceso al panel administrativo de la Parroquia San Blas de Nicoya.",
     canonical: `${SITE_URL}/login`,
     robots: "noindex, nofollow",
   },
   [Rutas.recuperarContrasena]: {
-    title: `Recuperar contraseña | ${BRAND}`,
+    title: "Recuperar contraseña | San Blas Nicoya",
     description:
       "Solicite un enlace para restablecer la contraseña de su cuenta en la Parroquia San Blas de Nicoya.",
     canonical: `${SITE_URL}/recuperar-contrasena`,
     robots: "noindex, nofollow",
   },
   [Rutas.restablecerContrasena]: {
-    title: `Restablecer contraseña | ${BRAND}`,
+    title: "Restablecer contraseña | San Blas Nicoya",
     description:
       "Cree una nueva contraseña para su cuenta de la Parroquia San Blas de Nicoya.",
     canonical: `${SITE_URL}/reset-password`,
     robots: "noindex, nofollow",
   },
   [Rutas.activarCuenta]: {
-    title: `Activar cuenta | ${BRAND}`,
+    title: "Activar cuenta | San Blas Nicoya",
     description:
       "Active su cuenta para acceder al sistema de la Parroquia San Blas de Nicoya.",
     canonical: `${SITE_URL}/activar-cuenta`,

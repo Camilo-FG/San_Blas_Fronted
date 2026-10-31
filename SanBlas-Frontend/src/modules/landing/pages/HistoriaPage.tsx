@@ -5,7 +5,9 @@ function HistoriaPage() {
   return (
     <>
       <SeoHead page="/historia" />
-      <HistoriaSection />
+      <main>
+        <HistoriaSection />
+      </main>
     </>
   );
 }

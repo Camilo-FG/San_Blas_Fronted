@@ -13,7 +13,7 @@ const HERO_DEFAULT = {
   title: "Firme en la",
   titleHighlight: "Fe y Tradición",
   description:
-    "Ubicada en el corazón de Nicoya, la Parroquia San Blas es testimonio vivo de nuestra historia y esperanza cristiana.",
+    "Parroquia San Blas de Nicoya, Guanacaste: misas, sacramentos, catequesis y acompañamiento pastoral en el corazón de la ciudad.",
 };
 
 const heroButtonClass =
@@ -71,7 +71,7 @@ function HeroSection() {
     >
       <img
         src={heroImage}
-        alt=""
+        alt="Fachada de la Parroquia San Blas de Nicoya, Guanacaste"
         className="absolute inset-0 -z-20 size-full object-cover object-center max-md:object-top"
         fetchPriority="high"
         decoding="async"

@@ -54,7 +54,7 @@ function normalizarBloques(origen: unknown): HorarioBloque[] {
 }
 
 function HorariosPage() {
-  const { data } = useLandingSection("horarios", HORARIOS_DEFAULT);
+  const { data, isSettled } = useLandingSection("horarios", HORARIOS_DEFAULT);
   const bloques = normalizarBloques(
     (data as { bloques?: unknown }).bloques,
   );
@@ -63,7 +63,7 @@ function HorariosPage() {
 
   return (
     <>
-      <SeoHead page="/horarios" />
+      <SeoHead page="/horarios" contentReady={isSettled} />
       <main className="bg-[#f7f1e3] px-4 py-10 sm:px-6 sm:py-14">
         <div
           className="relative mx-auto w-full max-w-2xl overflow-hidden rounded-3xl border border-[#e7dcc3] shadow-[0_24px_50px_rgba(30,58,110,0.14)]"
@@ -129,6 +129,17 @@ function HorariosPage() {
                 </ul>
               </section>
             ))}
+            <p className="m-0 text-center text-sm leading-relaxed text-text-muted">
+              Parroquia San Blas de Nicoya, Guanacaste — horarios de misa sujetos
+              a cambios pastorales. Para confirmaciones, visite{" "}
+              <a
+                href="/contacto"
+                className="font-semibold text-royal-blue no-underline hover:text-royal-gold"
+              >
+                Contacto
+              </a>
+              .
+            </p>
           </div>
         </div>
       </main>

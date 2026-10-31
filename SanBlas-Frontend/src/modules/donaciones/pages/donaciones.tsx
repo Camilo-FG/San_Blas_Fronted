@@ -2,30 +2,34 @@ import DonacionInfo from "../components/DonacionInfo";
 import DonacionForm from "../components/DonacionForm";
 import { useLandingSection } from "../../../hooks/useLandingSection";
 import { DONACIONES_DEFAULT } from "../../landing/donacionesContent";
+import SeoHead from "../../../seo/SeoHead";
 
 function Donaciones() {
-  const { data } = useLandingSection("donaciones", DONACIONES_DEFAULT);
+  const { data, isSettled } = useLandingSection("donaciones", DONACIONES_DEFAULT);
   const handleDonarInsumos = () => {
     document.getElementById("insumos")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <section className="w-full bg-white pb-12 pt-10 sm:pb-16 sm:pt-12 lg:pb-20 lg:pt-14">
-      <div className="mx-auto w-full max-w-4xl px-5 sm:px-8">
-        <DonacionInfo
-          title={data.title}
-          intro={data.intro}
-          sinpe={data.sinpe}
-          cuentaBancaria={data.cuentaBancaria}
-          banco={data.banco}
-          onDonarInsumos={handleDonarInsumos}
-        />
+    <>
+      <SeoHead page="/donaciones" contentReady={isSettled} />
+      <section className="w-full bg-white pb-12 pt-10 sm:pb-16 sm:pt-12 lg:pb-20 lg:pt-14">
+        <div className="mx-auto w-full max-w-4xl px-5 sm:px-8">
+          <DonacionInfo
+            title={data.title}
+            intro={data.intro}
+            sinpe={data.sinpe}
+            cuentaBancaria={data.cuentaBancaria}
+            banco={data.banco}
+            onDonarInsumos={handleDonarInsumos}
+          />
 
-        <div className="mt-16 sm:mt-20 lg:mt-24">
-          <DonacionForm />
+          <div className="mt-16 sm:mt-20 lg:mt-24">
+            <DonacionForm />
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
 

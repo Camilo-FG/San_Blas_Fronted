@@ -1,0 +1,208 @@
+/**
+ * Post-build: visita rutas públicas con Playwright y guarda HTML en dist/
+ * para que crawlers vean title/h1/texto sin ejecutar JS en el cliente.
+ *
+ * Hidratación del cliente: createRoot (no hydrateRoot) — el HTML es para
+ * crawlers; React remonta el árbol. TanStack Router + Playwright (Vite 8).
+ */
+import { spawn } from "node:child_process";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { chromium } from "@playwright/test";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const root = join(__dirname, "..");
+const dist = join(root, "dist");
+const HOST = "127.0.0.1";
+const PORT = 4179;
+const BASE = `http://${HOST}:${PORT}`;
+
+const ROUTES = [
+  "/",
+  "/sobre-nosotros",
+  "/historia",
+  "/horarios",
+  "/contacto",
+  "/eventos",
+  "/bautizos",
+  "/solicitudes-catequesis",
+  "/solicitudes-cica",
+  "/solicitudes-catequesis-bautismo",
+  "/solicitudes-sacramentos",
+  "/donaciones",
+  "/404",
+];
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForServer(url, attempts = 40) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url);
+      if (res.ok || res.status === 404) return;
+    } catch {
+      // reintentar
+    }
+    await wait(250);
+  }
+  throw new Error(`Preview no respondió en ${url}`);
+}
+
+function outPathFor(route) {
+  if (route === "/") return join(dist, "index.html");
+  if (route === "/404") return join(dist, "404.html");
+  // Pretty URL sin trailing slash: /horarios → horarios/index.html
+  return join(dist, route.slice(1), "index.html");
+}
+
+function apiBaseUrl() {
+  return (
+    process.env.VITE_API_URL?.replace(/\/+$/, "") ||
+    process.env.API_URL?.replace(/\/+$/, "") ||
+    ""
+  );
+}
+
+/** Falla el build si la API no responde (evita publicar defaults en silencio). */
+async function assertApiReachable() {
+  const allowOffline = process.env.PRERENDER_ALLOW_OFFLINE === "1";
+  const base = apiBaseUrl();
+  if (!base) {
+    if (allowOffline) {
+      console.warn(
+        "[prerender] Sin VITE_API_URL y PRERENDER_ALLOW_OFFLINE=1 — se continúa sin healthcheck.",
+      );
+      return;
+    }
+    throw new Error(
+      "[prerender] Falta VITE_API_URL. Defínela en el build de Netlify, o usa PRERENDER_ALLOW_OFFLINE=1 solo en local.",
+    );
+  }
+
+  const url = `${base}/landing`;
+  let lastError = "";
+  for (let i = 0; i < 5; i++) {
+    try {
+      const res = await fetch(url, {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.ok) {
+        console.log(`[prerender] API OK: ${url}`);
+        return;
+      }
+      lastError = `HTTP ${res.status}`;
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+    }
+    await wait(1000 * (i + 1));
+  }
+
+  if (allowOffline) {
+    console.warn(
+      `[prerender] API no alcanzable (${url}: ${lastError}) — PRERENDER_ALLOW_OFFLINE=1, se continúa.`,
+    );
+    return;
+  }
+
+  throw new Error(
+    `[prerender] API no alcanzable en ${url} (${lastError}). No se publican defaults silenciosos. Reintenta cuando Railway esté arriba, o PRERENDER_ALLOW_OFFLINE=1 solo en local.`,
+  );
+}
+
+/** Conserva solo la primera o la última coincidencia. */
+function keepOne(html, regex, which) {
+  const matches = html.match(regex) || [];
+  if (matches.length <= 1) return html;
+  let i = 0;
+  return html.replace(regex, (match) => {
+    i += 1;
+    if (which === "first") return i === 1 ? match : "";
+    return i === matches.length ? match : "";
+  });
+}
+
+/** Quita el host del preview y deduplica title/metas. */
+function cleanHtml(html) {
+  let out = html.replaceAll(BASE, "");
+  out = keepOne(out, /<title>[\s\S]*?<\/title>/gi, "first");
+  out = keepOne(out, /<meta[^>]*name=["']description["'][^>]*>/gi, "last");
+  out = keepOne(out, /<meta[^>]*name=["']robots["'][^>]*>/gi, "last");
+  out = keepOne(out, /<link[^>]*rel=["']canonical["'][^>]*>/gi, "last");
+  out = keepOne(out, /<meta[^>]*property=["']og:title["'][^>]*>/gi, "last");
+  out = keepOne(out, /<meta[^>]*property=["']og:description["'][^>]*>/gi, "last");
+  out = keepOne(out, /<meta[^>]*property=["']og:url["'][^>]*>/gi, "last");
+  out = keepOne(out, /<meta[^>]*property=["']og:image["'][^>]*>/gi, "last");
+  out = keepOne(out, /<meta[^>]*name=["']twitter:title["'][^>]*>/gi, "last");
+  out = keepOne(out, /<meta[^>]*name=["']twitter:description["'][^>]*>/gi, "last");
+  out = keepOne(out, /<meta[^>]*name=["']twitter:image["'][^>]*>/gi, "last");
+  return out;
+}
+
+async function main() {
+  await assertApiReachable();
+
+  const preview = spawn(
+    "pnpm",
+    ["exec", "vite", "preview", "--host", HOST, "--port", String(PORT), "--strictPort"],
+    {
+      cwd: root,
+      shell: true,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, BROWSER: "none" },
+    },
+  );
+
+  let previewLog = "";
+  preview.stdout?.on("data", (chunk) => {
+    previewLog += String(chunk);
+  });
+  preview.stderr?.on("data", (chunk) => {
+    previewLog += String(chunk);
+  });
+
+  try {
+    await waitForServer(BASE);
+    const browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext();
+
+    for (const route of ROUTES) {
+      const page = await context.newPage();
+      const response = await page.goto(`${BASE}${route}`, {
+        waitUntil: "domcontentloaded",
+        timeout: 60_000,
+      });
+      await page.waitForFunction(
+        () => document.documentElement.dataset.prerender === "ready",
+        { timeout: 45_000 },
+      );
+      const html = cleanHtml(await page.content());
+      const file = outPathFor(route);
+      await mkdir(dirname(file), { recursive: true });
+      await writeFile(file, html, "utf8");
+      const status = response?.status() ?? "?";
+      console.log(`prerender ${route} → ${file.replace(root, ".")} (${status})`);
+      await page.close();
+    }
+
+    await browser.close();
+    console.log(`Prerender listo (${ROUTES.length} rutas).`);
+  } catch (error) {
+    console.error("Prerender falló:", error);
+    console.error(previewLog.slice(-2000));
+    process.exitCode = 1;
+  } finally {
+    preview.kill("SIGTERM");
+    await wait(300);
+    try {
+      preview.kill("SIGKILL");
+    } catch {
+      // ya cerrado
+    }
+  }
+}
+
+main();
