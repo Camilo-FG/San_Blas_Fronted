@@ -1,4 +1,4 @@
-# Auth + dashboard (SPA). Sin catch-all a index.html.
+# Auth + dashboard (SPA)
 /login                /index.html   200!
 /recuperar-contrasena /index.html   200!
 /reset-password       /index.html   200!
@@ -8,6 +8,6 @@
 
 /404                  /404.html     404!
 
-# Desconocidas: 404 real
-# (Pretty URLs sirve /ruta/ desde /ruta/index.html; no reescribir públicas aquí)
-/*                    /404.html     404!
+# Sin ! (force): si el archivo existe (hero.webp, assets, index.html) se sirve.
+# Solo las rutas sin archivo caen en 404.
+/*                    /404.html     404
