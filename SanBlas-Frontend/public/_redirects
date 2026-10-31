@@ -1,36 +1,13 @@
-# Auth + dashboard (SPA)
-/login                              /index.html   200!
-/recuperar-contrasena               /index.html   200!
-/reset-password                     /index.html   200!
-/activar-cuenta                     /index.html   200!
-/dashboard                          /index.html   200!
-/dashboard/*                        /index.html   200!
+# Auth + dashboard (SPA). Sin catch-all a index.html.
+/login                /index.html   200!
+/recuperar-contrasena /index.html   200!
+/reset-password       /index.html   200!
+/activar-cuenta       /index.html   200!
+/dashboard            /index.html   200!
+/dashboard/*          /index.html   200!
 
-# Públicas: HTML prerenderizado (sin trailing slash / Pretty URLs)
-/sobre-nosotros/                    /sobre-nosotros  301!
-/sobre-nosotros                     /sobre-nosotros/index.html  200!
-/historia/                          /historia  301!
-/historia                           /historia/index.html  200!
-/horarios/                          /horarios  301!
-/horarios                           /horarios/index.html  200!
-/contacto/                          /contacto  301!
-/contacto                           /contacto/index.html  200!
-/eventos/                           /eventos  301!
-/eventos                            /eventos/index.html  200!
-/bautizos/                          /bautizos  301!
-/bautizos                           /bautizos/index.html  200!
-/solicitudes-catequesis/            /solicitudes-catequesis  301!
-/solicitudes-catequesis             /solicitudes-catequesis/index.html  200!
-/solicitudes-cica/                  /solicitudes-cica  301!
-/solicitudes-cica                   /solicitudes-cica/index.html  200!
-/solicitudes-catequesis-bautismo/   /solicitudes-catequesis-bautismo  301!
-/solicitudes-catequesis-bautismo    /solicitudes-catequesis-bautismo/index.html  200!
-/solicitudes-sacramentos/           /solicitudes-sacramentos  301!
-/solicitudes-sacramentos            /solicitudes-sacramentos/index.html  200!
-/donaciones/                        /donaciones  301!
-/donaciones                         /donaciones/index.html  200!
+/404                  /404.html     404!
 
-/404                                /404.html   404!
-
-# Desconocidas: 404 real (el /* → index.html 200 anterior rompía esto)
-/*                                  /404.html   404!
+# Desconocidas: 404 real
+# (Pretty URLs sirve /ruta/ desde /ruta/index.html; no reescribir públicas aquí)
+/*                    /404.html     404!
