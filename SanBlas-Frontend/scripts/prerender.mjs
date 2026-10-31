@@ -6,7 +6,7 @@
  * crawlers; React remonta el árbol. TanStack Router + Playwright (Vite 8).
  */
 import { spawn } from "node:child_process";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
@@ -128,6 +128,8 @@ function keepOne(html, regex, which) {
 /** Quita el host del preview y deduplica title/metas. */
 function cleanHtml(html) {
   let out = html.replaceAll(BASE, "");
+  // No persistir la señal de prerender (evitar falsos "ready" en visitas siguientes).
+  out = out.replace(/\s*data-prerender="[^"]*"/gi, "");
   out = keepOne(out, /<title>[\s\S]*?<\/title>/gi, "first");
   out = keepOne(out, /<meta[^>]*name=["']description["'][^>]*>/gi, "last");
   out = keepOne(out, /<meta[^>]*name=["']robots["'][^>]*>/gi, "last");
@@ -165,27 +167,69 @@ async function main() {
   });
 
   try {
+    // Shell limpio de Vite (sin data-prerender). Evita que el fallback SPA
+    // sirva un index.html ya prerenderizado con ready=true de otra ruta.
+    const spaShell = await readFile(join(dist, "index.html"), "utf8");
+
     await waitForServer(BASE);
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
+    let homeHtml = null;
 
     for (const route of ROUTES) {
+      const file = outPathFor(route);
+      // Quitar HTML previo de esta ruta para forzar el boot SPA desde el shell.
+      if (route !== "/") {
+        await rm(file, { force: true });
+        if (route !== "/404") {
+          await rm(dirname(file), { recursive: true, force: true });
+        }
+      }
+      await writeFile(join(dist, "index.html"), spaShell, "utf8");
+
       const page = await context.newPage();
       const response = await page.goto(`${BASE}${route}`, {
         waitUntil: "domcontentloaded",
         timeout: 60_000,
       });
+      // ready + último canonical de la ruta (Helmet puede dejar varios links).
       await page.waitForFunction(
-        () => document.documentElement.dataset.prerender === "ready",
-        { timeout: 45_000 },
+        (expectedRoute) => {
+          if (document.documentElement.dataset.prerender !== "ready") {
+            return false;
+          }
+          const links = [
+            ...document.querySelectorAll('link[rel="canonical"]'),
+          ];
+          const href = links.at(-1)?.getAttribute("href") || "";
+          try {
+            const path = new URL(href).pathname.replace(/\/+$/, "") || "/";
+            const want = expectedRoute.replace(/\/+$/, "") || "/";
+            if (path !== want) return false;
+          } catch {
+            return false;
+          }
+          // Home: el shell de Vite ya tiene title/canonical; exigir h1 montado.
+          if (expectedRoute === "/" || expectedRoute === "/404") {
+            return Boolean(document.querySelector("h1"));
+          }
+          return true;
+        },
+        route,
+        { timeout: 60_000 },
       );
       const html = cleanHtml(await page.content());
-      const file = outPathFor(route);
       await mkdir(dirname(file), { recursive: true });
       await writeFile(file, html, "utf8");
+      if (route === "/") homeHtml = html;
       const status = response?.status() ?? "?";
       console.log(`prerender ${route} → ${file.replace(root, ".")} (${status})`);
       await page.close();
+    }
+
+    // Dejar index.html = home prerenderizado (el loop lo sobrescribe con el shell).
+    if (homeHtml) {
+      await writeFile(join(dist, "index.html"), homeHtml, "utf8");
     }
 
     await browser.close();

@@ -24,27 +24,25 @@ export default function SeoHead({
   contentReady = true,
 }: SeoHeadProps) {
   const base = pageMetadata[page];
+  const meta = base ? { ...base, ...overrides } : null;
+  const path = page === "/" ? "" : page.replace(/\/+$/, "");
+  const canonical = (
+    meta?.canonical || `${SITE_URL}${path}`
+  ).replace(/^(https?:\/\/[^/]+)\/+$/, "$1");
 
   useEffect(() => {
     clearPrerenderReady();
-    if (!base || !contentReady) return;
-    // Deja que Helmet aplique title/metas en el DOM antes de señalizar.
-    const id = requestAnimationFrame(() => setPrerenderReady());
+    if (!meta || !contentReady) return;
+    // Tiempo para que Helmet escriba title/canonical en el DOM.
+    const id = window.setTimeout(() => setPrerenderReady(), 250);
     return () => {
-      cancelAnimationFrame(id);
+      window.clearTimeout(id);
       clearPrerenderReady();
     };
-  }, [base, contentReady, page, overrides, jsonLd]);
+  }, [contentReady, page, meta?.title, canonical, jsonLd]);
 
-  if (!base) return null;
+  if (!meta) return null;
 
-  const meta = { ...base, ...overrides };
-  // Canónicos sin trailing slash (salvo home).
-  const path = page === "/" ? "" : page.replace(/\/+$/, "");
-  const canonical = (meta.canonical || `${SITE_URL}${path}`).replace(
-    /^(https?:\/\/[^/]+)\/+$/,
-    "$1",
-  );
   const ogImage = meta.ogImage || DEFAULT_OG_IMAGE;
   const robots = meta.robots ?? "index, follow";
 
