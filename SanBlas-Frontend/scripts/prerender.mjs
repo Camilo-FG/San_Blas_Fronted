@@ -144,6 +144,28 @@ function cleanHtml(html) {
   return out;
 }
 
+/** Mata preview + hijos (en Netlify el shell/pnpm deja vite vivo si solo kill al padre). */
+function killPreviewTree(child) {
+  if (!child?.pid) return;
+  try {
+    if (process.platform === "win32") {
+      spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], {
+        stdio: "ignore",
+        windowsHide: true,
+      });
+      return;
+    }
+    // Grupo de procesos (requiere detached al spawn).
+    process.kill(-child.pid, "SIGKILL");
+  } catch {
+    try {
+      child.kill("SIGKILL");
+    } catch {
+      // ya cerrado
+    }
+  }
+}
+
 async function main() {
   await assertApiReachable();
 
@@ -153,6 +175,8 @@ async function main() {
     {
       cwd: root,
       shell: true,
+      // detached: grupo propio → se puede matar el árbol en Linux/Netlify
+      detached: process.platform !== "win32",
       stdio: ["ignore", "pipe", "pipe"],
       env: { ...process.env, BROWSER: "none" },
     },
@@ -166,13 +190,16 @@ async function main() {
     previewLog += String(chunk);
   });
 
+  let browser;
+  let failed = false;
+
   try {
     // Shell limpio de Vite (sin data-prerender). Evita que el fallback SPA
     // sirva un index.html ya prerenderizado con ready=true de otra ruta.
     const spaShell = await readFile(join(dist, "index.html"), "utf8");
 
     await waitForServer(BASE);
-    const browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
     let homeHtml = null;
 
@@ -232,21 +259,29 @@ async function main() {
       await writeFile(join(dist, "index.html"), homeHtml, "utf8");
     }
 
-    await browser.close();
     console.log(`Prerender listo (${ROUTES.length} rutas).`);
   } catch (error) {
+    failed = true;
     console.error("Prerender falló:", error);
     console.error(previewLog.slice(-2000));
-    process.exitCode = 1;
   } finally {
-    preview.kill("SIGTERM");
-    await wait(300);
     try {
-      preview.kill("SIGKILL");
+      await browser?.close();
     } catch {
-      // ya cerrado
+      // ignore
     }
+    killPreviewTree(preview);
+    // Evitar que pipes del preview mantengan el event loop vivo.
+    preview.stdout?.destroy();
+    preview.stderr?.destroy();
+    await wait(200);
   }
+
+  // Netlify se queda en Building si Node no sale (vite/playwright huérfanos).
+  process.exit(failed ? 1 : 0);
 }
 
-main();
+main().catch((error) => {
+  console.error("Prerender falló:", error);
+  process.exit(1);
+});
