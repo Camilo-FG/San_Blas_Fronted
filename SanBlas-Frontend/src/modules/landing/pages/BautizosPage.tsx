@@ -18,32 +18,40 @@ const BAUTIZOS_DEFAULT = {
 };
 
 function BautizosPage() {
-  const { data } = useLandingSection("bautizos", BAUTIZOS_DEFAULT);
+  const { data, isSettled } = useLandingSection("bautizos", BAUTIZOS_DEFAULT);
 
   return (
     <>
-      <SeoHead page="/bautizos" />
-      <div className="bautizos-page" style={{ padding: "40px", maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
-      <h1 style={{ color: "#2c3e50", marginBottom: "20px" }}>{data.title}</h1>
-      <p style={{ fontSize: "1.1rem", color: "#555", marginBottom: "30px" }}>
-        {data.intro}
-      </p>
+      <SeoHead page="/bautizos" contentReady={isSettled} />
+      <main className="mx-auto max-w-[800px] px-6 py-10 text-center sm:px-10 sm:py-14">
+        <h1 className="mb-5 font-heading text-[clamp(1.85rem,4vw,2.5rem)] text-royal-blue">
+          {data.title}
+        </h1>
+        <p className="mb-8 text-base leading-relaxed text-text-muted sm:text-lg">
+          {data.intro}
+        </p>
 
-      <div style={{ textAlign: "left", marginTop: "20px", backgroundColor: "#f9f9f9", padding: "20px", borderRadius: "8px" }}>
-        <h2 style={{ color: "#2980b9" }}>Requisitos para el Bautismo</h2>
-        <ul style={{ lineHeight: "1.8" }}>
-          {(data.requisitos ?? BAUTIZOS_DEFAULT.requisitos).map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
+        <article className="rounded-2xl border border-border bg-surface-muted p-6 text-left sm:p-8">
+          <h2 className="mb-3 text-lg font-bold text-royal-blue">
+            Requisitos para el bautismo
+          </h2>
+          <ul className="mb-6 list-disc space-y-1 pl-5 text-text-secondary leading-relaxed">
+            {(data.requisitos ?? BAUTIZOS_DEFAULT.requisitos).map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
 
-        <h2 style={{ color: "#2980b9", marginTop: "20px" }}>Charlas Bautismales</h2>
-        <p>{data.charlas}</p>
+          <h2 className="mb-3 text-lg font-bold text-royal-blue">
+            Charlas bautismales
+          </h2>
+          <p className="mb-6 text-text-secondary leading-relaxed">{data.charlas}</p>
 
-        <h2 style={{ color: "#2980b9", marginTop: "20px" }}>Solicitud de Bautizo</h2>
-        <p>{data.solicitud}</p>
-      </div>
-    </div>
+          <h2 className="mb-3 text-lg font-bold text-royal-blue">
+            Solicitud de bautizo
+          </h2>
+          <p className="m-0 text-text-secondary leading-relaxed">{data.solicitud}</p>
+        </article>
+      </main>
     </>
   );
 }

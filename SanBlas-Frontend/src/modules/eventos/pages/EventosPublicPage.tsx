@@ -218,7 +218,15 @@ const EventosPublicPage = () => {
 
   return (
     <>
-      <SeoHead page="/eventos" jsonLd={eventos.length > 0 ? eventos.map(getEventSchema) : []} />
+      <SeoHead
+        page="/eventos"
+        contentReady={!cargando}
+        jsonLd={
+          eventos
+            .filter((e) => extraerFechaCalendario(e.fechaInicio) >= fechaHoyCostaRica())
+            .map(getEventSchema)
+        }
+      />
       <section className="mx-auto max-w-[1200px] px-6 py-12 pb-16">
       <ScrollReveal className="mb-10 text-center" amount={0.4}>
         <header>

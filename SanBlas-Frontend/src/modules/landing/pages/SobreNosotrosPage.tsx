@@ -5,7 +5,9 @@ function SobreNosotrosPage() {
   return (
     <>
       <SeoHead page="/sobre-nosotros" />
-      <SobreNosotrosSection />
+      <main>
+        <SobreNosotrosSection tituloComo="h1" />
+      </main>
     </>
   );
 }

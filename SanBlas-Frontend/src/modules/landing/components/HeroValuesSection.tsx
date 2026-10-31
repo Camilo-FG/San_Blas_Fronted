@@ -6,19 +6,19 @@ const VALUES = [
     icon: Compass,
     title: "Tradición Colonial",
     description:
-      "Preservamos con honor la segunda iglesia más antigua de toda Costa Rica.",
+      "La Parroquia San Blas de Nicoya custodia una de las iglesias más antiguas de Costa Rica, viva en la fe de Guanacaste.",
   },
   {
     icon: Users,
     title: "Comunión de Fe",
     description:
-      "Abrazamos a las filiales de Nicoya bajo un lazo fraterno de amor cristiano.",
+      "Acompañamos a familias y filiales de Nicoya con misas, catequesis y sacramentos en comunidad.",
   },
   {
     icon: Heart,
     title: "Acción Caritativa",
     description:
-      "Sostenemos al desvalido y alimentamos al necesitado del cantón.",
+      "Servimos a quienes más lo necesitan en el cantón de Nicoya con cercanía y solidaridad cristiana.",
   },
 ] as const;
 

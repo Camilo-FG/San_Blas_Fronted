@@ -6,7 +6,10 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/generate-sitemap.mjs && node scripts/prerender.mjs",
+    "build:app": "vite build",
+    "sitemap": "node scripts/generate-sitemap.mjs",
+    "prerender": "node scripts/prerender.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -29,8 +32,7 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-google-recaptcha": "^3.1.0",
-    "react-helmet-async": "^3.0.0",
-    "react-router-dom": "^7.15.1"
+    "react-helmet-async": "^3.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",

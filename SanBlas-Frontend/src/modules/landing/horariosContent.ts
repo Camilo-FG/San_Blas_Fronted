@@ -14,7 +14,7 @@ export const HORARIOS_DEFAULT = {
   subtitle: "de la Santa",
   titleHighlight: "Misa",
   intro:
-    "Consulte los horarios de la Santa Misa en la Parroquia San Blas.",
+    "Horarios de misas de la Parroquia San Blas de Nicoya, Guanacaste. Consulte celebraciones entre semana y misas dominicales.",
   imageUrl: "",
   bloques: [
     {

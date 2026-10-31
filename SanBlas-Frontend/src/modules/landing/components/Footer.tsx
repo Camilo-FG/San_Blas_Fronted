@@ -84,10 +84,11 @@ function Footer() {
                     >
                         <img
                             src={LOGO_URL}
-                            alt=""
+                            alt="Logo de la Parroquia San Blas de Nicoya"
                             className="block size-[52px] shrink-0 rounded-full object-cover"
                             width={52}
                             height={52}
+                            loading="lazy"
                             decoding="async"
                         />
                         <span className="font-heading text-[22px] font-extrabold uppercase leading-tight tracking-wide text-white transition-colors group-hover:text-royal-gold max-sm:text-lg">
