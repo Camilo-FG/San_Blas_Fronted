@@ -19,6 +19,24 @@ describe("obligatorios CICA", () => {
     expect(validarFormularioCica(formValido)).toEqual({});
   });
 
+  it("acepta letras acentuadas en la parte local del correo", () => {
+    expect(
+      validarFormularioCica({
+        ...formValido,
+        correo: "maríaangeljhjh@gmail.com",
+      }).correo,
+    ).toBeUndefined();
+  });
+
+  it.each(["m aría@gmail.com", "maría@", "maría@gmail", "maría!@gmail.com"])(
+    "rechaza un correo con formato inválido: %s",
+    (correo) => {
+      expect(validarFormularioCica({ ...formValido, correo }).correo).toBe(
+        "Ingrese un correo válido. Ej: nombre@dominio.com",
+      );
+    },
+  );
+
   it.each(["nombre", "apellido1", "fechaNacimiento", "cedula", "nacionalidad", "telefono", "correo", "estadoCivil", "padreNombre", "padreApellido1", "madreNombre", "madreApellido1", "provincia", "canton", "distrito", "direccionHogar", "esCatolico"] as const)(
     "considera faltante %s vacío o con espacios", (campo) => {
       for (const valor of ["", "   "]) {
