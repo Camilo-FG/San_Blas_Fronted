@@ -30,6 +30,7 @@ const Rutas = {
   recuperarContrasena: "/recuperar-contrasena",
   restablecerContrasena: "/reset-password",
   activarCuenta: "/activar-cuenta",
+  notFound: "/404",
   dashboard: dashboardBase,
 
   dashboardPath,

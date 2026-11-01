@@ -4,13 +4,13 @@ import { useLandingSection } from "../../../hooks/useLandingSection";
 import { CONTACTO_DEFAULT } from "../constants/contactoDefaults";
 
 function ContactoPage() {
-  const { data } = useLandingSection("contacto", CONTACTO_DEFAULT);
+  const { data, isSettled } = useLandingSection("contacto", CONTACTO_DEFAULT);
   const horarios = data.horariosAtencion ?? CONTACTO_DEFAULT.horariosAtencion;
 
   return (
     <>
-      <SeoHead page="/contacto" />
-      <section className="bg-surface px-[8%] pb-20 pt-12 max-[960px]:px-8 max-[960px]:pb-16 max-[960px]:pt-10 max-sm:px-[18px] max-sm:pb-14 max-sm:pt-8">
+      <SeoHead page="/contacto" contentReady={isSettled} />
+      <main className="bg-surface px-[8%] pb-20 pt-12 max-[960px]:px-8 max-[960px]:pb-16 max-[960px]:pt-10 max-sm:px-[18px] max-sm:pb-14 max-sm:pt-8">
       <div className="mx-auto max-w-[1200px]">
         <span className="mb-3.5 inline-flex text-[11px] font-black uppercase tracking-[0.32em] text-royal-gold">
           {data.eyebrow ?? CONTACTO_DEFAULT.eyebrow}
@@ -93,7 +93,7 @@ function ContactoPage() {
           </div>
         </div>
       </div>
-    </section>
+    </main>
     </>
   );
 }

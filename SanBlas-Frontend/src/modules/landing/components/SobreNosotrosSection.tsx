@@ -1,18 +1,27 @@
 import { useLandingSection } from "../../../hooks/useLandingSection";
 import { SOBRE_NOSOTROS_DEFAULT, SOBRE_NOSOTROS_IMAGE } from "../sobreNosotrosContent";
 import { ScrollReveal } from "../../../shared/ui";
+import { sameOriginImage } from "../../../utils/sameOriginImage";
 
-function SobreNosotrosSection() {
+function SobreNosotrosSection({
+  tituloComo = "h2",
+}: {
+  /** En la home va h2 (bajo el h1 del hero); en /sobre-nosotros va h1. */
+  tituloComo?: "h1" | "h2";
+}) {
   const { data } = useLandingSection("sobre-nosotros", SOBRE_NOSOTROS_DEFAULT, {
     defer: true,
   });
   const cards = data.cards ?? SOBRE_NOSOTROS_DEFAULT.cards;
   const leftCards = cards.slice(0, 2);
   const rightCards = cards.slice(2, 4);
-  const imageSrc =
+  const imageSrc = sameOriginImage(
     typeof data.imageUrl === "string" && data.imageUrl.trim()
       ? data.imageUrl.trim()
-      : SOBRE_NOSOTROS_IMAGE;
+      : SOBRE_NOSOTROS_IMAGE,
+    { width: 920 },
+  );
+  const Titulo = tituloComo;
 
   return (
     <section className="bg-surface py-28 pb-24 max-md:px-5 max-md:py-20" id="sobre-nosotros">
@@ -21,9 +30,9 @@ function SobreNosotrosSection() {
           <span className="mb-4 inline-flex text-xs font-black uppercase tracking-[0.28em] text-royal-gold md:text-sm">
             {data.eyebrow}
           </span>
-          <h2 className="mb-5 font-heading text-[clamp(36px,5vw,58px)] leading-[1.12] text-royal-blue">
+          <Titulo className="mb-5 font-heading text-[clamp(36px,5vw,58px)] leading-[1.12] text-royal-blue">
             {data.title}
-          </h2>
+          </Titulo>
           <p className="mx-auto max-w-[780px] text-base leading-[1.8] text-text-secondary md:text-lg md:leading-[1.85] max-md:mx-0">
             {data.lead}
           </p>

@@ -41,7 +41,7 @@ export function useLandingSection<T extends Record<string, unknown>>(
     };
   }, [defer]);
 
-  const { data: section } = useQuery({
+  const { data: section, isFetched, isError, isSuccess } = useQuery({
     queryKey: ["landing", sectionKey],
     queryFn: () => obtenerSeccionLanding<T>(sectionKey),
     enabled: ready,
@@ -49,5 +49,8 @@ export function useLandingSection<T extends Record<string, unknown>>(
     gcTime: 30 * 60_000,
   });
 
-  return { data: { ...fallback, ...section?.data } };
+  /** true cuando el fetch de la sección terminó (éxito o error). */
+  const isSettled = ready && (isFetched || isError || isSuccess);
+
+  return { data: { ...fallback, ...section?.data }, isSettled };
 }

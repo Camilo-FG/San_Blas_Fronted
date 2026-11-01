@@ -19,6 +19,7 @@ import {
 
 import { cn, ScrollReveal } from "../../../shared/ui";
 import { useLandingSection } from "../../../hooks/useLandingSection";
+import { sameOriginImage } from "../../../utils/sameOriginImage";
 import {
   iconoServicio,
   SERVICIOS_DEFAULT,
@@ -258,7 +259,7 @@ export default function ServiciosCarousel() {
                     <div>
                       <div className="relative h-56 overflow-hidden after:absolute after:inset-0 after:bg-gradient-to-t after:from-white after:via-white/15 after:to-transparent max-sm:h-44 max-[420px]:h-40">
                         <img
-                          src={service.image}
+                          src={sameOriginImage(service.image, { width: 800 })}
                           alt={service.title}
                           draggable={false}
                           className="size-full object-cover transition-transform duration-700 group-hover:scale-[1.08]"
@@ -386,7 +387,7 @@ export default function ServiciosCarousel() {
             >
               <div className="relative h-[180px] max-sm:h-[150px]">
                 <img
-                  src={selectedService.image}
+                  src={sameOriginImage(selectedService.image, { width: 800 })}
                   alt={selectedService.title}
                   className="size-full object-cover"
                   width={400}

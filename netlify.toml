@@ -1,12 +1,11 @@
+# Monorepo: el sitio vive en SanBlas-Frontend.
+# Los redirects/headers viven en SanBlas-Frontend/netlify.toml (base).
+# NO poner aquí /* → index.html 200: anula el 404 real y el prerender.
+
 [build]
   base = "SanBlas-Frontend"
-  command = "npm run build"
+  command = "pnpm exec playwright install chromium && pnpm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "22"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200

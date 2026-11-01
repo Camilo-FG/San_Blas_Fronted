@@ -17,6 +17,7 @@ import {
   formatearFechaCalendario,
   formatearHoraEvento,
 } from "../../../shared/utils/fechas";
+import { sameOriginImage } from "../../../utils/sameOriginImage";
 
 const LIMITE_EVENTOS_LANDING = 10;
 
@@ -255,7 +256,7 @@ export default function EventosCarousel() {
                         <div className="h-56 w-full overflow-hidden rounded-[16px] bg-gradient-to-br from-royal-blue to-royal-blue-dark max-sm:h-44">
                           {evento.imagenUrl ? (
                             <img
-                              src={evento.imagenUrl}
+                              src={sameOriginImage(evento.imagenUrl, { width: 800 })}
                               alt=""
                               draggable={false}
                               className="pointer-events-none h-full w-full object-cover"

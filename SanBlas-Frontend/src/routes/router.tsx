@@ -5,13 +5,12 @@ import {
   createRouter,
   Outlet,
   redirect,
-  useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
 
 import Navbar from "../shared/components/Navbar";
 import Footer from "../modules/landing/components/Footer";
-import { PageLoader, useToast } from "../shared/ui";
+import { PageLoader } from "../shared/ui";
 import LandingLoader from "../modules/landing/components/LandingLoader";
 import Rutas from "./Rutas";
 import {
@@ -22,8 +21,11 @@ import {
 import { restoreSession } from "../services/authService";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
 import { useTheme } from "../context/ThemeContext";
+import HomePage from "../modules/landing/pages/HomePage";
 
-const Home = lazyWithRetry(() => import("../modules/landing/pages/HomePage"));
+const NotFoundPage = lazyWithRetry(
+  () => import("../modules/landing/pages/NotFoundPage"),
+);
 
 const HistoriaPage = lazyWithRetry(
   () => import("../modules/landing/pages/HistoriaPage"),
@@ -129,11 +131,11 @@ function RootLayout() {
     <div className="flex min-h-screen flex-col">
       {!isDashboard && !isAuthPublica && <Navbar />}
 
-      <main className="min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col">
         <Suspense fallback={isDashboard ? <PageLoader /> : <LandingLoader />}>
           <Outlet />
         </Suspense>
-      </main>
+      </div>
 
       {!isDashboard && !isAuthPublica && <Footer />}
     </div>
@@ -144,44 +146,17 @@ const rootRoute = createRootRoute({
   component: RootLayout,
 });
 
-let avisoDeRutaMostrado = false;
-
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.home,
-  validateSearch: (search: Record<string, unknown>) => ({
-    aviso: search.aviso === "ruta" ? ("ruta" as const) : undefined,
-  }),
-  component: function InicioConAviso() {
-    const { aviso } = homeRoute.useSearch();
-    const navigate = useNavigate();
-    const { showToast } = useToast();
+  // Eager: evita LandingLoader → CLS al montar el hero a pantalla completa.
+  component: HomePage,
+});
 
-    useEffect(() => {
-      if (aviso !== "ruta") {
-        avisoDeRutaMostrado = false;
-        return;
-      }
-      if (avisoDeRutaMostrado) return;
-      avisoDeRutaMostrado = true;
-      showToast(
-        "Esa dirección no existe. Le mostramos los servicios de la parroquia.",
-        "warning",
-      );
-      navigate({
-        to: Rutas.home,
-        hash: "servicios",
-        search: { aviso: undefined },
-        replace: true,
-      });
-    }, [aviso, navigate, showToast]);
-
-    return (
-      <Suspense fallback={<LandingLoader />}>
-        <Home />
-      </Suspense>
-    );
-  },
+const notFoundRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: Rutas.notFound,
+  component: withSuspense(NotFoundPage, LandingLoader),
 });
 
 const sobreNosotrosRoute = createRoute({
@@ -443,18 +418,12 @@ const perfilRoute = createRoute({
 const rutaDesconocidaRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "$",
-  beforeLoad: () => {
-    throw redirect({
-      to: Rutas.home,
-      hash: "servicios",
-      search: { aviso: "ruta" },
-      replace: true,
-    });
-  },
+  component: withSuspense(NotFoundPage, LandingLoader),
 });
 
 const routeTree = rootRoute.addChildren([
   homeRoute,
+  notFoundRoute,
   sobreNosotrosRoute,
   contactoRoute,
   historiaRoute,

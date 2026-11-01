@@ -10,6 +10,7 @@ import {
   formatearFechaCalendario,
   formatearHoraEvento,
 } from "../../../shared/utils/fechas";
+import { sameOriginImage } from "../../../utils/sameOriginImage";
 
 const TRANSICION_MODAL = {
   duration: 0.32,
@@ -105,7 +106,11 @@ export function ModalEvento({
         <div className={`relative h-[280px] shrink-0 overflow-hidden ${fondoPortada} max-sm:h-[200px]`}>
           {mostrarImagen ? (
             <img
-              src={evento.imagenUrl ?? undefined}
+              src={
+                evento.imagenUrl
+                  ? sameOriginImage(evento.imagenUrl, { width: 1200 })
+                  : undefined
+              }
               alt={evento.titulo}
               className="size-full object-cover"
               onError={() => setImagenRota(true)}

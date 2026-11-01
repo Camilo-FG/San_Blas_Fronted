@@ -2,10 +2,10 @@ export const CONTACTO_DEFAULT = {
   eyebrow: "San Blas, Nicoya",
   title: "Contáctenos",
   intro:
-    "Estamos a su disposición para consultas pastorales, trámites parroquiales e información sobre nuestras actividades.",
+    "Comuníquese con la Parroquia San Blas de Nicoya para consultas pastorales, bautizos, catequesis, constancias sacramentales y horarios de misa en Guanacaste.",
   telefono: "+506 2685-3540",
   correo: "parroquiasanblas@gmail.com",
-  ubicacion: "Nicoya, Guanacaste, Costa Rica",
+  ubicacion: "Parroquia San Blas, centro de Nicoya, Guanacaste, Costa Rica",
   horariosAtencion: [
     "Lunes: 8:00 a.m. a 12:00 m.d.",
     "Martes: 8:00 a.m. a 12:00 m.d. y 2:00 p.m. a 5:00 p.m.",

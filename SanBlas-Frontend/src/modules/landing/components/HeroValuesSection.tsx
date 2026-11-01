@@ -6,19 +6,19 @@ const VALUES = [
     icon: Compass,
     title: "Tradición Colonial",
     description:
-      "Preservamos con honor la segunda iglesia más antigua de toda Costa Rica.",
+      "La Parroquia San Blas de Nicoya custodia una de las iglesias más antiguas de Costa Rica, viva en la fe de Guanacaste.",
   },
   {
     icon: Users,
     title: "Comunión de Fe",
     description:
-      "Abrazamos a las filiales de Nicoya bajo un lazo fraterno de amor cristiano.",
+      "Acompañamos a familias y filiales de Nicoya con misas, catequesis y sacramentos en comunidad.",
   },
   {
     icon: Heart,
     title: "Acción Caritativa",
     description:
-      "Sostenemos al desvalido y alimentamos al necesitado del cantón.",
+      "Servimos a quienes más lo necesitan en el cantón de Nicoya con cercanía y solidaridad cristiana.",
   },
 ] as const;
 
@@ -31,19 +31,17 @@ function HeroValuesSection() {
       <div className="mx-auto grid max-w-[1200px] grid-cols-3 gap-7 max-[900px]:grid-cols-1 max-[900px]:gap-5">
         {VALUES.map(({ icon: Icon, title, description }, indice) => (
           <ScrollReveal key={title} delay={indice * 0.08} className="h-full">
-          <article
-            className="h-full rounded-[22px] border border-[#e8edf2] bg-surface p-9 shadow-[0_16px_40px_rgba(15,23,42,0.06)] max-[900px]:px-6 max-[900px]:py-7"
-          >
-            <div className="mb-[22px] grid size-14 place-items-center rounded-[14px] bg-royal-blue text-royal-gold">
-              <Icon size={28} strokeWidth={1.8} aria-hidden="true" />
-            </div>
-            <h3 className="mb-3 font-heading text-[1.35rem] font-extrabold text-royal-blue max-sm:text-[1.2rem]">
-              {title}
-            </h3>
-            <p className="text-[0.98rem] leading-[1.65] text-text-secondary">
-              {description}
-            </p>
-          </article>
+            <article className="h-full rounded-[22px] border border-[#e8edf2] bg-surface p-9 shadow-[0_16px_40px_rgba(15,23,42,0.06)] max-[900px]:px-6 max-[900px]:py-7">
+              <div className="mb-[22px] grid size-14 place-items-center rounded-[14px] bg-royal-blue text-royal-gold">
+                <Icon size={28} strokeWidth={1.8} aria-hidden="true" />
+              </div>
+              <h3 className="mb-3 font-heading text-[1.35rem] font-extrabold text-royal-blue max-sm:text-[1.2rem]">
+                {title}
+              </h3>
+              <p className="text-[0.98rem] leading-[1.65] text-text-secondary">
+                {description}
+              </p>
+            </article>
           </ScrollReveal>
         ))}
       </div>

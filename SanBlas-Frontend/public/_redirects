@@ -1,1 +1,17 @@
-/*    /index.html   200
+# Dominio canónico: el .netlify.app no debe indexarse ni servirse
+https://sanblasfrontend.netlify.app/*  https://parroquiasanblas.org/:splat  301!
+https://www.parroquiasanblas.org/*     https://parroquiasanblas.org/:splat  301!
+
+# Auth + dashboard (SPA)
+/login                /index.html   200!
+/recuperar-contrasena /index.html   200!
+/reset-password       /index.html   200!
+/activar-cuenta       /index.html   200!
+/dashboard            /index.html   200!
+/dashboard/*          /index.html   200!
+
+/404                  /404.html     404!
+
+# Sin ! (force): si el archivo existe (hero.webp, assets, index.html) se sirve.
+# Solo las rutas sin archivo caen en 404.
+/*                    /404.html     404

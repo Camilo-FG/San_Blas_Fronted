@@ -4,7 +4,6 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { BookOpen, ChevronDown, FileText } from "lucide-react";
 import Rutas from "../../../routes/Rutas";
 import { useLandingSection } from "../../../hooks/useLandingSection";
-import { ScrollReveal } from "../../../shared/ui";
 
 const HERO_IMAGE = "/hero.webp";
 
@@ -13,7 +12,7 @@ const HERO_DEFAULT = {
   title: "Firme en la",
   titleHighlight: "Fe y Tradición",
   description:
-    "Ubicada en el corazón de Nicoya, la Parroquia San Blas es testimonio vivo de nuestra historia y esperanza cristiana.",
+    "Parroquia San Blas de Nicoya, Guanacaste: misas, sacramentos, catequesis y acompañamiento pastoral en el corazón de la ciudad.",
 };
 
 const heroButtonClass =
@@ -26,10 +25,8 @@ function HeroSection() {
   const dropdownTramitesRef = useRef<HTMLDivElement>(null);
   const reducirMovimiento = useReducedMotion();
   const { data } = useLandingSection("hero", HERO_DEFAULT, { defer: true });
-  const heroImage =
-    typeof data.imageUrl === "string" && data.imageUrl.trim()
-      ? data.imageUrl.trim()
-      : HERO_IMAGE;
+  // LCP estable: siempre el asset local precargado (evita swap a Cloudinary).
+  const heroImage = HERO_IMAGE;
 
   // Si no cabe debajo del botón, ponemos el menú al costado para que no quede cortado por el borde inferior.
   useLayoutEffect(() => {
@@ -71,7 +68,7 @@ function HeroSection() {
     >
       <img
         src={heroImage}
-        alt=""
+        alt="Fachada de la Parroquia San Blas de Nicoya, Guanacaste"
         className="absolute inset-0 -z-20 size-full object-cover object-center max-md:object-top"
         fetchPriority="high"
         decoding="async"
@@ -80,18 +77,21 @@ function HeroSection() {
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-r from-royal-blue/88 via-royal-blue/68 to-royal-blue/22 max-[900px]:from-royal-blue/92 max-[900px]:via-royal-blue/78 max-[900px]:to-royal-blue/45" />
 
-      <ScrollReveal className="relative z-[2] mx-auto w-full max-w-[1200px]" amount={0.25}>
+      {/* Sin animación de entrada: el prerender muestra el texto y createRoot
+          no debe remontarlo en opacity:0 (parpadeo / texto que “desaparece”). */}
+      <div className="relative z-[2] mx-auto w-full max-w-[1200px] font-[system-ui,Segoe_UI,sans-serif]">
         <div className="mb-6 flex items-center gap-3.5 text-[13px] font-black uppercase tracking-[4px] text-royal-gold max-md:mb-[18px] max-md:text-[11px] max-md:tracking-[3px] max-sm:gap-2.5 max-sm:text-[10px] max-sm:tracking-[2.4px]">
           <span className="h-0.5 w-[54px] shrink-0 bg-royal-gold max-md:w-[38px]" />
           <span>{data.subtitle}</span>
         </div>
 
-        <h1 className="mb-[30px] max-w-[850px] font-heading text-[clamp(46px,8vw,92px)] font-extrabold leading-[0.95] text-white max-md:mb-6 max-md:text-[clamp(42px,13vw,62px)] max-md:leading-none max-sm:text-[clamp(38px,15vw,52px)]">
+        {/* Georgia local: mismo look en prerender y en React (sin FOUT de Playfair). */}
+        <h1 className="mb-[30px] max-w-[850px] font-[Georgia,'Times_New_Roman',serif] text-[clamp(46px,8vw,92px)] font-extrabold leading-[0.95] text-white max-md:mb-6 max-md:text-[clamp(42px,13vw,62px)] max-md:leading-none max-sm:text-[clamp(38px,15vw,52px)]">
           {data.title} <br />
           <span className="italic text-royal-gold">{data.titleHighlight}</span>
         </h1>
 
-        <p className="mb-[42px] max-w-[620px] border-l-4 border-royal-gold/65 pl-[22px] text-xl leading-[1.7] text-white/90 max-[900px]:max-w-[560px] max-[900px]:text-lg max-md:mb-[34px] max-md:pl-4 max-md:text-base max-md:leading-[1.65] max-sm:text-[15px] max-sm:leading-[1.6]">
+        <p className="mb-[42px] max-w-[620px] border-l-4 border-royal-gold/65 pl-[22px] font-[system-ui,Segoe_UI,sans-serif] text-xl leading-[1.7] text-white/90 max-[900px]:max-w-[560px] max-[900px]:text-lg max-md:mb-[34px] max-md:pl-4 max-md:text-base max-md:leading-[1.65] max-sm:text-[15px] max-sm:leading-[1.6]">
           {data.description}
         </p>
 
@@ -181,7 +181,7 @@ function HeroSection() {
             </AnimatePresence>
           </div>
         </div>
-      </ScrollReveal>
+      </div>
     </section>
   );
 }

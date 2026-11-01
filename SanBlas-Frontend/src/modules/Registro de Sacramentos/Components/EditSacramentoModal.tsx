@@ -35,7 +35,7 @@ import {
   PARENTESCOS_ABUELOS,
 } from '../constants/parentescosAbuelos';
 import { obtenerDatosCedula } from '../../../services/cedulaService';
-import { erroresVisibles, marcarTocado, mismosErrores, type CamposTocados } from '../utils/validacionEnVivo';
+import { erroresVisibles, marcarTocado, mismosErrores, type CamposTocados } from '../Utils/validacionEnVivo';
 import {
   MAX_CEDULA_NACIONAL,
   MAX_LIBRO,
