@@ -1,3 +1,7 @@
+# Dominio canónico: el .netlify.app no debe indexarse ni servirse
+https://sanblasfrontend.netlify.app/*  https://parroquiasanblas.org/:splat  301!
+https://www.parroquiasanblas.org/*     https://parroquiasanblas.org/:splat  301!
+
 # Auth + dashboard (SPA)
 /login                /index.html   200!
 /recuperar-contrasena /index.html   200!
