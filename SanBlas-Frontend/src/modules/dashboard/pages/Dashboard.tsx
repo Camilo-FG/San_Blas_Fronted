@@ -213,6 +213,18 @@ function Dashboard() {
     };
   }, [menuAbierto]);
 
+  // Geist solo en admin: no bloquea la landing.
+  useEffect(() => {
+    const id = "geist-font-deferred";
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap";
+    document.head.appendChild(link);
+  }, []);
+
   return (
     <>
       <SeoHead page="/login" overrides={{ robots: "noindex, nofollow", title: "Panel Administrativo | Parroquia San Blas", description: "Panel de administración de la Parroquia San Blas de Nicoya." }} />

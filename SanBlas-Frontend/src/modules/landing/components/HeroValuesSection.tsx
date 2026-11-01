@@ -1,5 +1,4 @@
 import { Compass, Heart, Users } from "lucide-react";
-import { ScrollReveal } from "../../../shared/ui";
 
 const VALUES = [
   {
@@ -29,9 +28,9 @@ function HeroValuesSection() {
       aria-label="Valores parroquiales"
     >
       <div className="mx-auto grid max-w-[1200px] grid-cols-3 gap-7 max-[900px]:grid-cols-1 max-[900px]:gap-5">
-        {VALUES.map(({ icon: Icon, title, description }, indice) => (
-          <ScrollReveal key={title} delay={indice * 0.08} className="h-full">
+        {VALUES.map(({ icon: Icon, title, description }) => (
           <article
+            key={title}
             className="h-full rounded-[22px] border border-[#e8edf2] bg-surface p-9 shadow-[0_16px_40px_rgba(15,23,42,0.06)] max-[900px]:px-6 max-[900px]:py-7"
           >
             <div className="mb-[22px] grid size-14 place-items-center rounded-[14px] bg-royal-blue text-royal-gold">
@@ -44,7 +43,6 @@ function HeroValuesSection() {
               {description}
             </p>
           </article>
-          </ScrollReveal>
         ))}
       </div>
     </section>

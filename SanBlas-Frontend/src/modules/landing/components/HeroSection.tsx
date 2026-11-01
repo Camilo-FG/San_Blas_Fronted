@@ -26,10 +26,8 @@ function HeroSection() {
   const dropdownTramitesRef = useRef<HTMLDivElement>(null);
   const reducirMovimiento = useReducedMotion();
   const { data } = useLandingSection("hero", HERO_DEFAULT, { defer: true });
-  const heroImage =
-    typeof data.imageUrl === "string" && data.imageUrl.trim()
-      ? data.imageUrl.trim()
-      : HERO_IMAGE;
+  // LCP estable: siempre el asset local precargado (evita swap a Cloudinary).
+  const heroImage = HERO_IMAGE;
 
   // Si no cabe debajo del botón, ponemos el menú al costado para que no quede cortado por el borde inferior.
   useLayoutEffect(() => {
@@ -80,7 +78,10 @@ function HeroSection() {
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-r from-royal-blue/88 via-royal-blue/68 to-royal-blue/22 max-[900px]:from-royal-blue/92 max-[900px]:via-royal-blue/78 max-[900px]:to-royal-blue/45" />
 
-      <ScrollReveal className="relative z-[2] mx-auto w-full max-w-[1200px]" amount={0.25}>
+      <ScrollReveal
+        className="relative z-[2] mx-auto w-full max-w-[1200px]"
+        immediate
+      >
         <div className="mb-6 flex items-center gap-3.5 text-[13px] font-black uppercase tracking-[4px] text-royal-gold max-md:mb-[18px] max-md:text-[11px] max-md:tracking-[3px] max-sm:gap-2.5 max-sm:text-[10px] max-sm:tracking-[2.4px]">
           <span className="h-0.5 w-[54px] shrink-0 bg-royal-gold max-md:w-[38px]" />
           <span>{data.subtitle}</span>
