@@ -1,6 +1,7 @@
 import { useLandingSection } from "../../../hooks/useLandingSection";
 import { SOBRE_NOSOTROS_DEFAULT, SOBRE_NOSOTROS_IMAGE } from "../sobreNosotrosContent";
 import { ScrollReveal } from "../../../shared/ui";
+import { sameOriginImage } from "../../../utils/sameOriginImage";
 
 function SobreNosotrosSection({
   tituloComo = "h2",
@@ -14,10 +15,12 @@ function SobreNosotrosSection({
   const cards = data.cards ?? SOBRE_NOSOTROS_DEFAULT.cards;
   const leftCards = cards.slice(0, 2);
   const rightCards = cards.slice(2, 4);
-  const imageSrc =
+  const imageSrc = sameOriginImage(
     typeof data.imageUrl === "string" && data.imageUrl.trim()
       ? data.imageUrl.trim()
-      : SOBRE_NOSOTROS_IMAGE;
+      : SOBRE_NOSOTROS_IMAGE,
+    { width: 920 },
+  );
   const Titulo = tituloComo;
 
   return (

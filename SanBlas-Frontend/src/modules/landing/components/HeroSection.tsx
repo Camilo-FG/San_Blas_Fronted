@@ -4,7 +4,6 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { BookOpen, ChevronDown, FileText } from "lucide-react";
 import Rutas from "../../../routes/Rutas";
 import { useLandingSection } from "../../../hooks/useLandingSection";
-import { ScrollReveal } from "../../../shared/ui";
 
 const HERO_IMAGE = "/hero.webp";
 
@@ -78,10 +77,9 @@ function HeroSection() {
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-r from-royal-blue/88 via-royal-blue/68 to-royal-blue/22 max-[900px]:from-royal-blue/92 max-[900px]:via-royal-blue/78 max-[900px]:to-royal-blue/45" />
 
-      <ScrollReveal
-        className="relative z-[2] mx-auto w-full max-w-[1200px]"
-        immediate
-      >
+      {/* Sin animación de entrada: el prerender muestra el texto y createRoot
+          no debe remontarlo en opacity:0 (parpadeo / texto que “desaparece”). */}
+      <div className="relative z-[2] mx-auto w-full max-w-[1200px]">
         <div className="mb-6 flex items-center gap-3.5 text-[13px] font-black uppercase tracking-[4px] text-royal-gold max-md:mb-[18px] max-md:text-[11px] max-md:tracking-[3px] max-sm:gap-2.5 max-sm:text-[10px] max-sm:tracking-[2.4px]">
           <span className="h-0.5 w-[54px] shrink-0 bg-royal-gold max-md:w-[38px]" />
           <span>{data.subtitle}</span>
@@ -182,7 +180,7 @@ function HeroSection() {
             </AnimatePresence>
           </div>
         </div>
-      </ScrollReveal>
+      </div>
     </section>
   );
 }
