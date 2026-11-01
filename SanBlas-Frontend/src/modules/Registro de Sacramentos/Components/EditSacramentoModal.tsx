@@ -89,7 +89,7 @@ const MENSAJES: Record<string, string> = {
   contrayente2PrimerApellido: 'El primer apellido del cónyuge es obligatorio.',
   fechaNacimiento: 'Seleccione la fecha de nacimiento.',
   horaNacimiento: 'Seleccione la hora de nacimiento.',
-  lugarNacimiento: 'El lugar de nacimiento es obligatorio.',
+  lugarNacimiento: 'Campo obligatorio.',
   libro: 'El libro es obligatorio.',
   folio: 'El folio es obligatorio.',
   asiento: 'El asiento es obligatorio.',
