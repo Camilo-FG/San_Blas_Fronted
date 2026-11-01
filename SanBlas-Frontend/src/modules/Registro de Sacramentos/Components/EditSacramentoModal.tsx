@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Button, cn, ContadorCaracteres, CustomSelect, Input, Label, useToast } from '../../../shared/ui';
+import { Button, cn, CustomSelect, Input, Label, useToast } from '../../../shared/ui';
+import { PieDeCampo } from './PieDeCampo';
 import { Loader2 } from 'lucide-react';
 import { useFocusTrap } from '../../../shared/hooks/useFocusTrap';
 import { useEscapeKey } from '../../../shared/hooks/useEscapeKey';
@@ -763,28 +764,26 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
                 />
               )}
             </div>
-            {renderAvisoCedula(prefijo, persona.cedula)}
-            <ContadorCaracteres
+            <PieDeCampo
+              aviso={renderAvisoCedula(prefijo, persona.cedula)}
+              errors={errors}
+              clave={`${prefijo}Cedula`}
               actual={cedulaDigitosValidos(persona.cedula).length}
               maximo={CEDULA_DIGITOS}
               unidad="dígitos"
             />
-            <ErrorMsg errors={errors} clave={`${prefijo}Cedula`} />
           </div>
           <div>
             <Input type="text" placeholder="Nombre" name={`${prefijo}Nombre`} maxLength={MAX_NOMBRE_PERSONA} className={inputClass(Boolean(errors[`${prefijo}Nombre`]))} value={persona.nombre} disabled={nombresBloqueados} title={nombresBloqueados ? 'Borre la cédula para cambiar el nombre.' : undefined} onChange={(e) => setCampoPersona(setter, 'nombre', e.target.value)} />
-            <ErrorMsg errors={errors} clave={`${prefijo}Nombre`} />
-            <ContadorCaracteres actual={persona.nombre.length} maximo={MAX_NOMBRE_PERSONA} />
+            <PieDeCampo errors={errors} clave={`${prefijo}Nombre`} actual={persona.nombre.length} maximo={MAX_NOMBRE_PERSONA} />
           </div>
           <div>
             <Input type="text" placeholder="Primer apellido" name={`${prefijo}PrimerApellido`} maxLength={MAX_NOMBRE_PERSONA} className={inputClass(Boolean(errors[`${prefijo}PrimerApellido`]))} value={persona.primerApellido} disabled={nombresBloqueados} title={nombresBloqueados ? 'Borre la cédula para cambiar el apellido.' : undefined} onChange={(e) => setCampoPersona(setter, 'primerApellido', e.target.value)} />
-            <ErrorMsg errors={errors} clave={`${prefijo}PrimerApellido`} />
-            <ContadorCaracteres actual={persona.primerApellido.length} maximo={MAX_NOMBRE_PERSONA} />
+            <PieDeCampo errors={errors} clave={`${prefijo}PrimerApellido`} actual={persona.primerApellido.length} maximo={MAX_NOMBRE_PERSONA} />
           </div>
           <div>
             <Input type="text" placeholder="Segundo apellido" name={`${prefijo}SegundoApellido`} maxLength={MAX_NOMBRE_PERSONA} className={inputClass(Boolean(errors[`${prefijo}SegundoApellido`]))} value={persona.segundoApellido} disabled={nombresBloqueados} title={nombresBloqueados ? 'Borre la cédula para cambiar el apellido.' : undefined} onChange={(e) => setCampoPersona(setter, 'segundoApellido', e.target.value)} />
-            <ErrorMsg errors={errors} clave={`${prefijo}SegundoApellido`} />
-            <ContadorCaracteres actual={persona.segundoApellido.length} maximo={MAX_NOMBRE_PERSONA} />
+            <PieDeCampo errors={errors} clave={`${prefijo}SegundoApellido`} actual={persona.segundoApellido.length} maximo={MAX_NOMBRE_PERSONA} />
           </div>
         </div>
       </div>
@@ -843,8 +842,8 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
                     }} />
                     {campoCedulaCargando === `abuelo-${idx}` && <Loader2 aria-label="Buscando datos de la cédula" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue" />}
                   </div>
-                  {renderAvisoCedula(`abuelo-${idx}`, ab.cedula)}
-                  <ContadorCaracteres
+                  <PieDeCampo
+                    aviso={renderAvisoCedula(`abuelo-${idx}`, ab.cedula)}
                     actual={cedulaDigitosValidos(ab.cedula).length}
                     maximo={CEDULA_DIGITOS}
                     unidad="dígitos"
@@ -852,15 +851,15 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
                 </div>
                 <div>
                   <Input type="text" placeholder="Nombre" maxLength={MAX_NOMBRE_PERSONA} value={ab.nombre} disabled={abueloBloqueado} onChange={(e) => setAbueloBautismoCampo(idx, 'nombre', e.target.value)} />
-                  <ContadorCaracteres actual={ab.nombre.length} maximo={MAX_NOMBRE_PERSONA} />
+                  <PieDeCampo actual={ab.nombre.length} maximo={MAX_NOMBRE_PERSONA} />
                 </div>
                 <div>
                   <Input type="text" placeholder="Primer apellido" maxLength={MAX_NOMBRE_PERSONA} value={ab.primerApellido} disabled={abueloBloqueado} onChange={(e) => setAbueloBautismoCampo(idx, 'primerApellido', e.target.value)} />
-                  <ContadorCaracteres actual={ab.primerApellido.length} maximo={MAX_NOMBRE_PERSONA} />
+                  <PieDeCampo actual={ab.primerApellido.length} maximo={MAX_NOMBRE_PERSONA} />
                 </div>
                 <div>
                   <Input type="text" placeholder="Segundo apellido" maxLength={MAX_NOMBRE_PERSONA} value={ab.segundoApellido} disabled={abueloBloqueado} onChange={(e) => setAbueloBautismoCampo(idx, 'segundoApellido', e.target.value)} />
-                  <ContadorCaracteres actual={ab.segundoApellido.length} maximo={MAX_NOMBRE_PERSONA} />
+                  <PieDeCampo actual={ab.segundoApellido.length} maximo={MAX_NOMBRE_PERSONA} />
                 </div>
               </div>
             </div>
@@ -886,26 +885,22 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
         <div>
           <Label required>Lugar de nacimiento</Label>
           <Input type="text" name="lugarNacimiento" maxLength={LUGAR_NACIMIENTO_MAX} className={inputClass(Boolean(errors.lugarNacimiento))} value={bautismo.lugarNacimiento} onChange={(e) => setCampoBautismo('lugarNacimiento', e.target.value)} />
-          <ErrorMsg errors={errors} clave="lugarNacimiento" />
-          <ContadorCaracteres actual={bautismo.lugarNacimiento.length} maximo={LUGAR_NACIMIENTO_MAX} />
+          <PieDeCampo errors={errors} clave="lugarNacimiento" actual={bautismo.lugarNacimiento.length} maximo={LUGAR_NACIMIENTO_MAX} />
         </div>
         <div>
           <Label required>Libro</Label>
           <Input type="text" name="libro" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.libro))} value={bautismo.libro} onChange={(e) => setCampoBautismo('libro', e.target.value)} />
-          <ErrorMsg errors={errors} clave="libro" />
-          <ContadorCaracteres actual={bautismo.libro.length} maximo={MAX_LIBRO} />
+          <PieDeCampo errors={errors} clave="libro" actual={bautismo.libro.length} maximo={MAX_LIBRO} />
         </div>
         <div>
           <Label required>Folio</Label>
           <Input type="text" name="folio" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.folio))} value={bautismo.folio} onChange={(e) => setCampoBautismo('folio', e.target.value)} />
-          <ErrorMsg errors={errors} clave="folio" />
-          <ContadorCaracteres actual={bautismo.folio.length} maximo={MAX_LIBRO} />
+          <PieDeCampo errors={errors} clave="folio" actual={bautismo.folio.length} maximo={MAX_LIBRO} />
         </div>
         <div>
           <Label required>Asiento</Label>
           <Input type="text" name="asiento" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.asiento))} value={bautismo.asiento} onChange={(e) => setCampoBautismo('asiento', e.target.value)} />
-          <ErrorMsg errors={errors} clave="asiento" />
-          <ContadorCaracteres actual={bautismo.asiento.length} maximo={MAX_LIBRO} />
+          <PieDeCampo errors={errors} clave="asiento" actual={bautismo.asiento.length} maximo={MAX_LIBRO} />
         </div>
       </div>
     </>
@@ -921,14 +916,12 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
         <div>
           <Label required>Libro</Label>
           <Input type="text" name="libro" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.libro))} value={matrimonio.libro} onChange={(e) => setCampoMatrimonio('libro', e.target.value)} />
-          <ErrorMsg errors={errors} clave="libro" />
-          <ContadorCaracteres actual={matrimonio.libro.length} maximo={MAX_LIBRO} />
+          <PieDeCampo errors={errors} clave="libro" actual={matrimonio.libro.length} maximo={MAX_LIBRO} />
         </div>
         <div>
           <Label required>Folio</Label>
           <Input type="text" name="folio" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.folio))} value={matrimonio.folio} onChange={(e) => setCampoMatrimonio('folio', e.target.value)} />
-          <ErrorMsg errors={errors} clave="folio" />
-          <ContadorCaracteres actual={matrimonio.folio.length} maximo={MAX_LIBRO} />
+          <PieDeCampo errors={errors} clave="folio" actual={matrimonio.folio.length} maximo={MAX_LIBRO} />
         </div>
       </div>
     </>
@@ -1094,8 +1087,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
                           setObservaciones(soloTextoSeguro(e.target.value, OBSERVACIONES_MAX))
                         }
                       />
-                      <ErrorMsg errors={errors} clave="observaciones" />
-                      <ContadorCaracteres actual={observaciones.length} maximo={OBSERVACIONES_MAX} />
+                      <PieDeCampo errors={errors} clave="observaciones" actual={observaciones.length} maximo={OBSERVACIONES_MAX} />
                     </div>
                   )}
                 </div>
