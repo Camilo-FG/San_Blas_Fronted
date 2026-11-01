@@ -429,7 +429,7 @@ const FormSolic = () => {
               </p>
               <h3
                 className="m-0 mt-1 text-[1.45rem] font-extrabold text-royal-blue"
-                style={{ fontFamily: "Inter, system-ui, sans-serif" }}
+                style={{ fontFamily: "'Geist', sans-serif" }}
               >
                 Requisitos para la solicitud
               </h3>

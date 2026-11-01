@@ -21,8 +21,8 @@ import {
 import { restoreSession } from "../services/authService";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
 import { useTheme } from "../context/ThemeContext";
-import HomePage from "../modules/landing/pages/HomePage";
 
+const Home = lazyWithRetry(() => import("../modules/landing/pages/HomePage"));
 const NotFoundPage = lazyWithRetry(
   () => import("../modules/landing/pages/NotFoundPage"),
 );
@@ -149,8 +149,7 @@ const rootRoute = createRootRoute({
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: Rutas.home,
-  // Eager: evita LandingLoader → CLS al montar el hero a pantalla completa.
-  component: HomePage,
+  component: withSuspense(Home, LandingLoader),
 });
 
 const notFoundRoute = createRoute({

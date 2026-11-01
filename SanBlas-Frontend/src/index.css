@@ -140,12 +140,6 @@
   }
 }
 
-/* Below-fold: menos trabajo de layout/paint en desktop (Lighthouse). */
-.cv-auto {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 720px;
-}
-
 @layer base {
   *,
   *::before,

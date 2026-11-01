@@ -59,21 +59,15 @@ const Home = () => {
           </p>
         </div>
       </section>
-      <div className="cv-auto">
-        <Suspense fallback={<CarouselPlaceholder />}>
-          <ServiciosCarousel />
-        </Suspense>
-      </div>
-      <div className="cv-auto">
-        <Suspense fallback={<EventosPlaceholder />}>
-          <EventosCarousel />
-        </Suspense>
-      </div>
-      <div className="cv-auto">
-        <Suspense fallback={<SobreNosotrosPlaceholder />}>
-          <SobreNosotrosSection />
-        </Suspense>
-      </div>
+      <Suspense fallback={<CarouselPlaceholder />}>
+        <ServiciosCarousel />
+      </Suspense>
+      <Suspense fallback={<EventosPlaceholder />}>
+        <EventosCarousel />
+      </Suspense>
+      <Suspense fallback={<SobreNosotrosPlaceholder />}>
+        <SobreNosotrosSection />
+      </Suspense>
     </>
   );
 };

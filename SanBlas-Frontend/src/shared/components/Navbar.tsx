@@ -116,7 +116,7 @@ function Navbar() {
 
   return (
     <header className="sticky top-0 z-[1000] w-full border-b-2 border-royal-gold bg-royal-blue">
-      <div className="mx-auto flex min-h-[68px] max-w-7xl items-center justify-between gap-6 px-8 py-3 max-[900px]:min-h-[62px] max-[900px]:gap-3.5 max-[900px]:px-[22px] max-sm:min-h-[58px] max-sm:px-4 max-sm:py-[11px]">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-8 py-3 max-[900px]:gap-3.5 max-[900px]:px-[22px] max-sm:px-4 max-sm:py-[11px]">
         <Link
           to={Rutas.home}
           className="flex min-w-0 items-center gap-2.5 font-heading text-[22px] font-extrabold uppercase tracking-wide text-white no-underline transition-colors hover:text-royal-gold max-sm:text-[17px] max-sm:tracking-[0.5px] max-[480px]:text-sm"
@@ -309,8 +309,6 @@ function Navbar() {
             Donaciones
           </Link>
 
-          {/* Slot fijo: evita CLS cuando restoreSession cambia login ↔ avatar. */}
-          <div className="flex min-h-[38px] min-w-[9.5rem] items-center justify-end gap-[18px]">
           {!isAuthenticated && (
             <Link
               to={Rutas.login}
@@ -394,7 +392,6 @@ function Navbar() {
               )}
             </div>
           )}
-          </div>
         </nav>
 
         <button
