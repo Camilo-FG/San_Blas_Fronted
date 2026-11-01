@@ -79,18 +79,19 @@ function HeroSection() {
 
       {/* Sin animación de entrada: el prerender muestra el texto y createRoot
           no debe remontarlo en opacity:0 (parpadeo / texto que “desaparece”). */}
-      <div className="relative z-[2] mx-auto w-full max-w-[1200px]">
+      <div className="relative z-[2] mx-auto w-full max-w-[1200px] font-[system-ui,Segoe_UI,sans-serif]">
         <div className="mb-6 flex items-center gap-3.5 text-[13px] font-black uppercase tracking-[4px] text-royal-gold max-md:mb-[18px] max-md:text-[11px] max-md:tracking-[3px] max-sm:gap-2.5 max-sm:text-[10px] max-sm:tracking-[2.4px]">
           <span className="h-0.5 w-[54px] shrink-0 bg-royal-gold max-md:w-[38px]" />
           <span>{data.subtitle}</span>
         </div>
 
-        <h1 className="mb-[30px] max-w-[850px] font-heading text-[clamp(46px,8vw,92px)] font-extrabold leading-[0.95] text-white max-md:mb-6 max-md:text-[clamp(42px,13vw,62px)] max-md:leading-none max-sm:text-[clamp(38px,15vw,52px)]">
+        {/* Georgia local: mismo look en prerender y en React (sin FOUT de Playfair). */}
+        <h1 className="mb-[30px] max-w-[850px] font-[Georgia,'Times_New_Roman',serif] text-[clamp(46px,8vw,92px)] font-extrabold leading-[0.95] text-white max-md:mb-6 max-md:text-[clamp(42px,13vw,62px)] max-md:leading-none max-sm:text-[clamp(38px,15vw,52px)]">
           {data.title} <br />
           <span className="italic text-royal-gold">{data.titleHighlight}</span>
         </h1>
 
-        <p className="mb-[42px] max-w-[620px] border-l-4 border-royal-gold/65 pl-[22px] text-xl leading-[1.7] text-white/90 max-[900px]:max-w-[560px] max-[900px]:text-lg max-md:mb-[34px] max-md:pl-4 max-md:text-base max-md:leading-[1.65] max-sm:text-[15px] max-sm:leading-[1.6]">
+        <p className="mb-[42px] max-w-[620px] border-l-4 border-royal-gold/65 pl-[22px] font-[system-ui,Segoe_UI,sans-serif] text-xl leading-[1.7] text-white/90 max-[900px]:max-w-[560px] max-[900px]:text-lg max-md:mb-[34px] max-md:pl-4 max-md:text-base max-md:leading-[1.65] max-sm:text-[15px] max-sm:leading-[1.6]">
           {data.description}
         </p>
 

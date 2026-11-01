@@ -32,7 +32,6 @@
     <link rel="preload" as="image" href="/hero.webp" fetchpriority="high" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Latin subsets: reduce CLS por swap tardío de tipografías (desktop + mobile). -->
     <link
       rel="preload"
       as="font"
@@ -47,6 +46,17 @@
       href="https://fonts.gstatic.com/s/playfairdisplay/v40/nuFiD-vYSZviVYUb_rj3ij__anPXDTzYgA.woff2"
       crossorigin
     />
+    <!-- Hero: Georgia de sistema = mismo aspecto antes/después de JS. -->
+    <style>
+      #inicio {
+        color: #fff;
+        font-family: system-ui, "Segoe UI", sans-serif;
+      }
+      #inicio h1 {
+        font-family: Georgia, "Times New Roman", serif;
+        font-weight: 800;
+      }
+    </style>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@700;800&display=swap"
       rel="stylesheet"
