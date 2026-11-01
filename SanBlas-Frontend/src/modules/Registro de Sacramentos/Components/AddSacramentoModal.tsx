@@ -72,9 +72,9 @@ const MENSAJES: Record<string, string> = {
   idParroquia: 'Seleccione la filial.',
   idPresbitero: 'Seleccione el presbítero.',
   fechaSacramento: 'Seleccione la fecha de celebración.',
-  bautizadoNombre: 'El nombre del bautizado es obligatorio.',
-  bautizadoPrimerApellido: 'El primer apellido del bautizado es obligatorio.',
-  bautizadoSegundoApellido: 'El segundo apellido del bautizado es obligatorio.',
+  bautizadoNombre: 'El nombre es obligatorio.',
+  bautizadoPrimerApellido: 'El primer apellido es obligatorio.',
+  bautizadoSegundoApellido: 'El segundo apellido es obligatorio.',
   contrayente2Nombre: 'El nombre del cónyuge es obligatorio.',
   contrayente2PrimerApellido: 'El primer apellido del cónyuge es obligatorio.',
   fechaNacimiento: 'Seleccione la fecha de nacimiento.',
@@ -757,6 +757,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
               title={nombresBloqueados ? 'Borre la cédula para cambiar el apellido.' : undefined}
               onChange={(e) => setPersonaCampo(setter, 'segundoApellido', e.target.value)}
             />
+            <ErrorMsg errors={errors} clave={`${prefijo}SegundoApellido`} />
             <ContadorCaracteres actual={persona.segundoApellido.length} maximo={MAX_NOMBRE_PERSONA} />
           </div>
         </div>
