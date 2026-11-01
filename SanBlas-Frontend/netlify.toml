@@ -6,6 +6,10 @@
   NODE_VERSION = "22"
   # No definir PRERENDER_ALLOW_OFFLINE en producción: el build debe fallar si la API no responde.
 
+# Proxy same-origin de imágenes Cloudinary (evita cookies de terceros en Lighthouse).
+[images]
+  remote_images = ["https://res\\.cloudinary\\.com/.*"]
+
 # Dominio canónico (una sola versión; sin cadenas)
 [[redirects]]
   from = "https://sanblasfrontend.netlify.app/*"
