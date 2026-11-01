@@ -74,6 +74,7 @@ const MENSAJES: Record<string, string> = {
   fechaSacramento: 'Seleccione la fecha de celebración.',
   bautizadoNombre: 'El nombre del bautizado es obligatorio.',
   bautizadoPrimerApellido: 'El primer apellido del bautizado es obligatorio.',
+  bautizadoSegundoApellido: 'El segundo apellido del bautizado es obligatorio.',
   contrayente2Nombre: 'El nombre del cónyuge es obligatorio.',
   contrayente2PrimerApellido: 'El primer apellido del cónyuge es obligatorio.',
   fechaNacimiento: 'Seleccione la fecha de nacimiento.',
@@ -490,14 +491,16 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     if (!idPresbitero) nuevos.idPresbitero = MENSAJES.idPresbitero;
     if (!fechaSacramento) nuevos.fechaSacramento = MENSAJES.fechaSacramento;
 
-    const personaOk = (p: PersonaForm, prefijo: string) => {
+    const personaOk = (p: PersonaForm, prefijo: string, requerirSegundoApellido = false) => {
       if (!p.nombre.trim()) nuevos[`${prefijo}Nombre`] = MENSAJES[`${prefijo}Nombre`];
       if (!p.primerApellido.trim())
         nuevos[`${prefijo}PrimerApellido`] = MENSAJES[`${prefijo}PrimerApellido`];
+      if (requerirSegundoApellido && !p.segundoApellido.trim())
+        nuevos[`${prefijo}SegundoApellido`] = MENSAJES[`${prefijo}SegundoApellido`];
     };
 
     if (tipo === 'bautismo') {
-      personaOk(bautizado, 'bautizado');
+      personaOk(bautizado, 'bautizado', true);
       if (!detalleBautismo.fechaNacimiento) nuevos.fechaNacimiento = MENSAJES.fechaNacimiento;
       if (!detalleBautismo.horaNacimiento) nuevos.horaNacimiento = MENSAJES.horaNacimiento;
       if (!detalleBautismo.lugarNacimiento.trim())

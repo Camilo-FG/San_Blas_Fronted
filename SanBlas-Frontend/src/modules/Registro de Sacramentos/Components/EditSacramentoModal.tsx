@@ -83,6 +83,7 @@ const MENSAJES: Record<string, string> = {
   fechaSacramento: 'Seleccione la fecha de celebración.',
   bautizadoNombre: 'El nombre del bautizado es obligatorio.',
   bautizadoPrimerApellido: 'El primer apellido del bautizado es obligatorio.',
+  bautizadoSegundoApellido: 'El segundo apellido del bautizado es obligatorio.',
   contrayente2Nombre: 'El nombre del cónyuge es obligatorio.',
   contrayente2PrimerApellido: 'El primer apellido del cónyuge es obligatorio.',
   fechaNacimiento: 'Seleccione la fecha de nacimiento.',
@@ -542,6 +543,8 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
         nuevos[`${prefijo}PrimerApellido`] = 'El primer apellido debe tener entre 2 y 30 caracteres.';
       if (p.segundoApellido.trim() && !textoEnRango(p.segundoApellido))
         nuevos[`${prefijo}SegundoApellido`] = 'El segundo apellido debe tener entre 2 y 30 caracteres.';
+      else if (prefijo === 'bautizado' && !p.segundoApellido.trim())
+        nuevos[`${prefijo}SegundoApellido`] = MENSAJES[`${prefijo}SegundoApellido`];
       if (p.cedula.trim() && !cedulaValida(p.cedula))
         nuevos[`${prefijo}Cedula`] = 'La cédula no es válida.';
     };
