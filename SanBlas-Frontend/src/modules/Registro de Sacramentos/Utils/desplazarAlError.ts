@@ -1,4 +1,4 @@
-const DURACION_SCROLL = 800;
+const DURACION_SCROLL = 1000;
 let frameScroll: number | null = null;
 
 export function desplazarAlPrimerError(form: HTMLFormElement | null): void {
@@ -11,9 +11,6 @@ export function desplazarAlPrimerError(form: HTMLFormElement | null): void {
     const primero = form.querySelector('[aria-invalid="true"]');
     if (!(primero instanceof HTMLElement)) return;
 
-    const movimientoReducido =
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     primero.focus({ preventScroll: true });
 
     const raiz = document.scrollingElement;
@@ -62,7 +59,7 @@ export function desplazarAlPrimerError(form: HTMLFormElement | null): void {
       ),
     );
 
-    if (movimientoReducido || Math.abs(destino - inicio) < 1) {
+    if (Math.abs(destino - inicio) < 1) {
       contenedor.scrollTop = destino;
       return;
     }

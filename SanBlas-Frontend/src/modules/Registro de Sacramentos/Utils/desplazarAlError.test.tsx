@@ -55,9 +55,9 @@ describe('desplazarAlPrimerError', () => {
     ejecutarFrame(0);
     expect(campo).toHaveFocus();
     ejecutarFrame(0);
-    ejecutarFrame(400);
+    ejecutarFrame(500);
     expect(scroll.scrollTop).toBeCloseTo(210);
-    ejecutarFrame(800);
+    ejecutarFrame(1000);
     expect(scroll.scrollTop).toBeCloseTo(420);
   });
 
