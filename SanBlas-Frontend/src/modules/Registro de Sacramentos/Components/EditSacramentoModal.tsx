@@ -694,7 +694,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
     const errores = validar();
     if (Object.keys(errores).length) {
       // Mueve la vista al primer campo inválido después de pintar sus errores.
-      requestAnimationFrame(() => desplazarAlPrimerError(formRef.current));
+      desplazarAlPrimerError(formRef.current);
       return;
     }
 
@@ -1017,7 +1017,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
               </div>
             ) : (
               <form ref={formRef} onSubmit={handleSubmit} noValidate onBlur={marcarCampoTocado} onChange={marcarCampoTocado} className="flex min-h-0 flex-1 flex-col">
-                <div className="min-h-0 flex-1 scrollbar-contenedor space-y-4 overflow-y-auto p-6">
+                <div data-validation-scroll-container className="min-h-0 flex-1 scrollbar-contenedor space-y-4 overflow-y-auto p-6">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <div>
                       <Label required>Filial</Label>

@@ -28,27 +28,7 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <ToastProvider>
-            <div
-              onSubmitCapture={(event) => {
-                const formulario = event.target;
-                if (!(formulario instanceof HTMLFormElement)) return;
-
-                requestAnimationFrame(() => {
-                  const primerCampoInvalido = formulario.querySelector('[aria-invalid="true"]');
-                  if (!(primerCampoInvalido instanceof HTMLElement)) return;
-
-                  const movimientoReducido =
-                    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-                  primerCampoInvalido.focus({ preventScroll: true });
-                  primerCampoInvalido.scrollIntoView?.({
-                    behavior: movimientoReducido ? "auto" : "smooth",
-                    block: "center",
-                  });
-                });
-              }}
-            >
-              <RouterProvider router={router} />
-            </div>
+            <RouterProvider router={router} />
           </ToastProvider>
         </AuthProvider>
       </ThemeProvider>
