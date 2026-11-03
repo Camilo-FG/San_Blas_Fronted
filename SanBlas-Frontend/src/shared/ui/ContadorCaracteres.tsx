@@ -16,7 +16,7 @@ export function ContadorCaracteres({ actual, maximo, unidad = 'caracteres', clas
   return (
     <p
       className={cn(
-        "m-0 mt-1 text-right text-xs text-slate-400 dark:text-[#7f8da3]",
+        "m-0 text-right text-xs text-slate-400 dark:text-[#7f8da3]",
         className,
       )}
     >
