@@ -1,11 +1,2 @@
 User-agent: *
-Allow: /
-
-Disallow: /dashboard
-Disallow: /dashboard/
-Disallow: /login
-Disallow: /recuperar-contrasena
-Disallow: /reset-password
-Disallow: /activar-cuenta
-
-Sitemap: https://parroquiasanblas.org/sitemap.xml
+Disallow: /

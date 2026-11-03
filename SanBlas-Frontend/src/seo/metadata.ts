@@ -140,7 +140,7 @@ export const pageMetadata: Record<string, PageMeta> = {
     description:
       "La página solicitada no existe. Vuelva al inicio o consulte horarios y contacto de la Parroquia San Blas.",
     canonical: `${SITE_URL}/404`,
-    robots: "noindex, follow",
+    robots: "noindex, nofollow",
   },
   [Rutas.login]: {
     title: "Iniciar sesión | San Blas Nicoya",

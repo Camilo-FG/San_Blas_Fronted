@@ -29,8 +29,9 @@ export default function SeoHead({
   // en páginas públicas indexables (evita pelear con 301 de Pretty URLs).
   const pathBare = page === "/" ? "" : page.replace(/\/+$/, "");
   let canonical = meta?.canonical || `${SITE_URL}${pathBare}`;
+  const robotsValue = meta?.robots ?? "noindex, nofollow";
   const isPublicIndexable =
-    page !== "/" && !(meta?.robots ?? "index, follow").includes("noindex");
+    page !== "/" && !robotsValue.includes("noindex");
   if (isPublicIndexable) {
     canonical = canonical.replace(/\/?$/, "/");
   } else if (page === "/") {
@@ -51,7 +52,7 @@ export default function SeoHead({
   if (!meta) return null;
 
   const ogImage = meta.ogImage || DEFAULT_OG_IMAGE;
-  const robots = meta.robots ?? "index, follow";
+  const robots = robotsValue;
 
   const schemas = [
     getOrganizationSchema(),
