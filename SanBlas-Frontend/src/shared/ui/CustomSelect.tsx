@@ -313,6 +313,7 @@ export function CustomSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
+        aria-invalid={hasError || undefined}
         onClick={() => {
           if (!open) calcMaxHeight();
           setOpen((prev) => !prev);
