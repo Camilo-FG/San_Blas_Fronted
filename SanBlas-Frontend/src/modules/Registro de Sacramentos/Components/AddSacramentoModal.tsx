@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Button, cn, ContadorCaracteres, CustomSelect, Input, Label, useToast } from '../../../shared/ui';
+import { Button, cn, CustomSelect, Input, Label, useToast } from '../../../shared/ui';
+import { PieDeCampo } from './PieDeCampo';
 import { Loader2 } from 'lucide-react';
 import { useFocusTrap } from '../../../shared/hooks/useFocusTrap';
 import { useEscapeKey } from '../../../shared/hooks/useEscapeKey';
@@ -28,6 +29,7 @@ import {
 } from '../constants/parentescosAbuelos';
 import { obtenerDatosCedula } from '../../../services/cedulaService';
 import { erroresVisibles, marcarTocado, mismosErrores, type CamposTocados } from '../Utils/validacionEnVivo';
+import { desplazarAlPrimerError } from '../Utils/desplazarAlError';
 import {
   MAX_CEDULA_NACIONAL,
   MAX_LIBRO,
@@ -72,16 +74,17 @@ const MENSAJES: Record<string, string> = {
   idParroquia: 'Seleccione la filial.',
   idPresbitero: 'Seleccione el presbítero.',
   fechaSacramento: 'Seleccione la fecha de celebración.',
-  bautizadoNombre: 'El nombre del bautizado es obligatorio.',
-  bautizadoPrimerApellido: 'El primer apellido del bautizado es obligatorio.',
+  bautizadoNombre: 'El nombre es obligatorio.',
+  bautizadoPrimerApellido: 'El primer apellido es obligatorio.',
+  bautizadoSegundoApellido: 'El segundo apellido es obligatorio.',
   contrayente2Nombre: 'El nombre del cónyuge es obligatorio.',
   contrayente2PrimerApellido: 'El primer apellido del cónyuge es obligatorio.',
   fechaNacimiento: 'Seleccione la fecha de nacimiento.',
   horaNacimiento: 'Seleccione la hora de nacimiento.',
-  lugarNacimiento: 'El lugar de nacimiento es obligatorio.',
-  libro: 'El libro es obligatorio.',
-  folio: 'El folio es obligatorio.',
-  asiento: 'El asiento es obligatorio.',
+  lugarNacimiento: 'Campo obligatorio.',
+  libro: 'Campo obligatorio.',
+  folio: 'Campo obligatorio.',
+  asiento: 'Campo obligatorio.',
 };
 
 const ErrorMsg = ({ errors, clave }: { errors: Record<string, string>; clave: string }) =>
@@ -251,6 +254,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   });
 
   const modalRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   useFocusTrap(modalRef, isOpen);
   useEscapeKey(isOpen, onClose, !saving);
 
@@ -490,14 +494,16 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     if (!idPresbitero) nuevos.idPresbitero = MENSAJES.idPresbitero;
     if (!fechaSacramento) nuevos.fechaSacramento = MENSAJES.fechaSacramento;
 
-    const personaOk = (p: PersonaForm, prefijo: string) => {
+    const personaOk = (p: PersonaForm, prefijo: string, requerirSegundoApellido = false) => {
       if (!p.nombre.trim()) nuevos[`${prefijo}Nombre`] = MENSAJES[`${prefijo}Nombre`];
       if (!p.primerApellido.trim())
         nuevos[`${prefijo}PrimerApellido`] = MENSAJES[`${prefijo}PrimerApellido`];
+      if (requerirSegundoApellido && !p.segundoApellido.trim())
+        nuevos[`${prefijo}SegundoApellido`] = MENSAJES[`${prefijo}SegundoApellido`];
     };
 
     if (tipo === 'bautismo') {
-      personaOk(bautizado, 'bautizado');
+      personaOk(bautizado, 'bautizado', true);
       if (!detalleBautismo.fechaNacimiento) nuevos.fechaNacimiento = MENSAJES.fechaNacimiento;
       if (!detalleBautismo.horaNacimiento) nuevos.horaNacimiento = MENSAJES.horaNacimiento;
       if (!detalleBautismo.lugarNacimiento.trim())
@@ -532,11 +538,11 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   };
 
   // Solo se ejecuta al guardar: publica todos los errores y enciende la validación en vivo.
-  const validar = (): boolean => {
+  const validar = (): Record<string, string> => {
     const nuevos = calcularErrores();
     setErrors(nuevos);
     setIntentado(true);
-    return Object.keys(nuevos).length === 0;
+    return nuevos;
   };
 
   // Validación en vivo: recalcula al cambiar cualquier valor y publica solo los
@@ -643,7 +649,12 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       showToast('Complete el sacramento anterior para poder registrar este.', 'error');
       return;
     }
-    if (!validar()) return;
+    const errores = validar();
+    if (Object.keys(errores).length) {
+      // Mueve la vista al primer campo inválido después de pintar sus errores.
+      desplazarAlPrimerError(formRef.current);
+      return;
+    }
     setSaving(true);
     try {
       await onSave(construirDto());
@@ -689,7 +700,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
                 maxLength={MAX_CEDULA_NACIONAL}
                 className={cn(inputClass(Boolean(errors[`${prefijo}Cedula`])), 'pr-10')}
                 value={persona.cedula}
-                aria-invalid={estadoCedula === 'no_encontrada' || undefined}
+                aria-invalid={Boolean(errors[`${prefijo}Cedula`]) || estadoCedula === 'no_encontrada' || undefined}
                 onChange={(e) => {
                   const cedula = formatearCedulaCR(cedulaDigitosValidos(e.target.value));
                   setPersonaCampo(setter, 'cedula', e.target.value);
@@ -705,8 +716,8 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
                 />
               )}
             </div>
-            {renderAvisoCedula(prefijo, persona.cedula)}
-            <ContadorCaracteres
+            <PieDeCampo
+              aviso={renderAvisoCedula(prefijo, persona.cedula)}
               actual={cedulaDigitosValidos(persona.cedula).length}
               maximo={CEDULA_DIGITOS}
               unidad="dígitos"
@@ -719,13 +730,18 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
               name={`${prefijo}Nombre`}
               maxLength={MAX_NOMBRE_PERSONA}
               className={inputClass(Boolean(errors[`${prefijo}Nombre`]))}
+              aria-invalid={Boolean(errors[`${prefijo}Nombre`]) || undefined}
               value={persona.nombre}
               disabled={nombresBloqueados}
               title={nombresBloqueados ? 'Borre la cédula para cambiar el nombre.' : undefined}
               onChange={(e) => setPersonaCampo(setter, 'nombre', e.target.value)}
             />
-            <ErrorMsg errors={errors} clave={`${prefijo}Nombre`} />
-            <ContadorCaracteres actual={persona.nombre.length} maximo={MAX_NOMBRE_PERSONA} />
+            <PieDeCampo
+              errors={errors}
+              clave={`${prefijo}Nombre`}
+              actual={persona.nombre.length}
+              maximo={MAX_NOMBRE_PERSONA}
+            />
           </div>
           <div>
             <Input
@@ -734,13 +750,18 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
               name={`${prefijo}PrimerApellido`}
               maxLength={MAX_NOMBRE_PERSONA}
               className={inputClass(Boolean(errors[`${prefijo}PrimerApellido`]))}
+              aria-invalid={Boolean(errors[`${prefijo}PrimerApellido`]) || undefined}
               value={persona.primerApellido}
               disabled={nombresBloqueados}
               title={nombresBloqueados ? 'Borre la cédula para cambiar el apellido.' : undefined}
               onChange={(e) => setPersonaCampo(setter, 'primerApellido', e.target.value)}
             />
-            <ErrorMsg errors={errors} clave={`${prefijo}PrimerApellido`} />
-            <ContadorCaracteres actual={persona.primerApellido.length} maximo={MAX_NOMBRE_PERSONA} />
+            <PieDeCampo
+              errors={errors}
+              clave={`${prefijo}PrimerApellido`}
+              actual={persona.primerApellido.length}
+              maximo={MAX_NOMBRE_PERSONA}
+            />
           </div>
           <div>
             <Input
@@ -749,12 +770,18 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
               name={`${prefijo}SegundoApellido`}
               maxLength={MAX_NOMBRE_PERSONA}
               className={inputClass(Boolean(errors[`${prefijo}SegundoApellido`]))}
+              aria-invalid={Boolean(errors[`${prefijo}SegundoApellido`]) || undefined}
               value={persona.segundoApellido}
               disabled={nombresBloqueados}
               title={nombresBloqueados ? 'Borre la cédula para cambiar el apellido.' : undefined}
               onChange={(e) => setPersonaCampo(setter, 'segundoApellido', e.target.value)}
             />
-            <ContadorCaracteres actual={persona.segundoApellido.length} maximo={MAX_NOMBRE_PERSONA} />
+            <PieDeCampo
+              errors={errors}
+              clave={`${prefijo}SegundoApellido`}
+              actual={persona.segundoApellido.length}
+              maximo={MAX_NOMBRE_PERSONA}
+            />
           </div>
         </div>
       </div>
@@ -812,8 +839,8 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
                     }} />
                     {campoCedulaCargando === `abuelo-${idx}` && <Loader2 aria-label="Buscando datos de la cédula" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-royal-blue" />}
                   </div>
-                  {renderAvisoCedula(`abuelo-${idx}`, ab.cedula)}
-                  <ContadorCaracteres
+                  <PieDeCampo
+                    aviso={renderAvisoCedula(`abuelo-${idx}`, ab.cedula)}
                     actual={cedulaDigitosValidos(ab.cedula).length}
                     maximo={CEDULA_DIGITOS}
                     unidad="dígitos"
@@ -821,15 +848,15 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
                 </div>
                 <div>
                   <Input type="text" placeholder="Nombre" maxLength={MAX_NOMBRE_PERSONA} value={ab.nombre} disabled={abueloBloqueado} title={abueloBloqueado ? 'Borre la cédula para cambiar el nombre.' : undefined} onChange={(e) => setAbueloCampo(idx, 'nombre', e.target.value)} />
-                  <ContadorCaracteres actual={ab.nombre.length} maximo={MAX_NOMBRE_PERSONA} />
+                  <PieDeCampo actual={ab.nombre.length} maximo={MAX_NOMBRE_PERSONA} />
                 </div>
                 <div>
                   <Input type="text" placeholder="Primer apellido" maxLength={MAX_NOMBRE_PERSONA} value={ab.primerApellido} disabled={abueloBloqueado} onChange={(e) => setAbueloCampo(idx, 'primerApellido', e.target.value)} />
-                  <ContadorCaracteres actual={ab.primerApellido.length} maximo={MAX_NOMBRE_PERSONA} />
+                  <PieDeCampo actual={ab.primerApellido.length} maximo={MAX_NOMBRE_PERSONA} />
                 </div>
                 <div>
                   <Input type="text" placeholder="Segundo apellido" maxLength={MAX_NOMBRE_PERSONA} value={ab.segundoApellido} disabled={abueloBloqueado} onChange={(e) => setAbueloCampo(idx, 'segundoApellido', e.target.value)} />
-                  <ContadorCaracteres actual={ab.segundoApellido.length} maximo={MAX_NOMBRE_PERSONA} />
+                  <PieDeCampo actual={ab.segundoApellido.length} maximo={MAX_NOMBRE_PERSONA} />
                 </div>
               </div>
             </div>
@@ -844,40 +871,36 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
           <Label required>Fecha de nacimiento</Label>
-          <Input type="date" name="fechaNacimiento" className={inputClass(Boolean(errors.fechaNacimiento))} max={fechaSacramento || undefined} value={detalleBautismo.fechaNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, fechaNacimiento: e.target.value }))} />
+          <Input type="date" name="fechaNacimiento" aria-invalid={Boolean(errors.fechaNacimiento) || undefined} className={inputClass(Boolean(errors.fechaNacimiento))} max={fechaSacramento || undefined} value={detalleBautismo.fechaNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, fechaNacimiento: e.target.value }))} />
           <ErrorMsg errors={errors} clave="fechaNacimiento" />
         </div>
         <div>
           <Label required>Hora de nacimiento</Label>
-          <Input type="time" name="horaNacimiento" className={inputClass(Boolean(errors.horaNacimiento))} value={detalleBautismo.horaNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, horaNacimiento: e.target.value }))} />
+          <Input type="time" name="horaNacimiento" aria-invalid={Boolean(errors.horaNacimiento) || undefined} className={inputClass(Boolean(errors.horaNacimiento))} value={detalleBautismo.horaNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, horaNacimiento: e.target.value }))} />
           <ErrorMsg errors={errors} clave="horaNacimiento" />
         </div>
         <div>
           <Label required>Lugar de nacimiento</Label>
-          <Input type="text" name="lugarNacimiento" maxLength={LUGAR_NACIMIENTO_MAX} className={inputClass(Boolean(errors.lugarNacimiento))} value={detalleBautismo.lugarNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, lugarNacimiento: soloTextoSeguro(e.target.value, LUGAR_NACIMIENTO_MAX) }))} />
-          <ErrorMsg errors={errors} clave="lugarNacimiento" />
-          <ContadorCaracteres actual={detalleBautismo.lugarNacimiento.length} maximo={LUGAR_NACIMIENTO_MAX} />
+          <Input type="text" name="lugarNacimiento" aria-invalid={Boolean(errors.lugarNacimiento) || undefined} maxLength={LUGAR_NACIMIENTO_MAX} className={inputClass(Boolean(errors.lugarNacimiento))} value={detalleBautismo.lugarNacimiento} onChange={(e) => setDetalleBautismo((p) => ({ ...p, lugarNacimiento: soloTextoSeguro(e.target.value, LUGAR_NACIMIENTO_MAX) }))} />
+          <PieDeCampo errors={errors} clave="lugarNacimiento" actual={detalleBautismo.lugarNacimiento.length} maximo={LUGAR_NACIMIENTO_MAX} />
         </div>
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
           <Label required>Libro</Label>
-          <Input type="text" name="libro" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.libro))} value={detalleBautismo.libro} onChange={(e) => setDetalleBautismoCampo('libro', e.target.value)} />
-          <ErrorMsg errors={errors} clave="libro" />
-          <ContadorCaracteres actual={detalleBautismo.libro.length} maximo={MAX_LIBRO} />
+          <Input type="text" name="libro" aria-invalid={Boolean(errors.libro) || undefined} maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.libro))} value={detalleBautismo.libro} onChange={(e) => setDetalleBautismoCampo('libro', e.target.value)} />
+          <PieDeCampo errors={errors} clave="libro" actual={detalleBautismo.libro.length} maximo={MAX_LIBRO} />
         </div>
         <div>
           <Label required>Folio</Label>
-          <Input type="text" name="folio" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.folio))} value={detalleBautismo.folio} onChange={(e) => setDetalleBautismoCampo('folio', e.target.value)} />
-          <ErrorMsg errors={errors} clave="folio" />
-          <ContadorCaracteres actual={detalleBautismo.folio.length} maximo={MAX_LIBRO} />
+          <Input type="text" name="folio" aria-invalid={Boolean(errors.folio) || undefined} maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.folio))} value={detalleBautismo.folio} onChange={(e) => setDetalleBautismoCampo('folio', e.target.value)} />
+          <PieDeCampo errors={errors} clave="folio" actual={detalleBautismo.folio.length} maximo={MAX_LIBRO} />
         </div>
         <div>
           <Label required>Asiento</Label>
-          <Input type="text" name="asiento" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.asiento))} value={detalleBautismo.asiento} onChange={(e) => setDetalleBautismoCampo('asiento', e.target.value)} />
-          <ErrorMsg errors={errors} clave="asiento" />
-          <ContadorCaracteres actual={detalleBautismo.asiento.length} maximo={MAX_LIBRO} />
+          <Input type="text" name="asiento" aria-invalid={Boolean(errors.asiento) || undefined} maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.asiento))} value={detalleBautismo.asiento} onChange={(e) => setDetalleBautismoCampo('asiento', e.target.value)} />
+          <PieDeCampo errors={errors} clave="asiento" actual={detalleBautismo.asiento.length} maximo={MAX_LIBRO} />
         </div>
       </div>
     </>
@@ -892,15 +915,13 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label required>Libro</Label>
-          <Input type="text" name="libro" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.libro))} value={detalleMatrimonio.libro} onChange={(e) => setDetalleMatrimonioCampo('libro', e.target.value)} />
-          <ErrorMsg errors={errors} clave="libro" />
-          <ContadorCaracteres actual={detalleMatrimonio.libro.length} maximo={MAX_LIBRO} />
+          <Input type="text" name="libro" aria-invalid={Boolean(errors.libro) || undefined} maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.libro))} value={detalleMatrimonio.libro} onChange={(e) => setDetalleMatrimonioCampo('libro', e.target.value)} />
+          <PieDeCampo errors={errors} clave="libro" actual={detalleMatrimonio.libro.length} maximo={MAX_LIBRO} />
         </div>
         <div>
           <Label required>Folio</Label>
-          <Input type="text" name="folio" maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.folio))} value={detalleMatrimonio.folio} onChange={(e) => setDetalleMatrimonioCampo('folio', e.target.value)} />
-          <ErrorMsg errors={errors} clave="folio" />
-          <ContadorCaracteres actual={detalleMatrimonio.folio.length} maximo={MAX_LIBRO} />
+          <Input type="text" name="folio" aria-invalid={Boolean(errors.folio) || undefined} maxLength={MAX_LIBRO} className={inputClass(Boolean(errors.folio))} value={detalleMatrimonio.folio} onChange={(e) => setDetalleMatrimonioCampo('folio', e.target.value)} />
+          <PieDeCampo errors={errors} clave="folio" actual={detalleMatrimonio.folio.length} maximo={MAX_LIBRO} />
         </div>
       </div>
     </>
@@ -971,8 +992,8 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
               })}
             </div>
 
-            <form onSubmit={handleSubmit} noValidate onBlur={marcarCampoTocado} onChange={marcarCampoTocado}>
-              <div className="max-h-[60vh] scrollbar-contenedor space-y-4 overflow-y-auto p-6">
+            <form ref={formRef} onSubmit={handleSubmit} noValidate onBlur={marcarCampoTocado} onChange={marcarCampoTocado}>
+              <div data-validation-scroll-container className="max-h-[60vh] scrollbar-contenedor space-y-4 overflow-y-auto p-6">
                 {catalogoCargando ? (
                   <div className="flex items-center gap-2 py-6 text-sm text-text-secondary dark:text-[#b7c3d4]">
                     <Loader2 size={18} className="animate-spin" /> Cargando catálogos...
@@ -1029,6 +1050,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
                         <Input
                           type="date"
                           name="fechaSacramento"
+                          aria-invalid={Boolean(errors.fechaSacramento) || undefined}
                           className={inputClass(Boolean(errors.fechaSacramento))}
                           value={fechaSacramento}
                           onChange={(e) => setFechaSacramento(e.target.value)}
@@ -1046,14 +1068,14 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
                         <Input
                           type="text"
                           name="observaciones"
+                          aria-invalid={Boolean(errors.observaciones) || undefined}
                           maxLength={OBSERVACIONES_MAX}
                           value={observaciones}
                           onChange={(e) =>
                             setObservaciones(soloTextoSeguro(e.target.value, OBSERVACIONES_MAX))
                           }
                         />
-                        <ErrorMsg errors={errors} clave="observaciones" />
-                        <ContadorCaracteres actual={observaciones.length} maximo={OBSERVACIONES_MAX} />
+                        <PieDeCampo errors={errors} clave="observaciones" actual={observaciones.length} maximo={OBSERVACIONES_MAX} />
                       </div>
                     )}
                   </>
