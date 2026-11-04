@@ -50,6 +50,10 @@ let refreshPromise: Promise<void> | null = null;
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 403 &&
+        !error.config?.url?.includes('/auth/')) {
+      window.dispatchEvent(new Event('auth:permisos-denegados'));
+    }
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       const url = error.config?.url ?? "";
       const config = error.config as (typeof error.config & { _retry?: boolean }) | undefined;

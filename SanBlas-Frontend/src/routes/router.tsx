@@ -14,14 +14,14 @@ import { PageLoader } from "../shared/ui";
 import LandingLoader from "../modules/landing/components/LandingLoader";
 import Rutas from "./Rutas";
 import {
-  getCurrentUser,
   tienePermiso,
-  type AuthUser,
 } from "../services/authSession";
 import { restoreSession } from "../services/authService";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
 import { useTheme } from "../context/ThemeContext";
 import HomePage from "../modules/landing/pages/HomePage";
+import { primeraRutaPermitida } from './permisosDashboard';
+import { ControlAccesoDashboard } from './ControlAccesoDashboard';
 
 const NotFoundPage = lazyWithRetry(
   () => import("../modules/landing/pages/NotFoundPage"),
@@ -133,7 +133,9 @@ function RootLayout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Suspense fallback={isDashboard ? <PageLoader /> : <LandingLoader />}>
-          <Outlet />
+          {isDashboard ? (
+            <ControlAccesoDashboard pathname={pathname}><Outlet /></ControlAccesoDashboard>
+          ) : <Outlet />}
         </Suspense>
       </div>
 
@@ -265,7 +267,7 @@ const dashboardRoute = createRoute({
   path: Rutas.dashboard,
   component: withSuspense(Dashboard),
   beforeLoad: async ({ location }) => {
-    const usuario = await restoreSession();
+    const usuario = await restoreSession(true);
     if (!usuario) {
       throw redirect({
         to: Rutas.login,
@@ -282,27 +284,8 @@ const dashboardRoute = createRoute({
   },
 });
 
-const RUTAS_POR_PERMISO: { permiso: string; to: string }[] = [
-  { permiso: "panel", to: Rutas.dashboard },
-  { permiso: "sacramentos", to: Rutas.dashboardUrl.registroSacramentos },
-  { permiso: "constancias", to: Rutas.dashboardUrl.constanciasSacramentos },
-  { permiso: "catequesis", to: Rutas.dashboardUrl.solicitudesCatequesis },
-  { permiso: "donaciones", to: Rutas.dashboardUrl.donaciones },
-  { permiso: "eventos", to: Rutas.dashboardUrl.eventos },
-  { permiso: "landing", to: Rutas.dashboardUrl.gestionLanding },
-  { permiso: "usuarios", to: Rutas.dashboardUrl.gestionUsuarios },
-];
-
-const primeraRutaPermitida = (usuario: AuthUser | null): string => {
-  if (!usuario) return Rutas.SolicitudesSacramentos;
-  const hallada = RUTAS_POR_PERMISO.find((item) =>
-    tienePermiso(usuario, item.permiso),
-  );
-  return hallada ? hallada.to : Rutas.SolicitudesSacramentos;
-};
-
 const requierePermiso = (permiso: string) => async () => {
-  const usuario = (await restoreSession()) ?? getCurrentUser();
+  const usuario = await restoreSession(true);
   if (!usuario || !tienePermiso(usuario, permiso)) {
     const destino = primeraRutaPermitida(usuario);
     if (destino === Rutas.SolicitudesSacramentos) {

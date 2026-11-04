@@ -4,12 +4,14 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import {
   esSecretario,
   getCurrentUser,
+  subscribeSession,
   logout as logoutSession,
   tienePermiso as tienePermisoSesion,
   type AuthUser,
@@ -20,6 +22,7 @@ import {
   restoreSession,
   type LoginCredentials,
 } from "../services/authService";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -34,17 +37,40 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(() => getCurrentUser());
+  const previousUser = useRef(user);
+
+  useEffect(() => subscribeSession((siguiente) => {
+    const anterior = previousUser.current;
+    if (anterior && JSON.stringify(anterior) !== JSON.stringify(siguiente)) {
+      void queryClient.cancelQueries();
+      queryClient.clear();
+    }
+    previousUser.current = siguiente;
+    setUser(siguiente);
+  }), [queryClient]);
 
   useEffect(() => {
-    let active = true;
-    void restoreSession().then((sessionUser) => {
-      if (active) setUser(sessionUser);
-    });
-
-    return () => {
-      active = false;
+    const actualizar = () => {
+      if (!getCurrentUser()) return;
+      void restoreSession(true).catch(() => { /* Se conserva la sesión ante errores de red. */ });
     };
+    const visible = () => { if (document.visibilityState === 'visible') actualizar(); };
+    window.addEventListener('focus', actualizar);
+    window.addEventListener('auth:permisos-denegados', actualizar);
+    document.addEventListener('visibilitychange', visible);
+    return () => {
+      window.removeEventListener('focus', actualizar);
+      window.removeEventListener('auth:permisos-denegados', actualizar);
+      document.removeEventListener('visibilitychange', visible);
+    };
+  }, [queryClient]);
+
+  useEffect(() => {
+    // La suscripción aplica el resultado; evita que una promesa inicial antigua
+    // sobrescriba permisos que ya se actualizaron por foco o por un 403.
+    void restoreSession().catch(() => {});
   }, []);
 
   const login = useCallback(async (credentials: LoginCredentials) => {

@@ -4,6 +4,7 @@ import {
 } from "./apiClient";
 import {
   getCurrentUser,
+  getSessionRevision,
   logout as clearSession,
   setCurrentUser,
   type AuthUser,
@@ -38,13 +39,19 @@ export const login = async (
 };
 
 let restorePromise: Promise<AuthUser | null> | null = null;
+let restoreRevision = -1;
 
 // Recupera la sesión desde la cookie HttpOnly una vez por carga de la app.
-export const restoreSession = async (): Promise<AuthUser | null> => {
-  if (getCurrentUser()) return getCurrentUser();
-  restorePromise ??= apiClient
+export const restoreSession = async (actualizar = false): Promise<AuthUser | null> => {
+  if (!actualizar && getCurrentUser()) return getCurrentUser();
+  const revision = getSessionRevision();
+  if (restorePromise && restoreRevision === revision) return restorePromise;
+  restoreRevision = revision;
+  const peticion = apiClient
     .get<LoginResponse>("/auth/session")
     .then(({ data }) => {
+      // Un logout, login u otra actualización invalida las respuestas anteriores.
+      if (revision !== getSessionRevision()) return getCurrentUser();
       if (!data?.user) {
         clearSession();
         return null;
@@ -52,22 +59,26 @@ export const restoreSession = async (): Promise<AuthUser | null> => {
       setCurrentUser(data.user);
       return data.user;
     })
-    .catch(() => {
+    .catch((error) => {
+      if (revision !== getSessionRevision()) return getCurrentUser();
+      // Una caída de red no equivale a perder la sesión ni los permisos.
+      if (error?.response?.status !== 401) throw error;
       clearSession();
       return null;
     })
     .finally(() => {
-      restorePromise = null;
+      if (restorePromise === peticion) restorePromise = null;
     });
-
-  return restorePromise;
+  restorePromise = peticion;
+  return peticion;
 };
 
 export const logout = async (): Promise<void> => {
+  const revision = getSessionRevision();
   try {
     await apiClient.post("/auth/logout");
   } finally {
-    clearSession();
+    if (revision === getSessionRevision()) clearSession();
   }
 };
 
