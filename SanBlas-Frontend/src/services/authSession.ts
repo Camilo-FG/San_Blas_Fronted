@@ -10,9 +10,19 @@ export interface AuthUser {
 }
 
 let currentUser: AuthUser | null = null;
+let sessionRevision = 0;
+export const getSessionRevision = (): number => sessionRevision;
+const listeners = new Set<(user: AuthUser | null) => void>();
+
+export const subscribeSession = (listener: (user: AuthUser | null) => void) => {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+};
 
 export const setCurrentUser = (user: AuthUser | null): void => {
+  sessionRevision += 1;
   currentUser = user;
+  listeners.forEach((listener) => listener(user));
 };
 
 export const logout = (): void => {
