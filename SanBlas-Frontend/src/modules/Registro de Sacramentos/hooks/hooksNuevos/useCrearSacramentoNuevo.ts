@@ -10,6 +10,8 @@ export const useCrearSacramentoNuevo = () => {
     mutationKey: ['sacramentos-nuevos', 'crear'],
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'buscar'] });
+      queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'detalle'] });
+      queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'persona'] });
     },
   });
 };

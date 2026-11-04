@@ -189,6 +189,8 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const [observaciones, setObservaciones] = useState(() =>
     soloTextoSeguro(borradorInicial?.observaciones ?? '', OBSERVACIONES_MAX),
   );
+  // Tipos ya guardados en esta sesión (persiste al reabrir el modal sin recargar).
+  const [tiposGuardados, setTiposGuardados] = useState<Partial<Record<TipoSacramento, boolean>>>({});
   const [saving, setSaving] = useState(false);
   const [campoCedulaCargando, setCampoCedulaCargando] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -322,11 +324,18 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     );
   };
 
-  // Una pestaña se habilita solo si la inmediatamente anterior (y las previas) está completa.
+  // Anterior listo si el formulario está completo, ya se guardó en esta sesión,
+  // o (solo bautismo) ya existe al menos un bautismo registrado en el sistema.
+  const anteriorListo = (t: TipoSacramento): boolean =>
+    completo(t) ||
+    Boolean(tiposGuardados[t]) ||
+    (t === 'bautismo' && tieneBautismo);
+
+  // Una pestaña se habilita solo si la inmediatamente anterior (y las previas) está lista.
   const habilitado = (t: TipoSacramento): boolean => {
     const idx = ORDEN.indexOf(t);
     if (idx === 0) return true;
-    return completo(ORDEN[idx - 1]) && habilitado(ORDEN[idx - 1]);
+    return anteriorListo(ORDEN[idx - 1]) && habilitado(ORDEN[idx - 1]);
   };
 
   // Al avanzar de pestaña, reutiliza la persona ya registrada en el bautismo
@@ -657,9 +666,31 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     }
     setSaving(true);
     try {
+      const tipoGuardado = tipo;
       await onSave(construirDto());
-      limpiarProgreso(false);
-      onClose();
+      setTiposGuardados((prev) => ({ ...prev, [tipoGuardado]: true }));
+      setErrors({});
+      setTocados({});
+      setIntentado(false);
+      borrarBorradorSacramento();
+
+      // Dejar el modal abierto y pasar al siguiente sacramento, conservando
+      // la persona del expediente para no obligar a recargar la página.
+      const idx = ORDEN.indexOf(tipoGuardado);
+      if (idx >= 0 && idx < ORDEN.length - 1) {
+        const siguiente = ORDEN[idx + 1];
+        if (tipoGuardado === 'bautismo') {
+          setPersona((prev) => ({ ...bautizado, ...prev }));
+        }
+        if (siguiente === 'matrimonio') {
+          const base = { ...bautizado, ...persona };
+          setContrayente1((prev) => ({ ...base, ...prev }));
+        }
+        setTipo(siguiente);
+      } else {
+        limpiarProgreso(false);
+        onClose();
+      }
     } catch (err: any) {
       if (err?.response?.status === 409) {
         // Muestra el mensaje del backend (ej: cédula de un bautizado ya registrado).

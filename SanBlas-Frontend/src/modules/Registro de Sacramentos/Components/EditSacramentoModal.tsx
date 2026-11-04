@@ -703,10 +703,21 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
       const seccion = construirSeccion();
       if (existeEnTab && sacramentoDelTab) {
         await onUpdate(sacramentoDelTab.id, { ...construirBase(), ...seccion });
+        onClose();
       } else {
+        // Tras crear un sacramento nuevo, refrescar la ficha y dejar el modal
+        // abierto para poder seguir con el siguiente (p. ej. comunión → confirmación)
+        // sin tener que recargar la página.
         await onCreate({ tipo: activeTab, ...construirBase(), ...seccion });
+        await ficha.refetch();
+        setErrors({});
+        setTocados({});
+        setIntentado(false);
+        const idx = TIPOS.indexOf(activeTab);
+        if (idx >= 0 && idx < TIPOS.length - 1) {
+          setActiveTab(TIPOS[idx + 1]);
+        }
       }
-      onClose();
     } catch (err: any) {
       if (err?.response?.status === 409) {
         // Muestra el mensaje del backend (ej: cédula de un bautizado ya registrado).
