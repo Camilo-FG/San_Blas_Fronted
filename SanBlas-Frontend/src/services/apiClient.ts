@@ -51,7 +51,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (axios.isAxiosError(error) && error.response?.status === 403 &&
-        !error.config?.url?.includes('/auth/session')) {
+        !error.config?.url?.includes('/auth/')) {
       window.dispatchEvent(new Event('auth:permisos-denegados'));
     }
     if (axios.isAxiosError(error) && error.response?.status === 401) {

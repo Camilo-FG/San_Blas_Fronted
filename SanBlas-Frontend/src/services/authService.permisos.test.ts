@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from './apiClient';
-import { restoreSession, logout } from './authService';
+import { restoreSession, logout, login } from './authService';
+import { ApiError } from './apiClient';
 import { getCurrentUser, setCurrentUser, logout as cerrarSesionLocal, type AuthUser } from './authSession';
 
 function pendiente<T>() {
@@ -96,5 +97,32 @@ describe('actualización de permisos de sesión', () => {
     respuesta.resolve();
     await cierre;
     expect(getCurrentUser()).toEqual(nuevo);
+  });
+});
+
+describe('login: conserva el mensaje del backend sin iniciar sesión tras errores', () => {
+  beforeEach(() => { setCurrentUser(null); });
+  afterEach(() => { vi.restoreAllMocks(); setCurrentUser(null); });
+
+  it.each([
+    [401, 'Email o contraseña incorrecta'],
+    [403, 'Esta cuenta está pendiente de activación. Utiliza el enlace enviado a tu correo para crear tu contraseña.'],
+  ])('propaga el texto exacto de HTTP %s y no guarda usuario', async (status, mensaje) => {
+    vi.spyOn(apiClient, 'post').mockRejectedValue({
+      isAxiosError: true, response: { status, data: { mensaje } },
+    });
+    await expect(login({ email: 'test@example.com', password: 'Incorrecta123!' }))
+      .rejects.toMatchObject({ name: 'ApiError', message: mensaje, status });
+    expect(getCurrentUser()).toBeNull();
+  });
+
+  it('tras un error permite volver a iniciar sesión con credenciales corregidas', async () => {
+    vi.spyOn(apiClient, 'post')
+      .mockRejectedValueOnce({ isAxiosError: true, response: { status: 401, data: { mensaje: 'Email o contraseña incorrecta' } } })
+      .mockResolvedValueOnce({ data: { user: usuario } });
+    await expect(login({ email: usuario.email, password: 'Incorrecta123!' })).rejects.toBeInstanceOf(ApiError);
+    expect(getCurrentUser()).toBeNull();
+    expect(await login({ email: usuario.email, password: 'Correcta123!' })).toEqual(usuario);
+    expect(getCurrentUser()).toEqual(usuario);
   });
 });

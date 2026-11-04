@@ -33,6 +33,7 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (loading) return;
     setError(null);
     setLoading(true);
 
@@ -113,7 +114,7 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
           solicitudes de constancia y catequesis.
         </p>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} aria-busy={loading}>
           <div className="mb-5 flex flex-col gap-2">
             <Label htmlFor="email" className="text-royal-blue">
               Correo electrónico
@@ -141,6 +142,7 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
+                aria-describedby="login-ayuda-activacion"
                 className="min-h-12 px-4 py-3 pr-12 text-base"
               />
               <button
@@ -164,6 +166,9 @@ const LoginPage = ({ redirectTo }: LoginPageProps) => {
             </Link>
           </div>
 
+          <p id="login-ayuda-activacion" className="mb-5 text-sm leading-relaxed text-text-secondary">
+            Si aún no has activado tu cuenta, utiliza el enlace enviado a tu correo para crear tu contraseña.
+          </p>
           <FieldError message={error} className="mb-5" />
 
           <Button
