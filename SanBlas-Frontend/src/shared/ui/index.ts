@@ -32,3 +32,4 @@ export {
   AdminTableRow,
   AdminToolbar,
 } from "./AdminPrimitives";
+export { Skeleton, type SkeletonProps } from "./Skeleton";
