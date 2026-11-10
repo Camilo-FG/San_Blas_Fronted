@@ -10,6 +10,7 @@ export const MAX_APELLIDO_BAUTISMO = 25;
 export const MAX_NACIONALIDAD_BAUTISMO = 25;
 
 export const TELEFONO_BAUTISMO = /^[1-9]\d{3}-\d{4}$/;
+export const CORREO_BAUTISMO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const LETRAS_CON_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
 const LETRAS_SIN_ESPACIO = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/;
 
@@ -39,6 +40,7 @@ export type FormularioCatequesisBautismo = {
   tipoCedula: TipoCedula;
   nacionalidad: string;
   telefono: string;
+  correo: string;
   estadoCivil: EstadoCivilBautismo | "";
   parroquiaOrigen: string;
   provincia: string;
@@ -91,7 +93,7 @@ export const validarFormularioCatequesisBautismo = (
 
   poner("nombre", mensajeNombre(form.nombre, "El nombre", true, true));
   poner("apellido1", mensajeNombre(form.apellido1, "El primer apellido", true, false));
-  poner("apellido2", mensajeNombre(form.apellido2, "El segundo apellido", false, false));
+  poner("apellido2", mensajeNombre(form.apellido2, "El segundo apellido", true, false));
   poner("fechaNacimiento", mensajeFechaNacimientoBautismo(form.fechaNacimiento));
 
   poner("cedula", validarCedulaIdentificacion(form.cedula, form.tipoCedula));
@@ -108,6 +110,13 @@ export const validarFormularioCatequesisBautismo = (
   if (!form.telefono.trim()) errores.telefono = "El teléfono es obligatorio.";
   else if (!TELEFONO_BAUTISMO.test(form.telefono.trim()))
     errores.telefono = "El formato debe ser 8888-8888.";
+
+  const correo = form.correo.trim();
+  if (!correo) errores.correo = "El correo electrónico es obligatorio.";
+  else if (!CORREO_BAUTISMO.test(correo))
+    errores.correo = "El correo electrónico no es válido.";
+  else if (correo.length > 120)
+    errores.correo = "El correo no puede superar los 120 caracteres.";
 
   if (!form.estadoCivil.trim()) errores.estadoCivil = "Seleccione el estado civil.";
   else if (!ESTADOS_CIVILES_BAUTISMO.includes(form.estadoCivil as EstadoCivilBautismo))
@@ -144,21 +153,45 @@ export const validarFormularioCatequesisBautismo = (
   return errores;
 };
 
+// Valida que la fecha exista de verdad (no 2026-02-31) y no sea futura.
+const mensajeFechaCertificacion = (valor: string, etiqueta: string): string | null => {
+  if (!valor) return `Indique ${etiqueta}.`;
+  const [anio, mes, dia] = valor.split("-").map(Number);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+    return "La fecha no es válida.";
+  }
+  const fecha = new Date(Date.UTC(anio, mes - 1, dia));
+  const existe =
+    fecha.getUTCFullYear() === anio &&
+    fecha.getUTCMonth() === mes - 1 &&
+    fecha.getUTCDate() === dia;
+  if (!existe) return "La fecha no es válida.";
+  const hoy = new Date();
+  const hoyUTC = Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  if (Date.UTC(anio, mes - 1, dia) > hoyUTC)
+    return "La fecha no puede ser futura.";
+  return null;
+};
+
 export const validarCertificacion = (datos: {
   fechaInicioCatequesis: string;
   fechaFinalizacionCatequesis: string;
   responsableCertifica: string;
 }): Record<string, string> => {
   const errores: Record<string, string> = {};
-  if (!datos.fechaInicioCatequesis) {
-    errores.fechaInicioCatequesis = "Indique el inicio de las catequesis.";
-  }
-  if (!datos.fechaFinalizacionCatequesis) {
-    errores.fechaFinalizacionCatequesis = "Indique la finalización de las catequesis.";
-  }
+  const errorInicio = mensajeFechaCertificacion(
+    datos.fechaInicioCatequesis,
+    "el inicio de las catequesis",
+  );
+  if (errorInicio) errores.fechaInicioCatequesis = errorInicio;
+  const errorFin = mensajeFechaCertificacion(
+    datos.fechaFinalizacionCatequesis,
+    "la finalización de las catequesis",
+  );
+  if (errorFin) errores.fechaFinalizacionCatequesis = errorFin;
   if (
-    datos.fechaInicioCatequesis &&
-    datos.fechaFinalizacionCatequesis &&
+    !errorInicio &&
+    !errorFin &&
     datos.fechaFinalizacionCatequesis < datos.fechaInicioCatequesis
   ) {
     errores.fechaFinalizacionCatequesis =

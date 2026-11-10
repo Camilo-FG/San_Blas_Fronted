@@ -133,6 +133,7 @@ for (const [nombre, Pagina, consultar] of [
       } else {
         fireEvent.change(screen.getByLabelText(/^Estado civil/), { target: { value: "soltero" } });
         fireEvent.change(screen.getByLabelText(/^Condición/), { target: { value: "padre_madre" } });
+        fireEvent.change(screen.getByPlaceholderText("Ej: nombre@correo.com"), { target: { value: "prueba@example.com" } });
       }
       fireEvent.submit(container.querySelector("form")!);
       await waitFor(() => expect(crear).toHaveBeenCalledWith(expect.objectContaining({ cedula: "112345678901", tipoCedula: "extranjera" })));
@@ -153,7 +154,7 @@ for (const [nombre, Pagina, consultar] of [
       expect(obtenerDatosCedula).toHaveBeenCalledTimes(2);
     });
 
-    it("no permite enviar una nacional no encontrada", async () => {
+    it("muestra el aviso cuando la cédula nacional no aparece en el padrón", async () => {
       vi.mocked(obtenerDatosCedula).mockResolvedValueOnce({
         estado: "no_encontrada",
       });
@@ -167,14 +168,14 @@ for (const [nombre, Pagina, consultar] of [
       expect(crearInscripcionCatequesisBautismo).not.toHaveBeenCalled();
     });
 
-    it("no permite ceros iniciales al consultar estados y conserva los internos", () => {
+    it("conserva los ceros iniciales de la cédula extranjera al consultar", () => {
       render(<Pagina />);
       fireEvent.click(screen.getByRole("button", { name: "Consultar estado" }));
       const input = screen.getByPlaceholderText("Ej: 102340567");
-      fireEvent.change(input, { target: { value: "0" } });
-      expect(input).toHaveValue("");
       fireEvent.change(input, { target: { value: "000102340567" } });
-      expect(input).toHaveValue("102340567");
+      expect(input).toHaveValue(
+        nombre === "Bautismo" ? "000102340567" : "102340567",
+      );
     });
 
     it("consulta el estado con Enter y no duplica la petición mientras carga", async () => {
@@ -184,12 +185,19 @@ for (const [nombre, Pagina, consultar] of [
       fireEvent.click(screen.getByRole("button", { name: "Consultar estado" }));
       const input = screen.getByPlaceholderText("Ej: 102340567");
       fireEvent.change(input, { target: { value: "102340567" } });
+      if (nombre === "Bautismo") {
+        fireEvent.change(screen.getByLabelText(/^Fecha de nacimiento/), { target: { value: "1990-01-01" } });
+      }
       fireEvent.keyDown(input, { key: "Enter" });
       await waitFor(() => expect(consultar).toHaveBeenCalledTimes(1));
       fireEvent.keyDown(input, { key: "Enter" });
       expect(consultar).toHaveBeenCalledTimes(1);
       resolver([]);
-      await screen.findByText("No hay solicitudes con esa cédula.");
+      await screen.findByText(
+        nombre === "Bautismo"
+          ? "No hay solicitudes con esa cédula y fecha de nacimiento."
+          : "No hay solicitudes con esa cédula.",
+      );
     });
 
     it("Enter conserva la validación de la cédula", () => {
@@ -209,12 +217,74 @@ for (const [nombre, Pagina, consultar] of [
       fireEvent.change(screen.getByPlaceholderText("Ej: 102340567"), {
         target: { value: "112345678901" },
       });
+      if (nombre === "Bautismo") {
+        fireEvent.change(screen.getByLabelText(/^Fecha de nacimiento/), {
+          target: { value: "1990-01-01" },
+        });
+      }
       fireEvent.click(
         screen.getByRole("button", { name: /^Consultar$/ }),
       );
       await waitFor(() =>
-        expect(consultar).toHaveBeenCalledWith("112345678901"),
+        expect(consultar).toHaveBeenCalledWith(
+          "112345678901",
+          ...(nombre === "Bautismo" ? ["1990-01-01"] : []),
+        ),
       );
     });
   });
 }
+
+// Riesgo 1.2: GoMeta es solo una ayuda visual; si no encuentra la cédula,
+// la inscripción de bautismo igual se puede enviar con el formulario completo.
+describe("bautismo sin resultado del padrón", () => {
+  it("envía la inscripción aunque la cédula nacional no se encuentre", async () => {
+    vi.mocked(obtenerDatosCedula).mockResolvedValueOnce({
+      estado: "no_encontrada",
+    });
+    vi.mocked(crearInscripcionCatequesisBautismo).mockResolvedValue({
+      id: 1,
+      mensaje: "Registrada",
+      estado: "Pendiente",
+    });
+    const { container } = render(<CatequesisBautismoPage />);
+    fireEvent.change(screen.getByRole("textbox", { name: /^Cédula/ }), {
+      target: { value: "102340567" },
+    });
+    await screen.findByText("La cédula ingresada no existe.");
+
+    for (const input of Array.from(
+      container.querySelectorAll<HTMLInputElement>('input[type="text"]'),
+    )) {
+      if (!input.value) fireEvent.change(input, { target: { value: "Prueba" } });
+    }
+    fireEvent.change(container.querySelector('input[type="date"]')!, {
+      target: { value: "1990-01-01" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Ej: 8888-8888"), {
+      target: { value: "88881234" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Ej: nombre@correo.com"), {
+      target: { value: "prueba@example.com" },
+    });
+    const ubicaciones = Array.from(
+      container.querySelectorAll<HTMLSelectElement>("select:not([id])"),
+    );
+    fireEvent.change(ubicaciones[0], { target: { value: "Guanacaste" } });
+    fireEvent.change(ubicaciones[1], { target: { value: "Nicoya" } });
+    fireEvent.change(ubicaciones[2], { target: { value: "Nicoya" } });
+    fireEvent.change(screen.getByLabelText(/^Estado civil/), {
+      target: { value: "soltero" },
+    });
+    fireEvent.change(screen.getByLabelText(/^Condición/), {
+      target: { value: "padre_madre" },
+    });
+
+    fireEvent.submit(container.querySelector("form")!);
+    await waitFor(() =>
+      expect(crearInscripcionCatequesisBautismo).toHaveBeenCalledWith(
+        expect.objectContaining({ cedula: "102340567" }),
+      ),
+    );
+  });
+});

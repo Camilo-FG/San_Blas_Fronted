@@ -31,6 +31,7 @@ export function mapearFormularioBautismo(
     tipoCedula: form.tipoCedula,
     nacionalidad: nuloSiVacio(form.nacionalidad),
     telefono: limpiar(form.telefono),
+    correo: limpiar(form.correo).toLowerCase(),
     estadoCivil: form.estadoCivil as EstadoCivilBautismo,
     parroquiaOrigen: limpiar(form.parroquiaOrigen),
     provincia,

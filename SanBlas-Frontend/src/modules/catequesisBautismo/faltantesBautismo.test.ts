@@ -3,19 +3,20 @@ import { obtenerFaltantesBautismo } from "./faltantesBautismo";
 import { validarFormularioCatequesisBautismo, type FormularioCatequesisBautismo } from "./validarCatequesisBautismo";
 
 const valido: FormularioCatequesisBautismo = {
-  nombre: "Ana", apellido1: "Pérez", apellido2: "", fechaNacimiento: "1990-01-01",
+  nombre: "Ana", apellido1: "Pérez", apellido2: "Gómez", fechaNacimiento: "1990-01-01",
   cedula: "102340567", tipoCedula: "nacional", nacionalidad: "Costarricense", telefono: "8888-8888",
+  correo: "ana@correo.com",
   estadoCivil: "soltero", condicion: "padre_madre", parroquiaOrigen: "San Blas",
   provincia: "Guanacaste", canton: "Nicoya", distrito: "Nicoya", barrio: "Centro",
 };
 
 describe("obligatorios de la inscripción de bautismo", () => {
-  it("acepta todos los obligatorios sin exigir segundo apellido", () => {
+  it("acepta todos los obligatorios", () => {
     expect(obtenerFaltantesBautismo(valido)).toEqual([]);
     expect(validarFormularioCatequesisBautismo(valido)).toEqual({});
   });
 
-  it.each(["cedula", "nombre", "apellido1", "fechaNacimiento", "telefono", "estadoCivil", "condicion", "parroquiaOrigen", "provincia", "canton", "distrito", "barrio"] as const)(
+  it.each(["cedula", "nombre", "apellido1", "apellido2", "fechaNacimiento", "telefono", "correo", "estadoCivil", "condicion", "parroquiaOrigen", "provincia", "canton", "distrito", "barrio"] as const)(
     "detecta %s vacío y solo espacios", (campo) => {
       for (const valor of ["", "   "]) {
         const form = { ...valido, [campo]: valor };
