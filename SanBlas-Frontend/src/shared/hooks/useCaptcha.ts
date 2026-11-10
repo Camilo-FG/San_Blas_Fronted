@@ -1,8 +1,11 @@
 import { useCallback, useRef, useState } from 'react';
-import ReCAPTCHA from 'react-google-recaptcha';
+
+export interface CaptchaControl {
+  reset: () => void;
+}
 
 export const useCaptcha = () => {
-  const captchaRef = useRef<ReCAPTCHA>(null);
+  const captchaRef = useRef<CaptchaControl | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleCaptchaChange = (token: string | null) => {

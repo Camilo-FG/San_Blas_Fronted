@@ -21,7 +21,7 @@ export interface CrearDonacionPayload {
   correo: string;
   telefono: string;
   detalle: string;
-  recaptchaToken?: string;
+  recaptchaToken: string;
 }
 
 export interface Donacion {

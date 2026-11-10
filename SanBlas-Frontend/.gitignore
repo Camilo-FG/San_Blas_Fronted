@@ -16,6 +16,7 @@ dist-ssr
 #
 .env
 .env.*
+!.env.example
 
 # Playwright (artefactos de corrida; el estado de sesión trae el token)
 test-results/
