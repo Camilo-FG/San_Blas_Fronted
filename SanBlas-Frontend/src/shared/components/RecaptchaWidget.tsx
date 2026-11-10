@@ -1,82 +1,67 @@
 import { useEffect, useRef, useState } from "react";
-import type ReCAPTCHA from "react-google-recaptcha";
+import type { CaptchaControl } from "../hooks/useCaptcha";
 
 interface RecaptchaWidgetProps {
   sitekey: string;
-  captchaRef: { current: ReCAPTCHA | null };
+  captchaRef: { current: CaptchaControl | null };
   onChange?: (token: string | null) => void;
   onExpired?: () => void;
 }
 
-type Grc = {
-  render: (
-    el: HTMLElement,
-    opts: Record<string, unknown>,
-  ) => number;
-  reset: (widgetId?: number) => void;
-  execute: (widgetId?: number) => void;
-  getResponse: (widgetId?: number) => string;
-};
+interface GoogleRecaptcha {
+  render: (element: HTMLElement, options: Record<string, unknown>) => number;
+  reset: (widgetId: number) => void;
+}
 
-const TIEMPO_ESPERA_MS = 4000;
-const TIEMPO_ESPERA_EMULADO_MS = 2500;
-const TOKEN_FALLOBACK_DEV = "fallback-recaptcha-modo-desarrollo";
+interface VentanaRecaptcha extends Window {
+  grecaptcha?: GoogleRecaptcha;
+  __sanblasRecaptchaReady?: () => void;
+  __SANBLAS_PRERENDER__?: boolean;
+}
 
-let scriptPromise: Promise<void> | null = null;
+let cargaScript: Promise<GoogleRecaptcha> | null = null;
 
-const getGrc = (): Grc | null =>
-  (window as unknown as { grecaptcha?: Grc }).grecaptcha ?? null;
+// Comparte una sola carga entre formularios y usa únicamente el dominio autorizado en CSP.
+function cargarRecaptcha(): Promise<GoogleRecaptcha> {
+  const ventana = window as VentanaRecaptcha;
+  if (ventana.grecaptcha?.render) return Promise.resolve(ventana.grecaptcha);
+  if (cargaScript) return cargaScript;
 
-const cargarScriptReCaptcha = (): Promise<void> => {
-  if (scriptPromise) return scriptPromise;
+  cargaScript = new Promise<GoogleRecaptcha>((resolve, reject) => {
+    const script = document.createElement("script");
+    const timer = window.setTimeout(() => fallar(), 15_000);
 
-  scriptPromise = new Promise<void>((resolve) => {
-    if (getGrc()?.render) {
-      resolve();
-      return;
+    // Libera el callback aunque Google falle; así el botón puede intentar una carga nueva.
+    function fallar() {
+      window.clearTimeout(timer);
+      delete ventana.__sanblasRecaptchaReady;
+      script.remove();
+      reject(new Error("No se pudo cargar la verificación"));
     }
 
-    const callbackName = `__recaptcha_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    (window as unknown as Record<string, unknown>)[callbackName] = () => {
-      delete (window as unknown as Record<string, unknown>)[callbackName];
-      resolve();
-    };
-
-    const fuentes = [
-      "https://recaptcha.net/recaptcha/api.js?onload=" + callbackName + "&render=explicit",
-      "https://www.google.com/recaptcha/api.js?onload=" + callbackName + "&render=explicit",
-    ];
-
-    let indice = 0;
-    const cargarFuente = () => {
-      if (indice >= fuentes.length) {
-        delete (window as unknown as Record<string, unknown>)[callbackName];
-        scriptPromise = null;
-        resolve();
+    ventana.__sanblasRecaptchaReady = () => {
+      if (!ventana.grecaptcha?.render) {
+        fallar();
         return;
       }
-
-      const script = document.createElement("script");
-      script.src = fuentes[indice];
-      indice += 1;
-      script.async = true;
-      script.defer = true;
-      script.onerror = () => {
-        script.remove();
-        cargarFuente();
-      };
-      document.head.appendChild(script);
+      window.clearTimeout(timer);
+      delete ventana.__sanblasRecaptchaReady;
+      resolve(ventana.grecaptcha);
     };
-
-    cargarFuente();
+    script.src =
+      "https://www.google.com/recaptcha/api.js?onload=__sanblasRecaptchaReady&render=explicit&hl=es";
+    script.async = true;
+    script.defer = true;
+    script.onerror = fallar;
+    document.head.appendChild(script);
+  }).catch((error: unknown) => {
+    cargaScript = null;
+    throw error;
   });
+  return cargaScript;
+}
 
-  return scriptPromise;
-};
-
-const emulandoMovil = () =>
-  /(Mobile|Android|iPhone|iPad|iPod)/i.test(navigator.userAgent);
-
+// Monta una verificación real; un fallo jamás genera un token alternativo.
 export function RecaptchaWidget({
   sitekey,
   captchaRef,
@@ -84,130 +69,106 @@ export function RecaptchaWidget({
   onExpired,
 }: RecaptchaWidgetProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const callbacksRef = useRef({ onChange, onExpired });
-  callbacksRef.current = { onChange, onExpired };
-  const rendereadoRef = useRef(false);
-  const widgetIdRef = useRef<number | null>(null);
-  const timerRef = useRef<number | null>(null);
-  const [mostrarFallo, setMostrarFallo] = useState(false);
-
-  const vigilarCarga = (contenedor: HTMLElement | null) => {
-    if (!contenedor || !import.meta.env.DEV) return;
-    if (timerRef.current) window.clearInterval(timerRef.current);
-
-    const limite = emulandoMovil()
-      ? TIEMPO_ESPERA_EMULADO_MS
-      : TIEMPO_ESPERA_MS;
-    const inicio = Date.now();
-
-    timerRef.current = window.setInterval(() => {
-      const cont = containerRef.current;
-      if (!cont) return;
-
-      if (cont.querySelector("iframe, .g-recaptcha-response")) {
-        if (timerRef.current) window.clearInterval(timerRef.current);
-        return;
-      }
-
-      if (Date.now() - inicio > limite) {
-        if (timerRef.current) window.clearInterval(timerRef.current);
-        setMostrarFallo(true);
-      }
-    }, 300);
-  };
+  const callbacks = useRef({ onChange, onExpired });
+  callbacks.current = { onChange, onExpired };
+  const [estado, setEstado] = useState<"cargando" | "listo" | "error">("cargando");
+  const [intento, setIntento] = useState(0);
+  const clave = sitekey.trim();
 
   useEffect(() => {
+    // No serializamos scripts, iframes ni desafíos de localhost en el HTML público.
+    if ((window as VentanaRecaptcha).__SANBLAS_PRERENDER__) return;
+    const container = containerRef.current;
+    callbacks.current.onChange?.(null);
+    if (!clave || !container) return;
+
     let cancelado = false;
+    let google: GoogleRecaptcha | null = null;
+    let widgetId: number | null = null;
 
-    if (rendereadoRef.current) return;
-    setMostrarFallo(false);
-
-    cargarScriptReCaptcha()
-      .then(() => {
-        if (cancelado || rendereadoRef.current) return;
-        const g = getGrc();
-        const container = containerRef.current;
-        if (!g?.render || !container) return;
-
-        const widgetId = g.render(container, {
-          sitekey,
+    cargarRecaptcha()
+      .then((cliente) => {
+        if (cancelado) return;
+        google = cliente;
+        const contenido = document.createElement("div");
+        container.replaceChildren(contenido);
+        widgetId = cliente.render(contenido, {
+          sitekey: clave,
+          hl: "es",
           callback: (token: string | null) => {
-            callbacksRef.current.onChange?.(token);
+            if (!cancelado) callbacks.current.onChange?.(token);
           },
           "expired-callback": () => {
-            callbacksRef.current.onExpired?.();
+            if (cancelado) return;
+            callbacks.current.onChange?.(null);
+            callbacks.current.onExpired?.();
           },
           "error-callback": () => {
-            if (import.meta.env.DEV) {
-              setMostrarFallo(
-                () =>
-                  !container.querySelector("iframe, .g-recaptcha-response"),
-              );
-            }
+            if (cancelado) return;
+            callbacks.current.onChange?.(null);
+            setEstado("error");
           },
         });
-
-        widgetIdRef.current = widgetId;
-        rendereadoRef.current = true;
         captchaRef.current = {
-          reset: () => g.reset(widgetId),
-          execute: () => g.execute(widgetId),
-          executeAsync: () => Promise.resolve(g.getResponse(widgetId) || null),
-          getValue: () => g.getResponse(widgetId) || null,
-          getWidgetId: () => widgetId,
-        } as unknown as ReCAPTCHA;
-
-        vigilarCarga(container);
+          reset: () => {
+            if (widgetId !== null) cliente.reset(widgetId);
+          },
+        };
+        setEstado("listo");
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (cancelado) return;
+        callbacks.current.onChange?.(null);
+        setEstado("error");
+      });
 
+    // Descarta callbacks anteriores al desmontar o reintentar, también en StrictMode.
     return () => {
       cancelado = true;
-      if (timerRef.current) window.clearInterval(timerRef.current);
+      captchaRef.current = null;
+      if (google && widgetId !== null) {
+        try {
+          google.reset(widgetId);
+        } catch {
+          // El iframe puede haber desaparecido durante la navegación.
+        }
+      }
+      container.replaceChildren();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sitekey, captchaRef]);
+  }, [clave, captchaRef, intento]);
 
+  // Reinicia la carga sin permitir enviar hasta resolver otro desafío.
   const reintentar = () => {
-    setMostrarFallo(false);
-    const g = getGrc();
-    if (g?.reset && widgetIdRef.current !== null) {
-      g.reset(widgetIdRef.current);
-    }
-    vigilarCarga(containerRef.current);
+    callbacks.current.onChange?.(null);
+    setEstado("cargando");
+    setIntento((actual) => actual + 1);
   };
 
   return (
     <div className="flex w-full max-w-[304px] flex-col items-center gap-2 max-[368px]:origin-top max-[368px]:scale-[0.75]">
       <div ref={containerRef} className="min-h-[78px] min-w-0" />
-
-      {mostrarFallo && (
-        <label className="flex w-full max-w-[304px] cursor-pointer items-start gap-2 rounded-xl border border-dashed border-slate-400 bg-slate-50 px-3 py-2 text-left text-[0.78rem] leading-snug text-slate-600">
-          <input
-            type="checkbox"
-            className="mt-0.5 size-4 shrink-0 accent-slate-600"
-            onChange={(e) => {
-              callbacksRef.current.onChange?.(
-                e.target.checked ? TOKEN_FALLOBACK_DEV : null,
-              );
-            }}
-          />
-          <span>
-            El captcha de Google no cargó en esta vista de dispositivo. Marcá
-            esta casilla para continuar.
-          </span>
-        </label>
-      )}
-
-      {mostrarFallo && (
-        <button
-          type="button"
-          onClick={reintentar}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[0.78rem] font-medium text-slate-600 transition-colors hover:bg-slate-50"
-        >
-          Reintentar captcha
-        </button>
-      )}
+      {!clave ? (
+        <p role="alert" className="text-center text-sm text-danger">
+          La verificación de seguridad no está configurada. Intente más tarde.
+        </p>
+      ) : estado === "error" ? (
+        <>
+          <p role="alert" className="text-center text-sm text-danger">
+            No se pudo cargar el reCAPTCHA. Revisá tu conexión y reintentá.
+          </p>
+          <button
+            type="button"
+            onClick={reintentar}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600"
+          >
+            Reintentar captcha
+          </button>
+        </>
+      ) : estado === "cargando" ? (
+        <p role="status" className="text-center text-sm text-text-muted">
+          Cargando verificación de seguridad…
+        </p>
+      ) : null}
     </div>
   );
 }

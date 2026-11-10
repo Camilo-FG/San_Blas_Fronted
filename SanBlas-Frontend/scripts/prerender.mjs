@@ -201,6 +201,10 @@ async function main() {
     await waitForServer(BASE);
     browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
+    // El captcha se monta solo en visitas reales, no se publica un desafío del build.
+    await context.addInitScript(() => {
+      window.__SANBLAS_PRERENDER__ = true;
+    });
     let homeHtml = null;
 
     for (const route of ROUTES) {
