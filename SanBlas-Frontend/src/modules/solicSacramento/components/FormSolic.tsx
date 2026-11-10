@@ -161,8 +161,7 @@ const FormSolic = () => {
   const exitoRef = useRef<HTMLDivElement | null>(null);
 
   const RECAPTCHA_KEY =
-    import.meta.env.VITE_RECAPTCHA_SITE_KEY ??
-    "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+    import.meta.env.VITE_RECAPTCHA_SITE_KEY?.trim() ?? "";
 
   useEffect(() => {
     if (enviado) {
@@ -199,6 +198,7 @@ const FormSolic = () => {
         setErrorEnvio(null);
         await mutateAsync({
           ...value,
+          recaptchaToken: captchaToken,
           archivoImagen: archivoImagen?.file ?? null,
         });
         if (tipoCedula === "extranjera") {
@@ -212,7 +212,6 @@ const FormSolic = () => {
         setCaptchaError(null);
         setErrorCedula(null);
         setErrorMotivoBackend(null);
-        resetCaptcha();
         setEnviado(true);
       } catch (error) {
         const erroresMotivo: string[] = [];
@@ -252,6 +251,8 @@ const FormSolic = () => {
             ?.scrollIntoView({ behavior: "smooth", block: "center" });
         }
         setErrorEnvio(mensaje || null);
+      } finally {
+        resetCaptcha(); // no reutilizamos un token que el servidor ya pudo haber consumido
       }
     },
   });

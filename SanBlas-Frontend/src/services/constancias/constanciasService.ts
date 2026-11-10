@@ -90,10 +90,13 @@ export const obtenerSolicitudSacramentoPorId = async (
 };
 
 export const crearSolicitudSacramento = async (
-  solicitud: Omit<FormSacramento, "id" | "Estado">,
+  solicitud: Omit<FormSacramento, "id" | "Estado"> & { recaptchaToken: string },
 ): Promise<FormSacramento> => {
   try {
-    const payload = mapFormToBackendRequest(solicitud);
+    const payload = {
+      ...mapFormToBackendRequest(solicitud),
+      recaptchaToken: solicitud.recaptchaToken,
+    }; // también viaja dentro de Payload cuando se adjunta un comprobante
 
     if (solicitud.archivoImagen) {
       const formData = new FormData();

@@ -123,8 +123,7 @@ export default function DonacionForm() {
   }, [errors, erroresCampo]);
 
   const RECAPTCHA_KEY =
-    import.meta.env.VITE_RECAPTCHA_SITE_KEY ??
-    "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+    import.meta.env.VITE_RECAPTCHA_SITE_KEY?.trim() ?? "";
 
   const validar = (): FormErrors => {
     const nuevosErrores: FormErrors = {};
@@ -221,9 +220,10 @@ export default function DonacionForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (cargando) return;
 
     const revision = validar();
-    if (Object.keys(revision).length > 0) {
+    if (Object.keys(revision).length > 0 || !captchaToken) {
       const primerId = primerCampoConError(revision);
       if (primerId) {
         document
@@ -249,8 +249,11 @@ export default function DonacionForm() {
       correo: formData.correo.trim(),
       telefono: formData.anonimo ? "N/A" : formData.telefono,
       detalle: formData.detalle,
-      recaptchaToken: captchaToken ?? undefined,
+      recaptchaToken: captchaToken,
     });
+
+    resetCaptcha(); // Google consume el token al verificarlo, incluso si luego falla el guardado
+    setCaptchaExpirado(false);
 
     if (!enviada) return;
 
@@ -267,8 +270,6 @@ export default function DonacionForm() {
       telefono: "",
       detalle: "",
     });
-    resetCaptcha();
-    setCaptchaExpirado(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
