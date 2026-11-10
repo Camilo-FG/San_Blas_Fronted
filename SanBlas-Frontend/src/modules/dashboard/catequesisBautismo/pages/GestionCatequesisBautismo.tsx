@@ -319,7 +319,7 @@ const GestionCatequesisBautismo = () => {
         </div>
       </AdminToolbar>
 
-      {!cargando && filas.length === 0 && (
+      {!cargando && !error && filas.length === 0 && (
         <EmptyState
           title={
             hayFiltros

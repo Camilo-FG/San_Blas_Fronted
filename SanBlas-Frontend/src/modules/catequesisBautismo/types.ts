@@ -29,6 +29,7 @@ export interface InscripcionCatequesisBautismo {
   cedula: string;
   nacionalidad: string | null;
   telefono: string;
+  correo: string | null;
   estadoCivil: EstadoCivilBautismo;
   parroquiaOrigen: string;
   provincia: string;
@@ -54,6 +55,7 @@ export interface CrearInscripcionCatequesisBautismo {
   cedula: string;
   nacionalidad: string | null;
   telefono: string;
+  correo: string;
   estadoCivil: EstadoCivilBautismo;
   parroquiaOrigen: string;
   provincia: ProvinciaCostaRica;

@@ -22,9 +22,9 @@ vi.mock("../../../shared/components/UbicacionCostaRicaCampos", () => ({
 }));
 
 const base: FormularioCatequesisBautismo = {
-  nombre: "Ana", apellido1: "Pérez", apellido2: "", fechaNacimiento: "1990-01-01",
+  nombre: "Ana", apellido1: "Pérez", apellido2: "Gómez", fechaNacimiento: "1990-01-01",
   cedula: "102340567", tipoCedula: "nacional", nacionalidad: "Costarricense",
-  telefono: "8888-8888", estadoCivil: "soltero", condicion: "padre_madre",
+  telefono: "8888-8888", correo: "ana@correo.com", estadoCivil: "soltero", condicion: "padre_madre",
   parroquiaOrigen: "San Blas", provincia: "Guanacaste", canton: "Nicoya",
   distrito: "Nicoya", barrio: "Centro",
 };

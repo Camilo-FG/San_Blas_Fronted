@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ChevronDown, Loader2, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, SlidersHorizontal } from 'lucide-react';
+import SacramentTableSkeleton from './SacramentTableSkeleton';
 import { useBuscarSacramentosNuevos } from '../hooks/hooksNuevos/useBuscarSacramentosNuevos';
 import { useCrearSacramentoNuevo } from '../hooks/hooksNuevos/useCrearSacramentoNuevo';
 import { useActualizarSacramentoNuevo } from '../hooks/hooksNuevos/useActualizarSacramentoNuevo';
@@ -212,12 +213,7 @@ const GestionSacramentos = () => {
         </div>
       )}
 
-      {query.isPending && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <Loader2 size={32} className="animate-spin text-text-muted dark:text-[#7f8da3]" />
-          <p className="m-0 text-sm text-text-secondary dark:text-[#b7c3d4]">Buscando registros...</p>
-        </div>
-      )}
+      {query.isPending && <SacramentTableSkeleton />}
 
       {query.error && !query.isPending && (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-danger-bg bg-danger-bg/40 px-6 py-16 text-center dark:border-[#ff6b6b]/50 dark:bg-[#e03131]">

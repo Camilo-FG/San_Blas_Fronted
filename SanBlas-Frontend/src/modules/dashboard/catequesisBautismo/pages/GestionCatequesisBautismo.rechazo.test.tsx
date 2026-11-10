@@ -22,6 +22,7 @@ vi.mock("../../../catequesisBautismo/catequesisBautismoService", () => ({
 const solicitud: InscripcionCatequesisBautismo = {
   id: 7, nombre: "Ana", apellido1: "Pérez", apellido2: null,
   fechaNacimiento: "1990-01-01", cedula: "102340567", telefono: "8888-8888",
+  correo: null,
   estadoCivil: "soltero", parroquiaOrigen: "San Blas", provincia: "Guanacaste",
   canton: "Nicoya", distrito: "Nicoya", barrio: "Centro", condicion: "padre_madre",
   estado: "Pendiente", observacionAdministrativa: null, fechaInicioCatequesis: null,

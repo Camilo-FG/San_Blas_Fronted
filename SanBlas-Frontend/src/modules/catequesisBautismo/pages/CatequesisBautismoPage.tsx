@@ -42,6 +42,7 @@ const vacio: FormularioCatequesisBautismo = {
   tipoCedula: "nacional",
   nacionalidad: "Costarricense",
   telefono: "",
+  correo: "",
   estadoCivil: "",
   parroquiaOrigen: "",
   provincia: "",
@@ -109,6 +110,7 @@ const CatequesisBautismoPage = () => {
   const [listo, setListo] = useState<{ mensaje: string; estado: string } | null>(null);
   const [seccion, setSeccion] = useState<"inscribirse" | "consultar">("inscribirse");
   const [cedulaConsulta, setCedulaConsulta] = useState("");
+  const [fechaConsulta, setFechaConsulta] = useState("");
   const [consultando, setConsultando] = useState(false);
   const [errorConsulta, setErrorConsulta] = useState<string | null>(null);
   const [consultas, setConsultas] = useState<
@@ -165,9 +167,6 @@ const CatequesisBautismoPage = () => {
     event.preventDefault();
     setErrorEnvio(null);
     const encontrados = validarFormularioCatequesisBautismo(form);
-    if (!encontrados.cedula && form.tipoCedula === "nacional" && estadoCedula !== "encontrada") {
-      encontrados.cedula = "Verifique la cédula antes de enviar la inscripción.";
-    }
     setErrores(encontrados);
     if (Object.keys(encontrados).length > 0) {
       setIntentoFoco((actual) => actual + 1);
@@ -204,13 +203,21 @@ const CatequesisBautismoPage = () => {
       setConsultas([]);
       return;
     }
+    if (!fechaConsulta) {
+      setErrorConsulta("Indique la fecha de nacimiento para consultar.");
+      setConsultas([]);
+      return;
+    }
     setConsultando(true);
     setErrorConsulta(null);
     try {
-      const data = await consultarInscripcionCatequesisBautismo(cedula);
+      const data = await consultarInscripcionCatequesisBautismo(
+        cedula,
+        fechaConsulta,
+      );
       setConsultas(data ?? []);
       if (!data?.length) {
-        setErrorConsulta("No hay solicitudes con esa cédula.");
+        setErrorConsulta("No hay solicitudes con esa cédula y fecha de nacimiento.");
       }
     } catch (err) {
       setConsultas([]);
@@ -222,6 +229,14 @@ const CatequesisBautismoPage = () => {
     } finally {
       setConsultando(false);
     }
+  };
+
+  // Permite inscribir a otra persona sin recargar la página.
+  const inscribirOtra = () => {
+    setForm(vacio);
+    setErrores({});
+    setErrorEnvio(null);
+    setListo(null);
   };
 
   return (
@@ -275,6 +290,11 @@ const CatequesisBautismoPage = () => {
                 <p className="m-0 text-sm text-text-secondary" role="status">
                   {listo.mensaje}
                 </p>
+                <div>
+                  <Button type="button" variant="royal" onClick={inscribirOtra}>
+                    Inscribir a otra persona
+                  </Button>
+                </div>
               </div>
             </Card>
           ) : (
@@ -338,6 +358,16 @@ const CatequesisBautismoPage = () => {
                   valor={form.telefono}
                   error={errores.telefono}
                   onChange={(valor) => set("telefono", filtrarTelefonoBautismo(valor))}
+                />
+                <Campo
+                  etiqueta="Correo electrónico"
+                  obligatorio
+                  type="email"
+                  maxLength={120}
+                  placeholder="Ej: nombre@correo.com"
+                  valor={form.correo}
+                  error={errores.correo}
+                  onChange={(valor) => set("correo", valor)}
                 />
               </fieldset>
 
@@ -444,7 +474,7 @@ const CatequesisBautismoPage = () => {
                 </p>
               )}
 
-              <Button type="submit" variant="royal" disabled={enviando || estadoCedula === "buscando"}>
+              <Button type="submit" variant="royal" disabled={enviando}>
                 {enviando ? "Enviando..." : "Enviar inscripción"}
               </Button>
             </form>
@@ -457,12 +487,14 @@ const CatequesisBautismoPage = () => {
             Consultar estado
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
-            Escriba la cédula con la que se inscribió para ver el estado de su solicitud.
+            Escriba la cédula y la fecha de nacimiento con las que se inscribió
+            para ver el estado de su solicitud.
           </p>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1">
-              <Label required>Cédula</Label>
+              <Label htmlFor="bautismo-consulta-cedula" required>Cédula</Label>
               <Input
+                id="bautismo-consulta-cedula"
                 value={cedulaConsulta}
                 inputMode="numeric"
                 maxLength={12}
@@ -473,7 +505,16 @@ const CatequesisBautismoPage = () => {
                     void consultar();
                   }
                 }}
-                onChange={(event) => setCedulaConsulta(event.target.value.replace(/\D/g, "").replace(/^0+/, "").slice(0, 12))}
+                onChange={(event) => setCedulaConsulta(event.target.value.replace(/\D/g, "").slice(0, 12))}
+              />
+            </div>
+            <div className="flex-1">
+              <Label htmlFor="bautismo-consulta-fecha" required>Fecha de nacimiento</Label>
+              <Input
+                id="bautismo-consulta-fecha"
+                type="date"
+                value={fechaConsulta}
+                onChange={(event) => setFechaConsulta(event.target.value)}
               />
             </div>
             <Button
@@ -502,6 +543,12 @@ const CatequesisBautismoPage = () => {
                       {textoEstadoCica(solicitud.estado)}
                     </Badge>
                   </div>
+                  <p className="m-0 mt-2 text-xs text-text-secondary">
+                    Solicitada el {solicitud.fechaSolicitud.slice(0, 10)}
+                    {solicitud.fechaActualizacionEstado
+                      ? ` · Actualizada el ${solicitud.fechaActualizacionEstado.slice(0, 10)}`
+                      : ""}
+                  </p>
                 </Card>
               ))}
             </div>

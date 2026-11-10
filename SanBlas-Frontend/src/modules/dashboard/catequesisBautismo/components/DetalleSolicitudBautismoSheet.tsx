@@ -4,6 +4,7 @@ import {
   Church,
   Globe,
   Heart,
+  Mail,
   MapPin,
   Phone,
   User,
@@ -184,6 +185,8 @@ export function DetalleSolicitudBautismoSheet({
           <section className={claseTarjetaClara}>
             <TituloSeccion>Contacto y ubicación</TituloSeccion>
             <Campo label="Teléfono" value={valorOGuion(solicitud.telefono)} tabular icon={<Phone size={16} className="shrink-0" />} />
+            <Separador />
+            <Campo label="Correo" value={valorOGuion(solicitud.correo)} icon={<Mail size={16} className="shrink-0" />} />
             <Separador />
             <Campo label="Parroquia de origen" value={valorOGuion(solicitud.parroquiaOrigen)} icon={<Church size={16} className="shrink-0" />} />
             <Separador />

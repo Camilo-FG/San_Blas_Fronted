@@ -32,13 +32,13 @@ describe("Cédulas nacionales y extranjeras de catequesis", () => {
     }
   });
 
-  it("elimina separadores y ceros iniciales sin quitar ceros internos", () => {
+  it("elimina separadores y conserva los ceros iniciales de la extranjera", () => {
     expect(limpiarCedula("1-0234-0567", "nacional")).toBe("102340567");
-    expect(limpiarCedula("00123456789012", "extranjera")).toBe("123456789012");
-    expect(limpiarCedula("000", "nacional")).toBe("");
-    expect(validarCedulaIdentificacion("012345678901", "extranjera")).toBe("La cédula no puede iniciar con cero.");
+    expect(limpiarCedula("00123456789012", "extranjera")).toBe("001234567890");
+    expect(limpiarCedula("000", "nacional")).toBe("000");
+    expect(validarCedulaIdentificacion("012345678901", "extranjera")).toBeNull();
     expect(validarCedulaIdentificacion("012345678", "nacional")).toBe("La cédula no puede iniciar con cero.");
-    expect(PATRON_CEDULA.test("012345678901")).toBe(false);
+    expect(PATRON_CEDULA.test("012345678901")).toBe(true);
   });
 
   it("CICA valida y envía completa la cédula extranjera", () => {
@@ -89,6 +89,7 @@ describe("Cédulas nacionales y extranjeras de catequesis", () => {
       tipoCedula: "extranjera",
       nacionalidad: "",
       telefono: "",
+      correo: "",
       estadoCivil: "",
       parroquiaOrigen: "",
       provincia: "",

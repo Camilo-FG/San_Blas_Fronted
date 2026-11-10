@@ -98,7 +98,7 @@ export function useSolicitudesCatequesisBautismo(filtros: FiltrosMatriculas) {
     historial: filtros.vista === 'historial' ? listado.data?.data ?? [] : [],
     total: listado.data?.total,
     totales: listado.data?.totales,
-    cargando: listado.isPending,
+    cargando: listado.isPending || listado.isFetching,
     error: errorCarga
       ? mensajeDeError(errorCarga, "No se pudieron cargar las solicitudes.")
       : "",
