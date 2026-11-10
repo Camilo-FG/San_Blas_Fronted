@@ -35,7 +35,10 @@ export const listarInscripcionesCatequesisBautismo = async (
   }
 };
 
-export const consultarInscripcionCatequesisBautismo = async (cedula: string) => {
+export const consultarInscripcionCatequesisBautismo = async (
+  cedula: string,
+  fechaNacimiento: string,
+) => {
   try {
     const { data } = await apiClient.get<
       {
@@ -47,7 +50,9 @@ export const consultarInscripcionCatequesisBautismo = async (cedula: string) => 
         fechaSolicitud: string;
         fechaActualizacionEstado: string | null;
       }[]
-    >("/catequesis-bautismo/consulta", { params: { cedula } });
+    >("/catequesis-bautismo/consulta", {
+      params: { cedula, fechaNacimiento },
+    });
     return data;
   } catch (error) {
     handleApiError(error);

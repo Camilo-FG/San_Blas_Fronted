@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 export function usePaginacionServidor(filtro: string) {
   const [estado, setEstado] = useState({ filtro, pagina: 1, limite: 10 });
   // Recordar también el filtro evita restaurar la página vieja al volver a una búsqueda anterior.
-  if (estado.filtro !== filtro) setEstado({ ...estado, filtro, pagina: 1 });
+  useEffect(() => {
+    setEstado((actual) =>
+      actual.filtro === filtro ? actual : { ...actual, filtro, pagina: 1 },
+    );
+  }, [filtro]);
   const pagina = estado.filtro === filtro ? estado.pagina : 1;
   const [total, setTotal] = useState(0);
   const totalPaginas = Math.max(1, Math.ceil(total / estado.limite));

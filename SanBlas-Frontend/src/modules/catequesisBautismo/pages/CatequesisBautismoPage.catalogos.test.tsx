@@ -62,6 +62,7 @@ describe("estado civil y condición en pantalla", () => {
     const identificacion = container.querySelector("fieldset")!;
     for (const input of identificacion.querySelectorAll('input')) {
       const valor = input.type === "date" ? "1990-01-01"
+        : input.type === "email" ? "ana@correo.com"
         : input.placeholder.includes("8888") ? "88888888"
         : input.inputMode === "numeric" ? "102340567" : "Ana";
       fireEvent.change(input, { target: { value: valor } });
