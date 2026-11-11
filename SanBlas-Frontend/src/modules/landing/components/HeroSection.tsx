@@ -140,7 +140,7 @@ function HeroSection() {
                   animate={{ opacity: 1, x: 0, y: 0 }}
                   exit={{ opacity: 0, y: reducirMovimiento || dropdownAlLado ? 0 : -5 }}
                   transition={{ duration: reducirMovimiento ? 0.12 : 0.2, ease: "easeOut" }}
-                  className={`absolute z-10 w-[min(300px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#d9a928]/25 bg-[#fffdf8] text-[#16243c] shadow-[0_20px_50px_rgba(3,20,43,0.28)] ring-1 ring-black/5 ${
+                  className={`absolute z-10 w-[min(300px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#d9a928]/25 bg-[#fffdf8] text-[#16243c] shadow-[0_20px_50px_rgba(3,20,43,0.28)] ring-1 ring-black/5 max-md:static max-md:mt-3 max-md:w-full ${
                     dropdownAlLado
                       ? "left-[calc(100%+0.75rem)] bottom-0"
                       : "top-[calc(100%+0.75rem)] left-0"
