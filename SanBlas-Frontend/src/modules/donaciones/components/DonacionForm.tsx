@@ -245,7 +245,7 @@ export default function DonacionForm() {
 
     const enviada = await enviar({
       anonimo: formData.anonimo,
-      nombre: formData.anonimo ? "Anónimo" : nombreCompleto,
+      nombre: formData.anonimo ? "Sin nombre indicado" : nombreCompleto,
       correo: formData.correo.trim(),
       telefono: formData.anonimo ? "N/A" : formData.telefono,
       detalle: formData.detalle,
@@ -323,7 +323,7 @@ onChange={(e) => {
           />
           <span>
             <span className="block text-[0.95rem] font-bold text-royal-blue sm:text-base">
-              Donar de forma anónima
+              Donar sin indicar mi nombre
             </span>
             <span className="mt-1 block text-[0.9rem] leading-relaxed text-text-muted sm:text-sm">
               {formData.anonimo
