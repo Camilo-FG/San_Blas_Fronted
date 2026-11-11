@@ -102,7 +102,11 @@ const GestionSacramentos = () => {
   };
 
   const handleDelete = async (sacramento: { id: number; nombre: string }) => {
-    if (confirm(`¿Estás seguro de eliminar ${sacramento.nombre}?`)) {
+    if (
+      confirm(
+        `¿Estás seguro de eliminar todos los registros sacramentales de ${sacramento.nombre}? Esta acción eliminará Bautismo, Comunión, Confirmación y Matrimonio asociados.`,
+      )
+    ) {
       try {
         await deleteSacramento.mutateAsync(sacramento.id);
         showToast('Registro eliminado correctamente', 'success');

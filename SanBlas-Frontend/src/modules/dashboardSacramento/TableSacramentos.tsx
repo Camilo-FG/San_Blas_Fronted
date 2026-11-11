@@ -479,6 +479,7 @@ const TableSacramentos = () => {
         motivoRechazo: motivo,
         detalleRechazo: rejectionReasonText.trim() || undefined,
       });
+      archivarSolicitudProcesada(solicitudARechazar, "Rechazado");
       showToast("Solicitud rechazada correctamente", "error");
       setIsConfirmRejectOpen(false);
       setIsRejectModalOpen(false);
@@ -525,6 +526,21 @@ const TableSacramentos = () => {
     showToast("Solicitud archivada correctamente", "success");
     setVista("archivados");
   }, [solicitudAArchivar, showToast]);
+
+  const archivarSolicitudProcesada = useCallback(
+    (solicitud: FormSacramento, estado: "Aprobado" | "Rechazado") => {
+      const archivada = { ...solicitud, Estado: estado };
+      setArchivadasLocal((prev) => {
+        const next = [
+          archivada,
+          ...prev.filter((item) => String(item.id) !== String(solicitud.id)),
+        ];
+        guardarArchivadasLocal(next);
+        return next;
+      });
+    },
+    [],
+  );
 
   const handleRestaurar = useCallback(
     (solicitud: FormSacramento) => {
@@ -821,6 +837,9 @@ const TableSacramentos = () => {
       { id: solicitudAAprobar.id },
       {
         onSuccess: () => {
+          if (solicitudAAprobar) {
+            archivarSolicitudProcesada(solicitudAAprobar, "Aprobado");
+          }
           setIsApproveModalOpen(false);
           setSolicitudAAprobar(null);
           setSolicitudSeleccionada(null);

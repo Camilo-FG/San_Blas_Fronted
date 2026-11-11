@@ -7,6 +7,7 @@ import {
   Plus,
   Power,
   PowerOff,
+  RotateCcw,
   Trash2,
 } from "lucide-react";
 import {
@@ -291,6 +292,20 @@ const GestionEventos = () => {
       );
     });
   }, [busqueda, eventos, fechaDesde, fechaHasta, filtroEstado]);
+
+  const limpiarFiltros = () => {
+    setBusqueda("");
+    setFiltroEstado("todos");
+    setFechaDesde("");
+    setFechaHasta("");
+    setPaginaActual(1);
+  };
+
+  const hayFiltros =
+    Boolean(busqueda.trim()) ||
+    Boolean(fechaDesde) ||
+    Boolean(fechaHasta) ||
+    filtroEstado !== "todos";
 
   const totalPaginas = Math.max(
     1,
@@ -743,6 +758,17 @@ const GestionEventos = () => {
             <option value="publicado-inactivo">Publicado / Inactivo</option>
             <option value="borrador">Borrador</option>
           </Select>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full shrink-0 sm:col-span-2 lg:col-span-1 xl:w-auto"
+            onClick={limpiarFiltros}
+            disabled={!hayFiltros}
+            aria-label="Limpiar filtros de eventos"
+          >
+            <RotateCcw size={16} />
+            Limpiar filtros
+          </Button>
         </div>
         <Button
           variant="royal"
