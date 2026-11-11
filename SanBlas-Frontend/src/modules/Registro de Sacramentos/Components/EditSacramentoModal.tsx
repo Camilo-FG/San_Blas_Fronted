@@ -1029,49 +1029,41 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <div>
                       <Label required>Filial</Label>
-                      <CustomSelect
-                        value={idParroquia}
-                        onChange={(valor) => {
-                          setIdParroquia(valor);
-                          setTocados((t) => marcarTocado(t, 'idParroquia'));
-                        }}
-                        options={opcionesLugarCelebracion(
-                          parroquias,
-                          sacramentoDelTab?.parroquia ?? null,
-                        ).map((lugar) => ({
-                          label: lugar.nombre,
-                          value: String(lugar.id),
-                        }))}
-                        placeholder="Seleccione..."
-                        ariaLabel="Filial"
-                        hasError={Boolean(errors.idParroquia)}
-                        maxVisibleOptions={5}
-                        triggerClassName={selectTriggerClass(Boolean(errors.idParroquia))}
-                        menuClassName={selectMenuClass}
-                        optionClassName={selectOptionClass}
-                      />
+                       <select
+                         value={idParroquia}
+                         onChange={(event) => {
+                           setIdParroquia(event.target.value);
+                           setTocados((t) => marcarTocado(t, 'idParroquia'));
+                         }}
+                         aria-label="Filial"
+                         className={cn('w-full cursor-pointer appearance-none', selectTriggerClass(Boolean(errors.idParroquia)))}
+                       >
+                         <option value="">Seleccione...</option>
+                         {opcionesLugarCelebracion(
+                           parroquias,
+                           sacramentoDelTab?.parroquia ?? null,
+                         ).map((lugar) => (
+                           <option key={lugar.id} value={String(lugar.id)}>{lugar.nombre}</option>
+                         ))}
+                       </select>
                       <ErrorMsg errors={errors} clave="idParroquia" />
                     </div>
                     <div>
                       <Label required>Presbítero</Label>
-                      <CustomSelect
-                        value={idPresbitero}
-                        onChange={(valor) => {
-                          setIdPresbitero(valor);
-                          setTocados((t) => marcarTocado(t, 'idPresbitero'));
-                        }}
-                        options={(presbiteros ?? []).map((p) => ({
-                          label: `${p.nombre} ${p.primerApellido}`,
-                          value: String(p.id),
-                        }))}
-                        placeholder="Seleccione..."
-                        ariaLabel="Presbítero"
-                        hasError={Boolean(errors.idPresbitero)}
-                        maxVisibleOptions={5}
-                        triggerClassName={selectTriggerClass(Boolean(errors.idPresbitero))}
-                        menuClassName={selectMenuClass}
-                        optionClassName={selectOptionClass}
-                      />
+                       <select
+                         value={idPresbitero}
+                         onChange={(event) => {
+                           setIdPresbitero(event.target.value);
+                           setTocados((t) => marcarTocado(t, 'idPresbitero'));
+                         }}
+                         aria-label="Presbítero"
+                         className={cn('w-full cursor-pointer appearance-none', selectTriggerClass(Boolean(errors.idPresbitero)))}
+                       >
+                         <option value="">Seleccione...</option>
+                         {(presbiteros ?? []).map((p) => (
+                           <option key={p.id} value={String(p.id)}>{p.nombre} {p.primerApellido}</option>
+                         ))}
+                       </select>
                       <ErrorMsg errors={errors} clave="idPresbitero" />
                     </div>
                     <div>
