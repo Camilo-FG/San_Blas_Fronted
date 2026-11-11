@@ -928,9 +928,6 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
 
   const renderMatrimonio = () => (
     <>
-      <p className="mb-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33] dark:text-[#b7c3d4]">
-        El primer contrayente es la persona inscrita en el Bautismo; solo ingrese el cónyuge.
-      </p>
       {renderPersona('Cónyuge', contrayente2, setContrayente2, 'contrayente2')}
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
