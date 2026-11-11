@@ -68,7 +68,6 @@ export interface DetalleBautismo {
   lugarNacimiento: string | null;
   reconocimientoLegal: string | null;
   libro: string | null;
-  tomo: string | null;
   folio: string | null;
   asiento: string | null;
   firmaParroco: string | null;
@@ -82,7 +81,6 @@ export interface DetalleMatrimonio {
   contrayente1: PersonaDetalle;
   contrayente2: PersonaDetalle;
   libro: string | null;
-  tomo: string | null;
   folio: string | null;
   asiento: string | null;
   firmaParroco: string | null;
@@ -150,7 +148,6 @@ export interface BautismoInput {
   lugarNacimiento?: string;
   reconocimientoLegal?: string;
   libro?: string;
-  tomo?: string;
   folio?: string;
   asiento?: string;
   firmaParroco?: string;
@@ -164,7 +161,6 @@ export interface MatrimonioInput {
   contrayente1: PersonaInput;
   contrayente2: PersonaInput;
   libro?: string;
-  tomo?: string;
   folio?: string;
   asiento?: string;
   firmaParroco?: string;

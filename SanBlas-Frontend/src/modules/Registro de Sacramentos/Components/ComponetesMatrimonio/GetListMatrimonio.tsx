@@ -21,7 +21,6 @@ const GetListMatrimonio = () => {
             <AdminTableHeaderCell>Mes</AdminTableHeaderCell>
             <AdminTableHeaderCell>Año</AdminTableHeaderCell>
             <AdminTableHeaderCell>Lugar</AdminTableHeaderCell>
-            <AdminTableHeaderCell>Tomo</AdminTableHeaderCell>
             <AdminTableHeaderCell>Folio</AdminTableHeaderCell>
           </tr>
         </AdminTableHead>
@@ -35,7 +34,6 @@ const GetListMatrimonio = () => {
               <AdminTableCell>{matrimonio.MesMatrimonio}</AdminTableCell>
               <AdminTableCell>{matrimonio.AnnioMatrimonio}</AdminTableCell>
               <AdminTableCell>{matrimonio.LugarMatrimonio}</AdminTableCell>
-              <AdminTableCell>{matrimonio.Tomo}</AdminTableCell>
               <AdminTableCell>{matrimonio.Folio}</AdminTableCell>
             </AdminTableRow>
           ))}

@@ -65,7 +65,6 @@ const renderBautismo = (detalle: DetalleBautismo) => (
     <Fila label="Hora de nacimiento:" valor={detalle.horaNacimiento} />
     <Fila label="Lugar de nacimiento:" valor={detalle.lugarNacimiento} />
     <Fila label="Libro:" valor={detalle.libro} />
-    <Fila label="Tomo:" valor={detalle.tomo} />
     <Fila label="Folio:" valor={detalle.folio} />
     <Fila label="Asiento:" valor={detalle.asiento} />
     {detalle.abuelos.length > 0 &&
@@ -290,10 +289,6 @@ const DetailsDrawer = ({ isOpen, onClose, sacramentoId }: Props) => {
                     <Fila
                       label="Libro:"
                       valor={(sacramental.matrimonio?.detalle as { libro: string | null } | undefined)?.libro}
-                    />
-                    <Fila
-                      label="Tomo:"
-                      valor={(sacramental.matrimonio?.detalle as { tomo: string | null } | undefined)?.tomo}
                     />
                     <Fila
                       label="Folio:"

@@ -289,6 +289,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     setTocados({});
     setIntentado(false);
     setConsultasCedula({});
+    setTiposGuardados({});
     if (mostrarMensaje) {
       showToast('Progreso eliminado. Puede iniciar una inscripción nueva.', 'success');
     }
@@ -335,6 +336,9 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const habilitado = (t: TipoSacramento): boolean => {
     const idx = ORDEN.indexOf(t);
     if (idx === 0) return true;
+    // El matrimonio solo requiere que el primer contrayente tenga Bautismo;
+    // no obliga a registrar antes Comunión y Confirmación.
+    if (t === 'matrimonio') return anteriorListo('bautismo');
     return anteriorListo(ORDEN[idx - 1]) && habilitado(ORDEN[idx - 1]);
   };
 
@@ -666,31 +670,16 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     }
     setSaving(true);
     try {
-      const tipoGuardado = tipo;
       await onSave(construirDto());
-      setTiposGuardados((prev) => ({ ...prev, [tipoGuardado]: true }));
       setErrors({});
       setTocados({});
       setIntentado(false);
       borrarBorradorSacramento();
 
-      // Dejar el modal abierto y pasar al siguiente sacramento, conservando
-      // la persona del expediente para no obligar a recargar la página.
-      const idx = ORDEN.indexOf(tipoGuardado);
-      if (idx >= 0 && idx < ORDEN.length - 1) {
-        const siguiente = ORDEN[idx + 1];
-        if (tipoGuardado === 'bautismo') {
-          setPersona((prev) => ({ ...bautizado, ...prev }));
-        }
-        if (siguiente === 'matrimonio') {
-          const base = { ...bautizado, ...persona };
-          setContrayente1((prev) => ({ ...base, ...prev }));
-        }
-        setTipo(siguiente);
-      } else {
-        limpiarProgreso(false);
-        onClose();
-      }
+      // Cada acta se registra de forma independiente. No avanzar ni copiar
+      // los datos del bautismo a Comunión o Confirmación después de guardar.
+      limpiarProgreso(false);
+      onClose();
     } catch (err: any) {
       if (err?.response?.status === 409) {
         // Muestra el mensaje del backend (ej: cédula de un bautizado ya registrado).

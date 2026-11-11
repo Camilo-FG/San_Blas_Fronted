@@ -304,10 +304,10 @@ const EventosPublicPage = () => {
               onClick={reiniciarConsulta}
               disabled={!hayFiltros}
               className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-4 text-sm font-semibold text-slate-900 transition-colors hover:bg-surface-muted focus-visible:border-blue-400 focus-visible:ring-3 focus-visible:ring-focus-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
-              aria-label="Reiniciar consulta de eventos"
+              aria-label="Limpiar filtros de eventos"
             >
               <RotateCcw size={15} strokeWidth={2} aria-hidden="true" />
-              Reiniciar consulta
+              Limpiar filtros
             </button>
           </div>
         </div>

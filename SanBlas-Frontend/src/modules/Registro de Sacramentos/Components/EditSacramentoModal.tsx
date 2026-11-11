@@ -279,11 +279,8 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
     if (t === 'comunion') return Boolean(personaSacramental?.bautismo);
     if (t === 'confirmacion')
       return Boolean(personaSacramental?.bautismo && personaSacramental?.comunion);
-    return Boolean(
-      personaSacramental?.bautismo &&
-        personaSacramental?.comunion &&
-        personaSacramental?.confirmacion,
-    );
+    // El matrimonio solo requiere Bautismo del primer contrayente.
+    return Boolean(personaSacramental?.bautismo);
   };
 
   // Inicializa el formulario según la ficha de la persona (o el detalle si no hay cédula).

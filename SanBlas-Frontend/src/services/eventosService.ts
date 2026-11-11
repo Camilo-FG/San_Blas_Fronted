@@ -12,6 +12,7 @@ export interface Evento {
   imagenUrl?: string | null;
   publicado: boolean;
   activo: boolean;
+  createdAt?: string | null;
 }
 
 export interface EventoPayload {
@@ -48,6 +49,15 @@ const normalizarEvento = (evento: Evento): Evento => ({
   publicado: Boolean(evento.publicado),
 });
 
+const ordenarPorCreacion = (eventos: Evento[]): Evento[] =>
+  [...eventos].sort((a, b) => {
+    const fechaA = a.createdAt ? Date.parse(a.createdAt) : 0;
+    const fechaB = b.createdAt ? Date.parse(b.createdAt) : 0;
+
+    if (fechaA !== fechaB) return fechaB - fechaA;
+    return b.id - a.id;
+  });
+
 // El back no acepta `publicado` en create/update (ValidationPipe forbidNonWhitelisted).
 const payloadCalendario = (payload: EventoPayload) => ({
   titulo: payload.titulo,
@@ -62,7 +72,7 @@ const payloadCalendario = (payload: EventoPayload) => ({
 export const obtenerEventosPublicos = async (): Promise<Evento[]> => {
   try {
     const { data } = await apiClient.get<Evento[]>(`${BASE}/publicos`);
-    return data.map(normalizarEvento);
+    return ordenarPorCreacion(data.map(normalizarEvento));
   } catch (error) {
     handleApiError(error);
   }
@@ -71,7 +81,7 @@ export const obtenerEventosPublicos = async (): Promise<Evento[]> => {
 export const obtenerEventos = async (): Promise<Evento[]> => {
   try {
     const { data } = await apiClient.get<Evento[]>(BASE);
-    return data.map(normalizarEvento);
+    return ordenarPorCreacion(data.map(normalizarEvento));
   } catch (error) {
     handleApiError(error);
   }
