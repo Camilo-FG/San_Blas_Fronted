@@ -10,7 +10,7 @@ import SacramentoEmptyState from './SacramentoEmptyState';
 import DetailsDrawer from './DetailsDrawer';
 import AddSacramentoModal from './AddSacramentoModal';
 import EditSacramentoModal from './EditSacramentoModal';
-import { AdminModule, AdminSearch, Button, useToast } from '../../../shared/ui';
+import { AdminModule, AdminSearch, Button, ConfirmacionAccionModal, useToast } from '../../../shared/ui';
 import { ActualizarSacramentoInput, CrearSacramentoInput } from '../../../types/sacramentosNuevos';
 
 const GestionSacramentos = () => {
@@ -32,6 +32,10 @@ const GestionSacramentos = () => {
   const [editId, setEditId] = useState<number | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [sacramentoAEliminar, setSacramentoAEliminar] = useState<{
+    id: number;
+    nombre: string;
+  } | null>(null);
 
   const query = useBuscarSacramentosNuevos({
     nombre: filtros.nombre || undefined,
@@ -102,17 +106,18 @@ const GestionSacramentos = () => {
   };
 
   const handleDelete = async (sacramento: { id: number; nombre: string }) => {
-    if (
-      confirm(
-        `¿Estás seguro de eliminar todos los registros sacramentales de ${sacramento.nombre}? Esta acción eliminará Bautismo, Comunión, Confirmación y Matrimonio asociados.`,
-      )
-    ) {
-      try {
-        await deleteSacramento.mutateAsync(sacramento.id);
-        showToast('Registro eliminado correctamente', 'success');
-      } catch (err: any) {
-        showToast(err?.response?.data?.mensaje ?? 'No se pudo eliminar el registro.', 'error');
-      }
+    setSacramentoAEliminar(sacramento);
+  };
+
+  const confirmarEliminacion = async () => {
+    if (!sacramentoAEliminar) return;
+
+    try {
+      await deleteSacramento.mutateAsync(sacramentoAEliminar.id);
+      setSacramentoAEliminar(null);
+      showToast('Registro eliminado correctamente', 'success');
+    } catch (err: any) {
+      showToast(err?.response?.data?.mensaje ?? 'No se pudo eliminar el registro.', 'error');
     }
   };
 
@@ -271,6 +276,25 @@ const GestionSacramentos = () => {
         sacramentoId={editId}
         onUpdate={handleUpdateSacramento}
         onCreate={handleSaveAdd}
+      />
+
+      <ConfirmacionAccionModal
+        open={sacramentoAEliminar !== null}
+        title="Eliminar registros sacramentales"
+        parteSubrayada="Eliminar registros"
+        resto=" sacramentales"
+        mensaje={
+          sacramentoAEliminar
+            ? `¿Está seguro de eliminar todos los registros sacramentales de ${sacramentoAEliminar.nombre}? Esta acción eliminará Bautismo, Comunión, Confirmación y Matrimonio asociados.`
+            : ''
+        }
+        confirmLabel="Eliminar todos"
+        pendingLabel="Eliminando..."
+        confirmVariant="royal"
+        iconoAdvertencia
+        isPending={deleteSacramento.isPending}
+        onConfirm={() => void confirmarEliminacion()}
+        onCancel={() => setSacramentoAEliminar(null)}
       />
     </AdminModule>
   );
