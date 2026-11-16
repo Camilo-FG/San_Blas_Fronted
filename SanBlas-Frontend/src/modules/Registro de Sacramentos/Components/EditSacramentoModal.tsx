@@ -9,6 +9,7 @@ import { useObtenerSacramentosPersona } from '../hooks/hooksNuevos/useObtenerSac
 import { useObtenerSacramentoNuevo } from '../hooks/hooksNuevos/useObtenerSacramentoNuevo';
 import { useListarParroquias } from '../hooks/hooksNuevos/useListarParroquias';
 import { useListarPresbiteros } from '../hooks/hooksNuevos/useListarPresbiteros';
+import { mensajePrerrequisitos, requisitosFaltantes } from '../Utils/prerrequisitosSacramentos';
 import {
   ActualizarSacramentoInput,
   CrearSacramentoInput,
@@ -247,7 +248,6 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
   useEscapeKey(isOpen, onClose, !saving);
 
   const personaSacramental = ficha.data;
-  const tieneBautismo = Boolean(personaSacramental?.bautismo);
 
   // El sacramento que se está editando es el que se clickeó (detalleQuery.data).
   // La ficha por cédula solo sirve para los otros tabs y para prellenar la persona.
@@ -270,18 +270,10 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
 
   const existeEnTab = Boolean(sacramentoDelTab);
 
-  // Proceso lineal: para agregar un sacramento deben existir los anteriores
-  // (bautismo -> comunión -> confirmación -> matrimonio). El que se está
-  // editando (detalleQuery.data) siempre queda habilitado.
-  const habilitado = (t: TipoSacramento): boolean => {
-    if (detalleQuery.data?.tipo === t) return true;
-    if (t === 'bautismo') return true;
-    if (t === 'comunion') return Boolean(personaSacramental?.bautismo);
-    if (t === 'confirmacion')
-      return Boolean(personaSacramental?.bautismo && personaSacramental?.comunion);
-    // El matrimonio solo requiere Bautismo del primer contrayente.
-    return Boolean(personaSacramental?.bautismo);
-  };
+  // Un matrimonio histórico no desbloquea su propia edición si faltan los sacramentos anteriores.
+  const habilitado = (t: TipoSacramento): boolean =>
+    t === 'bautismo' || (!ficha.isFetching && !ficha.error &&
+      requisitosFaltantes(t, personaSacramental).length === 0);
 
   // Inicializa el formulario según la ficha de la persona (o el detalle si no hay cédula).
   useEffect(() => {
@@ -679,12 +671,9 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
     if (saving) return;
 
     if (!habilitado(activeTab)) {
-      showToast('Complete el sacramento anterior para poder registrar este.', 'error');
-      return;
-    }
-
-    if (!existeEnTab && activeTab !== 'bautismo' && !tieneBautismo) {
-      showToast('Debe registrar primero el Bautismo antes de los demás sacramentos.', 'error');
+      showToast(ficha.isFetching || ficha.error
+        ? 'No se han podido verificar los sacramentos previos. Intente nuevamente.'
+        : mensajePrerrequisitos(activeTab, requisitosFaltantes(activeTab, personaSacramental)), 'error');
       return;
     }
 
@@ -992,7 +981,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
                     title={
                       disponible
                         ? undefined
-                        : 'Complete el sacramento anterior para desbloquear este'
+                        : mensajePrerrequisitos(t, requisitosFaltantes(t, personaSacramental))
                     }
                     className={cn(
                       'shrink-0 border-0 bg-transparent px-5 py-3 text-sm font-medium transition-colors',
@@ -1022,6 +1011,12 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
               </div>
             ) : (
               <form ref={formRef} onSubmit={handleSubmit} noValidate onBlur={marcarCampoTocado} onChange={marcarCampoTocado} className="flex min-h-0 flex-1 flex-col">
+                {!habilitado(activeTab) && (
+                  <p role="alert" className="mx-6 mt-4 text-sm text-danger">
+                    {ficha.error ? 'No se pudieron verificar los sacramentos previos.' :
+                      mensajePrerrequisitos(activeTab, requisitosFaltantes(activeTab, personaSacramental))}
+                  </p>
+                )}
                 <div data-validation-scroll-container className="min-h-0 flex-1 scrollbar-contenedor space-y-4 overflow-y-auto p-6">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <div>
@@ -1099,7 +1094,7 @@ const EditSacramentoModal = ({ isOpen, onClose, sacramentoId, onUpdate, onCreate
                 </div>
 
                 <div className="flex shrink-0 justify-end gap-3 border-t border-gray-200 bg-surface-muted px-6 py-4 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
-                  <Button type="submit" variant="royal" disabled={saving}>
+                  <Button type="submit" variant="royal" disabled={saving || !habilitado(activeTab)}>
                     {saving
                       ? 'GUARDANDO...'
                       : existeEnTab

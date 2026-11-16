@@ -12,6 +12,7 @@ export const useCrearSacramentoNuevo = () => {
       queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'buscar'] });
       queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'detalle'] });
       queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'persona'] });
+      queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'requisitos'] }); // vuelve a acreditar la cadena con las actas recién guardadas
     },
   });
 };

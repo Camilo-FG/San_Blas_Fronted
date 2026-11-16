@@ -111,6 +111,7 @@ export default function DonacionForm() {
   const { cargando, error, erroresCampo, limpiarErroresCampo, enviar } =
     useDonacionInsumos();
   const [captchaExpirado, setCaptchaExpirado] = useState(false);
+  const [solicitudEnviada, setSolicitudEnviada] = useState(false);
 
   const erroresVisibles: FormErrors = useMemo(() => {
     const combinados: FormErrors = { ...errors };
@@ -256,9 +257,10 @@ export default function DonacionForm() {
     setCaptchaExpirado(false);
 
     if (!enviada) return;
+    setSolicitudEnviada(true);
 
     showToast(
-      "¡Tu solicitud de donación fue enviada correctamente! Te contactaremos por los medios indicados.",
+      "¡Tu solicitud de donación fue enviada correctamente! Estado: Pendiente de revisión.",
       "success",
     );
     setFormData({
@@ -292,6 +294,11 @@ export default function DonacionForm() {
         </p>
       </div>
 
+      {solicitudEnviada && (
+        <p role="status" className="mb-4 rounded-xl border border-royal-gold/35 bg-surface-muted p-4 text-royal-blue">
+          Solicitud enviada correctamente. Estado: Pendiente de revisión.
+        </p>
+      )}
       <form
         onSubmit={handleSubmit}
         noValidate

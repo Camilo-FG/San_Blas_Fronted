@@ -168,8 +168,9 @@ const EventosPublicPage = () => {
         const fechaEvento = extraerFechaCalendario(evento.fechaInicio);
         const coincideDesde = !fechaDesde || fechaEvento >= fechaDesde;
         const coincideHasta = !fechaHasta || fechaEvento <= fechaHasta;
+        // Un rango explícito manda sobre "desde hoy"; el orden no debe vaciar una búsqueda histórica válida.
         const coincideProximos =
-          ordenEventos !== "proximos" || fechaEvento >= hoy;
+          ordenEventos !== "proximos" || Boolean(fechaDesde || fechaHasta) || fechaEvento >= hoy;
 
         return (
           coincideNombre &&

@@ -10,6 +10,7 @@ export const useEliminarSacramentoNuevo = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'buscar'] });
       queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'persona'] });
+      queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'requisitos'] }); // un acta eliminada deja de cumplir requisitos
     },
   });
 };

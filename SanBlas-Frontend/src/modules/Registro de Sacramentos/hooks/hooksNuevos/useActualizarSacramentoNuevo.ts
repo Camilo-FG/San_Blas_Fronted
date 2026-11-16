@@ -13,6 +13,7 @@ export const useActualizarSacramentoNuevo = () => {
       queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'buscar'] });
       queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'detalle'] });
       queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'persona'] });
+      queryClient.invalidateQueries({ queryKey: ['sacramentos-nuevos', 'requisitos'] }); // evita decidir con el expediente anterior
     },
   });
 };

@@ -44,6 +44,14 @@ export const crearSacramento = async (
   return response.data;
 };
 
+// El backend confirma el lote completo o revierte todas sus actas si falta algún requisito.
+export const crearSacramentos = async (
+  sacramentos: CrearSacramentoInput[],
+): Promise<SacramentoDetalle[]> => {
+  const response = await apiClient.post('/Sacramentos-nuevos/lote', { sacramentos });
+  return response.data;
+};
+
 export const actualizarSacramento = async ({
   id,
   dto,

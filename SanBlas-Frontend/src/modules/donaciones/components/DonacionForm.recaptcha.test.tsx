@@ -116,6 +116,11 @@ describe('reCAPTCHA en formulario de donaciones', () => {
         expect(screen.getByLabelText('Correo electrónico')).toHaveValue(
           'prueba@example.com',
         );
+      if (resultado) {
+        expect(screen.getByRole('status')).toHaveTextContent('Pendiente de revisión');
+      } else {
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      }
     },
   );
 });

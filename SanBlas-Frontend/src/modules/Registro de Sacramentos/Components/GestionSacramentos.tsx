@@ -3,6 +3,7 @@ import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import SacramentTableSkeleton from './SacramentTableSkeleton';
 import { useBuscarSacramentosNuevos } from '../hooks/hooksNuevos/useBuscarSacramentosNuevos';
 import { useCrearSacramentoNuevo } from '../hooks/hooksNuevos/useCrearSacramentoNuevo';
+import { useCrearSacramentosNuevos } from '../hooks/hooksNuevos/useCrearSacramentosNuevos';
 import { useActualizarSacramentoNuevo } from '../hooks/hooksNuevos/useActualizarSacramentoNuevo';
 import { useEliminarSacramentoNuevo } from '../hooks/hooksNuevos/useEliminarSacramentoNuevo';
 import SacramentTable from './SacramentTable';
@@ -47,11 +48,8 @@ const GestionSacramentos = () => {
     pageSize,
   });
 
-  // Consulta ligera para saber si existen bautismos y habilitar las otras pestañas.
-  const bautismosQuery = useBuscarSacramentosNuevos({ tipo: 'bautismo', page: 1, pageSize: 1 });
-  const tieneBautismo = (bautismosQuery.data?.total ?? 0) > 0;
-
   const createSacramento = useCrearSacramentoNuevo();
+  const createSacramentos = useCrearSacramentosNuevos();
   const updateSacramento = useActualizarSacramentoNuevo();
   const deleteSacramento = useEliminarSacramentoNuevo();
 
@@ -100,6 +98,13 @@ const GestionSacramentos = () => {
     showToast('Acta sacramental registrada correctamente', 'success');
   };
 
+  // Agregar envía todas las pestañas con datos en una sola operación atómica.
+  const handleSaveLote = async (actas: CrearSacramentoInput[]) => {
+    await createSacramentos.mutateAsync(actas);
+    showToast(actas.length === 1 ? 'Acta sacramental registrada correctamente' :
+      `${actas.length} actas sacramentales registradas correctamente`, 'success');
+  };
+
   const handleUpdateSacramento = async (id: number, dto: ActualizarSacramentoInput) => {
     await updateSacramento.mutateAsync({ id, dto });
     showToast('Acta sacramental actualizada correctamente', 'success');
@@ -129,6 +134,7 @@ const GestionSacramentos = () => {
     filtrosActa.asiento !== '';
 
   const limpiarFiltrosActa = () => {
+    setPage(1);
     setLibroInput('');
     setFolioInput('');
     setAsientoInput('');
@@ -266,8 +272,7 @@ const GestionSacramentos = () => {
       <AddSacramentoModal
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
-        onSave={handleSaveAdd}
-        tieneBautismo={tieneBautismo}
+        onSave={handleSaveLote}
       />
 
       <EditSacramentoModal

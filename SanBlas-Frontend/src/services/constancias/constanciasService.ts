@@ -156,13 +156,14 @@ export const rechazarSolicitudSacramento = async (
   detalleRechazo?: string,
 ): Promise<FormSacramento> => {
   try {
-    const { data } = await apiClient.patch<FormSacraBackend>(
+    await apiClient.patch<{ mensaje: string; estado: string }>(
       `${BASE}/${id}/rechazar`,
       { motivoRechazo, detalleRechazo },
       // Evita que el botón quede esperando si el servidor no responde
       { timeout: 15000 },
     );
-    return mapBackendToFormSacramento(data);
+    // El rechazo devuelve una confirmación, no una entidad: leer la fila persistida evita perder id/nombre/estado.
+    return await obtenerSolicitudSacramentoPorId(id);
   } catch (error) {
     handleApiError(error);
   }

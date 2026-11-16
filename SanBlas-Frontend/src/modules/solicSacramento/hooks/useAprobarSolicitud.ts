@@ -46,9 +46,10 @@ export const useAprobarSolicitud = () => {
         throw new Error(MENSAJES_APROBACION.servidor);
       }
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["solicitudes"] });
+    onSettled: async () => {
       invalidarNotificacionesPanel(queryClient);
+      // También tras un timeout: el servidor pudo guardar aunque el navegador no recibiera la respuesta.
+      await queryClient.invalidateQueries({ queryKey: ["solicitudes"] });
     },
   });
 };

@@ -485,6 +485,8 @@ const TableSacramentos = () => {
       setIsRejectModalOpen(false);
       handleCloseRejectModal({ volverAlDetalle: false });
     } catch (err) {
+      setIsConfirmRejectOpen(false);
+      handleCloseRejectModal({ volverAlDetalle: false });
       const mensaje =
         err instanceof ApiError
           ? err.message
@@ -846,8 +848,9 @@ const TableSacramentos = () => {
           showToast("Solicitud aprobada correctamente", "success");
         },
         onError: (err: unknown) => {
-          // El modal permanece abierto, el botón "Confirmar" se reactiva solo
-          // (isPending vuelve a false) y el estado de la tabla no cambia
+          setIsApproveModalOpen(false);
+          setSolicitudAAprobar(null);
+          setSolicitudSeleccionada(null); // no volver a ofrecer acciones sobre una copia posiblemente desactualizada
 const mensaje =
               err instanceof Error && err.message
                 ? err.message

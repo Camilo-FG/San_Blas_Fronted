@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { exportarMatriculas } from "./exportacionesMatriculas";
 import { ApiError } from "./apiClient";
 
@@ -13,6 +13,7 @@ vi.mock("./apiClient", async (original) => ({
 }));
 
 beforeEach(() => {
+  vi.useFakeTimers();
   vi.clearAllMocks();
   vi.stubGlobal(
     "URL",
@@ -27,6 +28,10 @@ beforeEach(() => {
       "content-disposition": 'attachment; filename="inscripciones.xlsx"',
     },
   });
+});
+afterEach(() => {
+  vi.runOnlyPendingTimers();
+  vi.useRealTimers();
 });
 
 describe("descarga de matrículas", () => {
@@ -57,6 +62,8 @@ describe("descarga de matrículas", () => {
         responseType: "blob",
       });
       expect(click).toHaveBeenCalledTimes(1);
+      expect(revocarUrl).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1000);
       expect(revocarUrl).toHaveBeenCalledWith("blob:prueba");
       expect(document.querySelector("a[download]")).toBeNull();
     },

@@ -73,7 +73,8 @@ export async function exportarMatriculas(
       enlace.click();
     } finally {
       enlace.remove();
-      URL.revokeObjectURL(url);
+      // El navegador necesita consumir el blob antes de revocarlo; hacerlo en el mismo turno puede cancelar la descarga.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {

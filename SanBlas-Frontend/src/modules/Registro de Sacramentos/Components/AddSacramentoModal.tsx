@@ -7,6 +7,8 @@ import { useFocusTrap } from '../../../shared/hooks/useFocusTrap';
 import { useEscapeKey } from '../../../shared/hooks/useEscapeKey';
 import { useListarParroquias } from '../hooks/hooksNuevos/useListarParroquias';
 import { useListarPresbiteros } from '../hooks/hooksNuevos/useListarPresbiteros';
+import { useRequisitosSacramentales } from '../hooks/hooksNuevos/useRequisitosSacramentales';
+import { mensajePrerrequisitos, requisitosFaltantes } from '../Utils/prerrequisitosSacramentos';
 import {
   AbueloInput,
   CrearSacramentoInput,
@@ -41,8 +43,7 @@ import {
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: CrearSacramentoInput) => Promise<void>;
-  tieneBautismo: boolean;
+  onSave: (data: CrearSacramentoInput[]) => Promise<void>;
 }
 
 const TIPOS: TipoSacramento[] = ['bautismo', 'comunion', 'confirmacion', 'matrimonio'];
@@ -116,6 +117,16 @@ const personaVacia = (): PersonaForm => ({
 
 const CLAVE_BORRADOR = 'sanblas.borrador.registro-sacramentos';
 
+type CelebracionForm = { idParroquia: string; idPresbitero: string; fechaSacramento: string };
+
+// Cada sacramento conserva su lugar, ministro y fecha al cambiar de pestaña.
+const celebracionesVacias = (): Record<TipoSacramento, CelebracionForm> => ({
+  bautismo: { idParroquia: '', idPresbitero: '', fechaSacramento: '' },
+  comunion: { idParroquia: '', idPresbitero: '', fechaSacramento: '' },
+  confirmacion: { idParroquia: '', idPresbitero: '', fechaSacramento: '' },
+  matrimonio: { idParroquia: '', idPresbitero: '', fechaSacramento: '' },
+});
+
 type BorradorSacramento = {
   tipo: TipoSacramento;
   idParroquia: string;
@@ -133,6 +144,7 @@ type BorradorSacramento = {
   contrayente2: PersonaForm;
   detalleBautismo: { fechaNacimiento: string; horaNacimiento: string; lugarNacimiento: string; libro: string; folio: string; asiento: string };
   detalleMatrimonio: { libro: string; folio: string };
+  celebraciones?: Record<TipoSacramento, CelebracionForm>; // los borradores anteriores no tenían datos por pestaña
 };
 
 const borradorVacio = (): BorradorSacramento => ({
@@ -140,6 +152,7 @@ const borradorVacio = (): BorradorSacramento => ({
   bautizado: personaVacia(), padre: personaVacia(), madre: personaVacia(), padrino: personaVacia(), madrina: personaVacia(), abuelos: [], persona: personaVacia(), contrayente1: personaVacia(), contrayente2: personaVacia(),
   detalleBautismo: { fechaNacimiento: '', horaNacimiento: '', lugarNacimiento: '', libro: '', folio: '', asiento: '' },
   detalleMatrimonio: { libro: '', folio: '' },
+  celebraciones: celebracionesVacias(),
 });
 
 // Lee únicamente borradores con la estructura esperada para no romper el formulario si localStorage se corrompe.
@@ -176,21 +189,33 @@ const borrarBorradorSacramento = () => {
   }
 };
 
-const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) => {
+const AddSacramentoModal = ({ isOpen, onClose, onSave }: Props) => {
   const { showToast } = useToast();
   const { data: parroquias, isPending: cargandoParroquias } = useListarParroquias();
   const { data: presbiteros, isPending: cargandoPresbiteros } = useListarPresbiteros();
   const [borradorInicial] = useState(leerBorradorSacramento);
 
   const [tipo, setTipo] = useState<TipoSacramento>(borradorInicial?.tipo ?? 'bautismo');
-  const [idParroquia, setIdParroquia] = useState(borradorInicial?.idParroquia ?? '');
-  const [idPresbitero, setIdPresbitero] = useState(borradorInicial?.idPresbitero ?? '');
-  const [fechaSacramento, setFechaSacramento] = useState(borradorInicial?.fechaSacramento ?? '');
+  const [celebraciones, setCelebraciones] = useState(() => {
+    const vacias = celebracionesVacias();
+    if (borradorInicial?.celebraciones) return { ...vacias, ...borradorInicial.celebraciones };
+    if (borradorInicial) vacias[borradorInicial.tipo] = {
+      idParroquia: borradorInicial.idParroquia ?? '',
+      idPresbitero: borradorInicial.idPresbitero ?? '',
+      fechaSacramento: borradorInicial.fechaSacramento ?? '',
+    };
+    return vacias;
+  });
+  const { idParroquia, idPresbitero, fechaSacramento } = celebraciones[tipo];
+  // Cambia únicamente los campos de la pestaña activa; no copia celebraciones a otras actas.
+  const setCelebracionCampo = (campo: keyof CelebracionForm, valor: string) =>
+    setCelebraciones((anteriores) => ({ ...anteriores, [tipo]: { ...anteriores[tipo], [campo]: valor } }));
+  const setIdParroquia = (valor: string) => setCelebracionCampo('idParroquia', valor);
+  const setIdPresbitero = (valor: string) => setCelebracionCampo('idPresbitero', valor);
+  const setFechaSacramento = (valor: string) => setCelebracionCampo('fechaSacramento', valor);
   const [observaciones, setObservaciones] = useState(() =>
     soloTextoSeguro(borradorInicial?.observaciones ?? '', OBSERVACIONES_MAX),
   );
-  // Tipos ya guardados en esta sesión (persiste al reabrir el modal sin recargar).
-  const [tiposGuardados, setTiposGuardados] = useState<Partial<Record<TipoSacramento, boolean>>>({});
   const [saving, setSaving] = useState(false);
   const [campoCedulaCargando, setCampoCedulaCargando] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -236,6 +261,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const [persona, setPersona] = useState<PersonaForm>(borradorInicial?.persona ?? personaVacia);
   const [contrayente1, setContrayente1] = useState<PersonaForm>(borradorInicial?.contrayente1 ?? personaVacia);
   const [contrayente2, setContrayente2] = useState<PersonaForm>(borradorInicial?.contrayente2 ?? personaVacia);
+  const requisitos = useRequisitosSacramentales(bautizado.cedula, isOpen);
   const [detalleBautismo, setDetalleBautismo] = useState(() => {
     const inicial = borradorInicial?.detalleBautismo ?? {
       fechaNacimiento: '',
@@ -261,17 +287,15 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   useEscapeKey(isOpen, onClose, !saving);
 
   useEffect(() => {
-    guardarBorradorSacramento({ tipo, idParroquia, idPresbitero, fechaSacramento, observaciones, bautizado, padre, madre, padrino, madrina, abuelos, persona, contrayente1, contrayente2, detalleBautismo, detalleMatrimonio });
-  }, [tipo, idParroquia, idPresbitero, fechaSacramento, observaciones, bautizado, padre, madre, padrino, madrina, abuelos, persona, contrayente1, contrayente2, detalleBautismo, detalleMatrimonio]);
+    guardarBorradorSacramento({ tipo, idParroquia, idPresbitero, fechaSacramento, observaciones, bautizado, padre, madre, padrino, madrina, abuelos, persona, contrayente1, contrayente2, detalleBautismo, detalleMatrimonio, celebraciones });
+  }, [tipo, idParroquia, idPresbitero, fechaSacramento, celebraciones, observaciones, bautizado, padre, madre, padrino, madrina, abuelos, persona, contrayente1, contrayente2, detalleBautismo, detalleMatrimonio]);
 
   // Reinicia el formulario y elimina el borrador para empezar una inscripción nueva.
   const limpiarProgreso = (mostrarMensaje = true) => {
     const vacio = borradorVacio();
     borrarBorradorSacramento();
     setTipo(vacio.tipo);
-    setIdParroquia(vacio.idParroquia);
-    setIdPresbitero(vacio.idPresbitero);
-    setFechaSacramento(vacio.fechaSacramento);
+    setCelebraciones(celebracionesVacias());
     setObservaciones(vacio.observaciones);
     setBautizado(vacio.bautizado);
     setPadre(vacio.padre);
@@ -289,58 +313,22 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     setTocados({});
     setIntentado(false);
     setConsultasCedula({});
-    setTiposGuardados({});
     if (mostrarMensaje) {
       showToast('Progreso eliminado. Puede iniciar una inscripción nueva.', 'success');
     }
   };
 
-  // Orden estricto de la cadena: bautismo -> comunion -> confirmacion -> matrimonio.
-  const ORDEN: TipoSacramento[] = ['bautismo', 'comunion', 'confirmacion', 'matrimonio'];
-
-  // true si el sacramento tiene sus campos requeridos completos (coincide con los `*` del formulario).
-  const completo = (t: TipoSacramento): boolean => {
-    const base = idParroquia !== '' && idPresbitero !== '' && fechaSacramento !== '';
-    if (t === 'bautismo')
-      return (
-        base &&
-        bautizado.nombre.trim() !== '' &&
-        bautizado.primerApellido.trim() !== '' &&
-        detalleBautismo.fechaNacimiento !== '' &&
-        detalleBautismo.horaNacimiento !== '' &&
-        detalleBautismo.lugarNacimiento.trim() !== '' &&
-        detalleBautismo.libro.trim() !== '' &&
-        detalleBautismo.folio.trim() !== '' &&
-        detalleBautismo.asiento.trim() !== ''
-      );
-    // Comunión y confirmación solo piden lugar y fecha: la persona es la misma del bautismo.
-    if (t === 'comunion' || t === 'confirmacion') return base;
-    // El matrimonio solo pide el cónyuge: el primer contrayente es la persona del bautismo.
-    return (
-      base &&
-      contrayente2.nombre.trim() !== '' &&
-      contrayente2.primerApellido.trim() !== '' &&
-      detalleMatrimonio.libro.trim() !== '' &&
-      detalleMatrimonio.folio.trim() !== ''
-    );
+  // Una pestaña con datos participa del envío, aunque le falte algún campo obligatorio.
+  const tieneDatos = (t: TipoSacramento): boolean => {
+    if (Object.values(celebraciones[t]).some((valor) => valor.trim())) return true;
+    if (t === 'bautismo') return Object.values(detalleBautismo).some((valor) => valor.trim()) ||
+      Boolean(observaciones.trim() || padre.nombre.trim() || madre.nombre.trim() ||
+        padrino.nombre.trim() || madrina.nombre.trim() || abuelos.length);
+    if (t === 'matrimonio') return Object.values(contrayente2).some((valor) => valor.trim()) ||
+      Object.values(detalleMatrimonio).some((valor) => valor.trim());
+    return false;
   };
-
-  // Anterior listo si el formulario está completo, ya se guardó en esta sesión,
-  // o (solo bautismo) ya existe al menos un bautismo registrado en el sistema.
-  const anteriorListo = (t: TipoSacramento): boolean =>
-    completo(t) ||
-    Boolean(tiposGuardados[t]) ||
-    (t === 'bautismo' && tieneBautismo);
-
-  // Una pestaña se habilita solo si la inmediatamente anterior (y las previas) está lista.
-  const habilitado = (t: TipoSacramento): boolean => {
-    const idx = ORDEN.indexOf(t);
-    if (idx === 0) return true;
-    // El matrimonio solo requiere que el primer contrayente tenga Bautismo;
-    // no obliga a registrar antes Comunión y Confirmación.
-    if (t === 'matrimonio') return anteriorListo('bautismo');
-    return anteriorListo(ORDEN[idx - 1]) && habilitado(ORDEN[idx - 1]);
-  };
+  const tiposConDatos = TIPOS.filter(tieneDatos);
 
   // Al avanzar de pestaña, reutiliza la persona ya registrada en el bautismo
   // para el resto de sacramentos del expediente (por lógica es la misma persona).
@@ -348,12 +336,12 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const cambiarTab = (nuevo: TipoSacramento) => {
     if (nuevo === tipo) return;
     if (tipo === 'bautismo' && nuevo !== 'bautismo') {
-      setPersona((prev) => ({ ...bautizado, ...prev }));
+      setPersona({ ...bautizado }); // los valores vacíos anteriores no deben borrar la identidad del expediente
     }
     // El primer contrayente del matrimonio es la misma persona del expediente.
     if (nuevo === 'matrimonio') {
-      const base = { ...bautizado, ...persona };
-      setContrayente1((prev) => ({ ...base, ...prev }));
+      const base = bautizado.nombre.trim() ? bautizado : persona;
+      setContrayente1({ ...base });
     }
     setErrors({});
     setTocados({});
@@ -501,8 +489,9 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   };
 
   // Cálculo puro de los errores del formulario actual (sin efectos secundarios).
-  const calcularErrores = (): Record<string, string> => {
+  const calcularErrores = (tipoValidado = tipo): Record<string, string> => {
     const nuevos: Record<string, string> = {};
+    const { idParroquia, idPresbitero, fechaSacramento } = celebraciones[tipoValidado];
     if (!idParroquia) nuevos.idParroquia = MENSAJES.idParroquia;
     if (!idPresbitero) nuevos.idPresbitero = MENSAJES.idPresbitero;
     if (!fechaSacramento) nuevos.fechaSacramento = MENSAJES.fechaSacramento;
@@ -515,7 +504,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
         nuevos[`${prefijo}SegundoApellido`] = MENSAJES[`${prefijo}SegundoApellido`];
     };
 
-    if (tipo === 'bautismo') {
+    if (tipoValidado === 'bautismo') {
       personaOk(bautizado, 'bautizado', true);
       if (!detalleBautismo.fechaNacimiento) nuevos.fechaNacimiento = MENSAJES.fechaNacimiento;
       if (!detalleBautismo.horaNacimiento) nuevos.horaNacimiento = MENSAJES.horaNacimiento;
@@ -540,21 +529,13 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
           'La fecha de celebración no puede ser anterior a la fecha de nacimiento.';
       }
     }
-    if (tipo === 'matrimonio') {
+    if (tipoValidado === 'matrimonio') {
       personaOk(contrayente2, 'contrayente2');
       if (!detalleMatrimonio.libro.trim()) nuevos.libro = MENSAJES.libro;
       if (!detalleMatrimonio.folio.trim()) nuevos.folio = MENSAJES.folio;
     }
     // Comunión/confirmación no llevan datos de persona: usan la del bautismo.
 
-    return nuevos;
-  };
-
-  // Solo se ejecuta al guardar: publica todos los errores y enciende la validación en vivo.
-  const validar = (): Record<string, string> => {
-    const nuevos = calcularErrores();
-    setErrors(nuevos);
-    setIntentado(true);
     return nuevos;
   };
 
@@ -572,6 +553,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     idParroquia,
     idPresbitero,
     fechaSacramento,
+    celebraciones,
     bautizado,
     padre,
     madre,
@@ -600,7 +582,8 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     segundoApellido: p.segundoApellido.trim() || undefined,
   });
 
-  const construirDto = (): CrearSacramentoInput => {
+  const construirDto = (tipo: TipoSacramento): CrearSacramentoInput => {
+    const { idParroquia, idPresbitero, fechaSacramento } = celebraciones[tipo];
     const base = {
       tipo,
       idParroquia: Number(idParroquia),
@@ -636,7 +619,10 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
     }
     // La persona del expediente se copió del bautismo; se usa como respaldo si por
     // algún flujo no quedó seteada (evita duplicar o cambiar la cédula del bautizado).
-    const personaDelExpediente = persona.nombre.trim() ? persona : bautizado;
+    const personaGuardada = requisitos.data?.persona;
+    const personaDelExpediente = personaGuardada
+      ? { ...personaGuardada, cedula: personaGuardada.cedula ?? '', segundoApellido: personaGuardada.segundoApellido ?? '' }
+      : bautizado;
     if (tipo === 'comunion')
       return { ...base, comunion: { persona: personaInput(personaDelExpediente) } };
     if (tipo === 'confirmacion')
@@ -645,9 +631,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
       ...base,
       matrimonio: {
         // El primer contrayente es la persona del expediente (bautismo); solo se pide el cónyuge.
-        contrayente1: personaInput(
-          contrayente1.nombre.trim() ? contrayente1 : personaDelExpediente,
-        ),
+        contrayente1: personaInput(personaDelExpediente),
         contrayente2: personaInput(contrayente2),
         libro: detalleMatrimonio.libro.trim() || undefined,
         folio: detalleMatrimonio.folio.trim() || undefined,
@@ -658,26 +642,45 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (saving) return;
-    if (!habilitado(tipo)) {
-      showToast('Complete el sacramento anterior para poder registrar este.', 'error');
+    const incluidos = tiposConDatos.length ? tiposConDatos : [tipo];
+    if (incluidos.some((t) => t !== 'bautismo') && (requisitos.isFetching || requisitos.isError)) {
+      showToast('No se han podido verificar los sacramentos previos. Intente nuevamente.', 'error');
       return;
     }
-    const errores = validar();
-    if (Object.keys(errores).length) {
-      // Mueve la vista al primer campo inválido después de pintar sus errores.
-      desplazarAlPrimerError(formRef.current);
+    // Los previos pueden existir en la BD o venir en este mismo envío; todos se validan antes de guardar.
+    const disponibles: Partial<Record<TipoSacramento, unknown>> = { ...requisitos.data };
+    for (const t of incluidos) disponibles[t] = true;
+    for (const t of incluidos) {
+      const faltantes = requisitosFaltantes(t, disponibles);
+      if (faltantes.length) {
+        showToast(mensajePrerrequisitos(t, faltantes), 'error');
+        return;
+      }
+    }
+    if (!incluidos.includes('bautismo') && !requisitos.data?.persona.nombre.trim() && !bautizado.nombre.trim()) {
+      showToast('Complete los datos de la persona en Bautismo antes de enviar las actas.', 'error');
       return;
+    }
+    for (const t of incluidos) {
+      const errores = calcularErrores(t);
+      if (Object.keys(errores).length) {
+        setTipo(t);
+        setErrors(errores);
+        setIntentado(true);
+        showToast(`Complete los campos obligatorios de ${TIPO_SACRAMENTO_LABEL[t]} antes de enviar las actas.`, 'error');
+        desplazarAlPrimerError(formRef.current);
+        return;
+      }
     }
     setSaving(true);
     try {
-      await onSave(construirDto());
+      await onSave(incluidos.map(construirDto));
       setErrors({});
       setTocados({});
       setIntentado(false);
       borrarBorradorSacramento();
 
-      // Cada acta se registra de forma independiente. No avanzar ni copiar
-      // los datos del bautismo a Comunión o Confirmación después de guardar.
+      // Solo se limpia cuando el backend confirmó todas las actas del envío.
       limpiarProgreso(false);
       onClose();
     } catch (err: any) {
@@ -987,19 +990,17 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
 
             <div className="flex gap-2 border-b border-gray-200 px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0a1425]">
               {TIPOS.map((t) => {
-                const disponible = habilitado(t);
                 return (
                   <button
                     key={t}
                     type="button"
-                    disabled={!disponible}
-                    title={disponible ? undefined : 'Complete el sacramento anterior para desbloquear este'}
+                    disabled={saving}
                     className={cn(
                       'px-5 py-3 text-sm font-medium transition-colors',
-                      !disponible
+                      saving
                         ? 'cursor-not-allowed border-0 bg-transparent text-gray-300 dark:text-[#7f8da3]'
                         : 'cursor-pointer border-0 bg-transparent text-gray-500 hover:text-blue-600 dark:text-[#b7c3d4] dark:hover:text-[#d9a928]',
-                      tipo === t && disponible && 'border-b-2 border-blue-600 text-blue-600 dark:border-[#d9a928] dark:text-[#d9a928]',
+                      tipo === t && 'border-b-2 border-blue-600 text-blue-600 dark:border-[#d9a928] dark:text-[#d9a928]',
                     )}
                     onClick={() => cambiarTab(t)}
                   >
@@ -1093,7 +1094,7 @@ const AddSacramentoModal = ({ isOpen, onClose, onSave, tieneBautismo }: Props) =
 
               <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-surface-muted px-4 py-4 sm:flex-row sm:justify-end sm:px-6 dark:border-[rgba(220,230,242,0.12)] dark:bg-[#0f1d33]">
                 <Button type="submit" variant="royal" className="w-full sm:w-auto" disabled={saving || catalogoCargando}>
-                  {saving ? 'GUARDANDO...' : 'INSCRIBIR ACTA'}
+                  {saving ? 'GUARDANDO...' : tiposConDatos.length > 1 ? `INSCRIBIR ${tiposConDatos.length} ACTAS` : 'INSCRIBIR ACTA'}
                 </Button>
                 <Button type="button" variant="secondary" className="w-full sm:w-auto dark:border! dark:border-white/15! dark:bg-white/5! dark:text-[#f3f6fa] dark:hover:bg-white/15!" onClick={onClose} disabled={saving}>
                   CANCELAR
